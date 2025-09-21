@@ -5,9 +5,14 @@ import { useState } from "react";
 import { Button } from "@/components/Button";
 import { downChevron } from "./utils/icons";
 import LoginModal from "./components/LoginModal";
+import { useRouter } from "next/navigation";
 
 export default function LandingPage() {
   const [open, setOpen] = useState(false);
+  const [loadingProvider, setLoadingProvider] = useState<
+    "google" | "facebook" | null
+  >(null);
+  const router = useRouter();
 
   return (
     <div className="min-h-screen bg-[var(--background,#fff)] text-[var(--foreground,#171717)] font-nunito">
@@ -227,12 +232,7 @@ export default function LandingPage() {
         </div>
       </footer>
 
-      <LoginModal
-        open={open}
-        onClose={() => setOpen(false)}
-        onLoginWithGoogle={() => console.log("Google login")}
-        onLoginWithFacebook={() => console.log("Facebook login")}
-      />
+      <LoginModal open={open} onClose={() => setOpen(false)} />
     </div>
   );
 }
