@@ -59,7 +59,6 @@ Trong khóa học, bạn sẽ:
 
   return (
     <main className="mx-auto max-w-screen-xl px-4 py-6">
-      {/* Breadcrumb / tags row */}
       <div className="flex flex-wrap gap-2 text-sm">
         {[
           "Writing IELTS 7.0+",
@@ -76,9 +75,7 @@ Trong khóa học, bạn sẽ:
         ))}
       </div>
 
-      {/* Title + Right side card */}
       <div className="mt-4 grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Left content */}
         <section className="lg:col-span-2">
           <h1 className="text-2xl font-bold text-slate-900">
             HỌC IELTS WRITING 8.0 VỚI KHÔI
@@ -86,8 +83,6 @@ Trong khóa học, bạn sẽ:
           <p className="mt-1 text-slate-600">
             Học theo lộ trình vững nền, bứt điểm từng tiêu chí, tự tin viết bài
           </p>
-
-          {/* Rating + stats */}
           <div className="mt-2 flex flex-wrap items-center gap-3 text-sm">
             <StarRating value={5} />
             <span className="text-yellow-600 font-semibold">4.9</span>
@@ -97,8 +92,6 @@ Trong khóa học, bạn sẽ:
             <span className="text-slate-400">•</span>
             <span className="text-slate-600">800 lượt đăng ký</span>
           </div>
-
-          {/* What you'll learn */}
           <div className="mt-5 rounded-xl border border-slate-300 bg-white p-4">
             <h3 className="font-semibold text-slate-900">
               Những gì bạn sẽ học
@@ -113,7 +106,6 @@ Trong khóa học, bạn sẽ:
             </ul>
           </div>
 
-          {/* Description */}
           <div className="mt-6">
             <h3 className="mb-2 inline-block rounded bg-sky-100 px-2 py-1 text-xs font-semibold text-sky-800">
               Mô tả
@@ -135,7 +127,6 @@ Trong khóa học, bạn sẽ:
             </div>
           </div>
 
-          {/* Ratings section */}
           <div className="mt-8">
             <h3 className="text-base font-semibold text-slate-900">
               ĐÁNH GIÁ KHÓA HỌC
