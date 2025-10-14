@@ -15,7 +15,7 @@ const demoItems: PracticeItem[] = Array.from({ length: 24 }, (_, i) => ({
     "https://images.unsplash.com/photo-1526481280698-8fcc13fd5f1d?q=80&w=1200&auto=format&fit=crop",
   attemps: 500 + i * 7,
   done: i % 5 === 0,
-  tags: ["reading"], // sẽ lọc theo group bên dưới
+  tags: ["reading"],
 }));
 
 export default async function GroupPage({ params, searchParams }: Props) {

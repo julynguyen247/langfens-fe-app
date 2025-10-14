@@ -77,7 +77,6 @@ export default function PracticeSidebar({
 
           return (
             <section key={g} className={open ? "mb-3" : "mb-2"}>
-              {/* Group header */}
               <Link
                 href={`/practice/${g}`}
                 className={[
