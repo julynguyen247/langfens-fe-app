@@ -15,7 +15,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`antialiased ${nunito.variable} font-nunito text-gray-900`}
+        className={`antialiased ${nunito.variable} font-nunito text-gray-900 overflow-hidden`}
       >
         <AppShell>{children}</AppShell>
       </body>
