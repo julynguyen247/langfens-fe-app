@@ -23,33 +23,6 @@ export default function LandingPage() {
               <div className="h-8 w-8 rounded-lg bg-[#317EFF]" />
               <span className="text-lg font-bold tracking-wide">LANGFENS</span>
             </div>
-            <nav className="hidden md:flex gap-8 text-sm ">
-              <a
-                className="hover:text-blue-600 font-semibold flex items-center gap-1 "
-                href="#"
-              >
-                <span className="mb-1">Khóa học</span> {downChevron}
-              </a>
-              <a
-                className="hover:text-blue-600 font-semibold flex items-center gap-1 "
-                href="#"
-              >
-                <span className="mb-1">Kiểm tra đầu vào </span>
-                {downChevron}
-              </a>
-              <a
-                className="hover:text-blue-600 font-semibold flex items-center gap-1 "
-                href="#"
-              >
-                <span className="mb-1">Luyện đề</span> {downChevron}
-              </a>
-              <a
-                className="hover:text-blue-600 font-semibold flex items-center gap-1"
-                href="#"
-              >
-                <span className="mb-1">Blog</span> {downChevron}
-              </a>
-            </nav>
           </div>
 
           <Button
