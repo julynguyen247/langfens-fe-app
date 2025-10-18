@@ -19,7 +19,6 @@ export default function DoTestAttemptLayout({
     attemptId: string;
   };
 
-  // Chiều cao dự kiến: QuestionNav (~56px) + Footer (~72px) + spacing
   const BOTTOM_SAFE_SPACE = "pb-[136px]";
 
   return (

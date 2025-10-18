@@ -15,10 +15,6 @@ const NAV: NavItem[] = [
   {
     label: "Khóa học",
     href: "/courses",
-    children: [
-      { label: "Writing IELTS 7.0+", href: "/khoa-hoc/writing-ielts-7" },
-      { label: "Reading Mastery", href: "/khoa-hoc/reading" },
-    ],
   },
   { label: "Luyện đề", href: "/practice", children: [] },
   { label: "Từ điển", href: "/dictionary", children: [] },
@@ -33,24 +29,6 @@ export default function LangfensHeader() {
   const [scrolled, setScrolled] = useState(false);
   const lastY = useRef(0);
   const ticking = useRef(false);
-
-  useEffect(() => {
-    const onScroll = () => {
-      const y = window.scrollY || 0;
-      if (!ticking.current) {
-        window.requestAnimationFrame(() => {
-          const goingDown = y > lastY.current;
-          setHideBrand(goingDown && y > 24); // cuộn xuống thì ẩn brand
-          setScrolled(y > 0); // thêm bóng nhẹ khi có scroll
-          lastY.current = y;
-          ticking.current = false;
-        });
-        ticking.current = true;
-      }
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
   const spacerHeight = hideBrand ? 40 : 96; // 40 = h-10 (nav), 96 = 56 (brand) + 40 (nav)
 
@@ -122,24 +100,6 @@ export default function LangfensHeader() {
               })}
             </div>
           </nav>
-
-          {hovered && hovered.children && hovered.children.length > 0 && (
-            <div className="w-full bg-white border-t">
-              <div className="mx-auto max-w-7xl px-4 py-3">
-                <div className="flex gap-6">
-                  {hovered.children.map((c) => (
-                    <Link
-                      key={c.href}
-                      href={c.href}
-                      className="text-sm text-slate-700 hover:text-[#2563EB]"
-                    >
-                      {c.label}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </header>
       <div style={{ height: spacerHeight }} />
