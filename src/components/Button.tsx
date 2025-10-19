@@ -7,6 +7,7 @@ interface ButtonProps {
   onClickFunc?: () => void;
   isValid?: boolean;
   children?: React.ReactNode;
+  type?: "button" | "submit" | "reset";
 }
 
 export const Button = ({
@@ -14,12 +15,14 @@ export const Button = ({
   onClickFunc,
   isValid = true,
   children,
+  type = "button",
 }: ButtonProps) => {
   return (
     <button
+      type={type}
       onClick={onClickFunc}
       disabled={!isValid}
-      className={`tracking-wide font-semibold px-6 py-3 rounded-lg flex items-center justify-center transition-colors duration-200 
+      className={`tracking-wide font-semibold px-6 py-3 rounded-lg flex items-center justify-center transition-colors duration-200 text-white
         ${
           isValid
             ? "bg-[#317EFF] hover:bg-[#317EFF] text-[#0F172A] cursor-pointer"

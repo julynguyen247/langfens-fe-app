@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { Button } from "@/components/Button";
 import { downChevron } from "./utils/icons";
-import LoginModal from "./components/LoginModal";
+import LoginModal from "./components/GoogleButton";
 import { useRouter } from "next/navigation";
 
 export default function LandingPage() {

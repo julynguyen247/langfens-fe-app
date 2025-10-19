@@ -6,3 +6,28 @@ export async function loginWithGoogle(idToken: string) {
   });
   return data;
 }
+export async function register(email: string, password: string) {
+  const res = await api.post("/api/auth/register", {
+    email,
+    password,
+  });
+  return res;
+}
+export async function login(email: string, password: string) {
+  const res = await api.post("/api/auth/login", {
+    email,
+    password,
+  });
+  return res;
+}
+export async function getMe() {
+  const res = await api.get("/api/auth/me");
+  return res;
+}
+
+export async function verifyEmail(email: string, otp: string) {
+  const res = await api.get("/api/auth/verify", {
+    params: { email, otp },
+  });
+  return res;
+}

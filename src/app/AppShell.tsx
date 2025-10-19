@@ -5,7 +5,10 @@ import LangfensHeader from "@/components/LangfensHeader";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const hideHeader = pathname === "/" || pathname.startsWith("/do-test");
+  const hideHeader =
+    pathname === "/" ||
+    pathname.startsWith("/do-test") ||
+    pathname.startsWith("/auth");
 
   return (
     <>
