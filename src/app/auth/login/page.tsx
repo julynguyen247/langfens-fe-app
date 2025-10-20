@@ -5,6 +5,7 @@ import { useLoadingStore } from "@/app/store/loading";
 import { Button } from "@/components/Button";
 import Input from "@/components/Input";
 import { login } from "@/utils/api";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -15,6 +16,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const { setLoading } = useLoadingStore();
+
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const isEmailValid = emailRegex.test(email);
   const isFormValid = isEmailValid && password.length > 0;
@@ -33,6 +35,7 @@ export default function Login() {
     setLoading(true);
     if (!isEmailValid) {
       setError("Enter a valid email address");
+      setLoading(false);
       return;
     }
 
@@ -66,79 +69,90 @@ export default function Login() {
     } finally {
       setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center justify-center">
-      <div className="flex flex-col items-center justify-center">
-        <h1 className="text-2xl xl:text-3xl font-semibold whitespace-nowrap text-[#2563EB]">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col items-center justify-center text-black px-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-md p-8 flex flex-col items-center">
+        <Image
+          src="/langfens.svg"
+          alt="Langfens Logo"
+          width={56}
+          height={56}
+          className="mb-4"
+        />
+
+        <h1 className="text-2xl xl:text-3xl font-semibold text-[#2563EB] text-center">
           Đăng nhập vào tài khoản
         </h1>
-        <div className="w-full flex-1 mt-8">
-          <form
-            onSubmit={async (e) => {
-              e.preventDefault();
-              await loginHandler();
-            }}
-            className="mx-auto max-w-xs"
-          >
-            <Input
-              value={email}
-              onChangeFunc={emailChangeHandler}
-              placeholder="name@email.com"
-              label="Email"
-              type="email"
-            />
-            <Input
-              className="mt-5"
-              value={password}
-              onChangeFunc={passwordChangeHandler}
-              placeholder="Password"
-              label="Password"
-              type="password"
-            />
-            {error && (
-              <div className="text-[#B91C1C] font-sans font-normal text-sm mt-3">
-                {error}
-              </div>
-            )}
-            <div className="flex items-center justify-between mt-5">
-              <label className="flex items-center gap-2 text-sm text-[#0A0A0A]">
-                <input
-                  id="remember"
-                  type="checkbox"
-                  className="w-4 h-4 rounded accent-[#EAB308]"
-                />
-                Remember me
-              </label>
-              <Link
-                href="/auth/reset-password"
-                className="text-sm font-medium text-[#1E40AF] hover:underline"
-              >
-                Quên mật khẩu
-              </Link>
-            </div>
-            <Button isValid={isFormValid} className="w-full mt-5" type="submit">
-              Đăng nhập
-            </Button>
-          </form>
-          <div className="mx-auto max-w-xs my-6 border-b text-center">
-            <div className="leading-none px-2 inline-block text-sm text-gray-600 tracking-wide font-medium bg-white transform translate-y-1/2">
-              hoặc
-            </div>
+
+        <p className="text-sm text-gray-500 mt-2 text-center">
+          Học tập cùng Langfens và theo dõi tiến độ của bạn.
+        </p>
+
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            await loginHandler();
+          }}
+          className="w-full mt-8"
+        >
+          <Input
+            value={email}
+            onChangeFunc={emailChangeHandler}
+            placeholder="name@email.com"
+            label="Email"
+            type="email"
+          />
+          <Input
+            className="mt-5"
+            value={password}
+            onChangeFunc={passwordChangeHandler}
+            placeholder="Password"
+            label="Password"
+            type="password"
+          />
+
+          {error && <div className="text-[#B91C1C] text-sm mt-3">{error}</div>}
+
+          <div className="flex items-center justify-between mt-5">
+            <label className="flex items-center gap-2 text-sm text-[#0A0A0A]">
+              <input
+                id="remember"
+                type="checkbox"
+                className="w-4 h-4 rounded accent-[#EAB308]"
+              />
+              Remember me
+            </label>
+            <Link
+              href="/auth/reset-password"
+              className="text-sm font-medium text-[#1E40AF] hover:underline"
+            >
+              Quên mật khẩu?
+            </Link>
           </div>
-          <GoogleLoginButton className="mx-auto max-w-xs" redirectTo="/home" />
+
+          <Button isValid={isFormValid} className="w-full mt-6" type="submit">
+            Đăng nhập
+          </Button>
+        </form>
+
+        <div className="relative w-full flex items-center justify-center my-6">
+          <div className="w-full border-t border-gray-200"></div>
+          <span className="absolute bg-white px-3 text-gray-500 text-sm">
+            hoặc
+          </span>
         </div>
-      </div>
-      <div>
-        <p className="flex items-center justify-center mt-6 text-xs text-gray-600 text-center">
-          Chưa có tài khoản Langfens?&nbsp;
+
+        <GoogleLoginButton className="w-full" redirectTo="/home" />
+
+        <p className="mt-6 text-sm text-gray-600 text-center">
+          Chưa có tài khoản Langfens?{" "}
           <Link
             href="/auth/register"
-            className="text-[#1E40AF] text-sm font-medium flex items-center gap-2"
+            className="text-[#1E40AF] font-medium hover:underline"
           >
-            Đăng kí
+            Đăng ký
           </Link>
         </p>
       </div>

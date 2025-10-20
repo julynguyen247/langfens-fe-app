@@ -42,3 +42,10 @@ export async function verifyEmail(email: string, otp: string) {
   });
   return res;
 }
+
+export async function resendEmail(email: string) {
+  const res = await api.post("/api/auth/resend-otp", null, {
+    params: { email },
+  });
+  return res;
+}

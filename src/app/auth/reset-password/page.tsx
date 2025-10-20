@@ -1,119 +1,69 @@
-'use client';
-import { useAppDispatch } from '@/app/hook';
-import { setLoading } from '@/app/store/ui';
-import { Button } from '@/components/Button';
-import { resetPasswordRequest } from '@/utils/api';
-import { forwardArrow } from '@/utils/icon';
-import Image from 'next/image';
-import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useEffect, useState } from 'react';
+"use client";
 
-const ResetPassword = () => {
-  const ResetPasswordContent = () => {
-    const searchParams = useSearchParams();
-    const dispatch = useAppDispatch();
-    const status = searchParams.get('status');
-    const [email, setEmail] = useState('');
-    const [resetPassword, setResetPassword] = useState(false);
-    const router = useRouter();
+import { Button } from "@/components/Button";
+import Image from "next/image";
+import Link from "next/link";
+import { FiArrowRight } from "react-icons/fi";
 
-    const resetPasswordHandler = async () => {
-      if (email) {
-        dispatch(setLoading(true));
-        const response = await resetPasswordRequest(email);
-        if (response.status === 200) {
-          setResetPassword(true);
-        }
-        dispatch(setLoading(false));
-      }
-    };
-
-    const [second, setSecond] = useState(10);
-    useEffect(() => {
-      if (status === 'success') {
-        const interval = setInterval(() => {
-          setSecond((prevSecond) => prevSecond - 1);
-        }, 1000);
-        if (second === 0) {
-          router.push('/auth/login');
-        }
-        return () => clearInterval(interval);
-      }
-    }, [second, router, status]);
-
-    return (
-      <div className="flex flex-col items-center gap-6">
-        <div className="mx-auto max-w-xs flex flex-col gap-3">
-          <Image width={54} height={36} src="../assets/logo.svg" alt="logo" />
-          {!resetPassword && (
-            <h1 className="text-2xl xl:text-3xl font-semibold">
-              {status === 'success'
-                ? 'Password changed successully'
-                : 'Reset Password'}
-            </h1>
-          )}
-          {!resetPassword && !status && (
-            <p className="text-sm font-sans font-normal text-[#64748B]">
-              We will send you a link to reset your password.
-            </p>
-          )}
-          {resetPassword && (
-            <p className="text-sm font-sans font-normal text-[#64748B]">
-              If this email is registered, a password reset link has been sent
-              to <span className="text-[#1E40AF] underline">{email}</span>.
-              Please check your inbox.
-            </p>
-          )}
-          {status === 'success' && (
-            <p className="text-sm font-sans font-normal text-[#64748B]">
-              The system is processing and will return to the Login page. Please
-              wait a few moments.
-            </p>
-          )}
+export default function ResetPassword() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 px-4">
+      <div className="w-full max-w-md bg-white shadow-md rounded-2xl p-8 flex flex-col gap-6">
+        {/* Logo / Title */}
+        <div className="flex flex-col items-center gap-2">
+          <Image
+            src="/langfens.svg"
+            alt="Logo"
+            width={48}
+            height={48}
+            className="mb-1"
+          />
+          <h1 className="text-2xl font-bold text-gray-900">Reset Password</h1>
+          <p className="text-sm text-gray-500 text-center">
+            Nhập email của bạn, chúng tôi sẽ gửi liên kết để đặt lại mật khẩu.
+          </p>
         </div>
 
-        {!resetPassword && !status && (
-          <div className="w-full">
-            <label className="text-[#0A0A0A] text-sm font-medium font-sans">
-              Email
-            </label>
-            <input
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 rounded-lg font-medium bg-white border border-gray-200 placeholder-gray-500 text-sm focus:border-2 focus:outline-none focus:border-[#EAB308]"
-              type="email"
-              placeholder="name@email.com"
-            />
-          </div>
-        )}
-        {!resetPassword && !status && (
-          <Button onClickFunc={resetPasswordHandler} className="w-full">
-            Send
-          </Button>
-        )}
-        <div className="w-full mx-auto max-w-xs border-b border-[#E2E8F0] text-center"></div>
-        <div>
-          <p className="flex items-center justify-center text-xs text-gray-600 text-center">
-            New to APM? &nbsp;
+        {/* Input */}
+        <div className="flex flex-col gap-2">
+          <label htmlFor="email" className="text-sm font-medium text-gray-700">
+            Email
+          </label>
+          <input
+            id="email"
+            type="email"
+            placeholder="name@email.com"
+            className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#FACC15] focus:ring-2 focus:ring-[#FACC15]/40 outline-none text-gray-800 placeholder:text-gray-400 transition"
+          />
+        </div>
+
+        {/* Button */}
+        <Button className="w-full mt-2 py-3 text-base font-semibold">
+          Gửi liên kết
+        </Button>
+
+        {/* Divider */}
+        <div className="relative flex items-center justify-center">
+          <div className="w-full border-t border-gray-200"></div>
+          <span className="absolute bg-white px-2 text-xs text-gray-400">
+            hoặc
+          </span>
+        </div>
+
+        {/* Back to login */}
+        <div className="text-center">
+          <p className="text-sm text-gray-600">
+            Nhớ mật khẩu rồi?{" "}
             <Link
               href="/auth/login"
-              className="text-[#1E40AF] text-sm font-medium flex justify-center items-center gap-2"
+              className="inline-flex items-center gap-1 text-[#1E40AF] font-medium hover:underline transition"
             >
-              Back to log in
-              {forwardArrow}
+              Quay lại đăng nhập
+              <FiArrowRight className="w-4 h-4" />
             </Link>
           </p>
         </div>
       </div>
-    );
-  };
-
-  return (
-    <Suspense fallback={<p>Loading...</p>}>
-      <ResetPasswordContent />
-    </Suspense>
+    </div>
   );
-};
-
-export default ResetPassword;
+}

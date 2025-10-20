@@ -2,7 +2,7 @@ import { create } from "zustand";
 
 export type User = {
   email: string;
-  name: string;
+  emailConfirmed: boolean;
   id: string;
 };
 

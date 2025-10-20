@@ -3,6 +3,7 @@
 
 import { getMe } from "@/utils/api";
 import { useEffect, useMemo } from "react";
+import { useUserStore } from "../store/userStore";
 
 type Course = {
   id: string;
@@ -18,15 +19,16 @@ type Attempt = {
   title: string;
   skill: "Reading" | "Listening" | "Writing";
   dateISO: string;
-  score?: number; // 0..100, undefined nếu chưa chấm
+  score?: number;
   durationMin: number;
 };
 
 export default function Home() {
+  const { setUser } = useUserStore();
   useEffect(() => {
     const fetchUser = async () => {
       const res = await getMe();
-      console.log(res);
+      setUser(res.data.data);
     };
     fetchUser();
   }, []);
