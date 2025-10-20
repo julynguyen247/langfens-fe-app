@@ -8,6 +8,12 @@ const api = axios.create({
   },
 });
 
+const handleRefreshToken = async () => {
+  const res = await api.post("/api/auth/refresh");
+  if (res && res.data) return res.data;
+  else return null;
+};
+
 // Add a request interceptor
 api.interceptors.request.use(
   function (config) {
@@ -30,9 +36,19 @@ api.interceptors.response.use(
     // Do something with response data
     return response;
   },
-  function (error) {
+  async function (error) {
     // Any status codes that falls outside the range of 2xx cause this function to trigger
     // Do something with response error
+    if (error.config && error.response && +error.response.status === 401) {
+      const access_token = await handleRefreshToken();
+      const data = access_token.data;
+      console.log(data);
+      if (data) {
+        error.config.headers["Authorization"] = `Bearer ${data}`;
+        localStorage.setItem("access_token", data);
+        return api.request(error.config);
+      }
+    }
     return Promise.reject(error);
   }
 );

@@ -57,11 +57,12 @@ export default function Register() {
       setError(
         "Mật khẩu quá yếu. Hãy dùng ≥8 ký tự, gồm chữ hoa, số và ký tự đặc biệt."
       );
+      return;
     }
     try {
       const res = await register(email, password);
       if (res.status === 201 || res.status === 200) {
-        router.replace("/auth/login");
+        router.replace(`/auth/verify?email=${encodeURIComponent(email)}`);
         return;
       }
       setError("Đăng ký thất bại. Vui lòng thử lại.");
@@ -87,7 +88,7 @@ export default function Register() {
           placeholder="name@email.com"
           label="Email"
           type="email"
-          className="mt-6"
+          className="mt-6 text-black"
         />
 
         <Input

@@ -3,7 +3,6 @@
 import { useState } from "react";
 
 import { Button } from "@/components/Button";
-import { downChevron } from "./utils/icons";
 import LoginModal from "./components/GoogleButton";
 import { useRouter } from "next/navigation";
 
@@ -27,7 +26,7 @@ export default function LandingPage() {
 
           <Button
             className="rounded-xl px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700"
-            onClickFunc={() => setOpen(true)}
+            onClickFunc={() => router.push("/auth/login")}
           >
             Bắt đầu
           </Button>
@@ -204,8 +203,6 @@ export default function LandingPage() {
           <p>© 2025 Langfens. All rights reserved.</p>
         </div>
       </footer>
-
-      <LoginModal open={open} onClose={() => setOpen(false)} />
     </div>
   );
 }

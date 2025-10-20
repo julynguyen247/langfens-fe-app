@@ -36,12 +36,9 @@ export default function Login() {
 
     try {
       const res = await login(email, password);
-      if (res.status === 200) {
-        const { session_token, first_login, accessToken } = res.data || {};
-        if (accessToken) localStorage.setItem("access_token", accessToken);
-        if (session_token) localStorage.setItem("session_token", session_token);
-        if (first_login) router.replace("/auth/onboarding");
-        else router.replace("/home");
+      if (res && res.data) {
+        localStorage.setItem("access_token", res.data.data);
+        router.replace("/home");
         return;
       }
       setError("Đăng nhập thất bại. Vui lòng thử lại.");

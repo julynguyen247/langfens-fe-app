@@ -1,7 +1,8 @@
 // app/home/page.tsx
 "use client";
 
-import { useMemo } from "react";
+import { getMe } from "@/utils/api";
+import { useEffect, useMemo } from "react";
 
 type Course = {
   id: string;
@@ -22,7 +23,13 @@ type Attempt = {
 };
 
 export default function Home() {
-  // ---- Mock data ----
+  useEffect(() => {
+    const fetchUser = async () => {
+      const res = await getMe();
+      console.log(res);
+    };
+    fetchUser();
+  }, []);
   const courses: Course[] = [
     {
       id: "c1",
