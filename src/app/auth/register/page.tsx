@@ -6,13 +6,14 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/Button";
 import Input from "@/components/Input";
 import { register } from "@/utils/api";
+import { useLoadingStore } from "@/app/store/loading";
 
 export default function Register() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-
+  const { setLoading } = useLoadingStore();
   const passwordScore = useMemo(() => {
     let score = 0;
     if (password.length >= 8) score++;
@@ -49,6 +50,7 @@ export default function Register() {
   };
 
   const registerHandler = async () => {
+    setLoading(true);
     if (!isEmailValid) {
       setError("Enter a valid email address");
       return;
@@ -73,6 +75,7 @@ export default function Register() {
       }
       setError("Có lỗi xảy ra. Vui lòng thử lại.");
     }
+    setLoading(false);
   };
 
   return (

@@ -1,6 +1,7 @@
 "use client";
 
 import GoogleLoginButton from "@/app/components/GoogleButton";
+import { useLoadingStore } from "@/app/store/loading";
 import { Button } from "@/components/Button";
 import Input from "@/components/Input";
 import { login } from "@/utils/api";
@@ -13,7 +14,7 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-
+  const { setLoading } = useLoadingStore();
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const isEmailValid = emailRegex.test(email);
   const isFormValid = isEmailValid && password.length > 0;
@@ -29,6 +30,7 @@ export default function Login() {
   };
 
   const loginHandler = async () => {
+    setLoading(true);
     if (!isEmailValid) {
       setError("Enter a valid email address");
       return;
@@ -61,7 +63,10 @@ export default function Login() {
         return;
       }
       setError("Có lỗi xảy ra. Vui lòng thử lại.");
+    } finally {
+      setLoading(false);
     }
+    setLoading(false);
   };
 
   return (

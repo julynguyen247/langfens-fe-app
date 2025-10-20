@@ -1,32 +1,27 @@
 "use client";
 
-import { useState } from "react";
-
 import { Button } from "@/components/Button";
-import LoginModal from "./components/GoogleButton";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 export default function LandingPage() {
-  const [open, setOpen] = useState(false);
-  const [loadingProvider, setLoadingProvider] = useState<
-    "google" | "facebook" | null
-  >(null);
   const router = useRouter();
+
+  const goLogin = () => router.push("/auth/login");
 
   return (
     <div className="min-h-screen bg-[var(--background,#fff)] text-[var(--foreground,#171717)] font-nunito">
-      <header className="sticky top-0 z-30 backdrop-blur bg-white/70 border-b border-black/5">
+      <header className="sticky top-0 z-30 backdrop-blur bg-white border-b border-black/5">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between ">
           <div className="flex gap-8 items-center justify-center ">
-            <div className="flex items-center gap-3">
-              <div className="h-8 w-8 rounded-lg bg-[#317EFF]" />
-              <span className="text-lg font-bold tracking-wide">LANGFENS</span>
+            <div className="flex items-center gap-3 mt-4">
+              <Image width={156} height={120} src="/logo.png" alt="logo" />
             </div>
           </div>
 
           <Button
             className="rounded-xl px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700"
-            onClickFunc={() => router.push("/auth/login")}
+            onClickFunc={goLogin}
           >
             Bắt đầu
           </Button>
@@ -46,11 +41,14 @@ export default function LandingPage() {
             <div className="mt-6 flex flex-wrap gap-3">
               <Button
                 className="rounded-xl px-5 py-3 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700"
-                onClickFunc={() => setOpen(true)}
+                onClickFunc={goLogin}
               >
                 Bắt đầu ngay
               </Button>
-              <Button className="!bg-white !text-[#317EFF] rounded-xl px-5 py-3 text-sm font-semibold border border-[#317EFF] hover:bg-gray-50">
+              <Button
+                className="!bg-white !text-[#317EFF] rounded-xl px-5 py-3 text-sm font-semibold border border-[#317EFF] hover:bg-gray-50"
+                onClickFunc={goLogin}
+              >
                 Tham gia cộng đồng
               </Button>
             </div>
@@ -109,6 +107,7 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
       <section className="py-16 bg-white">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-10 items-center">
           <div className="order-last lg:order-first">
@@ -129,17 +128,21 @@ export default function LandingPage() {
             <div className="mt-6 flex gap-3">
               <Button
                 className="rounded-xl px-5 py-3 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700"
-                onClickFunc={() => setOpen(true)}
+                onClickFunc={goLogin}
               >
                 Bắt đầu ngay
               </Button>
-              <Button className="!bg-white !text-[#317EFF] rounded-xl px-5 py-3 text-sm font-semibold border border-[#317EFF] hover:bg-gray-50">
+              <Button
+                className="!bg-white !text-[#317EFF] rounded-xl px-5 py-3 text-sm font-semibold border border-[#317EFF] hover:bg-gray-50"
+                onClickFunc={goLogin}
+              >
                 Tham gia cộng đồng
               </Button>
             </div>
           </div>
         </div>
       </section>
+
       <section className="py-14  bg-[#F5F5F5]">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <h2 className="text-center text-2xl sm:text-3xl font-extrabold text-blue-700">
@@ -191,13 +194,17 @@ export default function LandingPage() {
               quả phân tích chi tiết.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
-              <Button className="rounded-xl bg-white px-6 py-3 text-sm font-semibold hover:bg-white/15">
+              <Button
+                className="rounded-xl px-6 py-3 text-sm font-semibold hover:bg-white/15"
+                onClickFunc={goLogin}
+              >
                 Dùng thử miễn phí
               </Button>
             </div>
           </div>
         </div>
       </section>
+
       <footer className="border-t bg-[#F5F5F5]">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-6 text-center text-sm text-gray-600">
           <p>© 2025 Langfens. All rights reserved.</p>

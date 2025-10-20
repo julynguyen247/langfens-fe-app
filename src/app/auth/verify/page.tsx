@@ -4,12 +4,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/Button";
 import { verifyEmail } from "@/utils/api";
+import { useLoadingStore } from "@/app/store/loading";
 
 export default function VerifyEmailPage() {
   const router = useRouter();
   const params = useSearchParams();
   const email = params.get("email") || "";
-
+  const { setLoading } = useLoadingStore();
   const [digits, setDigits] = useState<string[]>(Array(6).fill(""));
   const [error, setError] = useState("");
   const [resendCooldown, setResendCooldown] = useState(30);
@@ -56,6 +57,7 @@ export default function VerifyEmailPage() {
   };
 
   const submit = async () => {
+    setLoading(true);
     if (!isComplete) return setError("Hãy nhập đủ 6 số");
     try {
       const res = await verifyEmail(email, code);
@@ -69,6 +71,7 @@ export default function VerifyEmailPage() {
         setError("Mã xác minh không hợp lệ hoặc đã hết hạn");
       else setError("Có lỗi xảy ra. Vui lòng thử lại.");
     }
+    setLoading(false);
   };
 
   return (
