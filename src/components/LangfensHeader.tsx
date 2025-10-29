@@ -34,6 +34,7 @@ export default function LangfensHeader() {
   const ticking = useRef(false);
 
   const { user } = useUserStore();
+  console.log(user);
   const displayName = user?.email || "User";
   const avatarUrl = (user as any)?.avatarUrl || "";
   const email = user?.email || "—";

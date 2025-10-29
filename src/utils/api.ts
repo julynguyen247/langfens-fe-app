@@ -49,3 +49,14 @@ export async function resendEmail(email: string) {
   });
   return res;
 }
+
+export async function startAttempt(userId: string, examId: string) {
+  const res = await api.post(
+    "/attempts:start",
+    { examId },
+    {
+      params: { userId },
+    }
+  );
+  return res;
+}

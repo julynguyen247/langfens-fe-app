@@ -1,5 +1,3 @@
-import LangfensHeader from "@/components/LangfensHeader";
-
 export default function RootLayout({
   children,
 }: Readonly<{

@@ -3,6 +3,9 @@
 import Image from "next/image";
 import { useMemo, useState } from "react";
 import { FiSearch } from "react-icons/fi";
+import { useRouter } from "next/navigation";
+import { useAttemptStore } from "@/app/store/useAttemptStore";
+import { startAttempt } from "@/utils/api";
 
 export type PracticeItem = {
   id: string;
@@ -20,6 +23,8 @@ export type PracticeBankProps = {
   pageSize?: number;
   className?: string;
   onClickItem?: (item: PracticeItem) => void;
+  userId: string;
+  skill: string;
 };
 
 export default function PracticeBank({
@@ -27,10 +32,15 @@ export default function PracticeBank({
   pageSize = 12,
   className = "",
   onClickItem,
+  userId,
+  skill,
 }: PracticeBankProps) {
+  const router = useRouter();
+  const setAttempt = useAttemptStore((s) => s.setAttempt);
   const [tab, setTab] = useState<"todo" | "done">("todo");
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
+  const [loadingId, setLoadingId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -69,6 +79,22 @@ export default function PracticeBank({
   };
 
   const pages = buildPages();
+
+  async function handleStart(item: PracticeItem) {
+    if (onClickItem) return onClickItem(item);
+    try {
+      setLoadingId(item.id);
+      const res = await startAttempt(userId, item.id);
+      const payload = res.data?.data;
+      if (!payload?.attemptId) throw new Error("Missing attemptId");
+      setAttempt(payload);
+      router.push(`/do-test/${skill}/${payload.attemptId}`);
+    } catch {
+      alert("Không thể bắt đầu bài. Vui lòng thử lại!");
+    } finally {
+      setLoadingId(null);
+    }
+  }
 
   return (
     <section className={`w-full ${className}`}>
@@ -132,7 +158,8 @@ export default function PracticeBank({
           >
             <button
               className="relative block aspect-video w-full overflow-hidden"
-              onClick={() => onClickItem?.(it)}
+              onClick={() => handleStart(it)}
+              disabled={loadingId === it.id}
             >
               <Image
                 src={it.thumb || "/placeholder.png"}
@@ -153,7 +180,8 @@ export default function PracticeBank({
             <div className="flex min-h-0 flex-col p-3">
               <button
                 className="text-left"
-                onClick={() => onClickItem?.(it)}
+                onClick={() => handleStart(it)}
+                disabled={loadingId === it.id}
                 title={it.title}
               >
                 <h3 className="min-w-0 truncate text-sm font-semibold text-slate-800 hover:underline">
@@ -169,7 +197,7 @@ export default function PracticeBank({
                 {(it.attemps ?? 0).toLocaleString()} lượt làm bài
               </div>
 
-              <div className="mt-3 flex items-center justify-end">
+              <div className="mt-3 flex items-center justify-between">
                 {it.done ? (
                   <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
                     Đã làm
@@ -179,6 +207,13 @@ export default function PracticeBank({
                     Chưa làm
                   </span>
                 )}
+                <button
+                  onClick={() => handleStart(it)}
+                  disabled={loadingId === it.id}
+                  className="rounded-full bg-slate-900 px-3 py-1.5 text-xs text-white disabled:opacity-60"
+                >
+                  {loadingId === it.id ? "Đang bắt đầu…" : "Làm bài"}
+                </button>
               </div>
             </div>
           </article>
