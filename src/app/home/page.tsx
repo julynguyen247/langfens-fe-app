@@ -24,14 +24,6 @@ type Attempt = {
 };
 
 export default function Home() {
-  const { setUser } = useUserStore();
-  useEffect(() => {
-    const fetchUser = async () => {
-      const res = await getMe();
-      setUser(res.data.data);
-    };
-    fetchUser();
-  }, []);
   const courses: Course[] = [
     {
       id: "c1",
@@ -202,8 +194,6 @@ export default function Home() {
     </div>
   );
 }
-
-/* ---------------------- UI Bits ---------------------- */
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return <h2 className="text-sm font-semibold text-blue-700">{children}</h2>;

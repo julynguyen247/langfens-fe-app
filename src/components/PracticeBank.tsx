@@ -81,13 +81,14 @@ export default function PracticeBank({
   const pages = buildPages();
 
   async function handleStart(item: PracticeItem) {
-    if (onClickItem) return onClickItem(item);
     try {
       setLoadingId(item.id);
       const res = await startAttempt(userId, item.id);
       const payload = res.data?.data;
       if (!payload?.attemptId) throw new Error("Missing attemptId");
-      setAttempt(payload);
+
+      useAttemptStore.getState().setAttempt(payload);
+
       router.push(`/do-test/${skill}/${payload.attemptId}`);
     } catch {
       alert("Không thể bắt đầu bài. Vui lòng thử lại!");

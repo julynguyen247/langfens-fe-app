@@ -28,7 +28,7 @@ export default function LangfensHeader() {
   const [hideBrand, setHideBrand] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [userOpen, setUserOpen] = useState(false);
-  const [routeLoading, setRouteLoading] = useState(false); // NEW
+  const [routeLoading, setRouteLoading] = useState(false);
 
   const lastY = useRef(0);
   const ticking = useRef(false);
