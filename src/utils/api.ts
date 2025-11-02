@@ -99,3 +99,17 @@ export async function getPublicExams(
   });
   return res;
 }
+export async function submitAttempt(userId: string, attemptId: string) {
+  const res = await apisAttempt.post(
+    `/attempt/submit/${userId}/${attemptId}`,
+    {}
+  );
+  return res;
+}
+
+export async function getAttemptResult(userId: string, attemptId: string) {
+  const res = await apisAttempt.get(
+    `/attempt/getresult/${userId}/${attemptId}`
+  );
+  return res;
+}

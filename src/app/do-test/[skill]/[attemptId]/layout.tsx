@@ -65,7 +65,6 @@ export default function DoTestAttemptLayout({
       });
   }, [attempt]);
 
-  // ⬇️ Điều hướng theo URL ?sec=<sectionId>
   const router = useRouter();
   const pathname = usePathname();
   const sp = useSearchParams();

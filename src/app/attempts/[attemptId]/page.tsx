@@ -1,0 +1,388 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { getAttemptResult } from "@/utils/api";
+import {
+  FiCheckCircle,
+  FiAlertCircle,
+  FiXCircle,
+  FiChevronDown,
+  FiChevronUp,
+} from "react-icons/fi";
+import { useUserStore } from "@/app/store/userStore";
+
+type AttemptResult = {
+  attemptId: string;
+  status: "GRADED" | "PENDING" | string;
+  finishedAt: string;
+  timeUsedSec: number;
+  correctCount: number;
+  totalPoints: number;
+  awardedTotal: number;
+  needsManualReview: number;
+  bandScore?: number;
+  items?: AttemptQuestionResult[];
+  questions?: AttemptQuestionResult[];
+};
+
+type AttemptQuestionResult = {
+  questionId: string;
+  index?: number; // 1-based nếu có
+  promptMd?: string; // hoặc text
+  // đáp án chọn & đúng (1 hoặc nhiều)
+  selectedOptionIds?: string[];
+  correctOptionIds?: string[];
+  // map option id -> text
+  options?: Array<{ id: string; label?: string; contentMd?: string }>;
+  explanationMd?: string;
+};
+
+export default function AttemptResultPage() {
+  const { attemptId, skill } = useParams() as {
+    attemptId: string;
+    skill: string;
+  };
+  const [data, setData] = useState<AttemptResult | null>(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const { user } = useUserStore();
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await getAttemptResult(
+          "4745c68b-298c-4898-ac57-b91cc53ea8de",
+          attemptId
+        );
+        console.log("✅ res:", res.data);
+        setData(res.data);
+      } catch (e) {
+        console.error("❌ error:", e);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  if (loading)
+    return (
+      <div className="p-6 text-center text-slate-500">Đang tải kết quả…</div>
+    );
+  if (!data)
+    return (
+      <div className="p-6 text-center text-slate-500">
+        Không tìm thấy kết quả.{" "}
+        <button
+          onClick={() => router.push("/home")}
+          className="text-blue-600 underline"
+        >
+          Quay lại trang chủ
+        </button>
+      </div>
+    );
+  return (
+    <div className="max-w-5xl mx-auto mt-10 bg-white rounded-xl shadow-md overflow-hidden">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-blue-500 to-emerald-500 text-white p-8 text-center">
+        <h1 className="text-3xl font-bold mb-2 uppercase tracking-wide">
+          IELTS Result
+        </h1>
+        <p className="text-sm opacity-90">
+          {new Date(data.finishedAt).toLocaleString("vi-VN")}
+        </p>
+      </div>
+
+      {/* Band Display */}
+      <div className="flex flex-col items-center py-10">
+        <div className="relative w-40 h-40 rounded-full bg-gradient-to-b from-emerald-400 to-blue-400 text-white flex items-center justify-center shadow-lg">
+          <span className="text-6xl font-extrabold">
+            {data.bandScore?.toFixed(1) ?? "--"}
+          </span>
+        </div>
+        <p className="mt-4 text-lg text-slate-700">Overall Band Score</p>
+      </div>
+
+      {/* Stats */}
+      <div className="px-8 pb-6 grid sm:grid-cols-2 lg:grid-cols-4 gap-6 text-slate-700">
+        <Stat label="Trạng thái">
+          {data.status === "GRADED" ? (
+            <span className="flex items-center gap-2 text-emerald-600 font-semibold">
+              <FiCheckCircle /> Đã chấm xong
+            </span>
+          ) : data.status === "PENDING" ? (
+            <span className="flex items-center gap-2 text-amber-600 font-semibold">
+              <FiAlertCircle /> Đang chờ chấm tay
+            </span>
+          ) : (
+            <span className="flex items-center gap-2 text-rose-600 font-semibold">
+              <FiXCircle /> Không xác định
+            </span>
+          )}
+        </Stat>
+
+        <Stat label="Số câu đúng">{data.correctCount}</Stat>
+        <Stat label="Điểm nội bộ">
+          {data.awardedTotal}/{data.totalPoints}
+        </Stat>
+        <Stat label="Thời gian làm bài">
+          {(data.timeUsedSec / 60).toFixed(1)} phút
+        </Stat>
+      </div>
+
+      {/* Manual Review Banner */}
+      {data.needsManualReview > 0 && (
+        <div className="mx-8 mb-8 p-4 rounded-lg border border-amber-300 bg-amber-50 text-amber-800 text-sm">
+          ⚠️ Có {data.needsManualReview} câu cần chấm tay — band có thể thay đổi
+          sau khi hoàn tất chấm.
+        </div>
+      )}
+
+      {/* ---------------- Bottom: Review chi tiết ---------------- */}
+      <QuestionReview details={data.items ?? data.questions ?? []} />
+
+      {/* Actions */}
+      <div className="flex justify-center gap-4 pb-10">
+        <button
+          onClick={() => router.push("/home")}
+          className="px-6 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium"
+        >
+          Về trang chủ
+        </button>
+        <button
+          onClick={() => router.push(`/review/${attemptId}`)}
+          className="px-6 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-medium"
+        >
+          Xem lại bài làm (mở rộng)
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** ---------- Small stat box ---------- */
+function Stat({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="bg-slate-50 rounded-lg border p-4">
+      <p className="text-sm text-slate-500 mb-1">{label}</p>
+      <div className="text-xl font-semibold">{children}</div>
+    </div>
+  );
+}
+
+/** ---------- Review List ---------- */
+function QuestionReview({ details }: { details: AttemptQuestionResult[] }) {
+  const [filter, setFilter] = useState<"all" | "correct" | "wrong" | "none">(
+    "all"
+  );
+
+  const normalized = useMemo(
+    () => (details ?? []).map(normalizeDetail),
+    [details]
+  );
+
+  const filtered = useMemo(() => {
+    if (filter === "all") return normalized;
+    if (filter === "correct")
+      return normalized.filter((d) => d.isCorrect === true);
+    if (filter === "wrong")
+      return normalized.filter((d) => d.isCorrect === false);
+    return normalized.filter((d) => d.state === "none");
+  }, [normalized, filter]);
+
+  return (
+    <div className="px-8 pb-8">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-semibold text-slate-800">
+          Review chi tiết
+        </h2>
+        <div className="flex gap-2">
+          <FilterBtn active={filter === "all"} onClick={() => setFilter("all")}>
+            Tất cả ({normalized.length})
+          </FilterBtn>
+          <FilterBtn
+            active={filter === "correct"}
+            onClick={() => setFilter("correct")}
+          >
+            Đúng ({normalized.filter((d) => d.isCorrect === true).length})
+          </FilterBtn>
+          <FilterBtn
+            active={filter === "wrong"}
+            onClick={() => setFilter("wrong")}
+          >
+            Sai ({normalized.filter((d) => d.isCorrect === false).length})
+          </FilterBtn>
+          <FilterBtn
+            active={filter === "none"}
+            onClick={() => setFilter("none")}
+          >
+            Chưa trả lời ({normalized.filter((d) => d.state === "none").length})
+          </FilterBtn>
+        </div>
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="p-6 text-center text-slate-500 border rounded-lg bg-slate-50">
+          Không có dữ liệu chi tiết câu hỏi.
+        </div>
+      ) : (
+        <ul className="space-y-3">
+          {filtered.map((d) => (
+            <ReviewItem key={d.questionId} data={d} />
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/** ---------- Item ---------- */
+function ReviewItem({ data }: { data: ReturnType<typeof normalizeDetail> }) {
+  const [open, setOpen] = useState(false);
+
+  const badge =
+    data.state === "none" ? (
+      <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border">
+        Chưa trả lời
+      </span>
+    ) : data.isCorrect ? (
+      <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200">
+        Đúng
+      </span>
+    ) : (
+      <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-700 border border-rose-200">
+        Sai
+      </span>
+    );
+
+  return (
+    <li className="border rounded-lg p-4">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1">
+          <div className="flex items-center gap-3 mb-1">
+            <span className="text-sm font-mono text-slate-500">
+              Q{data.index ?? "?"}
+            </span>
+            {badge}
+          </div>
+          <div className="text-slate-800 whitespace-pre-wrap">
+            {data.prompt}
+          </div>
+
+          <div className="mt-3 grid sm:grid-cols-2 gap-3">
+            <div className="bg-slate-50 rounded p-3">
+              <p className="text-xs text-slate-500 mb-1">Bạn chọn</p>
+              <div className="text-sm">
+                {data.selectedLabels.length ? (
+                  <ul className="list-disc ml-5 space-y-1">
+                    {data.selectedLabels.map((t, i) => (
+                      <li key={i}>{t}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <span className="text-slate-400 italic">—</span>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-slate-50 rounded p-3">
+              <p className="text-xs text-slate-500 mb-1">Đáp án đúng</p>
+              <div className="text-sm">
+                {data.correctLabels.length ? (
+                  <ul className="list-disc ml-5 space-y-1">
+                    {data.correctLabels.map((t, i) => (
+                      <li key={i}>{t}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <span className="text-slate-400 italic">—</span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button
+          onClick={() => setOpen((v) => !v)}
+          className="shrink-0 inline-flex items-center gap-1 text-sm px-3 py-2 rounded-md border hover:bg-slate-50"
+        >
+          {open ? <FiChevronUp /> : <FiChevronDown />}
+          Giải thích
+        </button>
+      </div>
+
+      {open && data.explanation && (
+        <div className="mt-3 p-3 rounded bg-emerald-50 border border-emerald-100 text-emerald-900 text-sm whitespace-pre-wrap">
+          {data.explanation}
+        </div>
+      )}
+    </li>
+  );
+}
+
+/** ---------- Filter button ---------- */
+function FilterBtn({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`px-3 py-1.5 rounded-lg text-sm border transition ${
+        active
+          ? "bg-slate-900 text-white border-slate-900"
+          : "bg-white text-slate-700 hover:bg-slate-50"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+/** ---------- Normalizer & helpers ---------- */
+function normalizeDetail(d: AttemptQuestionResult) {
+  const opts = d.options ?? [];
+  const optionText = (id: string) =>
+    opts.find((o) => String(o.id) === String(id))?.label ??
+    opts.find((o) => String(o.id) === String(id))?.contentMd ??
+    String(id);
+
+  const selected = (d.selectedOptionIds ?? []).map(String);
+  const correct = (d.correctOptionIds ?? []).map(String);
+
+  const selectedLabels = selected.map(optionText);
+  const correctLabels = correct.map(optionText);
+
+  // xác định đúng/sai (tập hợp bằng nhau, không quan tâm thứ tự)
+  let isCorrect: boolean | null = null;
+  let state: "answered" | "none" = "answered";
+  if (!selected.length) {
+    state = "none";
+    isCorrect = null;
+  } else {
+    const a = [...selected].sort().join(",");
+    const b = [...correct].sort().join(",");
+    isCorrect = correct.length ? a === b : null; // nếu backend không trả correct -> null
+  }
+
+  return {
+    questionId: d.questionId,
+    index: d.index,
+    prompt: d.promptMd ?? "",
+    selectedLabels,
+    correctLabels,
+    explanation: d.explanationMd ?? "",
+    isCorrect,
+    state,
+  };
+}
