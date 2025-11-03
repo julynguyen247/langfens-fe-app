@@ -62,7 +62,6 @@ export async function startAttempt(userId: string, examId: string) {
 }
 
 export async function autoSaveAttempt(
-  userId: string,
   attemptId: string,
   payload: {
     answers: Array<{
@@ -75,7 +74,7 @@ export async function autoSaveAttempt(
   }
 ) {
   const res = await apisAttempt.post(
-    `/attempt/autosave/${userId}/${attemptId}`,
+    `/attempt/autosave/${attemptId}`,
     payload,
     {
       headers: { "Content-Type": "application/json" },
@@ -93,23 +92,30 @@ export async function getPublicExams(
     params: {
       page,
       pageSize,
-      category: opts?.category,
-      level: opts?.level,
     },
   });
   return res;
 }
-export async function submitAttempt(userId: string, attemptId: string) {
-  const res = await apisAttempt.post(
-    `/attempt/submit/${userId}/${attemptId}`,
-    {}
-  );
+export async function submitAttempt(attemptId: string) {
+  const res = await apisAttempt.post(`/attempt/submit/${attemptId}`, {});
   return res;
 }
 
-export async function getAttemptResult(userId: string, attemptId: string) {
-  const res = await apisAttempt.get(
-    `/attempt/getresult/${userId}/${attemptId}`
-  );
+export async function getAttemptResult(attemptId: string) {
+  const res = await apisAttempt.get(`/attempt/getresult/${attemptId}`);
+  return res;
+}
+
+export async function getAttempt(
+  page: number,
+  pageSize: number,
+  opts?: { category?: string; level?: string }
+) {
+  const res = await apisAttempt.get("/attempt/getlistattempt", {
+    params: {
+      page,
+      pageSize,
+    },
+  });
   return res;
 }

@@ -6,7 +6,7 @@ import PassageView from "./components/reading/PassageView";
 import QuestionPanel from "./components/common/QuestionPanel";
 import { useAttemptStore } from "@/app/store/useAttemptStore";
 import { useUserStore } from "@/app/store/userStore";
-import { autoSaveAttempt, submitAttempt } from "@/utils/api";
+import { submitAttempt } from "@/utils/api";
 import { useDebouncedAutoSave } from "@/app/utils/hook";
 
 type Skill = "reading" | "listening" | "writing";
@@ -77,7 +77,7 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
     try {
       setSubmitting(true);
       cancelAutoSave();
-      await submitAttempt(user!.id, attemptId);
+      await submitAttempt(attemptId);
       clearAttempt?.(attemptId);
       router.replace(`/attempts/${attemptId}`);
     } catch (e) {
@@ -185,7 +185,7 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
     try {
       setSubmitting(true);
       cancelAutoSave();
-      await submitAttempt(user!.id, attemptId);
+      await submitAttempt(attemptId);
       clearAttempt?.(attemptId);
       router.replace(`/attempt/${attemptId}/result`);
     } catch (e) {

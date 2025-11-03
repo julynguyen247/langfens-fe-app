@@ -1,4 +1,3 @@
-// components/PracticeSidebar.tsx
 "use client";
 
 import Link from "next/link";
@@ -28,7 +27,6 @@ export default function PracticeSidebar({
   defaultOpen?: boolean;
   className?: string;
 }) {
-  // folder structure: /practice/<group>
   const params = useParams<{ group?: string }>();
   const searchParams = useSearchParams();
 
@@ -36,7 +34,6 @@ export default function PracticeSidebar({
   const currentItem = searchParams.get("item") ?? undefined;
 
   const [open, setOpen] = useState(defaultOpen);
-
   const selectedId = useMemo(
     () => (currentGroup && currentItem ? `${currentGroup}:${currentItem}` : ""),
     [currentGroup, currentItem]

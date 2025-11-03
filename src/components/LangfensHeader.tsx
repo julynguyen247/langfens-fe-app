@@ -1,6 +1,6 @@
 "use client";
 
-import { logout, resendEmail } from "@/utils/api";
+import { getMe, logout, resendEmail } from "@/utils/api";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -25,24 +25,37 @@ export default function LangfensHeader() {
   const router = useRouter();
 
   const [hovered, setHovered] = useState<NavItem | null>(null);
-  const [hideBrand, setHideBrand] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const [userOpen, setUserOpen] = useState(false);
   const [routeLoading, setRouteLoading] = useState(false);
 
-  const lastY = useRef(0);
-  const ticking = useRef(false);
+  const fetchingRef = useRef(false);
 
-  const { user } = useUserStore();
-  console.log(user);
+  // ✅ Lấy cả user + setUser
+  const { user, setUser } = useUserStore();
+
+  // ✅ Chỉ fetch khi chưa có user (và tránh double ở StrictMode)
+  useEffect(() => {
+    if (user || fetchingRef.current) return;
+    (async () => {
+      try {
+        fetchingRef.current = true;
+        const res = await getMe(); // nhớ axios withCredentials=true
+        setUser(res.data?.data ?? null);
+      } catch {
+      } finally {
+        fetchingRef.current = false;
+      }
+    })();
+  }, [user, setUser]);
+
   const displayName = user?.email || "User";
   const avatarUrl = (user as any)?.avatarUrl || "";
-  const email = user?.email || "—";
+  const email = user?.email || "";
   const emailConfirmed = (user as any)?.emailConfirmed === true;
 
   const handleProfile = () => {
     setUserOpen(false);
-    setRouteLoading(true);
+    if (!pathname.startsWith("/profile")) setRouteLoading(true);
     router.push("/profile");
   };
 
@@ -53,6 +66,7 @@ export default function LangfensHeader() {
       if (typeof window !== "undefined") {
         localStorage.removeItem("access_token");
       }
+
       setUserOpen(false);
       router.replace("/auth/login");
     } catch (err) {
@@ -70,26 +84,21 @@ export default function LangfensHeader() {
       )}
 
       <header className="fixed inset-x-0 top-0 z-50 font-nunito">
-        <div
-          className={[
-            "w-full bg-white transition-all duration-300 ease-out",
-            hideBrand ? "max-h-0 opacity-0" : "max-h-14 opacity-100",
-            scrolled ? "shadow-sm" : "",
-          ].join(" ")}
-          aria-hidden={hideBrand}
-        >
+        {/* Brand bar */}
+        <div className="w-full bg-white transition-all duration-300 ease-out shadow-sm">
           <div className="mx-auto max-w-7xl px-4">
             <div className="h-14 flex items-center justify-between">
               <Link
                 href="/home"
                 className="text-base sm:text-xl font-bold tracking-wide text-[#2563EB]"
-                onClick={(e) => {
+                onClick={() => {
                   if (pathname !== "/home") setRouteLoading(true);
                 }}
               >
                 LANGFENS – Best Solution
               </Link>
 
+              {/* User menu */}
               <div
                 className="relative"
                 onMouseEnter={() => setUserOpen(true)}
@@ -128,7 +137,7 @@ export default function LangfensHeader() {
                 {userOpen && (
                   <div
                     role="menu"
-                    className="absolute right-0 top-full p-2 w-72 rounded-2xl bg-white shadow-lg ring-1 ring-black/5 "
+                    className="absolute right-0 top-full p-2 w-72 rounded-2xl bg-white shadow-lg ring-1 ring-black/5"
                   >
                     <div className="p-2 flex items-center gap-3">
                       <div className="min-w-0">
@@ -136,7 +145,7 @@ export default function LangfensHeader() {
                           {displayName}
                         </div>
                         <div className="text-sm text-slate-500 truncate">
-                          {email}
+                          {email || "—"}
                         </div>
                       </div>
 
@@ -164,7 +173,7 @@ export default function LangfensHeader() {
                     <div className="h-px bg-slate-200" />
 
                     <div className="py-1">
-                      {!emailConfirmed && (
+                      {!emailConfirmed && !!email && (
                         <div className="px-3 py-2 text-xs text-amber-600 flex items-center justify-between">
                           <span>Chưa xác thực email</span>
                           <button
@@ -188,6 +197,7 @@ export default function LangfensHeader() {
                           </button>
                         </div>
                       )}
+
                       <button
                         role="menuitem"
                         onMouseDown={(e) => e.preventDefault()}
@@ -225,6 +235,7 @@ export default function LangfensHeader() {
           </div>
         </div>
 
+        {/* Nav bar */}
         <div
           className="w-full bg-[#3B82F6] transition-shadow duration-300 ease-out"
           onMouseLeave={() => setHovered(null)}
@@ -251,7 +262,7 @@ export default function LangfensHeader() {
                             ? "bg-white text-[#2563EB] shadow"
                             : "text-white/95 hover:text-white"
                         }`}
-                      onClick={(e) => {
+                      onClick={() => {
                         if (!pathname.startsWith(item.href))
                           setRouteLoading(true);
                       }}
@@ -266,6 +277,7 @@ export default function LangfensHeader() {
         </div>
       </header>
 
+      {/* spacer */}
       <div style={{ height: 96 }} />
     </>
   );

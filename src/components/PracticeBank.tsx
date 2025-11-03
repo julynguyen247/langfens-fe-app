@@ -163,7 +163,7 @@ export default function PracticeBank({
               disabled={loadingId === it.id}
             >
               <Image
-                src={it.thumb || "/placeholder.png"}
+                src="https://th.bing.com/th/id/R.0901589eef10038b5f3298ca9e4bb370?rik=EcrM4tIYeQ%2bfYQ&pid=ImgRaw&r=0"
                 alt={it.title}
                 fill
                 className="object-cover"

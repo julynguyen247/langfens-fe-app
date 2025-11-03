@@ -37,9 +37,7 @@ export default function QuestionCard({
         </div>
       )}
 
-      <div className="font-bold mb-3">
-        {question.id} {question.stem}
-      </div>
+      <div className="font-bold mb-3">{question.stem}</div>
       <div className="space-y-2">
         {question.choices.map((c) => {
           const value = typeof c === "string" ? c : c.value;

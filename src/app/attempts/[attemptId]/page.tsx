@@ -12,6 +12,7 @@ import {
 } from "react-icons/fi";
 import { useUserStore } from "@/app/store/userStore";
 
+/** ===== Types FE chuẩn hoá ===== */
 type AttemptResult = {
   attemptId: string;
   status: "GRADED" | "PENDING" | string;
@@ -22,52 +23,76 @@ type AttemptResult = {
   awardedTotal: number;
   needsManualReview: number;
   bandScore?: number;
-  items?: AttemptQuestionResult[];
-  questions?: AttemptQuestionResult[];
+  questions: AttemptQuestionResult[];
 };
 
 type AttemptQuestionResult = {
   questionId: string;
-  index?: number; // 1-based nếu có
-  promptMd?: string; // hoặc text
-  // đáp án chọn & đúng (1 hoặc nhiều)
+  index: number; // 1-based
+  promptMd?: string; // nội dung câu nếu có
   selectedOptionIds?: string[];
   correctOptionIds?: string[];
-  // map option id -> text
   options?: Array<{ id: string; label?: string; contentMd?: string }>;
   explanationMd?: string;
+  // extra
+  timeSpentSec?: number;
 };
 
+/** ===== Page ===== */
 export default function AttemptResultPage() {
-  const { attemptId, skill } = useParams() as {
-    attemptId: string;
-    skill: string;
-  };
+  const { attemptId } = useParams() as { attemptId: string; skill: string };
   const [data, setData] = useState<AttemptResult | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const { user } = useUserStore();
+
   useEffect(() => {
     (async () => {
       try {
-        const res = await getAttemptResult(
-          "4745c68b-298c-4898-ac57-b91cc53ea8de",
-          attemptId
-        );
-        console.log("✅ res:", res.data);
-        setData(res.data);
+        const res = await getAttemptResult(attemptId as any);
+        console.log(res);
+        const raw = res?.data?.data ?? res?.data ?? res;
+
+        const mapped: AttemptResult = {
+          attemptId: raw.attemptId,
+          status: raw.status ?? "GRADED",
+          finishedAt:
+            raw.gradedAt ?? raw.finishedAt ?? new Date().toISOString(),
+          timeUsedSec: raw.timeUsedSec ?? raw.timeUsed ?? 0,
+          correctCount: raw.correct ?? raw.correctCount ?? 0,
+          totalPoints: raw.totalPoints ?? raw.paperWithAnswers?.scoreRaw ?? 0,
+          awardedTotal: raw.awardedTotal ?? raw.paperWithAnswers?.scorePct ?? 0,
+          needsManualReview: raw.needsManualReview ?? 0,
+          bandScore: raw.bandScore,
+          questions: (raw.items ?? raw.questions ?? raw.answers ?? []).map(
+            (a: any, i: number): AttemptQuestionResult => ({
+              questionId: String(a.questionId ?? a.id ?? i + 1),
+              index: a.index ?? i + 1,
+              promptMd: a.promptMd ?? a.prompt ?? "",
+              selectedOptionIds: a.selectedOptionIds ?? [],
+              correctOptionIds: a.correctOptionIds ?? [],
+              options: a.options ?? [],
+              explanationMd: a.explanationMd ?? a.explanation ?? "",
+              timeSpentSec:
+                a.timeSpentSec ?? a.elapsedSec ?? a.time ?? undefined,
+            })
+          ),
+        };
+
+        setData(mapped);
       } catch (e) {
         console.error("❌ error:", e);
       } finally {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [attemptId]);
 
   if (loading)
     return (
       <div className="p-6 text-center text-slate-500">Đang tải kết quả…</div>
     );
+
   if (!data)
     return (
       <div className="p-6 text-center text-slate-500">
@@ -80,8 +105,15 @@ export default function AttemptResultPage() {
         </button>
       </div>
     );
+
+  // ========= UI =========
+  const answeredCount = data.questions.filter(
+    (q) => (q.selectedOptionIds?.length ?? 0) > 0
+  ).length;
+  const blankCount = data.questions.length - answeredCount;
+
   return (
-    <div className="max-w-5xl mx-auto mt-10 bg-white rounded-xl shadow-md overflow-hidden">
+    <div className="max-w-5xl mx-auto bg-white rounded-xl shadow-md overflow-hidden text-black">
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-500 to-emerald-500 text-white p-8 text-center">
         <h1 className="text-3xl font-bold mb-2 uppercase tracking-wide">
@@ -120,12 +152,13 @@ export default function AttemptResultPage() {
           )}
         </Stat>
 
+        <Stat label="Số câu đã trả lời">{answeredCount}</Stat>
+        <Stat label="Câu bỏ trống">{blankCount}</Stat>
+        <Stat label="Thời gian làm bài">{fmtMinSec(data.timeUsedSec)}</Stat>
+
         <Stat label="Số câu đúng">{data.correctCount}</Stat>
         <Stat label="Điểm nội bộ">
           {data.awardedTotal}/{data.totalPoints}
-        </Stat>
-        <Stat label="Thời gian làm bài">
-          {(data.timeUsedSec / 60).toFixed(1)} phút
         </Stat>
       </div>
 
@@ -138,7 +171,7 @@ export default function AttemptResultPage() {
       )}
 
       {/* ---------------- Bottom: Review chi tiết ---------------- */}
-      <QuestionReview details={data.items ?? data.questions ?? []} />
+      <QuestionReview details={data.questions} />
 
       {/* Actions */}
       <div className="flex justify-center gap-4 pb-10">
@@ -147,12 +180,6 @@ export default function AttemptResultPage() {
           className="px-6 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium"
         >
           Về trang chủ
-        </button>
-        <button
-          onClick={() => router.push(`/review/${attemptId}`)}
-          className="px-6 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-medium"
-        >
-          Xem lại bài làm (mở rộng)
         </button>
       </div>
     </div>
@@ -269,7 +296,13 @@ function ReviewItem({ data }: { data: ReturnType<typeof normalizeDetail> }) {
               Q{data.index ?? "?"}
             </span>
             {badge}
+            {typeof data.timeSpentSec === "number" && (
+              <span className="px-2 py-0.5 rounded-full text-xs bg-slate-50 border text-slate-600">
+                {fmtMinSec(data.timeSpentSec)}
+              </span>
+            )}
           </div>
+
           <div className="text-slate-800 whitespace-pre-wrap">
             {data.prompt}
           </div>
@@ -384,5 +417,13 @@ function normalizeDetail(d: AttemptQuestionResult) {
     explanation: d.explanationMd ?? "",
     isCorrect,
     state,
+    timeSpentSec: d.timeSpentSec,
   };
+}
+
+function fmtMinSec(totalSec: number) {
+  if (!totalSec || totalSec < 0) return "—";
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return `${m}m${String(s).padStart(2, "0")}s`;
 }

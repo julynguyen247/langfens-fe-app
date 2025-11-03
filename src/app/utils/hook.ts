@@ -26,7 +26,7 @@ export function useDebouncedAutoSave(
       };
 
       try {
-        await autoSaveAttempt(userId, attemptId, payload);
+        await autoSaveAttempt(attemptId, payload);
       } catch {}
     }, 2000);
   };

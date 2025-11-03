@@ -116,7 +116,7 @@ export default function DoTestAttemptLayout({
 
       {!!attempt && (
         <>
-          <div className="border-t bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70">
+          {/* <div className="border-t bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70">
             <div className="mx-auto max-w-6xl py-3 mb-16">
               <QuestionNav
                 total={currentPassage?.total ?? 0}
@@ -125,7 +125,7 @@ export default function DoTestAttemptLayout({
                 skill={skill}
               />
             </div>
-          </div>
+          </div> */}
 
           <PassageFooter
             passages={passages}
