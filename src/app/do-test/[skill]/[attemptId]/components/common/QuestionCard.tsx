@@ -1,4 +1,3 @@
-// app/.../QuestionCard.tsx
 "use client";
 import InstructionBox from "./InstructionBox";
 
@@ -13,11 +12,11 @@ export default function QuestionCard({
   question,
   selected,
   onSelect,
-  instruction, // ⬅️ mới
+  instruction,
 }: {
-  question: { id: number; stem: string; choices: Choice[] };
+  question: { id: string; stem: string; choices: Choice[] };
   selected?: string;
-  onSelect: (id: number, value: string) => void;
+  onSelect: (id: string, value: string) => void;
   instruction?: {
     title: string;
     note?: string;
@@ -32,16 +31,13 @@ export default function QuestionCard({
             title={instruction.title}
             note={instruction.note}
             items={instruction.items}
-            sticky={false} // ⬅️ quan trọng: KHÔNG sticky
-            className="text-sm" // chữ nhỏ gọn
+            sticky={false}
+            className="text-sm"
           />
         </div>
       )}
 
-      {/* Stem */}
-      <div className="font-medium mb-3">{question.stem}</div>
-
-      {/* Choices */}
+      <div className="font-bold mb-3">{question.stem}</div>
       <div className="space-y-2">
         {question.choices.map((c) => {
           const value = typeof c === "string" ? c : c.value;

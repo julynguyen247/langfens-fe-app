@@ -21,14 +21,11 @@ export default function QuestionNav({
   const searchParams = useSearchParams();
 
   const handleClick = (n: number) => {
-    // Nếu có callback -> gọi callback
     if (onSelect) return onSelect(n);
 
-    // Nếu không có -> tự điều hướng bằng router (vd: đổi param ?q=n)
     const params = new URLSearchParams(searchParams.toString());
     params.set("q", String(n));
 
-    // Giữ nguyên skill + attemptId trong URL
     const basePath = `/do-test/${skill ?? "reading"}/${attemptId}`;
     router.push(`${basePath}?${params.toString()}`);
   };

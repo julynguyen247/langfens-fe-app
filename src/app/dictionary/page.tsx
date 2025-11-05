@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-
-/** ---------------- Mock fetcher (hãy thay bằng API thật) ---------------- */
 async function mockFetchDictionary(term: string) {
   await new Promise((r) => setTimeout(r, 520));
   if (!term) return null;
@@ -38,8 +36,6 @@ async function mockFetchDictionary(term: string) {
     forms: ["plural: " + base + "s", "past: " + base + "ed"],
   } as const;
 }
-
-/** ---------------- Utils (localStorage) ---------------- */
 const LS_HISTORY = "lf_dict_history";
 const LS_SAVED = "lf_dict_saved";
 const saveJSON = (k: string, v: any) =>
@@ -140,7 +136,7 @@ export default function DictionaryPage() {
       {/* Top bar */}
       <div className="border-b bg-white">
         <div className="mx-auto max-w-7xl px-4 py-3 flex items-center gap-3">
-          <div className="text-xl font-extrabold tracking-tight text-gray-900">
+          <div className="text-xl font-extrabold tracking-tight text-blue-500">
             Dictionary
           </div>
           <div className="ml-auto flex items-center gap-2 w-full max-w-xl">

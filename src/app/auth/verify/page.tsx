@@ -3,16 +3,20 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/Button";
-import { verifyEmail } from "@/utils/api";
+import { verifyEmail, resendEmail } from "@/utils/api";
+import { useLoadingStore } from "@/app/store/loading";
 
 export default function VerifyEmailPage() {
   const router = useRouter();
   const params = useSearchParams();
   const email = params.get("email") || "";
+  const { setLoading } = useLoadingStore();
 
   const [digits, setDigits] = useState<string[]>(Array(6).fill(""));
   const [error, setError] = useState("");
-  const [resendCooldown, setResendCooldown] = useState(30);
+  const [info, setInfo] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(60);
+  const [resendLoading, setResendLoading] = useState(false);
   const inputsRef = useRef<Array<HTMLInputElement | null>>([]);
 
   const code = useMemo(() => digits.join(""), [digits]);
@@ -30,6 +34,7 @@ export default function VerifyEmailPage() {
 
   const handleChange = (idx: number, val: string) => {
     setError("");
+    setInfo("");
     const clean = val.replace(/\D/g, "");
     if (!clean) {
       setDigits((prev) => prev.map((d, i) => (i === idx ? "" : d)));
@@ -56,10 +61,16 @@ export default function VerifyEmailPage() {
   };
 
   const submit = async () => {
-    if (!isComplete) return setError("Hãy nhập đủ 6 số");
+    setLoading(true);
+    setInfo("");
+    if (!isComplete) {
+      setLoading(false);
+      return setError("Hãy nhập đủ 6 số");
+    }
     try {
       const res = await verifyEmail(email, code);
       if (res.status === 200) {
+        setLoading(false);
         router.replace("/auth/login?verified=1");
         return;
       }
@@ -68,6 +79,28 @@ export default function VerifyEmailPage() {
       if (err?.response?.status === 400)
         setError("Mã xác minh không hợp lệ hoặc đã hết hạn");
       else setError("Có lỗi xảy ra. Vui lòng thử lại.");
+    }
+    setLoading(false);
+  };
+
+  const handleResend = async () => {
+    if (!email) {
+      setError("Thiếu email để gửi lại mã.");
+      return;
+    }
+    try {
+      setResendLoading(true);
+      setError("");
+      setInfo("");
+      await resendEmail(email);
+      setInfo("Đã gửi lại mã xác minh. Vui lòng kiểm tra email.");
+      setDigits(Array(6).fill(""));
+      inputsRef.current[0]?.focus();
+      setResendCooldown(60);
+    } catch (err: any) {
+      setError("Không thể gửi lại mã. Vui lòng thử lại sau.");
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -98,6 +131,9 @@ export default function VerifyEmailPage() {
         </div>
 
         {error && <div className="text-[#B91C1C] text-sm mt-3">{error}</div>}
+        {info && !error && (
+          <div className="text-emerald-700 text-sm mt-3">{info}</div>
+        )}
 
         <Button
           isValid={isComplete}
@@ -110,10 +146,13 @@ export default function VerifyEmailPage() {
         <div className="mt-4 text-center text-sm text-slate-600">
           Chưa nhận được mã?{" "}
           <button
-            disabled={resendCooldown > 0}
-            className="font-medium text-sky-700 disabled:text-slate-400 disabled:cursor-not-allowed"
+            disabled={resendCooldown > 0 || resendLoading}
+            onClick={handleResend}
+            className="font-medium text-sky-700 disabled:text-slate-400 disabled:cursor-not-allowed cursor-pointer"
           >
-            Gửi lại {resendCooldown > 0 ? `(${resendCooldown}s)` : ""}
+            {resendLoading
+              ? "Đang gửi..."
+              : `Gửi lại ${resendCooldown > 0 ? `(${resendCooldown}s)` : ""}`}
           </button>
         </div>
       </div>

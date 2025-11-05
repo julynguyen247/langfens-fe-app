@@ -1,35 +1,66 @@
 // app/.../QuestionPanel.tsx
 "use client";
-import { useMemo, useState } from "react";
+
+import { useEffect, useMemo, useState } from "react";
 import QuestionCard from "./QuestionCard";
 
-type QA = Record<number, string>;
-type Question = {
-  id: number;
+type Choice = { value: string; label: string };
+type QA = Record<string, string>;
+
+export type Question = {
+  id: string;
   stem: string;
-  choices: Array<string | { value: string; label: string }>;
+  choices: Array<string | Choice>;
 };
 
 export default function QuestionPanel({
   questions,
   attemptId,
+  initialAnswers,
+  onAnswer,
+  onAnswersChange,
 }: {
   questions: Question[];
   attemptId: string;
+  initialAnswers?: QA;
+  onAnswer?: (payload: {
+    attemptId: string;
+    questionId: string;
+    value: string;
+  }) => void;
+  onAnswersChange?: (answers: QA) => void;
 }) {
-  const [answers, setAnswers] = useState<QA>({});
+  const qList = useMemo(
+    () =>
+      questions.map((q) => ({
+        ...q,
+        id: String(q.id),
+        choices: normalizeChoices(q.choices),
+      })),
+    [questions]
+  );
 
-  const handleAnswer = (id: number, value: string) =>
-    setAnswers((prev) => ({ ...prev, [id]: value }));
+  const [answers, setAnswers] = useState<QA>(() => initialAnswers ?? {});
 
-  const total = questions.length;
+  useEffect(() => {
+    if (initialAnswers) setAnswers(initialAnswers);
+  }, [initialAnswers]);
+
+  const handleAnswer = (id: string, value: string) => {
+    setAnswers((prev) => {
+      const next = { ...prev, [id]: value };
+      onAnswersChange?.(next);
+      onAnswer?.({ attemptId, questionId: id, value });
+      return next;
+    });
+  };
+
+  const total = qList.length;
   const current = useMemo(() => {
-    if (!questions.length) return 1;
-    const firstUnansweredIdx = questions.findIndex(
-      (q) => answers[q.id] == null
-    );
+    if (!qList.length) return 1;
+    const firstUnansweredIdx = qList.findIndex((q) => answers[q.id] == null);
     return firstUnansweredIdx === -1 ? total : firstUnansweredIdx + 1;
-  }, [questions, answers, total]);
+  }, [qList, answers, total]);
 
   const instructionData = {
     title:
@@ -46,18 +77,28 @@ export default function QuestionPanel({
   };
 
   return (
-    <div className="flex flex-col h-full min-h-0 rounded-xl shadow bg-white overflow-hidden text-sm">
-      <div className="flex-1 min-h-0 overflow-auto overscroll-contain bg-white p-4 space-y-4 [scrollbar-gutter:stable] leading-relaxed">
-        {questions.map((q, idx) => (
+    <div className="flex flex-col h-full min-h-0 rounded-xl shadow bg-white overflow-hidden text-sm ">
+      <div className="flex-1 min-h-0 overflow-auto overscroll-contain bg-white p-4 space-y-2 [scrollbar-gutter:stable] leading-relaxed mb-12">
+        {qList.map((q, idx) => (
           <QuestionCard
             key={q.id}
             question={{ id: q.id, stem: q.stem, choices: q.choices }}
             selected={answers[q.id]}
-            onSelect={handleAnswer}
+            onSelect={(_id: number | string, value: string) =>
+              handleAnswer(String(q.id), value)
+            }
             instruction={idx === 0 ? instructionData : undefined}
           />
         ))}
       </div>
     </div>
+  );
+}
+function normalizeChoices(
+  choices: Array<string | Choice> | undefined
+): Choice[] {
+  if (!choices || choices.length === 0) return [];
+  return choices.map((c, i) =>
+    typeof c === "string" ? { value: String(i + 1), label: c } : c
   );
 }

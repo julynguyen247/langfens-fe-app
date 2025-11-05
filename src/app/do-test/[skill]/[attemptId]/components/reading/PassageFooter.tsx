@@ -47,9 +47,6 @@ export default function PassageFooter({
                   title={`${p.label} (${p.done}/${p.total})`}
                 >
                   {p.label}{" "}
-                  <span className="opacity-70 ml-1 text-xs">
-                    {p.done}/{p.total}
-                  </span>
                 </button>
               );
             })}
