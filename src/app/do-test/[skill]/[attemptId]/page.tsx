@@ -6,7 +6,7 @@ import PassageView from "./components/reading/PassageView";
 import QuestionPanel from "./components/common/QuestionPanel";
 import { useAttemptStore } from "@/app/store/useAttemptStore";
 import { useUserStore } from "@/app/store/userStore";
-import { submitAttempt } from "@/utils/api";
+import { autoSaveAttempt, submitAttempt } from "@/utils/api";
 import { useDebouncedAutoSave } from "@/app/utils/hook";
 
 type Skill = "reading" | "listening" | "writing";
@@ -38,6 +38,7 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
     () => [...(attempt.paper.sections ?? [])].sort((a, b) => a.idx - b.idx),
     [attempt.paper.sections]
   );
+  const lastAnswersRef = useRef<QA>({});
 
   const sp = useSearchParams();
   const secFromUrl = sp.get("sec");
@@ -71,17 +72,24 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
   const [submitting, setSubmitting] = useState(false);
   async function handleSubmit() {
     if (submitting) return;
-    const ok = window.confirm("Bạn chắc chắn muốn nộp bài?");
-    if (!ok) return;
+    if (!window.confirm("Bạn chắc chắn muốn nộp bài?")) return;
 
     try {
       setSubmitting(true);
       cancelAutoSave();
+      const makePayload = (answers: QA) => ({
+        answers: Object.entries(answers).map(([questionId, value]) => ({
+          questionId,
+          sectionId: buildSectionId(questionId) ?? "",
+          selectedOptionIds: value ? [value] : [],
+        })),
+        clientRevision: Date.now(),
+      });
+      await autoSaveAttempt(attemptId, makePayload(lastAnswersRef.current));
       await submitAttempt(attemptId);
       clearAttempt?.(attemptId);
       router.replace(`/attempts/${attemptId}`);
     } catch (e) {
-      console.error("Submit failed:", e);
       setSubmitting(false);
       alert("Nộp bài thất bại. Vui lòng thử lại.");
     }
@@ -125,9 +133,10 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
           <QuestionPanel
             attemptId={attemptId}
             questions={panelQuestions}
-            onAnswersChange={(next) =>
-              debouncedSave(next as QA, buildSectionId)
-            }
+            onAnswersChange={(next) => {
+              lastAnswersRef.current = next as QA;
+              debouncedSave(next as QA, buildSectionId);
+            }}
           />
         </div>
       </div>

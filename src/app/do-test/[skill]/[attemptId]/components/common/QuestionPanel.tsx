@@ -77,8 +77,8 @@ export default function QuestionPanel({
   };
 
   return (
-    <div className="flex flex-col h-full min-h-0 rounded-xl shadow bg-white overflow-hidden text-sm">
-      <div className="flex-1 min-h-0 overflow-auto overscroll-contain bg-white p-4 space-y-4 [scrollbar-gutter:stable] leading-relaxed">
+    <div className="flex flex-col h-full min-h-0 rounded-xl shadow bg-white overflow-hidden text-sm ">
+      <div className="flex-1 min-h-0 overflow-auto overscroll-contain bg-white p-4 space-y-2 [scrollbar-gutter:stable] leading-relaxed mb-12">
         {qList.map((q, idx) => (
           <QuestionCard
             key={q.id}

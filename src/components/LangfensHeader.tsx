@@ -30,16 +30,13 @@ export default function LangfensHeader() {
 
   const fetchingRef = useRef(false);
 
-  // ✅ Lấy cả user + setUser
   const { user, setUser } = useUserStore();
-
-  // ✅ Chỉ fetch khi chưa có user (và tránh double ở StrictMode)
   useEffect(() => {
     if (user || fetchingRef.current) return;
     (async () => {
       try {
         fetchingRef.current = true;
-        const res = await getMe(); // nhớ axios withCredentials=true
+        const res = await getMe();
         setUser(res.data?.data ?? null);
       } catch {
       } finally {

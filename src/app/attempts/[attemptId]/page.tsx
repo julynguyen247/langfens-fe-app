@@ -12,7 +12,6 @@ import {
 } from "react-icons/fi";
 import { useUserStore } from "@/app/store/userStore";
 
-/** ===== Types FE chuẩn hoá ===== */
 type AttemptResult = {
   attemptId: string;
   status: "GRADED" | "PENDING" | string;
@@ -24,23 +23,23 @@ type AttemptResult = {
   needsManualReview: number;
   bandScore?: number;
   questions: AttemptQuestionResult[];
+  totalTime: string;
 };
 
 type AttemptQuestionResult = {
   questionId: string;
-  index: number; // 1-based
-  promptMd?: string; // nội dung câu nếu có
+  index: number;
+  promptMd?: string;
   selectedOptionIds?: string[];
-  correctOptionIds?: string[];
-  options?: Array<{ id: string; label?: string; contentMd?: string }>;
+  selectedAnswerText?: string;
+  correctAnswerText?: string;
+  isCorrect?: boolean | null;
   explanationMd?: string;
-  // extra
   timeSpentSec?: number;
 };
 
-/** ===== Page ===== */
 export default function AttemptResultPage() {
-  const { attemptId } = useParams() as { attemptId: string; skill: string };
+  const { attemptId } = useParams() as { attemptId: string; skill?: string };
   const [data, setData] = useState<AttemptResult | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -50,38 +49,48 @@ export default function AttemptResultPage() {
     (async () => {
       try {
         const res = await getAttemptResult(attemptId as any);
-        console.log(res);
         const raw = res?.data?.data ?? res?.data ?? res;
+        const answers: any[] = raw.answers ?? raw.items ?? raw.questions ?? [];
+        const totalTimeSec =
+          parseSecondsAny(raw.totalTime) ??
+          parseTimeTaken(raw.timeTaken) ??
+          parseSecondsAny(raw.timeUsedSec) ??
+          0;
 
         const mapped: AttemptResult = {
-          attemptId: raw.attemptId,
+          attemptId: raw.attemptId ?? raw.id ?? String(attemptId),
           status: raw.status ?? "GRADED",
           finishedAt:
-            raw.gradedAt ?? raw.finishedAt ?? new Date().toISOString(),
-          timeUsedSec: raw.timeUsedSec ?? raw.timeUsed ?? 0,
-          correctCount: raw.correct ?? raw.correctCount ?? 0,
-          totalPoints: raw.totalPoints ?? raw.paperWithAnswers?.scoreRaw ?? 0,
-          awardedTotal: raw.awardedTotal ?? raw.paperWithAnswers?.scorePct ?? 0,
+            raw.gradedAt ??
+            raw.finishedAt ??
+            raw.submittedAt ??
+            new Date().toISOString(),
+          timeUsedSec: totalTimeSec,
+          correctCount: raw.correct ?? 0,
+          totalPoints: raw.scoreRaw ?? raw.totalPoints ?? 0,
+          awardedTotal: raw.scorePct ?? raw.awardedTotal ?? 0,
           needsManualReview: raw.needsManualReview ?? 0,
-          bandScore: raw.bandScore,
-          questions: (raw.items ?? raw.questions ?? raw.answers ?? []).map(
+          bandScore: raw.ieltsBand,
+          questions: answers.map(
             (a: any, i: number): AttemptQuestionResult => ({
               questionId: String(a.questionId ?? a.id ?? i + 1),
               index: a.index ?? i + 1,
               promptMd: a.promptMd ?? a.prompt ?? "",
               selectedOptionIds: a.selectedOptionIds ?? [],
-              correctOptionIds: a.correctOptionIds ?? [],
-              options: a.options ?? [],
+              selectedAnswerText: a.selectedAnswerText ?? "",
+              correctAnswerText: a.correctAnswerText ?? "",
+              isCorrect: typeof a.isCorrect === "boolean" ? a.isCorrect : null,
               explanationMd: a.explanationMd ?? a.explanation ?? "",
               timeSpentSec:
                 a.timeSpentSec ?? a.elapsedSec ?? a.time ?? undefined,
             })
           ),
+          totalTime: fmtMinSec(totalTimeSec),
         };
 
         setData(mapped);
       } catch (e) {
-        console.error("❌ error:", e);
+        console.error("error:", e);
       } finally {
         setLoading(false);
       }
@@ -96,7 +105,7 @@ export default function AttemptResultPage() {
   if (!data)
     return (
       <div className="p-6 text-center text-slate-500">
-        Không tìm thấy kết quả.{" "}
+        Không tìm thấy kết quả{" "}
         <button
           onClick={() => router.push("/home")}
           className="text-blue-600 underline"
@@ -106,15 +115,13 @@ export default function AttemptResultPage() {
       </div>
     );
 
-  // ========= UI =========
   const answeredCount = data.questions.filter(
-    (q) => (q.selectedOptionIds?.length ?? 0) > 0
+    (q) => !!q.selectedAnswerText || (q.selectedOptionIds?.length ?? 0) > 0
   ).length;
   const blankCount = data.questions.length - answeredCount;
 
   return (
     <div className="max-w-5xl mx-auto bg-white rounded-xl shadow-md overflow-hidden text-black">
-      {/* Header */}
       <div className="bg-gradient-to-r from-blue-500 to-emerald-500 text-white p-8 text-center">
         <h1 className="text-3xl font-bold mb-2 uppercase tracking-wide">
           IELTS Result
@@ -124,17 +131,17 @@ export default function AttemptResultPage() {
         </p>
       </div>
 
-      {/* Band Display */}
       <div className="flex flex-col items-center py-10">
         <div className="relative w-40 h-40 rounded-full bg-gradient-to-b from-emerald-400 to-blue-400 text-white flex items-center justify-center shadow-lg">
           <span className="text-6xl font-extrabold">
-            {data.bandScore?.toFixed(1) ?? "--"}
+            {typeof data.bandScore === "number"
+              ? data.bandScore.toFixed(1)
+              : "--"}
           </span>
         </div>
         <p className="mt-4 text-lg text-slate-700">Overall Band Score</p>
       </div>
 
-      {/* Stats */}
       <div className="px-8 pb-6 grid sm:grid-cols-2 lg:grid-cols-4 gap-6 text-slate-700">
         <Stat label="Trạng thái">
           {data.status === "GRADED" ? (
@@ -154,15 +161,13 @@ export default function AttemptResultPage() {
 
         <Stat label="Số câu đã trả lời">{answeredCount}</Stat>
         <Stat label="Câu bỏ trống">{blankCount}</Stat>
-        <Stat label="Thời gian làm bài">{fmtMinSec(data.timeUsedSec)}</Stat>
-
+        <Stat label="Tổng thời gian">{data.totalTime}</Stat>
         <Stat label="Số câu đúng">{data.correctCount}</Stat>
         <Stat label="Điểm nội bộ">
           {data.awardedTotal}/{data.totalPoints}
         </Stat>
       </div>
 
-      {/* Manual Review Banner */}
       {data.needsManualReview > 0 && (
         <div className="mx-8 mb-8 p-4 rounded-lg border border-amber-300 bg-amber-50 text-amber-800 text-sm">
           ⚠️ Có {data.needsManualReview} câu cần chấm tay — band có thể thay đổi
@@ -170,10 +175,8 @@ export default function AttemptResultPage() {
         </div>
       )}
 
-      {/* ---------------- Bottom: Review chi tiết ---------------- */}
       <QuestionReview details={data.questions} />
 
-      {/* Actions */}
       <div className="flex justify-center gap-4 pb-10">
         <button
           onClick={() => router.push("/home")}
@@ -186,7 +189,6 @@ export default function AttemptResultPage() {
   );
 }
 
-/** ---------- Small stat box ---------- */
 function Stat({
   label,
   children,
@@ -202,7 +204,6 @@ function Stat({
   );
 }
 
-/** ---------- Review List ---------- */
 function QuestionReview({ details }: { details: AttemptQuestionResult[] }) {
   const [filter, setFilter] = useState<"all" | "correct" | "wrong" | "none">(
     "all"
@@ -268,7 +269,6 @@ function QuestionReview({ details }: { details: AttemptQuestionResult[] }) {
   );
 }
 
-/** ---------- Item ---------- */
 function ReviewItem({ data }: { data: ReturnType<typeof normalizeDetail> }) {
   const [open, setOpen] = useState(false);
 
@@ -311,12 +311,8 @@ function ReviewItem({ data }: { data: ReturnType<typeof normalizeDetail> }) {
             <div className="bg-slate-50 rounded p-3">
               <p className="text-xs text-slate-500 mb-1">Bạn chọn</p>
               <div className="text-sm">
-                {data.selectedLabels.length ? (
-                  <ul className="list-disc ml-5 space-y-1">
-                    {data.selectedLabels.map((t, i) => (
-                      <li key={i}>{t}</li>
-                    ))}
-                  </ul>
+                {data.selectedText ? (
+                  <span>{data.selectedText}</span>
                 ) : (
                   <span className="text-slate-400 italic">—</span>
                 )}
@@ -326,12 +322,8 @@ function ReviewItem({ data }: { data: ReturnType<typeof normalizeDetail> }) {
             <div className="bg-slate-50 rounded p-3">
               <p className="text-xs text-slate-500 mb-1">Đáp án đúng</p>
               <div className="text-sm">
-                {data.correctLabels.length ? (
-                  <ul className="list-disc ml-5 space-y-1">
-                    {data.correctLabels.map((t, i) => (
-                      <li key={i}>{t}</li>
-                    ))}
-                  </ul>
+                {data.correctText ? (
+                  <span>{data.correctText}</span>
                 ) : (
                   <span className="text-slate-400 italic">—</span>
                 )}
@@ -358,7 +350,6 @@ function ReviewItem({ data }: { data: ReturnType<typeof normalizeDetail> }) {
   );
 }
 
-/** ---------- Filter button ---------- */
 function FilterBtn({
   active,
   onClick,
@@ -382,38 +373,19 @@ function FilterBtn({
   );
 }
 
-/** ---------- Normalizer & helpers ---------- */
 function normalizeDetail(d: AttemptQuestionResult) {
-  const opts = d.options ?? [];
-  const optionText = (id: string) =>
-    opts.find((o) => String(o.id) === String(id))?.label ??
-    opts.find((o) => String(o.id) === String(id))?.contentMd ??
-    String(id);
-
-  const selected = (d.selectedOptionIds ?? []).map(String);
-  const correct = (d.correctOptionIds ?? []).map(String);
-
-  const selectedLabels = selected.map(optionText);
-  const correctLabels = correct.map(optionText);
-
-  // xác định đúng/sai (tập hợp bằng nhau, không quan tâm thứ tự)
-  let isCorrect: boolean | null = null;
-  let state: "answered" | "none" = "answered";
-  if (!selected.length) {
-    state = "none";
-    isCorrect = null;
-  } else {
-    const a = [...selected].sort().join(",");
-    const b = [...correct].sort().join(",");
-    isCorrect = correct.length ? a === b : null; // nếu backend không trả correct -> null
-  }
+  const hasAnswer =
+    !!d.selectedAnswerText || (d.selectedOptionIds?.length ?? 0) > 0;
+  let state: "answered" | "none" = hasAnswer ? "answered" : "none";
+  let isCorrect: boolean | null =
+    typeof d.isCorrect === "boolean" ? d.isCorrect : null;
 
   return {
     questionId: d.questionId,
     index: d.index,
     prompt: d.promptMd ?? "",
-    selectedLabels,
-    correctLabels,
+    selectedText: d.selectedAnswerText ?? "",
+    correctText: d.correctAnswerText ?? "",
     explanation: d.explanationMd ?? "",
     isCorrect,
     state,
@@ -424,6 +396,31 @@ function normalizeDetail(d: AttemptQuestionResult) {
 function fmtMinSec(totalSec: number) {
   if (!totalSec || totalSec < 0) return "—";
   const m = Math.floor(totalSec / 60);
-  const s = totalSec % 60;
+  const s = Math.floor(totalSec % 60);
   return `${m}m${String(s).padStart(2, "0")}s`;
+}
+
+function parseTimeTaken(s: string | undefined): number | null {
+  if (!s || typeof s !== "string") return null;
+  const m = s.match(/^(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?$/);
+  if (!m) return null;
+  const hh = Number(m[1] ?? 0);
+  const mm = Number(m[2] ?? 0);
+  const ss = Number(m[3] ?? 0);
+  return hh * 3600 + mm * 60 + ss;
+}
+
+function parseSecondsAny(v: any): number | null {
+  if (v == null) return null;
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+  if (typeof v !== "string") return null;
+  const m = v.match(/^(\d{1,2}):(\d{2}):(\d{2})(?:\.(\d+))?$/);
+  if (m) {
+    const hh = Number(m[1] ?? 0);
+    const mm = Number(m[2] ?? 0);
+    const ss = Number(m[3] ?? 0);
+    return hh * 3600 + mm * 60 + ss;
+  }
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
 }

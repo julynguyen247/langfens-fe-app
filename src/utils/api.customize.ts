@@ -1,15 +1,17 @@
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from "axios";
 
-type ServiceKey = "auth" | "exam" | "attempt";
+type ServiceKey = "auth" | "exam" | "attempt" | "vocabulary";
 
 const BASE_URL: Record<ServiceKey, string> = {
   auth: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080",
   exam: process.env.NEXT_PUBLIC_EXAM_URL || "http://localhost:8082",
   attempt: process.env.NEXT_PUBLIC_ATTEMPT_URL || "http://localhost:8083",
+  vocabulary: process.env.NEXT_PUBLIC_VOCABULARY_URL || "http://localhost:8087",
 };
 
 const getToken = () =>
   typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
+
 const setToken = (t: string | null) => {
   if (typeof window === "undefined") return;
   if (t) localStorage.setItem("access_token", t);
@@ -39,6 +41,7 @@ const apis = Object.fromEntries(
         const original = err.config as
           | (AxiosRequestConfig & { _retry?: boolean })
           | undefined;
+
         if (err.response?.status === 401 && original && !original._retry) {
           original._retry = true;
           try {
@@ -63,9 +66,11 @@ const apis = Object.fromEntries(
     return [k, api];
   })
 ) as Record<ServiceKey, AxiosInstance>;
+
 export const apisAuth = apis.auth;
 export const apisExam = apis.exam;
 export const apisAttempt = apis.attempt;
+export const apisVocabulary = apis.vocabulary;
 
 const api = apisAuth;
 export default api;

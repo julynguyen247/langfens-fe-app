@@ -1,4 +1,9 @@
-import { apisAttempt, apisAuth, apisExam } from "./api.customize";
+import {
+  apisAttempt,
+  apisAuth,
+  apisExam,
+  apisVocabulary,
+} from "./api.customize";
 
 export async function loginWithGoogle(idToken: string) {
   const { data } = await apisAuth.post("/api/auth/login-google", {
@@ -67,7 +72,7 @@ export async function autoSaveAttempt(
     answers: Array<{
       questionId: string;
       sectionId: string;
-      selectedOptionIds?: string[];
+      selectedOptionIds: string[];
       textAnswer?: string;
     }>;
     clientRevision: number;
@@ -117,5 +122,107 @@ export async function getAttempt(
       pageSize,
     },
   });
+  return res;
+}
+export async function createDeck(payload: {
+  slug: string;
+  title: string;
+  descriptionMd: string;
+  category: string;
+  status: "draft" | "published";
+  userId: string;
+}) {
+  const res = await apisVocabulary.post("/deck", payload);
+  return res;
+}
+export async function createDeckCard(
+  deckId: string,
+  payload: {
+    frontMd: string;
+    backMd: string;
+    hintMd?: string;
+  }
+) {
+  const res = await apisVocabulary.post(`/deck/${deckId}/card`, payload);
+  return res;
+}
+export async function updateDeck(
+  deckId: string,
+  payload: {
+    slug: string;
+    title: string;
+    description: string;
+    category: string;
+    status: "draft" | "published";
+  }
+) {
+  const res = await apisVocabulary.put(`/deck/${deckId}`, payload);
+  return res;
+}
+export async function updateCard(
+  cardId: string,
+  payload: {
+    frontMd: string;
+    backMd: string;
+    hintMd: string;
+  }
+) {
+  const res = await apisVocabulary.put(`/deck/card/${cardId}`, payload);
+  return res;
+}
+
+export async function getOwnDecks(userId: string) {
+  const res = await apisVocabulary.get(`/${userId}/own`);
+  return res;
+}
+export async function getDeckCards(deckId: string) {
+  const res = await apisVocabulary.get(`/deck:${deckId}/cards`);
+  return res;
+}
+export async function getDueFlashcards(userId: string, limit: number = 20) {
+  const res = await apisVocabulary.get(`/${userId}/flashcard/due`, {
+    params: { limit },
+  });
+  return res;
+}
+export async function reviewFlashcard(
+  userId: string,
+  cardId: string,
+  grade: number
+) {
+  const res = await apisVocabulary.post(
+    `/${userId}/flashcard/${cardId}/review`,
+    {
+      grade,
+    }
+  );
+  return res;
+}
+export async function getFlashcardProgress(userId: string) {
+  const res = await apisVocabulary.get(`/${userId}/flashcard/progress`);
+  return res;
+}
+export async function getPublicHandler(params?: {
+  status?: string;
+  category?: string;
+  page?: number;
+  pageSize?: number;
+}) {
+  const res = await apisVocabulary.get("/", {
+    params: {
+      status: params?.status ?? "",
+      category: params?.category ?? "",
+      page: params?.page ?? 1,
+      pageSize: params?.pageSize ?? 10,
+    },
+  });
+  return res;
+}
+export async function subscribeDeck(userId: string, deckId: string) {
+  const res = await apisVocabulary.post(`/${userId}/subscribe/${deckId}`);
+  return res;
+}
+export async function getUserSubscriptions(userId: string) {
+  const res = await apisVocabulary.get(`/${userId}/subscribe`);
   return res;
 }
