@@ -437,7 +437,7 @@ function normalizeAttemptItem(item: any): Attempt {
   ) {
     const id = String(item.attemptId);
     const examId = String(item.examId);
-    const title = `Exam ${shortId(examId)}`;
+    const title = String(item.title);
     const dateISO = item.submittedAt || item.startedAt;
     const durationMin = diffMinutesSafe(item.startedAt, item.submittedAt);
     let score: number | undefined = undefined;
