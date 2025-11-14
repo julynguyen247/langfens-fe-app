@@ -6,20 +6,20 @@ import {
 } from "./api.customize";
 
 export async function loginWithGoogle(idToken: string) {
-  const { data } = await apisAuth.post("/api/auth/login-google", {
+  const { data } = await apisAuth.post("/auth/login-google", {
     idToken,
   });
   return data;
 }
 export async function register(email: string, password: string) {
-  const res = await apisAuth.post("/api/auth/register", {
+  const res = await apisAuth.post("/auth/register", {
     email,
     password,
   });
   return res;
 }
 export async function login(email: string, password: string) {
-  const res = await apisAuth.post("/api/auth/login", {
+  const res = await apisAuth.post("/auth/login", {
     email,
     password,
   });
@@ -27,29 +27,29 @@ export async function login(email: string, password: string) {
 }
 
 export async function logout() {
-  const res = await apisAuth.post("/api/auth/logout");
+  const res = await apisAuth.post("/auth/logout");
   return res;
 }
 
 export async function refresh() {
-  const res = await apisAuth.post("/api/auth/refresh");
+  const res = await apisAuth.post("/auth/refresh");
   return res;
 }
 
 export async function getMe() {
-  const res = await apisAuth.get("/api/auth/me");
+  const res = await apisAuth.get("/auth/me");
   return res;
 }
 
 export async function verifyEmail(email: string, otp: string) {
-  const res = await apisAuth.get("/api/auth/verify", {
+  const res = await apisAuth.get("/auth/verify", {
     params: { email, otp },
   });
   return res;
 }
 
 export async function resendEmail(email: string) {
-  const res = await apisAuth.post("/api/auth/resend-otp", null, {
+  const res = await apisAuth.post("/auth/resend-otp", null, {
     params: { email },
   });
   return res;
@@ -93,7 +93,7 @@ export async function getPublicExams(
   pageSize: number,
   opts?: { category?: string; level?: string }
 ) {
-  const res = await apisExam.get("/api/public/exam/getall", {
+  const res = await apisExam.get("/public/exam/getall", {
     params: {
       page,
       pageSize,
