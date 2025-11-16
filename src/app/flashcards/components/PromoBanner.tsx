@@ -1,7 +1,7 @@
 import { Layers, FolderOpen } from "lucide-react";
 export default function PromoBanner() {
   return (
-    <div className="mt-6 h-40 w-full overflow-hidden rounded-2xl border bg-[#3B82F6]">
+    <div className="mt-6 h-40 w-full overflow-hidden rounded-2xl  bg-[#3B82F6]">
       <div className="flex h-full items-center justify-between px-8">
         <div className="max-w-[60%]">
           <h3 className="text-xl font-semibold text-white">

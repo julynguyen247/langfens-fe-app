@@ -1,16 +1,28 @@
-// app/.../QuestionPanel.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
 import QuestionCard from "./QuestionCard";
+import FillInBlankCard from "../reading/FillInBlankCard";
+import MatchingLetterCard from "../reading/MatchingLetterCard";
 
 type Choice = { value: string; label: string };
 type QA = Record<string, string>;
 
+export type BackendQuestionType = string;
+
+export type QuestionUiKind =
+  | "choice_single"
+  | "completion"
+  | "matching_letter"
+  | "flow_chart";
+
 export type Question = {
   id: string;
   stem: string;
-  choices: Array<string | Choice>;
+  backendType: BackendQuestionType;
+  uiKind: QuestionUiKind;
+  choices?: Array<string | Choice>;
+  placeholder?: string;
 };
 
 export default function QuestionPanel({
@@ -35,7 +47,7 @@ export default function QuestionPanel({
       questions.map((q) => ({
         ...q,
         id: String(q.id),
-        choices: normalizeChoices(q.choices),
+        choices: q.choices ? normalizeChoices(q.choices) : undefined,
       })),
     [questions]
   );
@@ -79,17 +91,69 @@ export default function QuestionPanel({
   return (
     <div className="flex flex-col h-full min-h-0 rounded-xl shadow bg-white overflow-hidden text-sm ">
       <div className="flex-1 min-h-0 overflow-auto overscroll-contain bg-white p-4 space-y-2 [scrollbar-gutter:stable] leading-relaxed mb-12">
-        {qList.map((q, idx) => (
-          <QuestionCard
-            key={q.id}
-            question={{ id: q.id, stem: q.stem, choices: q.choices }}
-            selected={answers[q.id]}
-            onSelect={(_id: number | string, value: string) =>
-              handleAnswer(String(q.id), value)
-            }
-            instruction={idx === 0 ? instructionData : undefined}
-          />
-        ))}
+        {qList.map((q, idx) => {
+          const value = answers[q.id] ?? "";
+
+          // detect T/F/NG để show instruction
+          const isTfNg =
+            q.backendType === "TRUE_FALSE_NOT_GIVEN" ||
+            q.backendType === "YES_NO_NOT_GIVEN";
+
+          switch (q.uiKind) {
+            case "choice_single":
+              return (
+                <QuestionCard
+                  key={q.id}
+                  question={{
+                    id: q.id,
+                    stem: q.stem,
+                    choices: q.choices ?? [],
+                  }}
+                  selected={value}
+                  onSelect={(_id: number | string, v: string) =>
+                    handleAnswer(String(q.id), v)
+                  }
+                  instruction={
+                    idx === 0 && isTfNg ? instructionData : undefined
+                  }
+                />
+              );
+
+            case "completion":
+              return (
+                <FillInBlankCard
+                  key={q.id}
+                  id={q.id}
+                  stem={q.stem}
+                  value={value}
+                  onChange={(v) => handleAnswer(q.id, v)}
+                />
+              );
+
+            case "matching_letter":
+              return (
+                <MatchingLetterCard
+                  key={q.id}
+                  id={q.id}
+                  stem={q.stem}
+                  value={value}
+                  onChange={(v) => handleAnswer(q.id, v)}
+                />
+              );
+
+            case "flow_chart":
+            default:
+              return (
+                <FillInBlankCard
+                  key={q.id}
+                  id={q.id}
+                  stem={q.stem}
+                  value={value}
+                  onChange={(v) => handleAnswer(q.id, v)}
+                />
+              );
+          }
+        })}
       </div>
     </div>
   );

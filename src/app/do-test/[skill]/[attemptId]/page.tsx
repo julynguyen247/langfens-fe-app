@@ -3,11 +3,22 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import PassageView from "./components/reading/PassageView";
-import QuestionPanel from "./components/common/QuestionPanel";
+import QuestionPanel, {
+  Question as UiQuestion,
+  BackendQuestionType,
+  QuestionUiKind,
+} from "./components/common/QuestionPanel";
+
 import { useAttemptStore } from "@/app/store/useAttemptStore";
 import { useUserStore } from "@/app/store/userStore";
 import { autoSaveAttempt, submitAttempt } from "@/utils/api";
 import { useDebouncedAutoSave } from "@/app/utils/hook";
+import { mapApiQuestionToUi } from "@/lib/mapApiQuestionToUi";
+type ApiOption = {
+  id?: string;
+  idx: number;
+  contentMd: string;
+};
 
 type Skill = "reading" | "listening" | "writing";
 type QA = Record<string, string>;
@@ -44,22 +55,12 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
   const secFromUrl = sp.get("sec");
   const activeSec = sections.find((s) => s.id === secFromUrl) ?? sections[0];
 
-  const panelQuestions = useMemo(
+  const panelQuestions = useMemo<UiQuestion[]>(
     () =>
       (activeSec?.questions ?? [])
         .slice()
         .sort((a, b) => a.idx - b.idx)
-        .map((q) => ({
-          id: String(q.id),
-          stem: q.promptMd,
-          choices: (q.options ?? [])
-            .slice()
-            .sort((a, b) => a.idx - b.idx)
-            .map((op) => ({
-              value: String(op.id ?? op.idx),
-              label: op.contentMd,
-            })),
-        })),
+        .map((q: any) => mapApiQuestionToUi(q)),
     [activeSec]
   );
 
@@ -101,7 +102,7 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
 
   return (
     <div className="flex h-full min-h-0 bg-white rounded-xl shadow overflow-hidden">
-      <div className="flex-1 min-h-0 overflow-hidden border-r bg-gray-50">
+      <div className="flex-1 min-h-0 overflow-hidden border-r bg-gray-50 mb-20">
         <PassageView
           passage={{
             title: activeSec.title,
@@ -133,10 +134,9 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
           <QuestionPanel
             attemptId={attemptId}
             questions={panelQuestions}
-            onAnswersChange={(next) => {
-              lastAnswersRef.current = next as QA;
-              debouncedSave(next as QA, buildSectionId);
-            }}
+            onAnswersChange={(next) =>
+              debouncedSave(next as QA, buildSectionId)
+            }
           />
         </div>
       </div>
@@ -167,17 +167,10 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
     .flatMap((s) => s.questions ?? [])
     .filter((q) => q.skill?.toLowerCase() === "listening");
 
-  const panelQuestions = qs
+  const panelQuestions: UiQuestion[] = qs
     .slice()
     .sort((a, b) => a.idx - b.idx)
-    .map((q) => ({
-      id: String(q.id),
-      stem: q.promptMd,
-      choices: (q.options ?? [])
-        .slice()
-        .sort((a, b) => a.idx - b.idx)
-        .map((op) => ({ value: String(op.id ?? op.idx), label: op.contentMd })),
-    }));
+    .map((q: any) => mapApiQuestionToUi(q));
 
   const { run: debouncedSave, cancel: cancelAutoSave } = useDebouncedAutoSave(
     user?.id,

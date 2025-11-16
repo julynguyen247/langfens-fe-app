@@ -3,7 +3,7 @@ import { BookOpen, Search, Plus } from "lucide-react";
 
 export default function PageHeader() {
   return (
-    <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-blue-50 to-blue-100 p-6">
+    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 p-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow">

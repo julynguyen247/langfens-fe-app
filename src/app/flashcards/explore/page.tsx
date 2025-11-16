@@ -75,7 +75,7 @@ export default function ExploreDecksPage() {
           <ArrowLeft className="h-4 w-4" />
           Quay lại
         </button>
-        <h1 className="text-2xl font-bold">Khám phá các bộ thẻ công khai</h1>
+        <h1 className="text-2xl font-bold">Khám phá các bộ thẻ</h1>
       </div>
 
       <div className="mb-6 flex flex-wrap items-center gap-3">
