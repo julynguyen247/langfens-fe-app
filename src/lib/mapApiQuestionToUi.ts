@@ -71,7 +71,7 @@ export function mapApiQuestionToUi(q: ApiQuestion): Question {
     return {
       ...base,
       choices: (q.options ?? []).map((opt) => ({
-        value: opt.id, // gửi optionId
+        value: opt.id,
         label: normalizeOptionLabel(opt.contentMd),
       })),
     };

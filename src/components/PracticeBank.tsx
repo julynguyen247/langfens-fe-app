@@ -86,9 +86,7 @@ export default function PracticeBank({
       const res = await startAttempt(userId, item.id);
       const payload = res.data?.data;
       if (!payload?.attemptId) throw new Error("Missing attemptId");
-
-      useAttemptStore.getState().setAttempt(payload);
-
+      setAttempt(payload);
       router.push(`/do-test/${skill}/${payload.attemptId}`);
     } catch {
       alert("Không thể bắt đầu bài. Vui lòng thử lại!");

@@ -14,14 +14,11 @@ import { useUserStore } from "@/app/store/userStore";
 import { autoSaveAttempt, submitAttempt } from "@/utils/api";
 import { useDebouncedAutoSave } from "@/app/utils/hook";
 import { mapApiQuestionToUi } from "@/lib/mapApiQuestionToUi";
-type ApiOption = {
-  id?: string;
-  idx: number;
-  contentMd: string;
-};
+import ListeningAudioBar from "./components/listening/ListeningAudioBar";
 
 type Skill = "reading" | "listening" | "writing";
 type QA = Record<string, string>;
+
 export default function DoTestAttemptPage() {
   const { skill, attemptId } = useParams() as {
     skill: Skill;
@@ -37,14 +34,18 @@ export default function DoTestAttemptPage() {
   if (skill === "reading") return <ReadingScreen attemptId={attemptId} />;
   if (skill === "listening") return <ListeningScreen attemptId={attemptId} />;
   // if (skill === "writing") return <WritingScreen attemptId={attemptId} />;
+
   return <div className="p-6">Unknown skill: {String(skill)}</div>;
 }
+
+/* -------------------- READING -------------------- */
 
 function ReadingScreen({ attemptId }: { attemptId: string }) {
   const router = useRouter();
   const { user } = useUserStore();
   const attempt = useAttemptStore((s) => s.byId[attemptId])!;
   const clearAttempt = useAttemptStore((s) => s.clear);
+
   const sections = useMemo(
     () => [...(attempt.paper.sections ?? [])].sort((a, b) => a.idx - b.idx),
     [attempt.paper.sections]
@@ -71,6 +72,7 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
   const buildSectionId = (qid: string) => activeSec?.id;
 
   const [submitting, setSubmitting] = useState(false);
+
   async function handleSubmit() {
     if (submitting) return;
     if (!window.confirm("Bạn chắc chắn muốn nộp bài?")) return;
@@ -144,16 +146,23 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
   );
 }
 
-/** --------------- Listening ---------------- */
+/* -------------------- LISTENING -------------------- */
+
 function ListeningScreen({ attemptId }: { attemptId: string }) {
   const router = useRouter();
   const { user } = useUserStore();
   const attempt = useAttemptStore((s) => s.byId[attemptId])!;
   const clearAttempt = useAttemptStore((s) => s.clear);
-  const { skill } = useParams() as { skill: Skill; attemptId: string };
+
+  const sections = useMemo(
+    () => [...(attempt.paper.sections ?? [])].sort((a, b) => a.idx - b.idx),
+    [attempt.paper.sections]
+  );
+  const listeningSection = sections.find((s: any) => s.audioUrl) ?? sections[0];
+  const listeningAudioUrl = listeningSection?.audioUrl ?? "";
   const sectionOfQuestion = useMemo(() => {
     const m = new Map<string, string>();
-    for (const s of attempt.paper.sections ?? []) {
+    for (const s of sections) {
       for (const q of s.questions ?? []) {
         if (String(q.skill).toLowerCase() === "listening") {
           m.set(String(q.id), s.id);
@@ -161,9 +170,9 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
       }
     }
     return m;
-  }, [attempt.paper.sections]);
+  }, [sections]);
 
-  const qs = attempt.paper.sections
+  const qs = sections
     .flatMap((s) => s.questions ?? [])
     .filter((q) => q.skill?.toLowerCase() === "listening");
 
@@ -179,6 +188,7 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
   const buildSectionId = (qid: string) => sectionOfQuestion.get(qid);
 
   const [submitting, setSubmitting] = useState(false);
+
   async function handleSubmit() {
     if (submitting) return;
     const ok = window.confirm("Bạn chắc chắn muốn nộp bài?");
@@ -199,22 +209,26 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
 
   return (
     <div className="flex flex-col h-full min-h-0 bg-white rounded-xl shadow overflow-hidden">
-      <div className="border-b p-4 bg-white sticky top-0 z-10 flex items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold text-slate-800">Questions</h2>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleSubmit}
-            disabled={submitting}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition
+      <div className="border-b p-4 bg-white sticky top-0 z-10 flex flex-col gap-3">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-slate-800">Listening</h2>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleSubmit}
+              disabled={submitting}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition
               ${
                 submitting
                   ? "bg-gray-200 text-gray-500 cursor-not-allowed"
                   : "bg-[#317EFF] text-white hover:bg-[#74a4f6]"
               }`}
-          >
-            {submitting ? "Đang nộp…" : "Nộp bài"}
-          </button>
+            >
+              {submitting ? "Đang nộp…" : "Nộp bài"}
+            </button>
+          </div>
         </div>
+
+        <ListeningAudioBar src={listeningAudioUrl} />
       </div>
 
       <div className="flex-1 min-h-0 overflow-auto p-6">
@@ -227,6 +241,8 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
     </div>
   );
 }
+
+/* -------------------- WRITING (stub) -------------------- */
 
 function WritingScreen() {
   return <div className="p-6">Bind prompt viết từ sections nếu có.</div>;
