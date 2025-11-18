@@ -45,3 +45,15 @@ export function isValidItem(group: GroupId, item: string) {
 export function firstItemOf(group: GroupId) {
   return GROUPS[group].items[0]?.id;
 }
+function detectSkill(
+  title: string
+): "reading" | "listening" | "writing" | "speaking" | "unknown" {
+  const t = title.toLowerCase();
+
+  if (t.includes("reading")) return "reading";
+  if (t.includes("listening")) return "listening";
+  if (t.includes("writing")) return "writing";
+  if (t.includes("speaking")) return "speaking";
+
+  return "unknown";
+}

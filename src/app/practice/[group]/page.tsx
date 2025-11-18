@@ -5,6 +5,19 @@ import { getPublicExams } from "@/utils/api";
 import { useUserStore } from "@/app/store/userStore";
 import PracticeBank, { PracticeItem } from "@/components/PracticeBank";
 
+function detectSkill(
+  title: string
+): "reading" | "listening" | "writing" | "speaking" | "unknown" {
+  const t = title.toLowerCase();
+
+  if (t.includes("reading")) return "reading";
+  if (t.includes("listening")) return "listening";
+  if (t.includes("writing")) return "writing";
+  if (t.includes("speaking")) return "speaking";
+
+  return "unknown";
+}
+
 export default function GroupPage() {
   const { group } = useParams<{ group: string }>();
   const sp = useSearchParams();
@@ -18,8 +31,13 @@ export default function GroupPage() {
       const res = await getPublicExams(1, 24, {
         category: group as string,
       });
-      console.log(res);
-      setItems(res.data.data);
+
+      const data = res.data.data.map((item: any) => ({
+        ...item,
+        skill: detectSkill(item.title),
+      }));
+
+      setItems(data);
     }
     fetchTest();
   }, [group]);
@@ -30,6 +48,7 @@ export default function GroupPage() {
     );
 
   const filtered = items
+    .filter((it) => it.skill === group)
     .filter((it) => (tab === "todo" ? !it.done : it.done))
     .filter(
       (it) =>

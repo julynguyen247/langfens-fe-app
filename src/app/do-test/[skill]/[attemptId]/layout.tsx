@@ -37,6 +37,7 @@ export default function DoTestAttemptLayout({
     attemptId: string;
   };
   const attempt = useAttemptStore((s) => s.byId[attemptId]);
+  console.log(attempt);
 
   const initialSeconds = useMemo(() => {
     if (!attempt) return 0;

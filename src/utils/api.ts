@@ -55,14 +55,8 @@ export async function resendEmail(email: string) {
   return res;
 }
 
-export async function startAttempt(userId: string, examId: string) {
-  const res = await apisAttempt.post(
-    "/attempts:start",
-    { examId },
-    {
-      params: { userId },
-    }
-  );
+export async function startAttempt(examId: string) {
+  const res = await apisAttempt.post("/attempt/attempts:start", { examId });
   return res;
 }
 

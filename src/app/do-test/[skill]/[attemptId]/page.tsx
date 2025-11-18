@@ -199,7 +199,7 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
       cancelAutoSave();
       await submitAttempt(attemptId);
       clearAttempt?.(attemptId);
-      router.replace(`/attempt/${attemptId}/result`);
+      router.replace(`/attempt/${attemptId}`);
     } catch (e) {
       console.error("Submit failed:", e);
       setSubmitting(false);

@@ -16,6 +16,7 @@ export type PracticeItem = {
   attemps?: number;
   done: boolean;
   tags?: string[];
+  skill?: string;
 };
 
 export type PracticeBankProps = {
@@ -83,7 +84,7 @@ export default function PracticeBank({
   async function handleStart(item: PracticeItem) {
     try {
       setLoadingId(item.id);
-      const res = await startAttempt(userId, item.id);
+      const res = await startAttempt(item.id);
       const payload = res.data?.data;
       if (!payload?.attemptId) throw new Error("Missing attemptId");
       setAttempt(payload);
