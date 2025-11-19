@@ -105,14 +105,7 @@ export default function DoTestAttemptLayout({
       />
 
       <main className="flex-1 min-h-0 w-full mx-auto overflow-y-auto">
-        {!attempt ? (
-          <div className="p-6 text-slate-600">
-            Không có dữ liệu đề trong phiên. Vui lòng quay lại trang trước và
-            bấm Start lại.
-          </div>
-        ) : (
-          children
-        )}
+        {children}
       </main>
 
       {!!attempt && (

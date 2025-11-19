@@ -1,7 +1,7 @@
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from "axios";
 
-type ServiceKey = "auth" | "exam" | "attempt" | "vocabulary";
-const GATEWAY_BASE = process.env.NEXT_PUBLIC_GATEWAY_URL || ""; 
+type ServiceKey = "auth" | "exam" | "attempt" | "vocabulary" | "speaking";
+const GATEWAY_BASE = process.env.NEXT_PUBLIC_GATEWAY_URL || "";
 const buildBase = (suffix: string) =>
   GATEWAY_BASE ? `${GATEWAY_BASE}${suffix}` : suffix;
 
@@ -10,6 +10,7 @@ const BASE_URL: Record<ServiceKey, string> = {
   exam: buildBase("/api-exams"),
   attempt: buildBase("/api-attempts"),
   vocabulary: buildBase("/api-vocabulary"),
+  speaking: buildBase(""),
 };
 
 const getToken = () =>
@@ -37,7 +38,7 @@ const apis = Object.fromEntries(
       }
       return config;
     });
-    console.log(GATEWAY_BASE);
+
     api.interceptors.response.use(
       (res) => res,
       async (err: AxiosError) => {
@@ -74,6 +75,7 @@ export const apisAuth = apis.auth;
 export const apisExam = apis.exam;
 export const apisAttempt = apis.attempt;
 export const apisVocabulary = apis.vocabulary;
+export const apisSpeaking = apis.speaking;
 
 const api = apisAuth;
 export default api;

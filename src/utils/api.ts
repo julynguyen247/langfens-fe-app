@@ -1,7 +1,9 @@
-import {
+import axios from "axios";
+import api, {
   apisAttempt,
   apisAuth,
   apisExam,
+  apisSpeaking,
   apisVocabulary,
 } from "./api.customize";
 
@@ -219,4 +221,18 @@ export async function subscribeDeck(userId: string, deckId: string) {
 export async function getUserSubscriptions(userId: string) {
   const res = await apisVocabulary.get(`/${userId}/subscribe`);
   return res;
+}
+export async function audioSubmitFromUrl(mediaBlobUrl: string) {
+  const res = await fetch(mediaBlobUrl);
+  const blob = await res.blob();
+
+  const file = new File([blob], `speaking-${Date.now()}.webm`, {
+    type: blob.type || "audio/webm",
+  });
+
+  const form = new FormData();
+  form.append("request", file);
+
+  const resp = await apisSpeaking.post("/api/speaking/transcript", form);
+  return resp;
 }
