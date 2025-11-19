@@ -10,7 +10,7 @@ const BASE_URL: Record<ServiceKey, string> = {
   exam: buildBase("/api-exams"),
   attempt: buildBase("/api-attempts"),
   vocabulary: buildBase("/api-vocabulary"),
-  speaking: buildBase(""),
+  speaking: buildBase("/api-speaking"),
 };
 
 const getToken = () =>

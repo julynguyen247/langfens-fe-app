@@ -6,6 +6,7 @@ import api, {
   apisSpeaking,
   apisVocabulary,
 } from "./api.customize";
+import { webmToWavFile } from "./audio";
 
 export async function loginWithGoogle(idToken: string) {
   const { data } = await apisAuth.post("/auth/login-google", {
@@ -223,16 +224,17 @@ export async function getUserSubscriptions(userId: string) {
   return res;
 }
 export async function audioSubmitFromUrl(mediaBlobUrl: string) {
-  const res = await fetch(mediaBlobUrl);
-  const blob = await res.blob();
-
-  const file = new File([blob], `speaking-${Date.now()}.webm`, {
-    type: blob.type || "audio/webm",
-  });
+  const file = await webmToWavFile(mediaBlobUrl);
 
   const form = new FormData();
   form.append("request", file);
 
-  const resp = await apisSpeaking.post("/api/speaking/transcript", form);
+  const resp = await apisSpeaking.post("/speaking/transcript", form, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+    transformRequest: (data) => data,
+  });
+
   return resp;
 }
