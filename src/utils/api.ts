@@ -238,3 +238,20 @@ export async function audioSubmitFromUrl(mediaBlobUrl: string) {
 
   return resp;
 }
+
+export async function createExam(
+  title: string,
+  taskText: string,
+  examType: number,
+  level: string,
+  tag: string
+) {
+  const res = await apisExam.post(`/api/admin/create`, {
+    title,
+    taskText,
+    examType,
+    level,
+    tag,
+  });
+  return res;
+}
