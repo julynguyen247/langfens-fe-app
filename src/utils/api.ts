@@ -255,3 +255,16 @@ export async function createExam(
   });
   return res;
 }
+export async function gradeWriting(
+  examId: string,
+  answer: string,
+  timeSpentSeconds: number
+) {
+  const res = await apisExam.post(`/api/writing/grade`, {
+    examId,
+    answer,
+    timeSpentSeconds,
+  });
+
+  return res;
+}
