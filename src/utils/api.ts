@@ -5,6 +5,7 @@ import api, {
   apisExam,
   apisSpeaking,
   apisVocabulary,
+  apisWriting,
 } from "./api.customize";
 import { webmToWavFile } from "./audio";
 
@@ -246,7 +247,7 @@ export async function createExam(
   level: string,
   tag: string
 ) {
-  const res = await apisExam.post(`/api/admin/create`, {
+  const res = await apisWriting.post(`/admin/create`, {
     title,
     taskText,
     examType,
@@ -260,11 +261,23 @@ export async function gradeWriting(
   answer: string,
   timeSpentSeconds: number
 ) {
-  const res = await apisExam.post(`/api/writing/grade`, {
+  const res = await apisWriting.post(`/writing/grade`, {
     examId,
     answer,
     timeSpentSeconds,
   });
 
+  return res;
+}
+export async function getWritingExams() {
+  const res = await apisWriting.get("/writing/exams");
+  return res;
+}
+export async function getWritingExamById(examId: string) {
+  const res = await apisWriting.get(`/writing/exams/${examId}`);
+  return res;
+}
+export async function getSpeakingExams() {
+  const res = await apisSpeaking.get("/speaking/exams");
   return res;
 }

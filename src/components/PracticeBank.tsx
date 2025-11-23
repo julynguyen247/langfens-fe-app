@@ -13,7 +13,7 @@ export type PracticeItem = {
   summary: string;
   section?: string;
   thumb?: string;
-  attemps?: number;
+  attempts?: number;
   done: boolean;
   tags?: string[];
   skill?: string;
@@ -194,7 +194,7 @@ export default function PracticeBank({
               </p>
 
               <div className="mt-2 text-[11px] text-slate-400">
-                {(it.attemps ?? 0).toLocaleString()} lượt làm bài
+                {(it.attempts ?? 0).toLocaleString()} lượt làm bài
               </div>
 
               <div className="mt-3 flex items-center justify-between">

@@ -1,6 +1,13 @@
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from "axios";
 
-type ServiceKey = "auth" | "exam" | "attempt" | "vocabulary" | "speaking";
+type ServiceKey =
+  | "auth"
+  | "exam"
+  | "attempt"
+  | "vocabulary"
+  | "speaking"
+  | "writing"; // ✅ đã thêm writing
+
 const GATEWAY_BASE = process.env.NEXT_PUBLIC_GATEWAY_URL || "";
 const buildBase = (suffix: string) =>
   GATEWAY_BASE ? `${GATEWAY_BASE}${suffix}` : suffix;
@@ -11,6 +18,7 @@ const BASE_URL: Record<ServiceKey, string> = {
   attempt: buildBase("/api-attempts"),
   vocabulary: buildBase("/api-vocabulary"),
   speaking: buildBase("/api-speaking"),
+  writing: buildBase("/api-writing"),
 };
 
 const getToken = () =>
@@ -30,6 +38,7 @@ const apis = Object.fromEntries(
       headers: { "Content-Type": "application/json" },
     });
 
+    // Attach token
     api.interceptors.request.use((config) => {
       const tok = getToken();
       if (tok) {
@@ -39,6 +48,7 @@ const apis = Object.fromEntries(
       return config;
     });
 
+    // Auto refresh token
     api.interceptors.response.use(
       (res) => res,
       async (err: AxiosError) => {
@@ -53,16 +63,19 @@ const apis = Object.fromEntries(
               withCredentials: true,
             });
             const newToken = (r.data as any)?.accessToken ?? null;
+
             if (newToken) {
               setToken(newToken);
               original.headers = original.headers ?? {};
               (original.headers as any).Authorization = `Bearer ${newToken}`;
             }
+
             return api.request(original);
           } catch {
             setToken(null);
           }
         }
+
         return Promise.reject(err);
       }
     );
@@ -71,11 +84,13 @@ const apis = Object.fromEntries(
   })
 ) as Record<ServiceKey, AxiosInstance>;
 
+// Exports
 export const apisAuth = apis.auth;
 export const apisExam = apis.exam;
 export const apisAttempt = apis.attempt;
 export const apisVocabulary = apis.vocabulary;
 export const apisSpeaking = apis.speaking;
+export const apisWriting = apis.writing;
 
 const api = apisAuth;
 export default api;
