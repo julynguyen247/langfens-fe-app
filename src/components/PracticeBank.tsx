@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { FiSearch } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 import { useAttemptStore } from "@/app/store/useAttemptStore";
-import { startAttempt } from "@/utils/api";
+import { startAttempt, startWritingExam, startSpeakingExam } from "@/utils/api";
 
 export type PracticeItem = {
   id: string;
@@ -25,7 +25,7 @@ export type PracticeBankProps = {
   className?: string;
   onClickItem?: (item: PracticeItem) => void;
   userId: string;
-  skill: string;
+  skill: string; // "reading" | "listening" | "writing" | "speaking"
 };
 
 export default function PracticeBank({
@@ -84,12 +84,35 @@ export default function PracticeBank({
   async function handleStart(item: PracticeItem) {
     try {
       setLoadingId(item.id);
-      const res = await startAttempt(item.id);
+
+      if (onClickItem) {
+        onClickItem(item);
+        return;
+      }
+
+      let res;
+
+      if (skill === "reading" || skill === "listening") {
+        res = await startAttempt(item.id);
+      } else if (skill === "writing") {
+        res = await startWritingExam(item.id);
+      } else if (skill === "speaking") {
+        res = await startSpeakingExam(item.id);
+      } else {
+        throw new Error("Unknown skill: " + skill);
+      }
+
       const payload = res.data?.data;
-      if (!payload?.attemptId) throw new Error("Missing attemptId");
+
+      const attemptId: string | undefined = payload?.attemptId ?? payload?.id;
+
+      if (!attemptId) {
+        throw new Error("Missing attemptId");
+      }
       setAttempt(payload);
-      router.push(`/do-test/${skill}/${payload.attemptId}`);
-    } catch {
+      router.push(`/do-test/${skill}/${attemptId}`);
+    } catch (err) {
+      console.error(err);
       alert("Không thể bắt đầu bài. Vui lòng thử lại!");
     } finally {
       setLoadingId(null);
@@ -162,7 +185,10 @@ export default function PracticeBank({
               disabled={loadingId === it.id}
             >
               <Image
-                src="https://th.bing.com/th/id/R.0901589eef10038b5f3298ca9e4bb370?rik=EcrM4tIYeQ%2bfYQ&pid=ImgRaw&r=0"
+                src={
+                  it.thumb ??
+                  "https://th.bing.com/th/id/R.0901589eef10038b5f3298ca9e4bb370?rik=EcrM4tIYeQ%2bfYQ&pid=ImgRaw&r=0"
+                }
                 alt={it.title}
                 fill
                 className="object-cover"

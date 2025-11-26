@@ -281,3 +281,38 @@ export async function getSpeakingExams() {
   const res = await apisSpeaking.get("/speaking/exams");
   return res;
 }
+export async function startWritingExam(examId: string) {
+  const res = await apisWriting.post(`/writing/start/${examId}`, {});
+
+  return res;
+}
+export async function startSpeakingExam(examId: string) {
+  const res = await apisSpeaking.post(`/speaking/start/${examId}`);
+  return res;
+}
+export async function getWritingExam(examId: string) {
+  const res = await apisWriting.get(`/writing/exams/${examId}`);
+  return res;
+}
+export async function getSpeakingExamsById(examId: string) {
+  const res = await apisSpeaking.get(`/speaking/exams/${examId}`);
+  return res;
+}
+export async function gradeSpeaking(params: {
+  examId: string;
+  timeSpentSeconds: number;
+  speech: Blob | File;
+}) {
+  const { examId, timeSpentSeconds, speech } = params;
+
+  const formData = new FormData();
+  formData.append("examId", examId);
+  formData.append("timeSpentSeconds", String(timeSpentSeconds));
+
+  const filename =
+    speech instanceof File ? speech.name : "speaking-recording.webm";
+  formData.append("speech", speech, filename);
+
+  const res = await api.post("/api/speaking/grade", formData);
+  return res;
+}

@@ -10,11 +10,10 @@ import {
 } from "next/navigation";
 import TopBar from "./components/common/TopBar";
 import TimerDisplay from "./components/common/TimerDisplay";
-import QuestionNav from "./components/common/QuestionNav";
 import PassageFooter from "./components/reading/PassageFooter";
 import { useAttemptStore } from "@/app/store/useAttemptStore";
 
-type Skill = "reading" | "listening" | "writing";
+type Skill = "reading" | "listening" | "writing" | "speaking";
 
 function getDeadlineMs(
   startedAt: string,
@@ -36,21 +35,23 @@ export default function DoTestAttemptLayout({
     skill: Skill;
     attemptId: string;
   };
+
   const attempt = useAttemptStore((s) => s.byId[attemptId]);
-  console.log(attempt);
 
   const initialSeconds = useMemo(() => {
     if (!attempt) return 0;
+    if (skill === "writing" || skill === "speaking") return 0;
     const dl = getDeadlineMs(
       attempt.startedAt,
       attempt.durationSec,
       attempt.timeLeft
     );
     return Math.max(0, Math.floor((dl - Date.now()) / 1000));
-  }, [attempt]);
+  }, [attempt, skill]);
 
   const passages = useMemo(() => {
     if (!attempt) return [];
+    if (skill !== "reading") return [];
     return [...attempt.paper.sections]
       .sort((a, b) => a.idx - b.idx)
       .map((sec) => {
@@ -64,12 +65,14 @@ export default function DoTestAttemptLayout({
           : `S${sec.idx}`;
         return { id: sec.id, label, total, done: 0 };
       });
-  }, [attempt]);
+  }, [attempt, skill]);
 
   const router = useRouter();
   const pathname = usePathname();
   const sp = useSearchParams();
-  const currentSecId = sp.get("sec") ?? passages[0]?.id ?? "";
+
+  const currentSecId =
+    sp.get("sec") ?? (passages.length > 0 ? passages[0].id : "");
 
   const currentIndex = Math.max(
     0,
@@ -92,45 +95,48 @@ export default function DoTestAttemptLayout({
     gotoSection(passages[nextIdx].id);
   };
 
+  const prettySkill =
+    skill === "reading"
+      ? "Reading"
+      : skill === "listening"
+      ? "Listening"
+      : skill === "writing"
+      ? "Writing"
+      : "Speaking";
+
+  const subtitle =
+    skill === "reading" || skill === "listening"
+      ? attempt
+        ? `IELTS Online Test · ${attempt.attemptId.slice(0, 6)}...`
+        : "—"
+      : "IELTS Online Practice";
+
+  const showTimer = skill === "reading" || skill === "listening";
+
   return (
     <div className="h-screen flex flex-col bg-[#F3F4F6] overflow-hidden">
       <TopBar
-        title={`Làm bài ${skill[0].toUpperCase() + skill.slice(1)}`}
-        subtitle={
-          attempt
-            ? `IELTS Online Test · ${attempt.attemptId.slice(0, 6)}...`
-            : "—"
+        title={`Làm bài ${prettySkill}`}
+        subtitle={subtitle}
+        rightSlot={
+          showTimer ? <TimerDisplay initialSeconds={initialSeconds} /> : null
         }
-        rightSlot={<TimerDisplay initialSeconds={initialSeconds} />}
       />
 
       <main className="flex-1 min-h-0 w-full mx-auto overflow-y-auto">
         {children}
       </main>
 
-      {!!attempt && (
-        <>
-          {/* <div className="border-t bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70">
-            <div className="mx-auto max-w-6xl py-3 mb-16">
-              <QuestionNav
-                total={currentPassage?.total ?? 0}
-                current={1}
-                attemptId={attempt.attemptId}
-                skill={skill}
-              />
-            </div>
-          </div> */}
-
-          <PassageFooter
-            passages={passages}
-            currentPassageId={currentSecId}
-            onChangePassage={(id) => gotoSection(id)}
-            onJumpRange={(dir) => jumpRange(dir)}
-            onGridClick={() => console.log("open answer sheet")}
-            rangeLabel={currentPassage?.label ?? ""}
-            rangePrevLabel={passages[currentIndex - 1]?.label ?? ""}
-          />
-        </>
+      {skill === "reading" && attempt && passages.length > 0 && (
+        <PassageFooter
+          passages={passages}
+          currentPassageId={currentSecId}
+          onChangePassage={(id) => gotoSection(id)}
+          onJumpRange={(dir) => jumpRange(dir)}
+          onGridClick={() => console.log("open answer sheet")}
+          rangeLabel={currentPassage?.label ?? ""}
+          rangePrevLabel={passages[currentIndex - 1]?.label ?? ""}
+        />
       )}
     </div>
   );

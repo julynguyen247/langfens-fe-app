@@ -14,6 +14,9 @@ import { useUserStore } from "@/app/store/userStore";
 import {
   audioSubmitFromUrl,
   autoSaveAttempt,
+  getSpeakingExamsById,
+  getWritingExam,
+  gradeSpeaking,
   gradeWriting,
   submitAttempt,
 } from "@/utils/api";
@@ -22,6 +25,10 @@ import { mapApiQuestionToUi } from "@/lib/mapApiQuestionToUi";
 import ListeningAudioBar from "./components/listening/ListeningAudioBar";
 import { useReactMediaRecorder } from "react-media-recorder";
 import { SpeakingRecorderBar } from "./components/speaking/SpeakingRecorderBar";
+import {
+  WritingGradeRes,
+  WritingGradeResult,
+} from "./components/writing/WritingGradeResult";
 
 type Skill = "reading" | "listening" | "writing" | "speaking";
 type QA = Record<string, string>;
@@ -42,7 +49,7 @@ export default function DoTestAttemptPage() {
 
   if (skill === "reading") return <ReadingScreen attemptId={attemptId} />;
   if (skill === "listening") return <ListeningScreen attemptId={attemptId} />;
-  if (skill === "speaking") return <SpeakingScreen />;
+  if (skill === "speaking") return <SpeakingScreen attemptId={attemptId} />;
   if (skill === "writing") return <WritingScreen attemptId={attemptId} />;
 
   return <div className="p-6">Unknown skill: {String(skill)}</div>;
@@ -321,19 +328,57 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
 }
 
 /* -------------------- SPEAKING (UI only) -------------------- */
+type SpeakingExam = {
+  id: string;
+  title: string;
+  description?: string;
+  prompt?: string;
+};
 
-function SpeakingScreen() {
+function SpeakingScreen({ attemptId }: { attemptId: string }) {
+  const examIdFromUrl = attemptId;
+
   const { status, startRecording, stopRecording, mediaBlobUrl } =
     useReactMediaRecorder({ audio: true });
 
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [seconds, setSeconds] = useState(0);
-  const [transcripts, setTranscripts] = useState<
-    Record<SpeakingPartId, string>
-  >({ part1: "", part2: "", part3: "" });
 
-  const currentPart = SPEAKING_PARTS[currentIndex];
+  const [exam, setExam] = useState<SpeakingExam | null>(null);
+  const [loadingExam, setLoadingExam] = useState(true);
+  const [errorExam, setErrorExam] = useState<string | null>(null);
+
+  const [transcript, setTranscript] = useState("");
+  const [grading, setGrading] = useState(false);
+  const [gradeResult, setGradeResult] = useState<any | null>(null);
+
   const isRecording = status === "recording";
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchExam() {
+      try {
+        setLoadingExam(true);
+        setErrorExam(null);
+        const res = await getSpeakingExamsById(examIdFromUrl);
+        if (cancelled) return;
+        const data = res.data?.data ?? res.data;
+        setExam(data ?? null);
+      } catch (e) {
+        console.error(e);
+        if (!cancelled) {
+          setErrorExam("Không tải được đề Speaking. Hãy thử lại sau.");
+        }
+      } finally {
+        if (!cancelled) setLoadingExam(false);
+      }
+    }
+
+    fetchExam();
+    return () => {
+      cancelled = true;
+    };
+  }, [examIdFromUrl]);
 
   useEffect(() => {
     let t: any = null;
@@ -347,110 +392,104 @@ function SpeakingScreen() {
     };
   }, [isRecording]);
 
-  useEffect(() => {
+  const handleStart = () => {
+    if (grading) return;
     setSeconds(0);
-  }, [currentIndex]);
-
-  const handleChangePart = (idx: number) => {
-    if (isRecording) {
-      if (
-        !window.confirm("Bạn đang ghi âm. Dừng lại và chuyển sang part khác?")
-      )
-        return;
-      stopRecording();
-    }
-    setCurrentIndex(idx);
+    setTranscript("");
+    setGradeResult(null);
+    startRecording();
   };
 
-  const submitHandler = async () => {
+  const handleStop = () => {
+    if (!isRecording) return;
+    stopRecording();
+  };
+
+  const handleGrade = async () => {
     if (!mediaBlobUrl) {
-      alert("Chưa có đoạn ghi âm để gửi transcript.");
+      alert("Chưa có đoạn ghi âm để chấm điểm.");
       return;
     }
+
+    const realExamId: string | undefined = exam?.id ?? examIdFromUrl;
+    if (!realExamId) {
+      alert("Không tìm thấy examId để chấm.");
+      return;
+    }
+
     try {
-      const res = await audioSubmitFromUrl(mediaBlobUrl);
-      const newText = res.data?.transcript || "";
-      setTranscripts((prev) => ({
-        ...prev,
-        [currentPart.id]: newText,
-      }));
+      setGrading(true);
+      const blob = await fetch(mediaBlobUrl).then((r) => r.blob());
+
+      const res = await gradeSpeaking({
+        examId: realExamId,
+        timeSpentSeconds: seconds,
+        speech: blob,
+      });
+
+      const payload = res.data?.data ?? res.data;
+
+      const newTranscript =
+        payload?.transcript ??
+        payload?.res?.transcript ??
+        payload?.result?.transcript ??
+        "";
+
+      if (newTranscript) {
+        setTranscript(newTranscript);
+      }
+
+      setGradeResult(payload);
+      alert("Đã chấm xong!");
     } catch (e) {
       console.error(e);
-      alert("Lỗi khi gửi audio, thử lại nhé.");
+      alert("Chấm điểm speaking thất bại, thử lại nhé.");
+    } finally {
+      setGrading(false);
     }
   };
 
-  const currentTranscript = transcripts[currentPart.id];
+  if (loadingExam) {
+    return (
+      <div className="p-6 text-sm text-slate-600">Đang tải đề Speaking...</div>
+    );
+  }
+
+  if (errorExam) {
+    return <div className="p-6 text-sm text-red-600">{errorExam}</div>;
+  }
+
+  if (!exam) {
+    return (
+      <div className="p-6 text-sm text-slate-600">
+        Không tìm thấy đề Speaking. Hãy quay lại danh sách và thử lại.
+      </div>
+    );
+  }
+
+  const title = exam.title || "Speaking test";
+  const description =
+    exam.description ??
+    exam.prompt ??
+    "You will speak about the topic below. Try to give full, natural answers.";
 
   return (
     <div className="flex h-full min-h-0 bg-slate-50">
-      <div className="flex flex-1 max-w-7xl mx-auto my-8 gap-8 w-full px-6">
-        <aside className="w-64 bg-white border rounded-2xl shadow-md p-5 flex flex-col gap-4">
-          <p className="text-xs uppercase tracking-[0.25em] text-slate-400 mb-1">
-            IELTS Speaking
-          </p>
-          <h2 className="text-base font-semibold text-slate-800 mb-1">
-            Test structure
-          </h2>
-
-          {SPEAKING_PARTS.map((p, idx) => {
-            const isActive = idx === currentIndex;
-            const hasTranscript = !!transcripts[p.id];
-            return (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => handleChangePart(idx)}
-                className={`w-full text-left px-4 py-3 rounded-xl text-sm border transition flex items-center justify-between
-                  ${
-                    isActive
-                      ? "bg-[#317EFF] text-white border-[#317EFF]"
-                      : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-                  }`}
-              >
-                <span className="flex flex-col">
-                  <span className="font-semibold">{p.label}</span>
-                  <span
-                    className={`text-[11px] ${
-                      isActive ? "text-slate-100" : "text-slate-500"
-                    }`}
-                  >
-                    {p.title}
-                  </span>
-                </span>
-                {hasTranscript && (
-                  <span
-                    className={`ml-2 inline-flex items-center justify-center w-6 h-6 rounded-full text-[11px] ${
-                      isActive
-                        ? "bg-white text-[#317EFF]"
-                        : "bg-emerald-100 text-emerald-700"
-                    }`}
-                  >
-                    ✓
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </aside>
-
+      <div className="flex flex-1 max-w-5xl mx-auto my-8 gap-8 w-full px-6">
         <main className="flex-1 flex flex-col gap-5 min-h-0">
           <div className="bg-white border rounded-2xl px-8 py-5 flex items-center justify-between shadow-md">
             <div>
               <p className="text-xs uppercase tracking-[0.25em] text-slate-400">
-                Speaking test
+                IELTS Speaking
               </p>
               <h2 className="text-xl font-semibold text-slate-800 mt-1">
-                {currentPart.label} – {currentPart.title}
+                {title}
               </h2>
-              <p className="text-xs text-slate-500 mt-2">
-                Recommended time: {currentPart.recommendedTime}
-              </p>
             </div>
 
             <div className="flex items-center gap-6 text-sm">
               <div className="flex flex-col items-end">
-                <span className="text-xs text-slate-500">Part timer</span>
+                <span className="text-xs text-slate-500">Timer</span>
                 <span className="font-mono font-semibold text-lg text-slate-800">
                   {formatTime(seconds)}
                 </span>
@@ -485,27 +524,12 @@ function SpeakingScreen() {
               <h3 className="text-base font-semibold text-slate-800">
                 Task instructions
               </h3>
-              <p className="text-base text-slate-700 leading-relaxed">
-                {currentPart.description}
+              <p className="text-base text-slate-700 leading-relaxed whitespace-pre-line">
+                {description}
               </p>
-
-              {currentPart.bulletPoints && (
-                <ul className="mt-1 list-disc list-inside text-base text-slate-700 space-y-1.5">
-                  {currentPart.bulletPoints.map((b, i) => (
-                    <li key={i}>{b}</li>
-                  ))}
-                </ul>
-              )}
-
-              {currentPart.id === "part2" && (
-                <div className="mt-4 rounded-lg bg-amber-50 border border-amber-100 px-4 py-3 text-xs text-amber-800">
-                  You will have 1 minute to think about what you are going to
-                  say. Then speak for 1–2 minutes.
-                </div>
-              )}
             </section>
 
-            <section className="w-full max-w-lg flex flex-col gap-4">
+            <section className="w-full max-w-md flex flex-col gap-4">
               <div className="bg-white border rounded-2xl p-6 shadow-md flex flex-col gap-4">
                 <h3 className="text-sm font-semibold text-slate-800">
                   Recording panel
@@ -531,11 +555,10 @@ function SpeakingScreen() {
                 <div className="flex items-center justify-between gap-4 text-xs text-slate-500 mt-3">
                   <button
                     type="button"
-                    onClick={startRecording}
-                    disabled={isRecording}
-                    className={`flex-1 px-4 py-2.5 rounded-lg font-semibold text-sm transition
-                    ${
-                      isRecording
+                    onClick={handleStart}
+                    disabled={isRecording || grading}
+                    className={`flex-1 px-4 py-2.5 rounded-lg font-semibold text-sm transition ${
+                      isRecording || grading
                         ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                         : "bg-[#317EFF] text-white hover:bg-[#74a4f6]"
                     }`}
@@ -545,11 +568,10 @@ function SpeakingScreen() {
 
                   <button
                     type="button"
-                    onClick={stopRecording}
-                    disabled={!isRecording}
-                    className={`flex-1 px-4 py-2.5 rounded-lg font-semibold text-sm transition
-                    ${
-                      !isRecording
+                    onClick={handleStop}
+                    disabled={!isRecording || grading}
+                    className={`flex-1 px-4 py-2.5 rounded-lg font-semibold text-sm transition ${
+                      !isRecording || grading
                         ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                         : "bg-red-500 text-white hover:bg-red-600"
                     }`}
@@ -560,42 +582,51 @@ function SpeakingScreen() {
 
                 <button
                   type="button"
-                  onClick={submitHandler}
-                  disabled={!mediaBlobUrl}
-                  className={`mt-3 w-full px-4 py-2.5 rounded-lg font-semibold text-sm transition
-                  ${
-                    mediaBlobUrl
+                  onClick={handleGrade}
+                  disabled={!mediaBlobUrl || grading}
+                  className={`mt-3 w-full px-4 py-2.5 rounded-lg font-semibold text-sm transition ${
+                    mediaBlobUrl && !grading
                       ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200"
                       : "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
                   }`}
                 >
-                  {mediaBlobUrl
-                    ? "Generate transcript for this part"
-                    : "Record first to get transcript"}
+                  {grading
+                    ? "Đang chấm..."
+                    : mediaBlobUrl
+                    ? "Grade & generate transcript"
+                    : "Record first to grade"}
                 </button>
               </div>
 
               <div className="bg-white border rounded-2xl p-5 shadow-md flex-1 min-h-[220px]">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold text-slate-800">
-                    Transcript – {currentPart.label}
+                    Transcript
                   </h3>
-                  {currentTranscript && (
+                  {transcript && (
                     <span className="text-[11px] px-2 py-1 rounded-full bg-slate-100 text-slate-600">
                       AI generated
                     </span>
                   )}
                 </div>
 
-                {currentTranscript ? (
+                {transcript ? (
                   <p className="text-sm text-slate-700 whitespace-pre-line leading-relaxed">
-                    {currentTranscript}
+                    {transcript}
                   </p>
                 ) : (
                   <p className="text-xs text-slate-500">
-                    Sau khi ghi âm và bấm <b>Generate transcript</b>, phần nói
-                    của bạn trong {currentPart.label} sẽ hiển thị ở đây.
+                    Sau khi ghi âm và bấm <b>Grade &amp; generate transcript</b>
+                    , transcript phần nói của bạn sẽ hiển thị ở đây.
                   </p>
+                )}
+
+                {gradeResult && (
+                  <div className="mt-4 p-3 rounded-lg bg-slate-50 border border-slate-200 max-h-64 overflow-auto">
+                    <pre className="text-[11px] text-slate-700 whitespace-pre-wrap">
+                      {JSON.stringify(gradeResult, null, 2)}
+                    </pre>
+                  </div>
                 )}
               </div>
             </section>
@@ -609,14 +640,43 @@ function SpeakingScreen() {
 /* -------------------- WRITING (stub) -------------------- */
 
 function WritingScreen({ attemptId }: { attemptId: string }) {
-  const attempt = useAttemptStore((s) => s.byId[attemptId]);
-  const examId = attempt?.paper?.id;
+  const examIdFromUrl = attemptId;
+
+  const [exam, setExam] = useState<any | null>(null);
+  const [loadingExam, setLoadingExam] = useState(true);
+  const [errorExam, setErrorExam] = useState<string | null>(null);
 
   const [answer, setAnswer] = useState("");
   const [wordCount, setWordCount] = useState(0);
   const [seconds, setSeconds] = useState(0);
   const [grading, setGrading] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<WritingGradeRes | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchExam() {
+      try {
+        setLoadingExam(true);
+        setErrorExam(null);
+        const res = await getWritingExam(examIdFromUrl);
+        if (cancelled) return;
+        setExam(res.data?.data ?? null);
+      } catch (e) {
+        console.error(e);
+        if (!cancelled) {
+          setErrorExam("Không tải được đề Writing. Hãy thử lại sau.");
+        }
+      } finally {
+        if (!cancelled) setLoadingExam(false);
+      }
+    }
+
+    fetchExam();
+    return () => {
+      cancelled = true;
+    };
+  }, [examIdFromUrl]);
 
   useEffect(() => {
     const t = setInterval(() => setSeconds((s) => s + 1), 1000);
@@ -630,7 +690,9 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
   };
 
   const handleSubmit = async () => {
-    if (!examId) {
+    const realExamId: string | undefined = exam?.id ?? examIdFromUrl;
+
+    if (!realExamId) {
       alert("Không tìm thấy examId");
       return;
     }
@@ -641,8 +703,27 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
 
     try {
       setGrading(true);
-      const res = await gradeWriting(examId, answer, seconds);
-      setResult(res.data);
+      const res = await gradeWriting(realExamId, answer, seconds);
+
+      // JSON em gửi:
+      // {
+      //   isSuccess: true,
+      //   message: "Submitted",
+      //   data: { id: "...", res: { ...writingResult } }
+      // }
+      const rawData = res.data;
+      const payload: WritingGradeRes | undefined =
+        rawData?.data?.res ?? rawData?.res;
+
+      console.log("grade raw:", rawData);
+      console.log("grade payload:", payload);
+
+      if (!payload) {
+        alert("Không nhận được dữ liệu chấm điểm.");
+        return;
+      }
+
+      setResult(payload);
       alert("Đã chấm xong!");
     } catch (e) {
       console.error(e);
@@ -652,15 +733,35 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
     }
   };
 
-  const writingPrompt =
-    attempt?.paper?.sections?.[0]?.instructionsMd ??
+  const examTitle: string = exam?.title ?? "Writing";
+
+  const writingPrompt: string =
+    exam?.taskText ??
     "Write an essay of at least 150 words on the following topic:\n\nDo you think technology improves the quality of life? Why or why not?";
+
+  if (loadingExam) {
+    return (
+      <div className="p-6 text-sm text-slate-600">Đang tải đề Writing...</div>
+    );
+  }
+
+  if (errorExam) {
+    return <div className="p-6 text-sm text-red-600">{errorExam}</div>;
+  }
+
+  if (!exam) {
+    return (
+      <div className="p-6 text-sm text-slate-600">
+        Không tìm thấy đề Writing. Hãy quay lại danh sách và thử lại.
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full min-h-0 bg-white rounded-xl shadow overflow-hidden">
       <div className="border-b p-4 bg-white sticky top-0 z-10 flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-slate-800">Writing</h2>
+          <h2 className="text-lg font-semibold text-slate-800">{examTitle}</h2>
           <p className="text-xs text-slate-500">
             Write your essay in the box below
           </p>
@@ -702,14 +803,8 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
           placeholder="Type your essay here…"
           className="w-full min-h-[300px] h-full p-4 border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#317EFF] focus:border-transparent text-slate-800"
         />
-        {result && (
-          <div className="mt-6 p-4 bg-white border border-slate-200 rounded-lg">
-            <h4 className="font-semibold text-slate-800 mb-2">Kết quả chấm:</h4>
-            <pre className="text-sm text-slate-700 whitespace-pre-wrap">
-              {JSON.stringify(result, null, 2)}
-            </pre>
-          </div>
-        )}
+
+        {result && <WritingGradeResult data={result} />}
       </div>
     </div>
   );
