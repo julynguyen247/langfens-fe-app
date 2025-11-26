@@ -120,7 +120,6 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
   const router = useRouter();
   const { user } = useUserStore();
   const attempt = useAttemptStore((s) => s.byId[attemptId])!;
-  const clearAttempt = useAttemptStore((s) => s.clear);
 
   const sections = useMemo(
     () => [...(attempt.paper.sections ?? [])].sort((a, b) => a.idx - b.idx),
@@ -132,7 +131,6 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
   const sp = useSearchParams();
   const secFromUrl = sp.get("sec");
   const activeSec = sections.find((s) => s.id === secFromUrl) ?? sections[0];
-
   const panelQuestions = useMemo<UiQuestion[]>(
     () =>
       (activeSec?.questions ?? [])
@@ -142,11 +140,28 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
     [activeSec]
   );
 
+  const questionUiKindMap = useMemo(() => {
+    const m: Record<string, QuestionUiKind> = {};
+    for (const q of panelQuestions) {
+      m[String(q.id)] = q.uiKind;
+    }
+    return m;
+  }, [panelQuestions]);
+
   const { run: debouncedSave, cancel: cancelAutoSave } = useDebouncedAutoSave(
     user?.id,
     attemptId
   );
+
   const buildSectionId = (qid: string) => activeSec?.id;
+
+  const buildTextAnswer = (qid: string, value: string) => {
+    if (!value) return undefined;
+    const kind = questionUiKindMap[qid];
+
+    if (kind === "choice_single") return undefined;
+    return value;
+  };
 
   const [submitting, setSubmitting] = useState(false);
 
@@ -157,19 +172,29 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
     try {
       setSubmitting(true);
       cancelAutoSave();
+
       const makePayload = (answers: QA) => ({
-        answers: Object.entries(answers).map(([questionId, value]) => ({
-          questionId,
-          sectionId: buildSectionId(questionId) ?? "",
-          selectedOptionIds: value ? [value] : [],
-        })),
+        answers: Object.entries(answers).map(([questionId, value]) => {
+          const sectionId = buildSectionId(questionId) ?? "";
+          const textAnswer = buildTextAnswer(questionId, value);
+          const hasText = !!textAnswer && textAnswer.trim().length > 0;
+
+          return {
+            questionId,
+            sectionId,
+
+            selectedOptionIds: !hasText && value ? [value] : [],
+            textAnswer: hasText ? textAnswer : undefined,
+          };
+        }),
         clientRevision: Date.now(),
       });
+
       await autoSaveAttempt(attemptId, makePayload(lastAnswersRef.current));
       await submitAttempt(attemptId);
-      clearAttempt?.(attemptId);
       router.replace(`/attempts/${attemptId}`);
     } catch (e) {
+      console.error(e);
       setSubmitting(false);
       alert("Nộp bài thất bại. Vui lòng thử lại.");
     }
@@ -215,12 +240,11 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
             questions={panelQuestions}
             onAnswersChange={(next) => {
               const casted = next as QA;
-              // lưu lại toàn bộ answer mới nhất để lúc submit có data
               lastAnswersRef.current = {
                 ...lastAnswersRef.current,
                 ...casted,
               };
-              debouncedSave(casted, buildSectionId);
+              debouncedSave(casted, buildSectionId, buildTextAnswer);
             }}
           />
         </div>

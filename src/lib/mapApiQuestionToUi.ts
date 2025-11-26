@@ -1,5 +1,5 @@
 import { Question } from "@/app/do-test/[skill]/[attemptId]/components/common/QuestionPanel";
-import { BackendQuestionType, QuestionUiKind } from "@/type/question.type";
+import { BackendQuestionType, QuestionUiKind } from "@/types/question.type";
 
 type ApiOption = {
   id: string;

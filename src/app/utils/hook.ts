@@ -1,5 +1,6 @@
 import { autoSaveAttempt } from "@/utils/api";
 import { useRef } from "react";
+
 type QA = Record<string, string>;
 
 export function useDebouncedAutoSave(
@@ -10,27 +11,34 @@ export function useDebouncedAutoSave(
 
   const buildPayload = (
     answers: QA,
-    buildSectionId: (qid: string) => string | undefined
+    buildSectionId: (qid: string) => string | undefined,
+    buildTextAnswer?: (qid: string, value: string) => string | undefined
   ) => ({
-    answers: Object.entries(answers).map(([questionId, value]) => ({
-      questionId,
-      sectionId: buildSectionId(questionId) ?? "",
-      selectedOptionIds: value ? [value] : [],
-    })),
+    answers: Object.entries(answers).map(([questionId, value]) => {
+      const textAnswer = buildTextAnswer?.(questionId, value);
+      const hasText = !!textAnswer && textAnswer.trim().length > 0;
+
+      return {
+        questionId,
+        sectionId: buildSectionId(questionId) ?? "",
+        selectedOptionIds: !hasText && value ? [value] : [],
+        textAnswer: hasText ? textAnswer : undefined,
+      };
+    }),
     clientRevision: Date.now(),
   });
 
   const run = (
     answers: QA,
     buildSectionId: (qid: string) => string | undefined,
-    buildTextAnswer?: (qid: string, optionId: string) => string | undefined
+    buildTextAnswer?: (qid: string, value: string) => string | undefined
   ) => {
     if (!userId) return;
     if (t.current) clearTimeout(t.current);
 
     t.current = setTimeout(async () => {
       try {
-        const payload = buildPayload(answers, buildSectionId);
+        const payload = buildPayload(answers, buildSectionId, buildTextAnswer);
         await autoSaveAttempt(attemptId, payload);
       } catch {}
     }, 2000);

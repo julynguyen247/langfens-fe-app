@@ -94,7 +94,6 @@ export default function QuestionPanel({
         {qList.map((q, idx) => {
           const value = answers[q.id] ?? "";
 
-          // detect T/F/NG để show instruction
           const isTfNg =
             q.backendType === "TRUE_FALSE_NOT_GIVEN" ||
             q.backendType === "YES_NO_NOT_GIVEN";
@@ -112,9 +111,6 @@ export default function QuestionPanel({
                   selected={value}
                   onSelect={(_id: number | string, v: string) =>
                     handleAnswer(String(q.id), v)
-                  }
-                  instruction={
-                    idx === 0 && isTfNg ? instructionData : undefined
                   }
                 />
               );

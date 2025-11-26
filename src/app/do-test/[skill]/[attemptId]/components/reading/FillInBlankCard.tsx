@@ -14,7 +14,7 @@ export default function FillInBlankCard({ stem, value, onChange }: Props) {
 
   return (
     <div className="border border-slate-200 rounded-lg p-4 space-y-3 bg-white">
-      <div className="text-slate-900 leading-relaxed">
+      <div className="text-slate-900 leading-relaxed font-bold">
         <ReactMarkdown
           components={{
             p: ({ node, ...props }) => (

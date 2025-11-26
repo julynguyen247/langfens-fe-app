@@ -94,6 +94,7 @@ export default function PracticeBank({
 
       if (skill === "reading" || skill === "listening") {
         res = await startAttempt(item.id);
+        console.log(res);
       } else if (skill === "writing") {
         res = await startWritingExam(item.id);
       } else if (skill === "speaking") {

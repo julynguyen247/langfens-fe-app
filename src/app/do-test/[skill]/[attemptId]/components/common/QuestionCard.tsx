@@ -24,19 +24,7 @@ export default function QuestionCard({
   };
 }) {
   return (
-    <div className="rounded-lg border p-4 bg-white text-black">
-      {instruction && (
-        <div className="mb-3">
-          <InstructionBox
-            title={instruction.title}
-            note={instruction.note}
-            items={instruction.items}
-            sticky={false}
-            className="text-sm"
-          />
-        </div>
-      )}
-
+    <div className="rounded-lg  p-4 bg-white text-black">
       <div className="font-bold mb-3">{question.stem}</div>
       <div className="space-y-2">
         {question.choices.map((c) => {

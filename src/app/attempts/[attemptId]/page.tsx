@@ -163,9 +163,6 @@ export default function AttemptResultPage() {
         <Stat label="Câu bỏ trống">{blankCount}</Stat>
         <Stat label="Tổng thời gian">{data.totalTime}</Stat>
         <Stat label="Số câu đúng">{data.correctCount}</Stat>
-        <Stat label="Điểm nội bộ">
-          {data.awardedTotal}/{data.totalPoints}
-        </Stat>
       </div>
 
       {data.needsManualReview > 0 && (
