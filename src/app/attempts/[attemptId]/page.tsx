@@ -50,6 +50,25 @@ export default function AttemptResultPage() {
       try {
         const res = await getAttemptResult(attemptId as any);
         const raw = res?.data?.data ?? res?.data ?? res;
+
+        const paper = raw.paperWithAnswers ?? raw.paper ?? null;
+        const questionMetaById: Record<string, any> = {};
+
+        if (paper?.sections) {
+          for (const sec of paper.sections) {
+            if (!sec?.questions) continue;
+            for (const q of sec.questions) {
+              if (!q?.id) continue;
+              questionMetaById[String(q.id)] = {
+                idx: q.idx,
+                promptMd: q.promptMd ?? "",
+                explanationMd: q.explanationMd ?? "",
+                options: q.options ?? null,
+              };
+            }
+          }
+        }
+
         const answers: any[] = raw.answers ?? raw.items ?? raw.questions ?? [];
         const totalTimeSec =
           parseSecondsAny(raw.totalTime) ??
@@ -66,25 +85,45 @@ export default function AttemptResultPage() {
             raw.submittedAt ??
             new Date().toISOString(),
           timeUsedSec: totalTimeSec,
-          correctCount: raw.correct ?? 0,
+          correctCount: raw.correct ?? raw.correctCount ?? 0,
           totalPoints: raw.scoreRaw ?? raw.totalPoints ?? 0,
           awardedTotal: raw.scorePct ?? raw.awardedTotal ?? 0,
           needsManualReview: raw.needsManualReview ?? 0,
-          bandScore: raw.ieltsBand,
-          questions: answers.map(
-            (a: any, i: number): AttemptQuestionResult => ({
-              questionId: String(a.questionId ?? a.id ?? i + 1),
-              index: a.index ?? i + 1,
-              promptMd: a.promptMd ?? a.prompt ?? "",
-              selectedOptionIds: a.selectedOptionIds ?? [],
-              selectedAnswerText: a.selectedAnswerText ?? "",
-              correctAnswerText: a.correctAnswerText ?? "",
+          bandScore: raw.ieltsBand ?? raw.bandScore,
+          questions: answers.map((a: any, i: number): AttemptQuestionResult => {
+            const qid = String(a.questionId ?? a.id ?? i + 1);
+            const meta = questionMetaById[qid];
+            const optionIds: string[] = a.selectedOptionIds ?? [];
+
+            let selectedText: string = a.selectedAnswerText ?? "";
+            if (
+              !selectedText &&
+              Array.isArray(optionIds) &&
+              optionIds.length > 0 &&
+              meta?.options
+            ) {
+              selectedText = meta.options
+                .filter((o: any) => optionIds.includes(o.id))
+                .map((o: any) => o.contentMd ?? "")
+                .filter((t: string) => t)
+                .join(" | ");
+            }
+
+            const correctText: string = a.correctAnswerText ?? "";
+
+            return {
+              questionId: qid,
+              index: a.index ?? meta?.idx ?? i + 1,
+              promptMd: a.promptMd ?? meta?.promptMd ?? "",
+              selectedOptionIds: optionIds,
+              selectedAnswerText: selectedText,
+              correctAnswerText: correctText,
               isCorrect: typeof a.isCorrect === "boolean" ? a.isCorrect : null,
-              explanationMd: a.explanationMd ?? a.explanation ?? "",
+              explanationMd: a.explanationMd ?? meta?.explanationMd ?? "",
               timeSpentSec:
                 a.timeSpentSec ?? a.elapsedSec ?? a.time ?? undefined,
-            })
-          ),
+            };
+          }),
           totalTime: fmtMinSec(totalTimeSec),
         };
 
