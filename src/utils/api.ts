@@ -311,8 +311,15 @@ export async function gradeSpeaking(params: {
 
   const filename =
     speech instanceof File ? speech.name : "speaking-recording.webm";
+
   formData.append("speech", speech, filename);
 
-  const res = await api.post("/api/speaking/grade", formData);
+  const res = await apisSpeaking.post("/speaking/grade", formData, {
+    headers: {
+      "Content-Type": undefined,
+    },
+    withCredentials: true,
+  });
+
   return res;
 }

@@ -29,6 +29,10 @@ import {
   WritingGradeRes,
   WritingGradeResult,
 } from "./components/writing/WritingGradeResult";
+import {
+  SpeakingGradeRes,
+  SpeakingGradeResult,
+} from "./components/speaking/SpeakingGradeResult";
 
 type Skill = "reading" | "listening" | "writing" | "speaking";
 type QA = Record<string, string>;
@@ -289,19 +293,36 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
     .slice()
     .sort((a, b) => a.idx - b.idx)
     .map((q: any) => mapApiQuestionToUi(q));
+  const questionUiKindMap = useMemo(() => {
+    const m: Record<string, QuestionUiKind> = {};
+    for (const q of panelQuestions) {
+      m[String(q.id)] = q.uiKind;
+    }
+    return m;
+  }, [panelQuestions]);
 
   const { run: debouncedSave, cancel: cancelAutoSave } = useDebouncedAutoSave(
     user?.id,
     attemptId
   );
+
+  const lastAnswersRef = useRef<QA>({});
+
   const buildSectionId = (qid: string) => sectionOfQuestion.get(qid);
+
+  const buildTextAnswer = (qid: string, value: string) => {
+    if (!value) return undefined;
+    const kind = questionUiKindMap[qid];
+
+    if (kind === "choice_single") return undefined;
+    return value;
+  };
 
   const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit() {
     if (submitting) return;
-    const ok = window.confirm("Bạn chắc chắn muốn nộp bài?");
-    if (!ok) return;
+    if (!window.confirm("Bạn chắc chắn muốn nộp bài?")) return;
 
     try {
       setSubmitting(true);
@@ -321,20 +342,17 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
       <div className="border-b p-4 bg-white sticky top-0 z-10 flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-slate-800">Listening</h2>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleSubmit}
-              disabled={submitting}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold transition
-              ${
-                submitting
-                  ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                  : "bg-[#317EFF] text-white hover:bg-[#74a4f6]"
-              }`}
-            >
-              {submitting ? "Đang nộp…" : "Nộp bài"}
-            </button>
-          </div>
+          <button
+            onClick={handleSubmit}
+            disabled={submitting}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+              submitting
+                ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                : "bg-[#317EFF] text-white hover:bg-[#74a4f6]"
+            }`}
+          >
+            {submitting ? "Đang nộp…" : "Nộp bài"}
+          </button>
         </div>
 
         <ListeningAudioBar src={listeningAudioUrl} />
@@ -344,7 +362,14 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
         <QuestionPanel
           attemptId={attemptId}
           questions={panelQuestions}
-          onAnswersChange={(next) => debouncedSave(next as QA, buildSectionId)}
+          onAnswersChange={(next) => {
+            const casted = next as QA;
+            lastAnswersRef.current = {
+              ...lastAnswersRef.current,
+              ...casted,
+            };
+            debouncedSave(casted, buildSectionId, buildTextAnswer);
+          }}
         />
       </div>
     </div>
@@ -366,14 +391,12 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
     useReactMediaRecorder({ audio: true });
 
   const [seconds, setSeconds] = useState(0);
-
   const [exam, setExam] = useState<SpeakingExam | null>(null);
   const [loadingExam, setLoadingExam] = useState(true);
   const [errorExam, setErrorExam] = useState<string | null>(null);
-
   const [transcript, setTranscript] = useState("");
   const [grading, setGrading] = useState(false);
-  const [gradeResult, setGradeResult] = useState<any | null>(null);
+  const [gradeResult, setGradeResult] = useState<SpeakingGradeRes | null>(null);
 
   const isRecording = status === "recording";
 
@@ -443,21 +466,32 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
 
     try {
       setGrading(true);
+
+      // 1) Lấy blob audio từ URL
       const blob = await fetch(mediaBlobUrl).then((r) => r.blob());
 
+      // 2) Gửi lên server để chấm
       const res = await gradeSpeaking({
         examId: realExamId,
         timeSpentSeconds: seconds,
         speech: blob,
       });
 
-      const payload = res.data?.data ?? res.data;
+      const rawData = res.data;
+      const payload: SpeakingGradeRes | undefined =
+        rawData?.data?.res ?? rawData?.res ?? rawData;
 
+      console.log("speaking grade raw:", rawData);
+      console.log("speaking grade payload:", payload);
+
+      if (!payload) {
+        alert("Không nhận được dữ liệu chấm điểm.");
+        return;
+      }
+
+      // 👉 Lấy transcriptRaw / transcriptNormalized từ kết quả chấm
       const newTranscript =
-        payload?.transcript ??
-        payload?.res?.transcript ??
-        payload?.result?.transcript ??
-        "";
+        payload.transcriptRaw || payload.transcriptNormalized || "";
 
       if (newTranscript) {
         setTranscript(newTranscript);
@@ -544,13 +578,21 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
           </div>
 
           <div className="flex flex-1 gap-5 min-h-0">
-            <section className="flex-1 bg-white border rounded-2xl p-7 shadow-md flex flex-col gap-4 min-h-0">
-              <h3 className="text-base font-semibold text-slate-800">
-                Task instructions
-              </h3>
-              <p className="text-base text-slate-700 leading-relaxed whitespace-pre-line">
-                {description}
-              </p>
+            <section className="flex-1 bg-white border rounded-2xl p-7 shadow-md flex flex-col min-h-0">
+              <div>
+                <h3 className="text-base font-semibold text-slate-800">
+                  Task instructions
+                </h3>
+                <p className="text-base text-slate-700 leading-relaxed whitespace-pre-line">
+                  {description}
+                </p>
+              </div>
+
+              {gradeResult && (
+                <div className="mt-6 flex-1 min-h-0 overflow-auto pr-2">
+                  <SpeakingGradeResult data={gradeResult} />
+                </div>
+              )}
             </section>
 
             <section className="w-full max-w-md flex flex-col gap-4">
@@ -643,14 +685,6 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
                     Sau khi ghi âm và bấm <b>Grade &amp; generate transcript</b>
                     , transcript phần nói của bạn sẽ hiển thị ở đây.
                   </p>
-                )}
-
-                {gradeResult && (
-                  <div className="mt-4 p-3 rounded-lg bg-slate-50 border border-slate-200 max-h-64 overflow-auto">
-                    <pre className="text-[11px] text-slate-700 whitespace-pre-wrap">
-                      {JSON.stringify(gradeResult, null, 2)}
-                    </pre>
-                  </div>
                 )}
               </div>
             </section>
