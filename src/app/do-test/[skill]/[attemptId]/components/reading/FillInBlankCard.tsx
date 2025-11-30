@@ -10,7 +10,7 @@ type Props = {
 };
 
 export default function FillInBlankCard({ stem, value, onChange }: Props) {
-  const text = stem.replace(/\\n/g, "\n");
+  const text = stem.replace(/\\n/g, "\n").replace(/\[blank[-_]\w+\]/gi, "____");
 
   return (
     <div className="border border-slate-200 rounded-lg p-4 space-y-3 bg-white">
