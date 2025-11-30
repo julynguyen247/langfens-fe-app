@@ -1,4 +1,6 @@
 "use client";
+
+import ReactMarkdown from "react-markdown";
 import InstructionBox from "./InstructionBox";
 
 type Choice =
@@ -12,20 +14,25 @@ export default function QuestionCard({
   question,
   selected,
   onSelect,
-  instruction,
 }: {
   question: { id: string; stem: string; choices: Choice[] };
   selected?: string;
   onSelect: (id: string, value: string) => void;
-  instruction?: {
-    title: string;
-    note?: string;
-    items: { label: string; text: string }[];
-  };
 }) {
   return (
-    <div className="rounded-lg  p-4 bg-white text-black">
-      <div className="font-bold mb-3">{question.stem}</div>
+    <div className="rounded-lg p-4 bg-white text-black">
+      <div className="font-bold mb-3">
+        <ReactMarkdown
+          components={{
+            p: ({ node, ...props }) => (
+              <p className="whitespace-pre-wrap" {...props} />
+            ),
+          }}
+        >
+          {question.stem}
+        </ReactMarkdown>
+      </div>
+
       <div className="space-y-2">
         {question.choices.map((c) => {
           const value = typeof c === "string" ? c : c.value;
@@ -36,14 +43,21 @@ export default function QuestionCard({
             <button
               key={value}
               onClick={() => onSelect(question.id, value)}
-              className={`w-full text-left px-3 py-2 rounded border transition 
-                ${
-                  active
-                    ? "border-blue-600 bg-blue-50"
-                    : "border-gray-200 hover:bg-gray-50"
-                }`}
+              className={`w-full text-left px-3 py-2 rounded border transition ${
+                active
+                  ? "border-blue-600 bg-blue-50"
+                  : "border-gray-200 hover:bg-gray-50"
+              }`}
             >
-              {label}
+              <ReactMarkdown
+                components={{
+                  p: ({ node, ...props }) => (
+                    <p className="whitespace-pre-wrap" {...props} />
+                  ),
+                }}
+              >
+                {label}
+              </ReactMarkdown>
             </button>
           );
         })}

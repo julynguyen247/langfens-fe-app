@@ -3,7 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { getAttempt, getMe } from "@/utils/api";
+import { getAttempt, getMe, getPublicExams, startAttempt } from "@/utils/api";
+import { FiPlay } from "react-icons/fi";
+import { TbTargetArrow } from "react-icons/tb";
+import { useAttemptStore } from "../store/useAttemptStore";
 
 type Course = {
   id: string;
@@ -56,6 +59,8 @@ export default function Home() {
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [loadingAttempts, setLoadingAttempts] = useState(true);
   const [attemptErr, setAttemptErr] = useState<string | null>(null);
+  const [placementTestId, setPlacementTestId] = useState("");
+  const { setAttempt } = useAttemptStore();
 
   useEffect(() => {
     getMe().catch(() => {});
@@ -90,10 +95,132 @@ export default function Home() {
     return { total, avg: Math.round(avg), streakDays };
   }, [attempts]);
 
+  useEffect(() => {
+    async function fetchTests() {
+      const res = await getPublicExams(1, 24);
+      const data = res.data.data.filter((item: any) =>
+        item.title.includes("English Placement")
+      );
+      console.log(data[0].id);
+      setPlacementTestId(data[0].id);
+    }
+    fetchTests();
+  }, []);
+
+  async function handleStart(id: string) {
+    try {
+      let res;
+      res = await startAttempt(id);
+      console.log(res);
+      const payload = res.data?.data;
+      const attemptId: string | undefined = payload?.attemptId ?? payload?.id;
+
+      if (!attemptId) {
+        throw new Error("Missing attemptId");
+      }
+      setAttempt(payload);
+      router.push(`/do-test/reading/${attemptId}`);
+    } catch (err) {
+      console.error(err);
+      alert("Không thể bắt đầu bài. Vui lòng thử lại!");
+    }
+  }
+
+  const hasPlacementTest = false;
+
   return (
     <div className="w-full min-h-screen bg-gradient-to-b from-blue-50 to-white">
       <main className="mx-auto max-w-6xl px-4 sm:px-6 py-8 space-y-6">
         <HeroHeader />
+        {hasPlacementTest ? (
+          <Card>
+            <div className="space-y-5">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-slate-900">
+                  Bài kiểm tra đầu vào
+                </p>
+
+                <button
+                  onClick={() => router.push("/attempts")}
+                  className="text-[11px] font-semibold tracking-wide uppercase text-blue-600 hover:text-blue-700"
+                >
+                  Xem kết quả
+                </button>
+              </div>
+
+              <div className="pt-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-sm">
+                    <FiPlay className="w-5 h-5" />
+                  </div>
+
+                  <div className="relative flex-1 h-5 rounded-full bg-slate-200 overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: "60%" }}
+                      transition={{ duration: 0.7, ease: "easeOut" }}
+                      className="absolute inset-y-0 left-0"
+                    >
+                      <div
+                        className="w-full h-full"
+                        style={{
+                          backgroundImage:
+                            "repeating-linear-gradient(45deg,#3b82f6 0,#3b82f6 8px,#2563eb 8px,#2563eb 16px)",
+                        }}
+                      />
+                    </motion.div>
+
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <span className="text-[12px] font-semibold text-white drop-shadow">
+                        60%
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-sm">
+                    <TbTargetArrow className="w-5 h-5" />
+                  </div>
+                </div>
+
+                <div className="mt-2 text-[11px] text-slate-500">
+                  Đã hoàn thành 60% bài kiểm tra đầu vào.
+                </div>
+              </div>
+            </div>
+          </Card>
+        ) : (
+          <Card>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-slate-900">
+                  Bài kiểm tra đầu vào
+                </p>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-sm">
+                  <FiPlay className="w-5 h-5" />
+                </div>
+
+                <div className="flex-1 space-y-3">
+                  <p className="text-sm text-slate-600">
+                    Hãy làm bài kiểm tra đầu vào để chúng tôi có thể đánh giá
+                    trình độ của bạn khách quan hơn và gợi ý lộ trình phù hợp.
+                  </p>
+
+                  <button
+                    onClick={() => {
+                      handleStart(placementTestId);
+                    }}
+                    className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700"
+                  >
+                    Bắt đầu làm
+                  </button>
+                </div>
+              </div>
+            </div>
+          </Card>
+        )}
 
         <SectionTitle> Các khóa học của tôi </SectionTitle>
         <motion.div
@@ -308,7 +435,7 @@ function Card({
 }) {
   return (
     <motion.div
-      className={`rounded-2xl border bg-white p-4 shadow-sm ${
+      className={`rounded-2xl  bg-white p-4 shadow-sm ${
         hover ? "hover:shadow-lg" : ""
       }`}
       whileHover={{ y: hover ? -2 : 0 }}

@@ -467,10 +467,8 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
     try {
       setGrading(true);
 
-      // 1) Lấy blob audio từ URL
       const blob = await fetch(mediaBlobUrl).then((r) => r.blob());
 
-      // 2) Gửi lên server để chấm
       const res = await gradeSpeaking({
         examId: realExamId,
         timeSpentSeconds: seconds,
@@ -488,8 +486,6 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
         alert("Không nhận được dữ liệu chấm điểm.");
         return;
       }
-
-      // 👉 Lấy transcriptRaw / transcriptNormalized từ kết quả chấm
       const newTranscript =
         payload.transcriptRaw || payload.transcriptNormalized || "";
 

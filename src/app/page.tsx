@@ -202,7 +202,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ORANGE SECTION */}
       <section className="py-16 bg-white">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-10 items-center">
           <div className="order-last lg:order-first">
@@ -269,7 +268,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* STATS */}
       <section className="py-14 bg-[#F5F5F5]">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <motion.h2
@@ -326,7 +324,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CTA */}
       <section className="py-20 bg-white">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <motion.div
@@ -376,7 +373,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
       <footer className="border-t bg-[#F5F5F5]">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-6 text-center text-sm text-gray-600">
           <p>© 2025 Langfens. All rights reserved.</p>
