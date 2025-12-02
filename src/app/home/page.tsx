@@ -119,7 +119,7 @@ export default function Home() {
         throw new Error("Missing attemptId");
       }
       setAttempt(payload);
-      router.push(`/do-test/reading/${attemptId}`);
+      router.push(`/placement/${attemptId}`);
     } catch (err) {
       console.error(err);
       alert("Không thể bắt đầu bài. Vui lòng thử lại!");
