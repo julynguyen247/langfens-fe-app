@@ -34,10 +34,12 @@ export default function MultiSkillAttemptPage() {
   const { user } = useUserStore();
   const attempt = useAttemptStore((s) => s.byId[attemptId]);
   const clearAttempt = useAttemptStore((s) => s.clear);
+
   const [activeTab, setActiveTab] = useState<Tab>("reading");
   const [submitting, setSubmitting] = useState(false);
   const [answers, setAnswers] = useState<QA>({});
   const lastAnswersRef = useRef<QA>({});
+
   const initialSecondsLeft = attempt?.timeLeft ?? attempt?.durationSec ?? 3600;
   const [secondsLeft, setSecondsLeft] = useState(initialSecondsLeft);
 
@@ -48,12 +50,13 @@ export default function MultiSkillAttemptPage() {
         : [],
     [attempt?.paper?.sections]
   );
+
   const questionMeta = useMemo(() => {
     const m = new Map<string, QuestionMeta>();
     for (const s of sections) {
       for (const q of s.questions) {
-        m.set(s.id, {
-          sectionId: q.id,
+        m.set(q.id, {
+          sectionId: s.id,
           type: q.type as BackendQuestionType,
           skill: q.skill.toLowerCase(),
         });
@@ -62,13 +65,14 @@ export default function MultiSkillAttemptPage() {
     return m;
   }, [sections]);
 
-  const readingQuestionsApi = useMemo(() => {
-    const questions = sections
-      .map((s) => s.questions)
-      .flat()
-      .filter((a) => a.skill.toLowerCase() === "reading");
-    return questions;
-  }, [sections]);
+  const readingQuestionsApi = useMemo(
+    () =>
+      sections
+        .map((s) => s.questions)
+        .flat()
+        .filter((a) => a.skill.toLowerCase() === "reading"),
+    [sections]
+  );
 
   const listeningSection = useMemo(
     () =>
@@ -101,10 +105,11 @@ export default function MultiSkillAttemptPage() {
 
   const writingQuestion = useMemo(() => {
     if (!writingSection) return null;
-    const q = (writingSection.questions ?? []).find(
-      (q: any) => String(q.skill).toLowerCase() === "writing"
+    return (
+      (writingSection.questions ?? []).find(
+        (q: any) => String(q.skill).toLowerCase() === "writing"
+      ) ?? null
     );
-    return q ?? null;
   }, [writingSection]);
 
   const readingUiQuestions = useMemo(
@@ -138,9 +143,7 @@ export default function MultiSkillAttemptPage() {
     attemptId
   );
 
-  const buildSectionId = (qid: string) => {
-    return questionMeta.get(qid)?.sectionId;
-  };
+  const buildSectionId = (qid: string) => questionMeta.get(qid)?.sectionId;
 
   const buildTextAnswer = (qid: string, value: string) => {
     if (!value) return undefined;
@@ -156,13 +159,9 @@ export default function MultiSkillAttemptPage() {
   };
 
   const mergeAndAutoSave = (partial: QA) => {
-    const merged = {
-      ...lastAnswersRef.current,
-      ...partial,
-    };
+    const merged = { ...lastAnswersRef.current, ...partial };
     lastAnswersRef.current = merged;
     setAnswers(merged);
-
     debouncedSave(merged, buildSectionId, buildTextAnswer);
   };
 
@@ -177,7 +176,6 @@ export default function MultiSkillAttemptPage() {
       setSecondsLeft((s) => {
         if (s <= 1) {
           clearInterval(t);
-
           handleSubmit(true);
           return 0;
         }
@@ -185,7 +183,6 @@ export default function MultiSkillAttemptPage() {
       });
     }, 1000);
     return () => clearInterval(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (!attempt) {
@@ -274,12 +271,11 @@ export default function MultiSkillAttemptPage() {
           <button
             onClick={() => handleSubmit(false)}
             disabled={submitting}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition
-              ${
-                submitting
-                  ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                  : "bg-[#317EFF] text-white hover:bg-[#74a4f6]"
-              }`}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+              submitting
+                ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                : "bg-[#317EFF] text-white hover:bg-[#74a4f6]"
+            }`}
           >
             {submitting ? "Đang nộp…" : "Nộp bài"}
           </button>
@@ -299,12 +295,11 @@ export default function MultiSkillAttemptPage() {
               <button
                 key={id}
                 onClick={() => setActiveTab(id)}
-                className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition
-                  ${
-                    active
-                      ? "border-[#317EFF] text-[#317EFF] bg-white"
-                      : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-white"
-                  }`}
+                className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition ${
+                  active
+                    ? "border-[#317EFF] text-[#317EFF] bg-white"
+                    : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-white"
+                }`}
               >
                 {t.label}
               </button>
@@ -341,15 +336,10 @@ export default function MultiSkillAttemptPage() {
                 <QuestionPanel
                   attemptId={attemptId}
                   questions={readingUiQuestions}
+                  initialAnswers={lastAnswersRef.current}
                   onAnswersChange={(next) => {
-                    const casted = next as QA;
-                    const merged = {
-                      ...lastAnswersRef.current,
-                      ...casted,
-                    };
-                    lastAnswersRef.current = merged;
-                    setAnswers(merged);
-                    debouncedSave(merged, buildSectionId, buildTextAnswer);
+                    lastAnswersRef.current = next;
+                    debouncedSave(next, buildSectionId, buildTextAnswer);
                   }}
                 />
               </div>
@@ -377,15 +367,10 @@ export default function MultiSkillAttemptPage() {
               <QuestionPanel
                 attemptId={attemptId}
                 questions={listeningUiQuestions}
+                initialAnswers={lastAnswersRef.current}
                 onAnswersChange={(next) => {
-                  const casted = next as QA;
-                  const merged = {
-                    ...lastAnswersRef.current,
-                    ...casted,
-                  };
-                  lastAnswersRef.current = merged;
-                  setAnswers(merged);
-                  debouncedSave(merged, buildSectionId, buildTextAnswer);
+                  lastAnswersRef.current = next;
+                  debouncedSave(next, buildSectionId, buildTextAnswer);
                 }}
               />
             </div>

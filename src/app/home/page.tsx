@@ -101,7 +101,6 @@ export default function Home() {
       const data = res.data.data.filter((item: any) =>
         item.title.includes("English Placement")
       );
-      console.log(data[0].id);
       setPlacementTestId(data[0].id);
     }
     fetchTests();
