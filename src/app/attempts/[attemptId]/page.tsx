@@ -61,7 +61,7 @@ export default function AttemptResultPage() {
               if (!q?.id) continue;
               questionMetaById[String(q.id)] = {
                 idx: q.idx,
-                promptMd: q.promptMd ?? "",
+                promptMd: q.promptMd,
                 explanationMd: q.explanationMd ?? "",
                 options: q.options ?? null,
               };
@@ -419,14 +419,40 @@ function normalizeDetail(d: AttemptQuestionResult) {
   return {
     questionId: d.questionId,
     index: d.index,
-    prompt: d.promptMd ?? "",
+    prompt: cleanQuestion(d.promptMd ?? ""),
     selectedText: d.selectedAnswerText ?? "",
-    correctText: d.correctAnswerText ?? "",
+    correctText: cleanAnswer(d.correctAnswerText ?? ""),
     explanation: d.explanationMd ?? "",
     isCorrect,
     state,
     timeSpentSec: d.timeSpentSec,
   };
+}
+
+function cleanQuestion(s: string) {
+  if (!s) return "";
+
+  return s
+
+    .replace(/\\n/g, "\n")
+
+    .replace(/blank[-_]\w+:\s*/gi, "____ ")
+
+    .replace(/\[blank[-_]\w+\]/gi, "____")
+
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function cleanAnswer(s: string) {
+  if (!s) return "";
+
+  return s
+    .replace(/\\n/g, "\n")
+    .replace(/blank[-_]\w+:\s*/gi, "")
+    .replace(/\[blank[-_]\w+\]/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function fmtMinSec(totalSec: number) {
