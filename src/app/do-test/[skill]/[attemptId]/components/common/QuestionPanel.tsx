@@ -24,6 +24,7 @@ export type Question = {
   uiKind: QuestionUiKind;
   choices?: Array<string | Choice>;
   placeholder?: string;
+  flowChartNodes?: { key: string; label: string }[];
 };
 
 export default function QuestionPanel({
@@ -127,6 +128,7 @@ export default function QuestionPanel({
                   key={q.id}
                   id={q.id}
                   stem={q.stem}
+                  nodes={q.flowChartNodes ?? []}
                   value={value}
                   onChange={(v) => handleAnswer(q.id, v)}
                 />

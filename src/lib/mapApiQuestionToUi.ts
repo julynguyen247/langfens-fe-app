@@ -13,6 +13,7 @@ type ApiQuestion = {
   type: BackendQuestionType;
   promptMd: string;
   options?: ApiOption[];
+  flowChartNodes?: { key: string; label: string }[];
 };
 
 function normalizeOptionLabel(contentMd: string): string {
@@ -66,7 +67,6 @@ export function mapApiQuestionToUi(q: ApiQuestion): Question {
     backendType: q.type,
     uiKind,
   };
-
   if (uiKind === "choice_single") {
     return {
       ...base,
@@ -77,5 +77,13 @@ export function mapApiQuestionToUi(q: ApiQuestion): Question {
     };
   }
 
+  if (uiKind === "flow_chart") {
+    return {
+      ...base,
+      flowChartNodes: q.flowChartNodes ?? [],
+    };
+  }
+
+  // Completion & others
   return base;
 }

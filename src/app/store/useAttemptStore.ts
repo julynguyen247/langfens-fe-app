@@ -7,6 +7,11 @@ export type AttemptOption = {
   contentMd: string;
 };
 
+export type FlowChartNode = {
+  key: string;
+  label: string;
+};
+
 export type AttemptQuestion = {
   id: string;
   idx: number;
@@ -15,7 +20,8 @@ export type AttemptQuestion = {
   difficulty: number;
   promptMd: string;
   explanationMd?: string;
-  options: AttemptOption[];
+  options?: AttemptOption[];
+  flowChartNodes?: FlowChartNode[];
 };
 
 export type AttemptSection = {

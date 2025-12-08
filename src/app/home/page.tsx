@@ -7,6 +7,7 @@ import { getAttempt, getMe, getPublicExams, startAttempt } from "@/utils/api";
 import { FiPlay } from "react-icons/fi";
 import { TbTargetArrow } from "react-icons/tb";
 import { useAttemptStore } from "../store/useAttemptStore";
+import PenguinLottie from "@/components/PenguinLottie";
 
 type Course = {
   id: string;
@@ -221,39 +222,6 @@ export default function Home() {
           </Card>
         )}
 
-        {/* <SectionTitle> Các khóa học của tôi </SectionTitle>
-        <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 gap-4"
-          initial="hidden"
-          animate="show"
-          variants={staggerContainer}
-        >
-          {courses.map((c, i) => (
-            <motion.div key={c.id} variants={fadeInUp}>
-              <Card>
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h3 className="text-base sm:text-lg font-semibold text-slate-900">
-                      {c.name}
-                    </h3>
-                    <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-                      {c.level} • {c.lessonsDone}/{c.lessonsTotal} bài học
-                    </p>
-                  </div>
-                  <span className="text-xs rounded-full px-2 py-1 bg-blue-100 text-blue-700 border border-blue-200">
-                    {c.progress}%
-                  </span>
-                </div>
-                <Progress value={c.progress} className="mt-4" />
-                <div className="mt-4 flex items-center justify-between">
-                  <div className="text-xs text-slate-500">Tiến độ khóa học</div>
-                  <MotionButton onClick={() => {}}>Tiếp tục học</MotionButton>
-                </div>
-              </Card>
-            </motion.div>
-          ))}
-        </motion.div> */}
-
         <SectionTitle> Lịch sử làm bài </SectionTitle>
         <AnimatePresence mode="popLayout">
           {loadingAttempts ? (
@@ -387,7 +355,7 @@ function HeroHeader() {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="rounded-2xl bg-gradient-to-r from-blue-600 to-blue-500 text-white p-6 sm:p-8 shadow-md"
+      className="relative rounded-2xl bg-gradient-to-r from-blue-600 to-blue-500 text-white p-6 sm:p-8 shadow-md overflow-hidden"
     >
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
@@ -398,6 +366,11 @@ function HeroHeader() {
             Tiếp tục chuỗi luyện tập của bạn và chinh phục mục tiêu IELTS.
           </p>
         </div>
+
+        <div className="flex items-center">
+          <PenguinLottie />
+        </div>
+
         <MotionButton
           variant="light"
           onClick={() => {
