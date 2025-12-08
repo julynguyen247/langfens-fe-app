@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import QuestionCard from "./QuestionCard";
 import FillInBlankCard from "../reading/FillInBlankCard";
 import MatchingLetterCard from "../reading/MatchingLetterCard";
+import FlowChartCard from "../reading/FlowChartCard";
 
 type Choice = { value: string; label: string };
 type QA = Record<string, string>;
@@ -122,7 +123,7 @@ export default function QuestionPanel({
             case "flow_chart":
             default:
               return (
-                <FillInBlankCard
+                <FlowChartCard
                   key={q.id}
                   id={q.id}
                   stem={q.stem}

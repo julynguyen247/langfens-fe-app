@@ -433,13 +433,10 @@ function cleanQuestion(s: string) {
   if (!s) return "";
 
   return s
-
     .replace(/\\n/g, "\n")
-
     .replace(/blank[-_]\w+:\s*/gi, "____ ")
-
     .replace(/\[blank[-_]\w+\]/gi, "____")
-
+    .replace(/(label|step|flow|node)[-_ ]*\d*:\s*/gi, "")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -451,6 +448,7 @@ function cleanAnswer(s: string) {
     .replace(/\\n/g, "\n")
     .replace(/blank[-_]\w+:\s*/gi, "")
     .replace(/\[blank[-_]\w+\]/gi, "")
+    .replace(/label[-_ ]*\w*:\s*/gi, "")
     .replace(/\s+/g, " ")
     .trim();
 }

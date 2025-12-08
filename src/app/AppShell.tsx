@@ -8,7 +8,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const hideHeader =
     pathname === "/" ||
     pathname.startsWith("/do-test") ||
-    pathname.startsWith("/auth");
+    pathname.startsWith("/auth") ||
+    pathname.startsWith("/placement");
 
   return (
     <>

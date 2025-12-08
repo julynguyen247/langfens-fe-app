@@ -101,7 +101,7 @@ export default function Home() {
       const data = res.data.data.filter((item: any) =>
         item.title.includes("English Placement")
       );
-      setPlacementTestId(data[0].id);
+      setPlacementTestId(data[0].id ?? "");
     }
     fetchTests();
   }, []);
@@ -221,7 +221,7 @@ export default function Home() {
           </Card>
         )}
 
-        <SectionTitle> Các khóa học của tôi </SectionTitle>
+        {/* <SectionTitle> Các khóa học của tôi </SectionTitle>
         <motion.div
           className="grid grid-cols-1 md:grid-cols-2 gap-4"
           initial="hidden"
@@ -252,7 +252,7 @@ export default function Home() {
               </Card>
             </motion.div>
           ))}
-        </motion.div>
+        </motion.div> */}
 
         <SectionTitle> Lịch sử làm bài </SectionTitle>
         <AnimatePresence mode="popLayout">
