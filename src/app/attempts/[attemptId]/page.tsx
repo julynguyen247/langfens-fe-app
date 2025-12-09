@@ -10,11 +10,10 @@ import {
   FiChevronDown,
   FiChevronUp,
 } from "react-icons/fi";
-import { useUserStore } from "@/app/store/userStore";
-
+import ReactMarkdown from "react-markdown";
 type AttemptResult = {
   attemptId: string;
-  status: "GRADED" | "PENDING" | string;
+  status: string;
   finishedAt: string;
   timeUsedSec: number;
   correctCount: number;
@@ -29,6 +28,7 @@ type AttemptResult = {
 type AttemptQuestionResult = {
   questionId: string;
   index: number;
+  skill: string;
   promptMd?: string;
   selectedOptionIds?: string[];
   selectedAnswerText?: string;
@@ -39,11 +39,13 @@ type AttemptQuestionResult = {
 };
 
 export default function AttemptResultPage() {
-  const { attemptId } = useParams() as { attemptId: string; skill?: string };
+  const { attemptId } = useParams() as { attemptId: string };
   const [data, setData] = useState<AttemptResult | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const { user } = useUserStore();
+  const [activeSkill, setActiveSkill] = useState<
+    "READING" | "LISTENING" | "WRITING" | "SPEAKING"
+  >("READING");
 
   useEffect(() => {
     (async () => {
@@ -56,20 +58,21 @@ export default function AttemptResultPage() {
 
         if (paper?.sections) {
           for (const sec of paper.sections) {
-            if (!sec?.questions) continue;
-            for (const q of sec.questions) {
+            for (const q of sec.questions ?? []) {
               if (!q?.id) continue;
               questionMetaById[String(q.id)] = {
                 idx: q.idx,
-                promptMd: q.promptMd,
+                promptMd: q.promptMd ?? "",
                 explanationMd: q.explanationMd ?? "",
                 options: q.options ?? null,
+                skill: q.skill ?? "UNKNOWN",
               };
             }
           }
         }
 
         const answers: any[] = raw.answers ?? raw.items ?? raw.questions ?? [];
+
         const totalTimeSec =
           parseSecondsAny(raw.totalTime) ??
           parseTimeTaken(raw.timeTaken) ??
@@ -90,34 +93,27 @@ export default function AttemptResultPage() {
           awardedTotal: raw.scorePct ?? raw.awardedTotal ?? 0,
           needsManualReview: raw.needsManualReview ?? 0,
           bandScore: raw.ieltsBand ?? raw.bandScore,
-          questions: answers.map((a: any, i: number): AttemptQuestionResult => {
+          questions: answers.map((a: any, i: number) => {
             const qid = String(a.questionId ?? a.id ?? i + 1);
             const meta = questionMetaById[qid];
-            const optionIds: string[] = a.selectedOptionIds ?? [];
+            const optionIds = a.selectedOptionIds ?? [];
+            let selectedText = a.selectedAnswerText ?? "";
 
-            let selectedText: string = a.selectedAnswerText ?? "";
-            if (
-              !selectedText &&
-              Array.isArray(optionIds) &&
-              optionIds.length > 0 &&
-              meta?.options
-            ) {
+            if (!selectedText && optionIds.length > 0 && meta?.options) {
               selectedText = meta.options
                 .filter((o: any) => optionIds.includes(o.id))
                 .map((o: any) => o.contentMd ?? "")
-                .filter((t: string) => t)
                 .join(" | ");
             }
 
-            const correctText: string = a.correctAnswerText ?? "";
-
             return {
               questionId: qid,
+              skill: meta?.skill ?? "UNKNOWN",
               index: a.index ?? meta?.idx ?? i + 1,
               promptMd: a.promptMd ?? meta?.promptMd ?? "",
               selectedOptionIds: optionIds,
               selectedAnswerText: selectedText,
-              correctAnswerText: correctText,
+              correctAnswerText: a.correctAnswerText ?? "",
               isCorrect: typeof a.isCorrect === "boolean" ? a.isCorrect : null,
               explanationMd: a.explanationMd ?? meta?.explanationMd ?? "",
               timeSpentSec:
@@ -154,10 +150,13 @@ export default function AttemptResultPage() {
       </div>
     );
 
-  const answeredCount = data.questions.filter(
+  const skillFiltered = data.questions.filter((q) => q.skill === activeSkill);
+
+  const answeredCount = skillFiltered.filter(
     (q) => !!q.selectedAnswerText || (q.selectedOptionIds?.length ?? 0) > 0
   ).length;
-  const blankCount = data.questions.length - answeredCount;
+
+  const blankCount = skillFiltered.length - answeredCount;
 
   return (
     <div className="max-w-5xl mx-auto bg-white rounded-xl shadow-md overflow-hidden text-black">
@@ -181,23 +180,23 @@ export default function AttemptResultPage() {
         <p className="mt-4 text-lg text-slate-700">Overall Band Score</p>
       </div>
 
-      <div className="px-8 pb-6 grid sm:grid-cols-2 lg:grid-cols-4 gap-6 text-slate-700">
-        <Stat label="Trạng thái">
-          {data.status === "GRADED" ? (
-            <span className="flex items-center gap-2 text-emerald-600 font-semibold">
-              <FiCheckCircle /> Đã chấm xong
-            </span>
-          ) : data.status === "PENDING" ? (
-            <span className="flex items-center gap-2 text-amber-600 font-semibold">
-              <FiAlertCircle /> Đang chờ chấm tay
-            </span>
-          ) : (
-            <span className="flex items-center gap-2 text-rose-600 font-semibold">
-              <FiXCircle /> Không xác định
-            </span>
-          )}
-        </Stat>
+      <div className="px-8 mb-6 flex gap-2 justify-center">
+        {["READING", "LISTENING", "WRITING", "SPEAKING"].map((sk) => (
+          <button
+            key={sk}
+            onClick={() => setActiveSkill(sk as any)}
+            className={`px-4 py-2 rounded-lg text-sm border ${
+              activeSkill === sk
+                ? "bg-slate-900 text-white border-slate-900"
+                : "bg-white text-slate-700 hover:bg-slate-50"
+            }`}
+          >
+            {sk}
+          </button>
+        ))}
+      </div>
 
+      <div className="px-8 pb-6 grid sm:grid-cols-2 lg:grid-cols-4 gap-6 text-slate-700">
         <Stat label="Số câu đã trả lời">{answeredCount}</Stat>
         <Stat label="Câu bỏ trống">{blankCount}</Stat>
         <Stat label="Tổng thời gian">{data.totalTime}</Stat>
@@ -206,12 +205,18 @@ export default function AttemptResultPage() {
 
       {data.needsManualReview > 0 && (
         <div className="mx-8 mb-8 p-4 rounded-lg border border-amber-300 bg-amber-50 text-amber-800 text-sm">
-          ⚠️ Có {data.needsManualReview} câu cần chấm tay — band có thể thay đổi
-          sau khi hoàn tất chấm.
+          ⚠️ Có {data.needsManualReview} câu cần chấm tay — band có thể thay
+          đổi.
         </div>
       )}
 
-      <QuestionReview details={data.questions} />
+      {activeSkill === "WRITING" ? (
+        <WritingReview questions={skillFiltered} />
+      ) : activeSkill === "SPEAKING" ? (
+        <SpeakingReview questions={skillFiltered} />
+      ) : (
+        <QuestionReview details={skillFiltered} />
+      )}
 
       <div className="flex justify-center gap-4 pb-10">
         <button
@@ -220,6 +225,86 @@ export default function AttemptResultPage() {
         >
           Về trang chủ
         </button>
+      </div>
+    </div>
+  );
+}
+
+function WritingReview({ questions }: { questions: AttemptQuestionResult[] }) {
+  if (!questions.length)
+    return (
+      <div className="p-6 text-center text-slate-500">Không có Writing.</div>
+    );
+
+  const q = questions[0];
+
+  return (
+    <div className="px-8 pb-8">
+      <h2 className="text-xl font-semibold mb-4 text-slate-800">
+        Writing Task
+      </h2>
+
+      <div className="mb-4 p-4 bg-slate-50 rounded-lg border">
+        <p className="text-sm font-semibold text-slate-600 mb-2">Đề bài</p>
+        <div className="whitespace-pre-wrap text-slate-800">{q.promptMd}</div>
+      </div>
+
+      <div className="mb-4 p-4 bg-white rounded-lg border">
+        <p className="text-sm font-semibold text-slate-600 mb-2">
+          Bài làm của bạn
+        </p>
+        <div className="whitespace-pre-wrap text-slate-700">
+          {q.selectedAnswerText || "—"}
+        </div>
+      </div>
+
+      <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+        <p className="text-sm font-semibold text-emerald-700 mb-2">
+          Nhận xét từ giám khảo
+        </p>
+        <div className="whitespace-pre-wrap text-emerald-900">
+          {q.explanationMd || "Chưa có nhận xét."}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SpeakingReview({ questions }: { questions: AttemptQuestionResult[] }) {
+  if (!questions.length)
+    return (
+      <div className="p-6 text-center text-slate-500">Không có Speaking.</div>
+    );
+
+  const q = questions[0];
+
+  return (
+    <div className="px-8 pb-8">
+      <h2 className="text-xl font-semibold mb-4 text-slate-800">
+        Speaking Review
+      </h2>
+
+      <div className="mb-4 p-4 bg-slate-50 rounded-lg border">
+        <p className="text-sm font-semibold text-slate-600 mb-2">Câu hỏi</p>
+        <div className="whitespace-pre-wrap text-slate-800">{q.promptMd}</div>
+      </div>
+
+      <div className="mb-4 p-4 bg-white rounded-lg border">
+        <p className="text-sm font-semibold text-slate-600 mb-2">
+          Phần trả lời (transcript)
+        </p>
+        <div className="whitespace-pre-wrap text-slate-700">
+          {q.selectedAnswerText || "—"}
+        </div>
+      </div>
+
+      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <p className="text-sm font-semibold text-blue-700 mb-2">
+          Nhận xét từ giám khảo
+        </p>
+        <div className="whitespace-pre-wrap text-blue-900">
+          {q.explanationMd || "Chưa có nhận xét."}
+        </div>
       </div>
     </div>
   );
@@ -338,9 +423,8 @@ function ReviewItem({ data }: { data: ReturnType<typeof normalizeDetail> }) {
               </span>
             )}
           </div>
-
-          <div className="text-slate-800 whitespace-pre-wrap">
-            {data.prompt}
+          <div className="prose prose-slate max-w-none">
+            <ReactMarkdown>{data.prompt}</ReactMarkdown>
           </div>
 
           <div className="mt-3 grid sm:grid-cols-2 gap-3">
@@ -412,9 +496,6 @@ function FilterBtn({
 function normalizeDetail(d: AttemptQuestionResult) {
   const hasAnswer =
     !!d.selectedAnswerText || (d.selectedOptionIds?.length ?? 0) > 0;
-  let state: "answered" | "none" = hasAnswer ? "answered" : "none";
-  let isCorrect: boolean | null =
-    typeof d.isCorrect === "boolean" ? d.isCorrect : null;
 
   return {
     questionId: d.questionId,
@@ -423,15 +504,13 @@ function normalizeDetail(d: AttemptQuestionResult) {
     selectedText: d.selectedAnswerText ?? "",
     correctText: cleanAnswer(d.correctAnswerText ?? ""),
     explanation: d.explanationMd ?? "",
-    isCorrect,
-    state,
+    isCorrect: typeof d.isCorrect === "boolean" ? d.isCorrect : null,
+    state: hasAnswer ? "answered" : "none",
     timeSpentSec: d.timeSpentSec,
   };
 }
 
 function cleanQuestion(s: string) {
-  if (!s) return "";
-
   return s
     .replace(/\\n/g, "\n")
     .replace(/blank[-_]\w+:\s*/gi, "____ ")
@@ -442,8 +521,6 @@ function cleanQuestion(s: string) {
 }
 
 function cleanAnswer(s: string) {
-  if (!s) return "";
-
   return s
     .replace(/\\n/g, "\n")
     .replace(/blank[-_]\w+:\s*/gi, "")
@@ -460,27 +537,20 @@ function fmtMinSec(totalSec: number) {
   return `${m}m${String(s).padStart(2, "0")}s`;
 }
 
-function parseTimeTaken(s: string | undefined): number | null {
+function parseTimeTaken(s: string | undefined) {
   if (!s || typeof s !== "string") return null;
-  const m = s.match(/^(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?$/);
+  const m = s.match(/^(\d{2}):(\d{2}):(\d{2})/);
   if (!m) return null;
-  const hh = Number(m[1] ?? 0);
-  const mm = Number(m[2] ?? 0);
-  const ss = Number(m[3] ?? 0);
-  return hh * 3600 + mm * 60 + ss;
+  return +m[1] * 3600 + +m[2] * 60 + +m[3];
 }
 
-function parseSecondsAny(v: any): number | null {
-  if (v == null) return null;
-  if (typeof v === "number" && Number.isFinite(v)) return v;
+function parseSecondsAny(v: any) {
+  if (typeof v === "number") return v;
   if (typeof v !== "string") return null;
-  const m = v.match(/^(\d{1,2}):(\d{2}):(\d{2})(?:\.(\d+))?$/);
-  if (m) {
-    const hh = Number(m[1] ?? 0);
-    const mm = Number(m[2] ?? 0);
-    const ss = Number(m[3] ?? 0);
-    return hh * 3600 + mm * 60 + ss;
-  }
+
+  const m = v.match(/^(\d{1,2}):(\d{2}):(\d{2})/);
+  if (m) return +m[1] * 3600 + +m[2] * 60 + +m[3];
+
   const n = Number(v);
   return Number.isFinite(n) ? n : null;
 }

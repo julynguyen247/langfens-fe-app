@@ -11,14 +11,25 @@ export default function ChatbotWidget() {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-lg z-[9999] transition-all"
+          className="
+            fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 
+            text-white p-4 rounded-full shadow-xl z-[9999]
+            transition-all duration-300 
+            animate-[chatbot-pop_0.35s_ease-out]
+          "
         >
           <FiMessageCircle size={24} />
         </button>
       )}
 
       {open && (
-        <div className="fixed bottom-6 right-6 w-80 h-96 bg-white rounded-xl shadow-2xl z-[9999] flex flex-col animate-fadeIn">
+        <div
+          className="
+            fixed bottom-6 right-6 w-80 h-96 bg-white rounded-xl shadow-2xl z-[9999] 
+            flex flex-col 
+            animate-[chatbot-open_0.35s_ease-out]
+          "
+        >
           <div className="p-3 flex justify-between items-center bg-white rounded-t-xl shadow-sm">
             <h3 className="font-semibold text-gray-900">Chat hỗ trợ</h3>
             <button
@@ -37,7 +48,10 @@ export default function ChatbotWidget() {
             <input
               type="text"
               placeholder="Nhập tin nhắn..."
-              className="w-full px-3 py-2 rounded-lg bg-gray-100 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              className="
+                w-full px-3 py-2 rounded-lg bg-gray-100 text-gray-900 
+                focus:outline-none focus:ring-2 focus:ring-blue-500 transition
+              "
             />
           </div>
         </div>
