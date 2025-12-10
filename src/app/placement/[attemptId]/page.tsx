@@ -5,16 +5,17 @@ import { useParams, useRouter } from "next/navigation";
 
 import { useAttemptStore } from "@/app/store/useAttemptStore";
 import { useUserStore } from "@/app/store/userStore";
-import { autoSaveAttempt, submitAttempt } from "@/utils/api";
+import { autoSaveAttempt, submitAttempt, uploadFile } from "@/utils/api";
 import { useDebouncedAutoSave } from "@/app/utils/hook";
 import { mapApiQuestionToUi } from "@/lib/mapApiQuestionToUi";
 import { BackendQuestionType } from "@/types/question.type";
 import ListeningAudioBar from "../../do-test/[skill]/[attemptId]/components/listening/ListeningAudioBar";
 import QuestionPanel from "../../do-test/[skill]/[attemptId]/components/common/QuestionPanel";
 import PassageView from "../../do-test/[skill]/[attemptId]/components/reading/PassageView";
+import { useReactMediaRecorder } from "react-media-recorder";
 
 type QA = Record<string, string>;
-type Tab = "reading" | "listening" | "writing";
+type Tab = "reading" | "listening" | "writing" | "speaking";
 
 type QuestionMeta = {
   sectionId: string;
@@ -42,6 +43,14 @@ export default function MultiSkillAttemptPage() {
 
   const initialSecondsLeft = attempt?.timeLeft ?? attempt?.durationSec ?? 3600;
   const [secondsLeft, setSecondsLeft] = useState(initialSecondsLeft);
+
+  const { status, startRecording, stopRecording, mediaBlobUrl } =
+    useReactMediaRecorder({ audio: true });
+
+  const [seconds, setSeconds] = useState(0);
+  const [uploading, setUploading] = useState(false);
+
+  const isRecording = status === "recording";
 
   const sections = useMemo(
     () =>
@@ -111,6 +120,25 @@ export default function MultiSkillAttemptPage() {
       ) ?? null
     );
   }, [writingSection]);
+
+  const speakingSection = useMemo(
+    () =>
+      sections.find((s: any) =>
+        (s.questions ?? []).some(
+          (q: any) => String(q.skill).toLowerCase() === "speaking"
+        )
+      ),
+    [sections]
+  );
+
+  const speakingQuestion = useMemo(() => {
+    if (!speakingSection) return null;
+    return (
+      (speakingSection.questions ?? []).find(
+        (q: any) => String(q.skill).toLowerCase() === "speaking"
+      ) ?? null
+    );
+  }, [speakingSection]);
 
   const readingUiQuestions = useMemo(
     () =>
@@ -185,6 +213,14 @@ export default function MultiSkillAttemptPage() {
     return () => clearInterval(t);
   }, []);
 
+  useEffect(() => {
+    if (!isRecording) return;
+    const t = setInterval(() => {
+      setSeconds((s) => s + 1);
+    }, 1000);
+    return () => clearInterval(t);
+  }, [isRecording]);
+
   if (!attempt) {
     return (
       <div className="p-6">
@@ -233,6 +269,47 @@ export default function MultiSkillAttemptPage() {
       if (!auto) alert("Nộp bài thất bại. Vui lòng thử lại.");
     }
   }
+
+  const handleStartRecording = () => {
+    if (uploading) return;
+    setSeconds(0);
+    startRecording();
+  };
+
+  const handleStopRecording = () => {
+    if (!isRecording) return;
+    stopRecording();
+  };
+
+  const handleSpeakingChange = (value: string) => {
+    if (!speakingQuestion) return;
+    mergeAndAutoSave({ [String(speakingQuestion.id)]: value });
+  };
+
+  const handleGrade = async () => {
+    if (!mediaBlobUrl) {
+      alert("Chưa có đoạn ghi âm để tải lên.");
+      return;
+    }
+
+    try {
+      setUploading(true);
+      const blob = await fetch(mediaBlobUrl).then((r) => r.blob());
+      const res = await uploadFile({ file: blob });
+      const serializedAnswer = res.data?.serializedResponse;
+      if (!serializedAnswer) {
+        alert("Không nhận được serializedAnswer từ server.");
+        return;
+      }
+      handleSpeakingChange(serializedAnswer);
+      alert("Đã tải và lưu câu trả lời speaking.");
+    } catch (e) {
+      console.error(e);
+      alert("Tải audio thất bại, thử lại nhé.");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const readingSection = sections.find((s: any) =>
     (s.questions ?? []).some(
@@ -288,6 +365,7 @@ export default function MultiSkillAttemptPage() {
             { id: "reading", label: "Reading" },
             { id: "listening", label: "Listening" },
             { id: "writing", label: "Writing" },
+            { id: "speaking", label: "Speaking" },
           ].map((t) => {
             const id = t.id as Tab;
             const active = activeTab === id;
@@ -437,6 +515,134 @@ export default function MultiSkillAttemptPage() {
               {!writingQuestion && (
                 <p className="text-sm text-slate-500">
                   Không tìm thấy câu hỏi Writing trong paper.
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === "speaking" && (
+          <div className="flex flex-col h-full min-h-0 bg-gray-50">
+            <div className="border-b p-4 bg-white sticky top-0 z-10 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-800">
+                  Speaking – Task (optional)
+                </h2>
+                <p className="text-xs text-slate-500">
+                  Nói to theo gợi ý bên dưới. Bạn có thể dùng nút ghi âm để
+                  luyện nói, tải audio lên và lưu câu trả lời.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-4 text-sm">
+                <div className="flex flex-col items-end">
+                  <span className="text-xs text-slate-500">Speaking timer</span>
+                  <span className="font-mono font-semibold text-lg text-slate-800">
+                    {formatTime(seconds)}
+                  </span>
+                </div>
+                <span
+                  className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium ${
+                    status === "recording"
+                      ? "bg-red-100 text-red-700"
+                      : status === "stopped"
+                      ? "bg-emerald-100 text-emerald-700"
+                      : "bg-slate-100 text-slate-600"
+                  }`}
+                >
+                  <span
+                    className={`mr-2 h-2.5 w-2.5 rounded-full ${
+                      status === "recording"
+                        ? "bg-red-500 animate-pulse"
+                        : status === "stopped"
+                        ? "bg-emerald-500"
+                        : "bg-slate-400"
+                    }`}
+                  />
+                  {status === "idle" && "Ready"}
+                  {status === "recording" && "Recording"}
+                  {status === "stopped" && "Recorded"}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex-1 p-6 overflow-auto">
+              {speakingSection && (
+                <div className="mb-4 bg-white border rounded-lg p-4 shadow-sm">
+                  <h3 className="font-semibold text-slate-800 mb-2">
+                    Instructions
+                  </h3>
+                  <p className="text-sm text-slate-700 whitespace-pre-line leading-relaxed">
+                    {speakingSection.instructionsMd}
+                  </p>
+                </div>
+              )}
+
+              {speakingQuestion && (
+                <div className="bg-white border rounded-lg p-5 shadow-sm flex flex-col gap-6">
+                  <div>
+                    <h3 className="font-semibold text-slate-800 mb-2">
+                      Speaking task
+                    </h3>
+                    <p className="text-sm text-slate-700 whitespace-pre-line leading-relaxed">
+                      {speakingQuestion.promptMd}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col lg:flex-row gap-6 items-start">
+                    <section className="w-full lg:w-1/2 flex flex-col gap-4">
+                      <div className="flex w-full gap-3 text-xs text-slate-500">
+                        <button
+                          type="button"
+                          onClick={handleStartRecording}
+                          disabled={isRecording || uploading}
+                          className={`flex-1 px-4 py-2.5 rounded-lg font-semibold text-sm transition ${
+                            isRecording || uploading
+                              ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                              : "bg-[#317EFF] text-white hover:bg-[#74a4f6]"
+                          }`}
+                        >
+                          Start
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={handleStopRecording}
+                          disabled={!isRecording || uploading}
+                          className={`flex-1 px-4 py-2.5 rounded-lg font-semibold text-sm transition ${
+                            !isRecording || uploading
+                              ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                              : "bg-red-500 text-white hover:bg-red-600"
+                          }`}
+                        >
+                          Stop
+                        </button>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={handleGrade}
+                        disabled={!mediaBlobUrl || uploading}
+                        className={`w-full px-4 py-2.5 rounded-lg font-semibold text-sm transition ${
+                          mediaBlobUrl && !uploading
+                            ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200"
+                            : "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
+                        }`}
+                      >
+                        {uploading
+                          ? "Đang tải lên..."
+                          : mediaBlobUrl
+                          ? "Tải lên & lưu câu trả lời"
+                          : "Ghi âm xong để tải lên"}
+                      </button>
+                    </section>
+                  </div>
+                </div>
+              )}
+
+              {!speakingQuestion && (
+                <p className="text-sm text-slate-500">
+                  Không tìm thấy câu hỏi Speaking trong paper.
                 </p>
               )}
             </div>

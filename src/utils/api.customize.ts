@@ -6,7 +6,7 @@ type ServiceKey =
   | "attempt"
   | "vocabulary"
   | "speaking"
-  | "writing"; // ✅ đã thêm writing
+  | "writing";
 
 const GATEWAY_BASE = process.env.NEXT_PUBLIC_GATEWAY_URL || "";
 const buildBase = (suffix: string) =>

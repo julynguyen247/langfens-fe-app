@@ -759,12 +759,6 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
       setGrading(true);
       const res = await gradeWriting(realExamId, answer, seconds);
 
-      // JSON em gửi:
-      // {
-      //   isSuccess: true,
-      //   message: "Submitted",
-      //   data: { id: "...", res: { ...writingResult } }
-      // }
       const rawData = res.data;
       const payload: WritingGradeRes | undefined =
         rawData?.data?.res ?? rawData?.res;

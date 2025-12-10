@@ -328,3 +328,16 @@ export async function gradeSpeaking(params: {
 
   return res;
 }
+export async function uploadFile(params: { file: Blob | File }) {
+  const { file } = params;
+  const filename = file instanceof File ? file.name : "speaking-recording.webm";
+  const formData = new FormData();
+  formData.append("file", file, filename);
+  const res = await apisSpeaking.post("/upload/audio", formData, {
+    headers: {
+      "Content-Type": undefined,
+    },
+    withCredentials: true,
+  });
+  return res;
+}
