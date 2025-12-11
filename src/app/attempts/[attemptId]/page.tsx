@@ -3,14 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { getAttemptResult } from "@/utils/api";
-import {
-  FiCheckCircle,
-  FiAlertCircle,
-  FiXCircle,
-  FiChevronDown,
-  FiChevronUp,
-} from "react-icons/fi";
+import { FiChevronDown, FiChevronUp } from "react-icons/fi";
 import ReactMarkdown from "react-markdown";
+
 type AttemptResult = {
   attemptId: string;
   status: string;
@@ -21,6 +16,8 @@ type AttemptResult = {
   awardedTotal: number;
   needsManualReview: number;
   bandScore?: number;
+  writingBand?: number;
+  speakingBand?: number;
   questions: AttemptQuestionResult[];
   totalTime: string;
 };
@@ -51,9 +48,10 @@ export default function AttemptResultPage() {
     (async () => {
       try {
         const res = await getAttemptResult(attemptId as any);
-        const raw = res?.data?.data ?? res?.data ?? res;
+        const raw = (res as any)?.data?.data ?? (res as any)?.data ?? res;
 
-        const paper = raw.paperWithAnswers ?? raw.paper ?? null;
+        const paper =
+          (raw as any).paperWithAnswers ?? (raw as any).paper ?? null;
         const questionMetaById: Record<string, any> = {};
 
         if (paper?.sections) {
@@ -71,28 +69,35 @@ export default function AttemptResultPage() {
           }
         }
 
-        const answers: any[] = raw.answers ?? raw.items ?? raw.questions ?? [];
+        const answers: any[] =
+          (raw as any).answers ??
+          (raw as any).items ??
+          (raw as any).questions ??
+          [];
 
         const totalTimeSec =
-          parseSecondsAny(raw.totalTime) ??
-          parseTimeTaken(raw.timeTaken) ??
-          parseSecondsAny(raw.timeUsedSec) ??
+          parseSecondsAny((raw as any).totalTime) ??
+          parseTimeTaken((raw as any).timeTaken) ??
+          parseSecondsAny((raw as any).timeUsedSec) ??
           0;
 
         const mapped: AttemptResult = {
-          attemptId: raw.attemptId ?? raw.id ?? String(attemptId),
-          status: raw.status ?? "GRADED",
+          attemptId:
+            (raw as any).attemptId ?? (raw as any).id ?? String(attemptId),
+          status: (raw as any).status ?? "GRADED",
           finishedAt:
-            raw.gradedAt ??
-            raw.finishedAt ??
-            raw.submittedAt ??
+            (raw as any).gradedAt ??
+            (raw as any).finishedAt ??
+            (raw as any).submittedAt ??
             new Date().toISOString(),
           timeUsedSec: totalTimeSec,
-          correctCount: raw.correct ?? raw.correctCount ?? 0,
-          totalPoints: raw.scoreRaw ?? raw.totalPoints ?? 0,
-          awardedTotal: raw.scorePct ?? raw.awardedTotal ?? 0,
-          needsManualReview: raw.needsManualReview ?? 0,
-          bandScore: raw.ieltsBand ?? raw.bandScore,
+          correctCount: (raw as any).correct ?? (raw as any).correctCount ?? 0,
+          totalPoints: (raw as any).scoreRaw ?? (raw as any).totalPoints ?? 0,
+          awardedTotal: (raw as any).scorePct ?? (raw as any).awardedTotal ?? 0,
+          needsManualReview: (raw as any).needsManualReview ?? 0,
+          bandScore: (raw as any).ieltsBand ?? (raw as any).bandScore,
+          writingBand: (raw as any).writingBand,
+          speakingBand: (raw as any).speakingBand,
           questions: answers.map((a: any, i: number) => {
             const qid = String(a.questionId ?? a.id ?? i + 1);
             const meta = questionMetaById[qid];
@@ -158,6 +163,9 @@ export default function AttemptResultPage() {
 
   const blankCount = skillFiltered.length - answeredCount;
 
+  const isProductiveSkill =
+    activeSkill === "WRITING" || activeSkill === "SPEAKING";
+
   return (
     <div className="max-w-5xl mx-auto bg-white rounded-xl shadow-md overflow-hidden text-black">
       <div className="bg-gradient-to-r from-blue-500 to-emerald-500 text-white p-8 text-center">
@@ -196,24 +204,31 @@ export default function AttemptResultPage() {
         ))}
       </div>
 
-      <div className="px-8 pb-6 grid sm:grid-cols-2 lg:grid-cols-4 gap-6 text-slate-700">
-        <Stat label="Số câu đã trả lời">{answeredCount}</Stat>
-        <Stat label="Câu bỏ trống">{blankCount}</Stat>
-        <Stat label="Tổng thời gian">{data.totalTime}</Stat>
-        <Stat label="Số câu đúng">{data.correctCount}</Stat>
-      </div>
+      {!isProductiveSkill && (
+        <>
+          <div className="px-8 pb-6 grid sm:grid-cols-2 lg:grid-cols-4 gap-6 text-slate-700">
+            <Stat label="Số câu đã trả lời">{answeredCount}</Stat>
+            <Stat label="Câu bỏ trống">{blankCount}</Stat>
+            <Stat label="Tổng thời gian">{data.totalTime}</Stat>
+            <Stat label="Số câu đúng">{data.correctCount}</Stat>
+          </div>
 
-      {data.needsManualReview > 0 && (
-        <div className="mx-8 mb-8 p-4 rounded-lg border border-amber-300 bg-amber-50 text-amber-800 text-sm">
-          ⚠️ Có {data.needsManualReview} câu cần chấm tay — band có thể thay
-          đổi.
-        </div>
+          {data.needsManualReview > 0 && (
+            <div className="mx-8 mb-8 p-4 rounded-lg border border-amber-300 bg-amber-50 text-amber-800 text-sm">
+              ⚠️ Có {data.needsManualReview} câu cần chấm tay — band có thể thay
+              đổi.
+            </div>
+          )}
+        </>
       )}
 
-      {activeSkill === "WRITING" ? (
-        <WritingReview questions={skillFiltered} />
-      ) : activeSkill === "SPEAKING" ? (
-        <SpeakingReview questions={skillFiltered} />
+      {isProductiveSkill ? (
+        <ProductiveBandSection
+          skill={activeSkill}
+          band={
+            activeSkill === "WRITING" ? data.writingBand : data.speakingBand
+          }
+        />
       ) : (
         <QuestionReview details={skillFiltered} />
       )}
@@ -230,81 +245,30 @@ export default function AttemptResultPage() {
   );
 }
 
-function WritingReview({ questions }: { questions: AttemptQuestionResult[] }) {
-  if (!questions.length)
-    return (
-      <div className="p-6 text-center text-slate-500">Không có Writing.</div>
-    );
-
-  const q = questions[0];
-
-  return (
-    <div className="px-8 pb-8">
-      <h2 className="text-xl font-semibold mb-4 text-slate-800">
-        Writing Task
-      </h2>
-
-      <div className="mb-4 p-4 bg-slate-50 rounded-lg border">
-        <p className="text-sm font-semibold text-slate-600 mb-2">Đề bài</p>
-        <div className="whitespace-pre-wrap text-slate-800">{q.promptMd}</div>
-      </div>
-
-      <div className="mb-4 p-4 bg-white rounded-lg border">
-        <p className="text-sm font-semibold text-slate-600 mb-2">
-          Bài làm của bạn
-        </p>
-        <div className="whitespace-pre-wrap text-slate-700">
-          {q.selectedAnswerText || "—"}
-        </div>
-      </div>
-
-      <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
-        <p className="text-sm font-semibold text-emerald-700 mb-2">
-          Nhận xét từ giám khảo
-        </p>
-        <div className="whitespace-pre-wrap text-emerald-900">
-          {q.explanationMd || "Chưa có nhận xét."}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function SpeakingReview({ questions }: { questions: AttemptQuestionResult[] }) {
-  if (!questions.length)
-    return (
-      <div className="p-6 text-center text-slate-500">Không có Speaking.</div>
-    );
-
-  const q = questions[0];
+function ProductiveBandSection({
+  skill,
+  band,
+}: {
+  skill: "WRITING" | "SPEAKING";
+  band?: number;
+}) {
+  const label = skill === "WRITING" ? "Writing band" : "Speaking band";
 
   return (
-    <div className="px-8 pb-8">
-      <h2 className="text-xl font-semibold mb-4 text-slate-800">
-        Speaking Review
-      </h2>
+    <div className="px-8 pb-10">
+      <h2 className="text-xl font-semibold mb-4 text-slate-800">{label}</h2>
 
-      <div className="mb-4 p-4 bg-slate-50 rounded-lg border">
-        <p className="text-sm font-semibold text-slate-600 mb-2">Câu hỏi</p>
-        <div className="whitespace-pre-wrap text-slate-800">{q.promptMd}</div>
-      </div>
-
-      <div className="mb-4 p-4 bg-white rounded-lg border">
-        <p className="text-sm font-semibold text-slate-600 mb-2">
-          Phần trả lời (transcript)
-        </p>
-        <div className="whitespace-pre-wrap text-slate-700">
-          {q.selectedAnswerText || "—"}
+      <div className="flex flex-col items-center">
+        <div className="w-32 h-32 rounded-full bg-gradient-to-b from-emerald-400 to-blue-400 text-white flex items-center justify-center shadow-lg">
+          <span className="text-4xl font-extrabold">
+            {typeof band === "number" ? band.toFixed(1) : "--"}
+          </span>
         </div>
-      </div>
-
-      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <p className="text-sm font-semibold text-blue-700 mb-2">
-          Nhận xét từ giám khảo
+        <p className="mt-3 text-sm text-slate-600">
+          {typeof band === "number"
+            ? "Điểm band cho kỹ năng này."
+            : "Chưa có điểm band cho kỹ năng này."}
         </p>
-        <div className="whitespace-pre-wrap text-blue-900">
-          {q.explanationMd || "Chưa có nhận xét."}
-        </div>
       </div>
     </div>
   );

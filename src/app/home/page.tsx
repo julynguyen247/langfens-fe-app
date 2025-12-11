@@ -3,11 +3,24 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { getAttempt, getMe, getPublicExams, startAttempt } from "@/utils/api";
+import {
+  getAttempt,
+  getMe,
+  getPublicExams,
+  startAttempt,
+  getPlacementStatus,
+} from "@/utils/api";
 import { FiPlay } from "react-icons/fi";
 import { TbTargetArrow } from "react-icons/tb";
 import { useAttemptStore } from "../store/useAttemptStore";
-import PenguinLottie from "@/components/PenguinLottie";
+import {
+  barItem,
+  fadeInUp,
+  staggerBar,
+  staggerContainer,
+} from "./components/variants";
+import { HeroHeader } from "./components/HeroHeader";
+import { cryptoRandom, diffMinutesSafe } from "./components/utils";
 
 type Course = {
   id: string;
@@ -25,6 +38,18 @@ type Attempt = {
   dateISO: string;
   score?: number;
   durationMin: number;
+};
+
+type PlacementStatus = {
+  completed: boolean;
+  attemptId: string;
+  examId: string;
+  status: string;
+  startedAt: string;
+  submittedAt: string;
+  gradedAt: string;
+  level: string;
+  band: number;
 };
 
 export default function Home() {
@@ -61,6 +86,8 @@ export default function Home() {
   const [loadingAttempts, setLoadingAttempts] = useState(true);
   const [attemptErr, setAttemptErr] = useState<string | null>(null);
   const [placementTestId, setPlacementTestId] = useState("");
+  const [placementStatus, setPlacementStatus] =
+    useState<PlacementStatus | null>(null);
   const { setAttempt } = useAttemptStore();
 
   useEffect(() => {
@@ -87,6 +114,50 @@ export default function Home() {
     })();
   }, []);
 
+  useEffect(() => {
+    async function fetchTests() {
+      try {
+        const res = await getPublicExams(1, 24);
+        const data = (res as any)?.data?.data ?? (res as any)?.data ?? [];
+        const placement = Array.isArray(data)
+          ? data.find((item: any) =>
+              String(item.title || "").includes("English Placement")
+            )
+          : null;
+        if (placement?.id) {
+          setPlacementTestId(String(placement.id));
+        }
+      } catch {}
+    }
+    fetchTests();
+  }, []);
+
+  useEffect(() => {
+    async function fetchPlacementStatus() {
+      try {
+        const res = await getPlacementStatus();
+        const raw =
+          (res as any)?.data?.data ??
+          (res as any)?.data ??
+          (res as any) ??
+          null;
+        if (!raw) return;
+        setPlacementStatus({
+          completed: !!raw.completed,
+          attemptId: String(raw.attemptId),
+          examId: String(raw.examId),
+          status: String(raw.status),
+          startedAt: raw.startedAt,
+          submittedAt: raw.submittedAt,
+          gradedAt: raw.gradedAt,
+          level: String(raw.level),
+          band: Number(raw.band ?? 0),
+        });
+      } catch {}
+    }
+    fetchPlacementStatus();
+  }, []);
+
   const analytics = useMemo(() => {
     const total = attempts.length;
     const graded = attempts.filter((a) => typeof a.score === "number");
@@ -96,25 +167,11 @@ export default function Home() {
     return { total, avg: Math.round(avg), streakDays };
   }, [attempts]);
 
-  useEffect(() => {
-    async function fetchTests() {
-      const res = await getPublicExams(1, 24);
-      const data = res.data.data.filter((item: any) =>
-        item.title.includes("English Placement")
-      );
-      setPlacementTestId(data[0].id ?? "");
-    }
-    fetchTests();
-  }, []);
-
   async function handleStart(id: string) {
     try {
-      let res;
-      res = await startAttempt(id);
-      console.log(res);
-      const payload = res.data?.data;
+      const res = await startAttempt(id);
+      const payload = (res as any)?.data?.data ?? (res as any)?.data ?? res;
       const attemptId: string | undefined = payload?.attemptId ?? payload?.id;
-
       if (!attemptId) {
         throw new Error("Missing attemptId");
       }
@@ -126,7 +183,14 @@ export default function Home() {
     }
   }
 
-  const hasPlacementTest = false;
+  const hasPlacementTest = !!placementStatus?.completed;
+  const placementProgress = placementStatus?.completed ? 100 : 0;
+  const placementSummary =
+    placementStatus && typeof placementStatus.band === "number"
+      ? `Bạn đã hoàn thành bài kiểm tra đầu vào. Band hiện tại: ${placementStatus.band.toFixed(
+          1
+        )} • Level: ${placementStatus.level}.`
+      : "Bạn đã hoàn thành bài kiểm tra đầu vào.";
 
   return (
     <div className="w-full min-h-screen bg-gradient-to-b from-blue-50 to-white">
@@ -141,7 +205,9 @@ export default function Home() {
                 </p>
 
                 <button
-                  onClick={() => router.push("/attempts")}
+                  onClick={() =>
+                    router.push(`/attempts/${placementStatus?.attemptId}`)
+                  }
                   className="text-[11px] font-semibold tracking-wide uppercase text-blue-600 hover:text-blue-700"
                 >
                   Xem kết quả
@@ -157,7 +223,7 @@ export default function Home() {
                   <div className="relative flex-1 h-5 rounded-full bg-slate-200 overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
-                      animate={{ width: "60%" }}
+                      animate={{ width: `${placementProgress}%` }}
                       transition={{ duration: 0.7, ease: "easeOut" }}
                       className="absolute inset-y-0 left-0"
                     >
@@ -172,7 +238,7 @@ export default function Home() {
 
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                       <span className="text-[12px] font-semibold text-white drop-shadow">
-                        60%
+                        {placementProgress}%
                       </span>
                     </div>
                   </div>
@@ -183,7 +249,7 @@ export default function Home() {
                 </div>
 
                 <div className="mt-2 text-[11px] text-slate-500">
-                  Đã hoàn thành 60% bài kiểm tra đầu vào.
+                  {placementSummary}
                 </div>
               </div>
             </div>
@@ -210,9 +276,12 @@ export default function Home() {
 
                   <button
                     onClick={() => {
-                      handleStart(placementTestId);
+                      if (placementTestId) {
+                        handleStart(placementTestId);
+                      }
                     }}
-                    className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700"
+                    className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed"
+                    disabled={!placementTestId}
                   >
                     Bắt đầu làm
                   </button>
@@ -348,42 +417,6 @@ export default function Home() {
   );
 }
 
-function HeroHeader() {
-  const router = useRouter();
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="relative rounded-2xl bg-gradient-to-r from-blue-600 to-blue-500 text-white p-6 sm:p-8 shadow-md overflow-hidden"
-    >
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-semibold">
-            Xin chào, chúc bạn học tốt hôm nay!
-          </h1>
-          <p className="mt-1 text-white/90 text-sm">
-            Tiếp tục chuỗi luyện tập của bạn và chinh phục mục tiêu IELTS.
-          </p>
-        </div>
-
-        <div className="flex items-center">
-          <PenguinLottie />
-        </div>
-
-        <MotionButton
-          variant="light"
-          onClick={() => {
-            router.replace("/practice");
-          }}
-        >
-          Bắt đầu luyện tập
-        </MotionButton>
-      </div>
-    </motion.div>
-  );
-}
-
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
     <motion.h2
@@ -418,26 +451,6 @@ function Card({
   );
 }
 
-function Progress({
-  value,
-  className = "",
-}: {
-  value: number;
-  className?: string;
-}) {
-  const v = Math.max(0, Math.min(100, value));
-  return (
-    <div className={`w-full h-2 rounded-full bg-slate-100 ${className}`}>
-      <motion.div
-        className="h-2 rounded-full bg-gradient-to-r from-blue-600 to-blue-500"
-        initial={{ width: 0 }}
-        animate={{ width: `${v}%` }}
-        transition={{ duration: 0.6 }}
-      />
-    </div>
-  );
-}
-
 function Badge({ children }: { children: React.ReactNode }) {
   return (
     <span className="text-[11px] leading-none rounded-full px-2 py-1 bg-blue-50 text-blue-700 border border-blue-100">
@@ -452,31 +465,6 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
       <div className="text-xs text-slate-500">{label}</div>
       <div className="mt-1 text-2xl font-semibold text-slate-900">{value}</div>
     </div>
-  );
-}
-
-function MotionButton({
-  children,
-  onClick,
-  variant = "solid",
-}: {
-  children: React.ReactNode;
-  onClick?: () => void;
-  variant?: "solid" | "light";
-}) {
-  const base =
-    "inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition";
-  const solid = "bg-white text-blue-700 hover:bg-blue-50";
-  const light = "bg-white/10 text-white hover:bg-white/15";
-  return (
-    <motion.button
-      whileHover={{ scale: 1.03 }}
-      whileTap={{ scale: 0.98 }}
-      onClick={onClick}
-      className={`${base} ${variant === "solid" ? solid : light}`}
-    >
-      {children}
-    </motion.button>
   );
 }
 
@@ -535,7 +523,6 @@ function normalizeAttemptItem(item: any): Attempt {
     (item?.startedAt || item?.submittedAt)
   ) {
     const id = String(item.attemptId);
-    const examId = String(item.examId);
     const title = String(item.title);
     const dateISO = item.submittedAt || item.startedAt;
     const durationMin = diffMinutesSafe(item.startedAt, item.submittedAt);
@@ -588,49 +575,4 @@ function toSkill(s: string): Attempt["skill"] {
   if (t.startsWith("listen")) return "Listening";
   if (t.startsWith("writ")) return "Writing";
   return "Reading";
-}
-
-function diffMinutesSafe(start?: string, end?: string): number {
-  try {
-    const s = start ? new Date(start).getTime() : NaN;
-    const e = end ? new Date(end).getTime() : NaN;
-    if (!isFinite(s) || !isFinite(e)) return 1;
-    const diffMs = Math.max(0, e - s);
-    return Math.max(1, Math.round(diffMs / 60000));
-  } catch {
-    return 1;
-  }
-}
-
-function shortId(id: string, n = 8) {
-  return id.length > n ? id.slice(0, n) : id;
-}
-
-function cryptoRandom() {
-  return Math.random().toString(36).slice(2, 10);
-}
-
-const staggerContainer = {
-  hidden: { opacity: 1 },
-  show: {
-    opacity: 1,
-    transition: { staggerChildren: 0.08, delayChildren: 0.05 },
-  },
-};
-
-const fadeInUp = {
-  hidden: { opacity: 0, y: 12 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.35 } },
-};
-
-const staggerBar = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.05 } },
-};
-
-function barItem(h: number) {
-  return {
-    hidden: { height: 0, opacity: 0 },
-    show: { height: `${h}%`, opacity: 1, transition: { duration: 0.5 } },
-  };
 }

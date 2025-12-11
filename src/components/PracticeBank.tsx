@@ -123,7 +123,7 @@ export default function PracticeBank({
   return (
     <section className={`w-full ${className}`}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="inline-flex rounded-lg border border-slate-200 bg-white p-1">
+        {/* <div className="inline-flex rounded-lg border border-slate-200 bg-white p-1">
           <button
             onClick={() => {
               setTab("todo");
@@ -150,7 +150,7 @@ export default function PracticeBank({
           >
             Bài đã làm
           </button>
-        </div>
+        </div> */}
 
         <div className="flex items-center gap-2">
           <div className="relative w-full sm:w-96">
@@ -162,7 +162,7 @@ export default function PracticeBank({
                 setPage(1);
               }}
               placeholder="Nhập từ khóa bạn muốn tìm kiếm"
-              className="w-full rounded-full border border-slate-300 py-2 pl-9 pr-4 text-sm outline-none focus:border-slate-400"
+              className="w-full rounded-full border border-slate-300 py-2 pl-9 pr-4 text-sm outline-none focus:border-slate-400 text-black"
             />
           </div>
           <button

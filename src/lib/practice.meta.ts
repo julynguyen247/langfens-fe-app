@@ -8,23 +8,17 @@ export const GROUPS: Record<
   writing: {
     title: "Writing",
     items: [
-      { id: "writing_task1", label: "Task 1" },
-      { id: "writing_task2", label: "Task 2" },
+      { id: "writing_part1", label: "Part 1" },
+      { id: "writing_part2", label: "Part 2" },
     ],
   },
   reading: {
     title: "Reading",
-    items: [
-      { id: "reading_full", label: "Full test" },
-      { id: "reading_section", label: "Section" },
-    ],
+    items: [{ id: "reading_full", label: "Full test" }],
   },
   listening: {
     title: "Listening",
-    items: [
-      { id: "listening_full", label: "Full test" },
-      { id: "listening_section", label: "Section" },
-    ],
+    items: [{ id: "listening_full", label: "Full test" }],
   },
   speaking: {
     title: "Speaking",

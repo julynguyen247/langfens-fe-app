@@ -341,3 +341,7 @@ export async function uploadFile(params: { file: Blob | File }) {
   });
   return res;
 }
+export async function getPlacementStatus() {
+  const res = await apisAttempt.get("/attempt/placement/status");
+  return res;
+}

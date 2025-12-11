@@ -76,8 +76,7 @@ export default function LangfensHeader() {
                 onClick={() => pathname !== "/home" && setRouteLoading(true)}
                 className="flex items-center gap-2"
               >
-                <SleepPenguinMini />
-                <span className="text-base sm:text-xl font-bold tracking-wide text-[#2563EB] mt-2">
+                <span className="text-base sm:text-xl font-bold tracking-wide text-[#2563EB] ">
                   LANGFENS – Best Solution
                 </span>
               </Link>
