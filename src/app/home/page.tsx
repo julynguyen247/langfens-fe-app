@@ -9,6 +9,8 @@ import {
   getPublicExams,
   startAttempt,
   getPlacementStatus,
+  getWritingHistory,
+  getSpeakingHistory,
 } from "@/utils/api";
 import { FiPlay } from "react-icons/fi";
 import { TbTargetArrow } from "react-icons/tb";
@@ -20,7 +22,12 @@ import {
   staggerContainer,
 } from "./components/variants";
 import { HeroHeader } from "./components/HeroHeader";
-import { cryptoRandom, diffMinutesSafe } from "./components/utils";
+import {
+  cryptoRandom,
+  diffMinutesSafe,
+  mapSpeakingHistoryToAttempt,
+  mapWritingHistoryToAttempt,
+} from "./components/utils";
 
 type Course = {
   id: string;
@@ -31,10 +38,10 @@ type Course = {
   lessonsTotal: number;
 };
 
-type Attempt = {
+export type Attempt = {
   id: string;
   title: string;
-  skill: "Reading" | "Listening" | "Writing";
+  skill: "Reading" | "Listening" | "Writing" | "Speaking";
   dateISO: string;
   score?: number;
   durationMin: number;
@@ -54,6 +61,7 @@ type PlacementStatus = {
 
 export default function Home() {
   const router = useRouter();
+  const { setAttempt } = useAttemptStore();
 
   const courses: Course[] = [
     {
@@ -88,24 +96,40 @@ export default function Home() {
   const [placementTestId, setPlacementTestId] = useState("");
   const [placementStatus, setPlacementStatus] =
     useState<PlacementStatus | null>(null);
-  const { setAttempt } = useAttemptStore();
 
   useEffect(() => {
     getMe().catch(() => {});
+
     (async () => {
       setLoadingAttempts(true);
       setAttemptErr(null);
+
       try {
         const res = await getAttempt(1, 10);
-        const raw =
-          (res as any)?.data?.items ??
-          (res as any)?.data?.data ??
-          (res as any)?.data ??
-          [];
+        const raw = res?.data?.items ?? res?.data?.data ?? res?.data ?? [];
+
         const list: Attempt[] = Array.isArray(raw)
           ? raw.map(normalizeAttemptItem)
           : [];
-        setAttempts(list);
+
+        const wres = await getWritingHistory();
+        const wraw = wres?.data?.data ?? [];
+        const writingList: Attempt[] = Array.isArray(wraw)
+          ? wraw.map(mapWritingHistoryToAttempt)
+          : [];
+
+        const sres = await getSpeakingHistory();
+        const sraw = sres?.data?.data ?? [];
+        const speakingList: Attempt[] = Array.isArray(sraw)
+          ? sraw.map(mapSpeakingHistoryToAttempt)
+          : [];
+
+        const merged = [...list, ...writingList, ...speakingList];
+        merged.sort(
+          (a, b) =>
+            new Date(b.dateISO).getTime() - new Date(a.dateISO).getTime()
+        );
+        setAttempts(merged);
       } catch (e: any) {
         setAttemptErr(e?.message || "Không thể tải lịch sử làm bài.");
       } finally {
@@ -183,6 +207,18 @@ export default function Home() {
     }
   }
 
+  // 🔹 Helper: build URL chi tiết theo skill
+  function buildAttemptDetailUrl(a: Attempt) {
+    if (a.skill === "Writing") {
+      return `/attempts/${a.id}?source=writing`;
+    }
+    if (a.skill === "Speaking") {
+      return `/attempts/${a.id}?source=speaking`;
+    }
+    // Reading / Listening / Placement
+    return `/attempts/${a.id}?source=attempt`;
+  }
+
   const hasPlacementTest = !!placementStatus?.completed;
   const placementProgress = placementStatus?.completed ? 100 : 0;
   const placementSummary =
@@ -206,7 +242,9 @@ export default function Home() {
 
                 <button
                   onClick={() =>
-                    router.push(`/attempts/${placementStatus?.attemptId}`)
+                    router.push(
+                      `/attempts/${placementStatus?.attemptId}?source=attempt`
+                    )
                   }
                   className="text-[11px] font-semibold tracking-wide uppercase text-blue-600 hover:text-blue-700"
                 >
@@ -353,7 +391,7 @@ export default function Home() {
                           </span>
                         )}
                         <MotionLink
-                          onClick={() => router.push(`/attempts/${a.id}`)}
+                          onClick={() => router.push(buildAttemptDetailUrl(a))}
                         >
                           Xem chi tiết
                         </MotionLink>

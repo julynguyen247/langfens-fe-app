@@ -5,14 +5,11 @@ import { useParams, useSearchParams, useRouter } from "next/navigation";
 import PassageView from "./components/reading/PassageView";
 import QuestionPanel, {
   Question as UiQuestion,
-  BackendQuestionType,
   QuestionUiKind,
 } from "./components/common/QuestionPanel";
-
 import { useAttemptStore } from "@/app/store/useAttemptStore";
 import { useUserStore } from "@/app/store/userStore";
 import {
-  audioSubmitFromUrl,
   autoSaveAttempt,
   getSpeakingExamsById,
   getWritingExam,
@@ -24,15 +21,8 @@ import { useDebouncedAutoSave } from "@/app/utils/hook";
 import { mapApiQuestionToUi } from "@/lib/mapApiQuestionToUi";
 import ListeningAudioBar from "./components/listening/ListeningAudioBar";
 import { useReactMediaRecorder } from "react-media-recorder";
-import { SpeakingRecorderBar } from "./components/speaking/SpeakingRecorderBar";
-import {
-  WritingGradeRes,
-  WritingGradeResult,
-} from "./components/writing/WritingGradeResult";
-import {
-  SpeakingGradeRes,
-  SpeakingGradeResult,
-} from "./components/speaking/SpeakingGradeResult";
+import { useLoadingStore } from "@/app/store/loading";
+import Modal from "@/components/Modal";
 
 type Skill = "reading" | "listening" | "writing" | "speaking";
 type QA = Record<string, string>;
@@ -43,13 +33,6 @@ export default function DoTestAttemptPage() {
     attemptId: string;
   };
   const attempt = useAttemptStore((s) => s.byId[attemptId]);
-
-  // if (!attempt)
-  // {
-  //   return (
-  //     <div className="p-6">Không có dữ liệu đề. Hãy quay lại và Start lại.</div>
-  //   );
-  // }
 
   if (skill === "reading") return <ReadingScreen attemptId={attemptId} />;
   if (skill === "listening") return <ListeningScreen attemptId={attemptId} />;
@@ -135,6 +118,7 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
   const sp = useSearchParams();
   const secFromUrl = sp.get("sec");
   const activeSec = sections.find((s) => s.id === secFromUrl) ?? sections[0];
+
   const panelQuestions = useMemo<UiQuestion[]>(
     () =>
       (activeSec?.questions ?? [])
@@ -162,7 +146,6 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
   const buildTextAnswer = (qid: string, value: string) => {
     if (!value) return undefined;
     const kind = questionUiKindMap[qid];
-
     if (kind === "choice_single") return undefined;
     return value;
   };
@@ -186,7 +169,6 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
           return {
             questionId,
             sectionId,
-
             selectedOptionIds: !hasText && value ? [value] : [],
             textAnswer: hasText ? textAnswer : undefined,
           };
@@ -293,6 +275,7 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
     .slice()
     .sort((a, b) => a.idx - b.idx)
     .map((q: any) => mapApiQuestionToUi(q));
+
   const questionUiKindMap = useMemo(() => {
     const m: Record<string, QuestionUiKind> = {};
     for (const q of panelQuestions) {
@@ -313,7 +296,6 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
   const buildTextAnswer = (qid: string, value: string) => {
     if (!value) return undefined;
     const kind = questionUiKindMap[qid];
-
     if (kind === "choice_single") return undefined;
     return value;
   };
@@ -376,7 +358,8 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
   );
 }
 
-/* -------------------- SPEAKING (UI only) -------------------- */
+/* -------------------- SPEAKING -------------------- */
+
 type SpeakingExam = {
   id: string;
   title: string;
@@ -386,6 +369,8 @@ type SpeakingExam = {
 
 function SpeakingScreen({ attemptId }: { attemptId: string }) {
   const examIdFromUrl = attemptId;
+  const router = useRouter();
+  const { setLoading } = useLoadingStore();
 
   const { status, startRecording, stopRecording, mediaBlobUrl } =
     useReactMediaRecorder({ audio: true });
@@ -396,7 +381,7 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
   const [errorExam, setErrorExam] = useState<string | null>(null);
   const [transcript, setTranscript] = useState("");
   const [grading, setGrading] = useState(false);
-  const [gradeResult, setGradeResult] = useState<SpeakingGradeRes | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const isRecording = status === "recording";
 
@@ -443,7 +428,6 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
     if (grading) return;
     setSeconds(0);
     setTranscript("");
-    setGradeResult(null);
     startRecording();
   };
 
@@ -452,13 +436,24 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
     stopRecording();
   };
 
-  const handleGrade = async () => {
+  const handleOpenConfirmGrade = () => {
     if (!mediaBlobUrl) {
       alert("Chưa có đoạn ghi âm để chấm điểm.");
       return;
     }
+    if (!exam?.id && !examIdFromUrl) {
+      alert("Không tìm thấy examId để chấm.");
+      return;
+    }
+    setConfirmOpen(true);
+  };
 
+  const doGrade = async () => {
     const realExamId: string | undefined = exam?.id ?? examIdFromUrl;
+    if (!mediaBlobUrl) {
+      alert("Chưa có đoạn ghi âm để chấm điểm.");
+      return;
+    }
     if (!realExamId) {
       alert("Không tìm thấy examId để chấm.");
       return;
@@ -466,41 +461,46 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
 
     try {
       setGrading(true);
-
+      setLoading(true);
       const blob = await fetch(mediaBlobUrl).then((r) => r.blob());
-
       const res = await gradeSpeaking({
         examId: realExamId,
         timeSpentSeconds: seconds,
         speech: blob,
       });
-
-      const rawData = res.data;
-      const payload: SpeakingGradeRes | undefined =
-        rawData?.data?.res ?? rawData?.res ?? rawData;
-
-      console.log("speaking grade raw:", rawData);
-      console.log("speaking grade payload:", payload);
+      const payload = res.data.data;
 
       if (!payload) {
         alert("Không nhận được dữ liệu chấm điểm.");
         return;
       }
-      const newTranscript =
-        payload.transcriptRaw || payload.transcriptNormalized || "";
 
+      const newTranscript =
+        (payload as any).transcriptRaw ||
+        (payload as any).transcriptNormalized ||
+        "";
       if (newTranscript) {
         setTranscript(newTranscript);
       }
 
-      setGradeResult(payload);
-      alert("Đã chấm xong!");
+      const submissionId = (payload as any).submissionId;
+      if (submissionId) {
+        router.push(`/attempts/${submissionId}?source=speaking`);
+      } else {
+        alert("Đã chấm xong nhưng không tìm thấy submissionId.");
+      }
     } catch (e) {
       console.error(e);
       alert("Chấm điểm speaking thất bại, thử lại nhé.");
     } finally {
       setGrading(false);
+      setLoading(false);
     }
+  };
+
+  const handleConfirmGrade = async () => {
+    setConfirmOpen(false);
+    await doGrade();
   };
 
   if (loadingExam) {
@@ -528,173 +528,202 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
     "You will speak about the topic below. Try to give full, natural answers.";
 
   return (
-    <div className="flex h-full min-h-0 bg-slate-50">
-      <div className="flex flex-1 max-w-5xl mx-auto my-8 gap-8 w-full px-6">
-        <main className="flex-1 flex flex-col gap-5 min-h-0">
-          <div className="bg-white border rounded-2xl px-8 py-5 flex items-center justify-between shadow-md">
-            <div>
-              <p className="text-xs uppercase tracking-[0.25em] text-slate-400">
-                IELTS Speaking
-              </p>
-              <h2 className="text-xl font-semibold text-slate-800 mt-1">
-                {title}
-              </h2>
-            </div>
-
-            <div className="flex items-center gap-6 text-sm">
-              <div className="flex flex-col items-end">
-                <span className="text-xs text-slate-500">Timer</span>
-                <span className="font-mono font-semibold text-lg text-slate-800">
-                  {formatTime(seconds)}
-                </span>
-              </div>
-              <span
-                className={`inline-flex items-center px-4 py-1.5 rounded-full text-xs font-medium ${
-                  status === "recording"
-                    ? "bg-red-100 text-red-700"
-                    : status === "stopped"
-                    ? "bg-emerald-100 text-emerald-700"
-                    : "bg-slate-100 text-slate-600"
-                }`}
-              >
-                <span
-                  className={`mr-2 h-2.5 w-2.5 rounded-full ${
-                    status === "recording"
-                      ? "bg-red-500 animate-pulse"
-                      : status === "stopped"
-                      ? "bg-emerald-500"
-                      : "bg-slate-400"
-                  }`}
-                />
-                {status === "idle" && "Ready"}
-                {status === "recording" && "Recording"}
-                {status === "stopped" && "Recorded"}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex flex-1 gap-5 min-h-0">
-            <section className="flex-1 bg-white border rounded-2xl p-7 shadow-md flex flex-col min-h-0">
+    <>
+      <div className="flex h-full min-h-0 bg-slate-50">
+        <div className="flex flex-1 max-w-5xl mx-auto my-8 gap-8 w-full px-6">
+          <main className="flex-1 flex flex-col gap-5 min-h-0">
+            <div className="bg-white border rounded-2xl px-8 py-5 flex items-center justify-between shadow-md">
               <div>
-                <h3 className="text-base font-semibold text-slate-800">
-                  Task instructions
-                </h3>
-                <p className="text-base text-slate-700 leading-relaxed whitespace-pre-line">
-                  {description}
+                <p className="text-xs uppercase tracking-[0.25em] text-slate-400">
+                  IELTS Speaking
                 </p>
+                <h2 className="text-xl font-semibold text-slate-800 mt-1">
+                  {title}
+                </h2>
               </div>
 
-              {gradeResult && (
-                <div className="mt-6 flex-1 min-h-0 overflow-auto pr-2">
-                  <SpeakingGradeResult data={gradeResult} />
+              <div className="flex items-center gap-6 text-sm">
+                <div className="flex flex-col items-end">
+                  <span className="text-xs text-slate-500">Timer</span>
+                  <span className="font-mono font-semibold text-lg text-slate-800">
+                    {formatTime(seconds)}
+                  </span>
                 </div>
-              )}
-            </section>
-
-            <section className="w-full max-w-md flex flex-col gap-4">
-              <div className="bg-white border rounded-2xl p-6 shadow-md flex flex-col gap-4">
-                <h3 className="text-sm font-semibold text-slate-800">
-                  Recording panel
-                </h3>
-
-                <div className="flex items-center justify-center">
-                  <div className="w-52 h-52 rounded-full border-[6px] border-slate-200 flex items-center justify-center relative">
-                    <div
-                      className={`w-36 h-36 rounded-full flex items-center justify-center text-sm font-semibold ${
-                        isRecording
-                          ? "bg-red-500 text-white shadow-lg"
-                          : "bg-slate-100 text-slate-700"
-                      }`}
-                    >
-                      {isRecording ? "Recording…" : "Tap Start to record"}
-                    </div>
-                    <div className="absolute -bottom-4 text-[11px] text-slate-500 font-mono">
-                      {formatTime(seconds)}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between gap-4 text-xs text-slate-500 mt-3">
-                  <button
-                    type="button"
-                    onClick={handleStart}
-                    disabled={isRecording || grading}
-                    className={`flex-1 px-4 py-2.5 rounded-lg font-semibold text-sm transition ${
-                      isRecording || grading
-                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                        : "bg-[#317EFF] text-white hover:bg-[#74a4f6]"
-                    }`}
-                  >
-                    Start
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleStop}
-                    disabled={!isRecording || grading}
-                    className={`flex-1 px-4 py-2.5 rounded-lg font-semibold text-sm transition ${
-                      !isRecording || grading
-                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                        : "bg-red-500 text-white hover:bg-red-600"
-                    }`}
-                  >
-                    Stop
-                  </button>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleGrade}
-                  disabled={!mediaBlobUrl || grading}
-                  className={`mt-3 w-full px-4 py-2.5 rounded-lg font-semibold text-sm transition ${
-                    mediaBlobUrl && !grading
-                      ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200"
-                      : "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
+                <span
+                  className={`inline-flex items-center px-4 py-1.5 rounded-full text-xs font-medium ${
+                    status === "recording"
+                      ? "bg-red-100 text-red-700"
+                      : status === "stopped"
+                      ? "bg-emerald-100 text-emerald-700"
+                      : "bg-slate-100 text-slate-600"
                   }`}
                 >
-                  {grading
-                    ? "Đang chấm..."
-                    : mediaBlobUrl
-                    ? "Grade & generate transcript"
-                    : "Record first to grade"}
-                </button>
+                  <span
+                    className={`mr-2 h-2.5 w-2.5 rounded-full ${
+                      status === "recording"
+                        ? "bg-red-500 animate-pulse"
+                        : status === "stopped"
+                        ? "bg-emerald-500"
+                        : "bg-slate-400"
+                    }`}
+                  />
+                  {status === "idle" && "Ready"}
+                  {status === "recording" && "Recording"}
+                  {status === "stopped" && "Recorded"}
+                </span>
               </div>
+            </div>
 
-              <div className="bg-white border rounded-2xl p-5 shadow-md flex-1 min-h-[220px]">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-slate-800">
-                    Transcript
+            <div className="flex flex-1 gap-5 min-h-0">
+              <section className="flex-1 bg-white border rounded-2xl p-7 shadow-md flex flex-col min-h-0">
+                <div>
+                  <h3 className="text-base font-semibold text-slate-800">
+                    Task instructions
                   </h3>
-                  {transcript && (
-                    <span className="text-[11px] px-2 py-1 rounded-full bg-slate-100 text-slate-600">
-                      AI generated
-                    </span>
-                  )}
+                  <p className="text-base text-slate-700 leading-relaxed whitespace-pre-line">
+                    {description}
+                  </p>
+                </div>
+              </section>
+
+              <section className="w-full max-w-md flex flex-col gap-4">
+                <div className="bg-white border rounded-2xl p-6 shadow-md flex flex-col gap-4">
+                  <h3 className="text-sm font-semibold text-slate-800">
+                    Recording panel
+                  </h3>
+
+                  <div className="flex items-center justify-center">
+                    <div className="w-52 h-52 rounded-full border-[6px] border-slate-200 flex items-center justify-center relative">
+                      <div
+                        className={`w-36 h-36 rounded-full flex items-center justify-center text-sm font-semibold ${
+                          isRecording
+                            ? "bg-red-500 text-white shadow-lg"
+                            : "bg-slate-100 text-slate-700"
+                        }`}
+                      >
+                        {isRecording ? "Recording…" : "Tap Start to record"}
+                      </div>
+                      <div className="absolute -bottom-4 text-[11px] text-slate-500 font-mono">
+                        {formatTime(seconds)}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-4 text-xs text-slate-500 mt-3">
+                    <button
+                      type="button"
+                      onClick={handleStart}
+                      disabled={isRecording || grading}
+                      className={`flex-1 px-4 py-2.5 rounded-lg font-semibold text-sm transition ${
+                        isRecording || grading
+                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                          : "bg-[#317EFF] text-white hover:bg-[#74a4f6]"
+                      }`}
+                    >
+                      Start
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleStop}
+                      disabled={!isRecording || grading}
+                      className={`flex-1 px-4 py-2.5 rounded-lg font-semibold text-sm transition ${
+                        !isRecording || grading
+                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                          : "bg-red-500 text-white hover:bg-red-600"
+                      }`}
+                    >
+                      Stop
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleOpenConfirmGrade}
+                    disabled={!mediaBlobUrl || grading}
+                    className={`mt-3 w-full px-4 py-2.5 rounded-lg font-semibold text-sm transition ${
+                      mediaBlobUrl && !grading
+                        ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200"
+                        : "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
+                    }`}
+                  >
+                    {grading
+                      ? "Đang chấm..."
+                      : mediaBlobUrl
+                      ? "Grade & generate transcript"
+                      : "Record first to grade"}
+                  </button>
                 </div>
 
-                {transcript ? (
-                  <p className="text-sm text-slate-700 whitespace-pre-line leading-relaxed">
-                    {transcript}
-                  </p>
-                ) : (
-                  <p className="text-xs text-slate-500">
-                    Sau khi ghi âm và bấm <b>Grade &amp; generate transcript</b>
-                    , transcript phần nói của bạn sẽ hiển thị ở đây.
-                  </p>
-                )}
-              </div>
-            </section>
-          </div>
-        </main>
+                <div className="bg-white border rounded-2xl p-5 shadow-md flex-1 min-h-[220px]">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-slate-800">
+                      Transcript
+                    </h3>
+                    {transcript && (
+                      <span className="text-[11px] px-2 py-1 rounded-full bg-slate-100 text-slate-600">
+                        AI generated
+                      </span>
+                    )}
+                  </div>
+
+                  {transcript ? (
+                    <p className="text-sm text-slate-700 whitespace-pre-line leading-relaxed">
+                      {transcript}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-slate-500">
+                      Sau khi ghi âm và bấm{" "}
+                      <b>Grade &amp; generate transcript</b>, transcript phần
+                      nói của bạn sẽ hiển thị ở đây.
+                    </p>
+                  )}
+                </div>
+              </section>
+            </div>
+          </main>
+        </div>
       </div>
-    </div>
+
+      <Modal
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        title="Xác nhận chấm điểm Speaking"
+        footer={
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => setConfirmOpen(false)}
+              className="px-4 py-2 rounded-lg text-sm font-medium border border-slate-200 text-slate-600 hover:bg-slate-50"
+            >
+              Hủy
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirmGrade}
+              className="px-4 py-2 rounded-lg text-sm font-semibold bg-[#317EFF] text-white hover:bg-[#74a4f6]"
+            >
+              Đồng ý
+            </button>
+          </div>
+        }
+      >
+        <p className="text-sm text-slate-700">
+          Bạn chắc chắn muốn gửi đoạn ghi âm để chấm điểm không?
+          <br />
+          Sau khi chấm xong, bạn sẽ được chuyển tới trang xem kết quả Speaking.
+        </p>
+      </Modal>
+    </>
   );
 }
 
-/* -------------------- WRITING (stub) -------------------- */
+/* -------------------- WRITING -------------------- */
 
 function WritingScreen({ attemptId }: { attemptId: string }) {
   const examIdFromUrl = attemptId;
+  const router = useRouter();
+  const { setLoading } = useLoadingStore();
 
   const [exam, setExam] = useState<any | null>(null);
   const [loadingExam, setLoadingExam] = useState(true);
@@ -704,7 +733,7 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
   const [wordCount, setWordCount] = useState(0);
   const [seconds, setSeconds] = useState(0);
   const [grading, setGrading] = useState(false);
-  const [result, setResult] = useState<WritingGradeRes | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -743,7 +772,15 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
     setWordCount(v.trim().split(/\s+/).filter(Boolean).length);
   };
 
-  const handleSubmit = async () => {
+  const handleOpenConfirmSubmit = () => {
+    if (!answer.trim()) {
+      alert("Bạn chưa viết gì cả.");
+      return;
+    }
+    setConfirmOpen(true);
+  };
+
+  const doSubmit = async () => {
     const realExamId: string | undefined = exam?.id ?? examIdFromUrl;
 
     if (!realExamId) {
@@ -757,28 +794,33 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
 
     try {
       setGrading(true);
+      setLoading(true);
       const res = await gradeWriting(realExamId, answer, seconds);
-
-      const rawData = res.data;
-      const payload: WritingGradeRes | undefined =
-        rawData?.data?.res ?? rawData?.res;
-
-      console.log("grade raw:", rawData);
-      console.log("grade payload:", payload);
+      const payload = res.data.data;
 
       if (!payload) {
         alert("Không nhận được dữ liệu chấm điểm.");
         return;
       }
 
-      setResult(payload);
-      alert("Đã chấm xong!");
+      const submissionId = (payload as any).submissionId;
+      if (submissionId) {
+        router.push(`/attempts/${submissionId}?source=writing`);
+      } else {
+        alert("Đã chấm xong nhưng không tìm thấy submissionId.");
+      }
     } catch (e) {
       console.error(e);
       alert("Chấm điểm thất bại!");
     } finally {
       setGrading(false);
+      setLoading(false);
     }
+  };
+
+  const handleConfirmSubmit = async () => {
+    setConfirmOpen(false);
+    await doSubmit();
   };
 
   const examTitle: string = exam?.title ?? "Writing";
@@ -806,54 +848,86 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
   }
 
   return (
-    <div className="flex flex-col h-full min-h-0 bg-white rounded-xl shadow overflow-hidden">
-      <div className="border-b p-4 bg-white sticky top-0 z-10 flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-semibold text-slate-800">{examTitle}</h2>
-          <p className="text-xs text-slate-500">
-            Write your essay in the box below
-          </p>
-        </div>
-        <button
-          onClick={handleSubmit}
-          disabled={grading}
-          className={`px-4 py-2 rounded-lg text-sm font-semibold transition
+    <>
+      <div className="flex flex-col h-full min-h-0 bg-white rounded-xl shadow overflow-hidden">
+        <div className="border-b p-4 bg-white sticky top-0 z-10 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-800">
+              {examTitle}
+            </h2>
+            <p className="text-xs text-slate-500">
+              Write your essay in the box below
+            </p>
+          </div>
+          <button
+            onClick={handleOpenConfirmSubmit}
+            disabled={grading}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition
             ${
               grading
                 ? "bg-gray-200 text-gray-500 cursor-not-allowed"
                 : "bg-[#317EFF] text-white hover:bg-[#74a4f6]"
             }`}
-        >
-          {grading ? "Đang chấm…" : "Nộp bài"}
-        </button>
-      </div>
+          >
+            {grading ? "Đang chấm…" : "Nộp bài"}
+          </button>
+        </div>
 
-      <div className="p-6 bg-gray-50 border-b">
-        <h3 className="font-semibold text-slate-800 mb-2">Prompt</h3>
-        <p className="whitespace-pre-line text-slate-700 leading-relaxed">
-          {writingPrompt}
-        </p>
-      </div>
-
-      <div className="flex-1 p-6 overflow-auto bg-gray-50">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-sm text-slate-500">
-            Word count: <span className="font-semibold">{wordCount}</span>
-          </p>
-          <p className="text-sm text-slate-500">
-            Time: <span className="font-mono">{seconds}s</span>
+        <div className="p-6 bg-gray-50 border-b">
+          <h3 className="font-semibold text-slate-800 mb-2">Prompt</h3>
+          <p className="whitespace-pre-line text-slate-700 leading-relaxed">
+            {writingPrompt}
           </p>
         </div>
 
-        <textarea
-          value={answer}
-          onChange={handleChange}
-          placeholder="Type your essay here…"
-          className="w-full min-h-[300px] h-full p-4 border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#317EFF] focus:border-transparent text-slate-800"
-        />
+        <div className="flex-1 p-6 overflow-auto bg-gray-50">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm text-slate-500">
+              Word count: <span className="font-semibold">{wordCount}</span>
+            </p>
+            <p className="text-sm text-slate-500">
+              Time: <span className="font-mono">{seconds}s</span>
+            </p>
+          </div>
 
-        {result && <WritingGradeResult data={result} />}
+          <textarea
+            value={answer}
+            onChange={handleChange}
+            placeholder="Type your essay here…"
+            className="w-full min-h-[300px] h-full p-4 border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#317EFF] focus:border-transparent text-slate-800"
+          />
+        </div>
       </div>
-    </div>
+
+      <Modal
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        title="Xác nhận nộp bài Writing"
+        footer={
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => setConfirmOpen(false)}
+              className="px-4 py-2 rounded-lg text-sm font-medium border border-slate-200 text-slate-600 hover:bg-slate-50"
+            >
+              Hủy
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirmSubmit}
+              className="px-4 py-2 rounded-lg text-sm font-semibold bg-[#317EFF] text-white hover:bg-[#74a4f6]"
+            >
+              Đồng ý
+            </button>
+          </div>
+        }
+      >
+        <p className="text-sm text-slate-700">
+          Bạn chắc chắn muốn nộp bài Writing để chấm điểm không?
+          <br />
+          Sau khi chấm xong, bạn sẽ được chuyển tới trang xem kết quả.
+        </p>
+      </Modal>
+    </>
   );
 }

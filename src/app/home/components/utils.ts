@@ -1,3 +1,5 @@
+import { Attempt } from "../page";
+
 export function formatDate(iso: string) {
   try {
     const d = new Date(iso);
@@ -26,4 +28,37 @@ export function diffMinutesSafe(start?: string, end?: string): number {
 
 export function cryptoRandom() {
   return Math.random().toString(36).slice(2, 10);
+}
+export function mapWritingHistoryToAttempt(item: any): Attempt {
+  return {
+    id: String(item.submissionId ?? item.id ?? cryptoRandom()),
+    title: String(item.title ?? "Writing Test"),
+    skill: "Writing",
+    dateISO: String(item.submittedAt ?? new Date().toISOString()),
+    score:
+      typeof item.overallBand === "number"
+        ? Math.round(item.overallBand * 10)
+        : undefined,
+    durationMin: Math.max(
+      1,
+      Math.round(Number(item.timeSpentSeconds ?? 0) / 60)
+    ),
+  };
+}
+
+export function mapSpeakingHistoryToAttempt(item: any): Attempt {
+  return {
+    id: String(item.submissionId ?? item.id ?? cryptoRandom()),
+    title: String(item.taskName ?? "Speaking Test"),
+    skill: "Speaking",
+    dateISO: String(item.submittedAt ?? new Date().toISOString()),
+    score:
+      typeof item.overallBand === "number"
+        ? Math.round(item.overallBand * 10)
+        : undefined,
+    durationMin: Math.max(
+      1,
+      Math.round(Number(item.timeSpentSeconds ?? 0) / 60)
+    ),
+  };
 }

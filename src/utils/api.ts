@@ -345,3 +345,20 @@ export async function getPlacementStatus() {
   const res = await apisAttempt.get("/attempt/placement/status");
   return res;
 }
+export async function getWritingHistory() {
+  const res = await apisWriting.get("/writing/history");
+  return res;
+}
+export async function getSpeakingHistory() {
+  const res = await apisSpeaking.get("/speaking/history");
+  return res;
+}
+
+export async function getWritingHistoryById(submissionId: string) {
+  const res = await apisWriting.get(`/writing/history/${submissionId}`);
+  return res;
+}
+export async function getSpeakingHistoryById(submissionId: string) {
+  const res = await apisSpeaking.get(`/speaking/history/${submissionId}`);
+  return res;
+}
