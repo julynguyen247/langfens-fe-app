@@ -8,10 +8,16 @@ type ChatMessage = {
   content: string;
 };
 
+const WELCOME_MESSAGE: ChatMessage = {
+  role: "assistant",
+  content:
+    "Xin chào, mình là trợ lý Langfens.\nHãy hỏi mình bất cứ điều gì về tiếng Anh, bài test hoặc cách dùng Langfens nhé!",
+};
+
 export default function ChatbotWidget() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([WELCOME_MESSAGE]);
   const [loading, setLoading] = useState(false);
 
   const handleSend = async (e?: React.FormEvent) => {
@@ -19,23 +25,34 @@ export default function ChatbotWidget() {
     const trimmed = input.trim();
     if (!trimmed || loading) return;
 
-    const botIndex = messages.length + 1;
-    setMessages([
-      ...messages,
-      { role: "user", content: trimmed },
-      { role: "assistant", content: "" },
-    ]);
+    let botIndex = -1;
+
+    setMessages((prev) => {
+      const userMsg: ChatMessage = { role: "user", content: trimmed };
+      const botMsg: ChatMessage = { role: "assistant", content: "" };
+      botIndex = prev.length + 1;
+      return [...prev, userMsg, botMsg];
+    });
+
     setInput("");
     setLoading(true);
 
     try {
+      const payload = {
+        messages: [
+          {
+            content: trimmed,
+            role: "user",
+          },
+        ],
+      };
+
       const res = await fetch("/api/chatbot/stream", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-
-        body: JSON.stringify({ message: trimmed }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.body) {
@@ -52,12 +69,11 @@ export default function ChatbotWidget() {
         if (done) break;
 
         const chunkText = decoder.decode(value, { stream: true });
-
         botText += chunkText;
 
         setMessages((prev) => {
+          if (botIndex < 0 || botIndex >= prev.length) return prev;
           const next = [...prev];
-          if (!next[botIndex]) return next;
           next[botIndex] = {
             ...next[botIndex],
             content: botText,
@@ -78,10 +94,12 @@ export default function ChatbotWidget() {
         <button
           onClick={() => setOpen(true)}
           className="
-            fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 
+            fixed bottom-6 right-6 bg-gradient-to-r from-blue-500 to-indigo-500
+            hover:brightness-110
             text-white p-4 rounded-full shadow-xl z-[9999]
             transition-all duration-300 
             animate-[chatbot-pop_0.35s_ease-out]
+            flex items-center justify-center
           "
         >
           <FiMessageCircle size={24} />
@@ -91,39 +109,49 @@ export default function ChatbotWidget() {
       {open && (
         <div
           className="
-            fixed bottom-6 right-6 w-80 h-96 bg-white rounded-xl shadow-2xl z-[9999] 
-            flex flex-col 
+            fixed bottom-6 right-6 w-80 h-96 
+            bg-gradient-to-b from-slate-50 to-slate-100
+            rounded-2xl shadow-2xl z-[9999] 
+            flex flex-col border border-slate-200
             animate-[chatbot-open_0.35s_ease-out]
           "
         >
-          <div className="p-3 flex justify-between items-center bg-white rounded-t-xl shadow-sm">
-            <h3 className="font-semibold text-gray-900">Chat hỗ trợ</h3>
+          <div
+            className="
+              px-4 py-3 flex justify-between items-center 
+              rounded-t-2xl
+              bg-gradient-to-r from-blue-600 to-indigo-500
+              text-white shadow-sm
+            "
+          >
+            <div className="flex flex-col">
+              <span className="font-semibold text-sm">Langfens Assistant</span>
+              <span className="text-[11px] text-blue-100">
+                Hỗ trợ tiếng Anh & bài test
+              </span>
+            </div>
             <button
               onClick={() => setOpen(false)}
-              className="text-gray-500 hover:text-gray-700 transition"
+              className="text-blue-100 hover:text-white transition"
             >
-              <FiX size={20} />
+              <FiX size={18} />
             </button>
           </div>
-
-          <div className="flex-1 p-3 overflow-y-auto text-sm text-gray-800 space-y-2">
-            {messages.length === 0 && (
-              <p className="text-gray-400 text-xs">
-                Hãy hỏi mình bất cứ điều gì về bài test, đăng ký, v.v. 👋
-              </p>
-            )}
-
+          <div className="flex-1 px-3 py-2 overflow-y-auto text-sm text-gray-800 space-y-2">
             {messages.map((m, i) => (
               <div
                 key={i}
-                className={m.role === "user" ? "text-right" : "text-left"}
+                className={
+                  "flex " +
+                  (m.role === "user" ? "justify-end" : "justify-start")
+                }
               >
                 <div
                   className={
-                    "inline-block px-3 py-2 rounded-lg max-w-[90%] whitespace-pre-wrap " +
+                    "max-w-[85%] px-3 py-2 rounded-2xl whitespace-pre-wrap text-[13px] shadow-sm " +
                     (m.role === "user"
-                      ? "bg-blue-600 text-white rounded-br-none"
-                      : "bg-gray-100 text-gray-900 rounded-bl-none")
+                      ? "bg-blue-600 text-white rounded-br-sm"
+                      : "bg-white text-gray-900 rounded-bl-sm border border-slate-100")
                   }
                 >
                   {m.content ||
@@ -133,18 +161,35 @@ export default function ChatbotWidget() {
                 </div>
               </div>
             ))}
+
+            {loading && (
+              <div className="flex justify-start">
+                <div className="px-3 py-2 rounded-2xl bg-white border border-slate-100 text-[12px] text-gray-500 shadow-sm">
+                  <span className="inline-flex items-center gap-1">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
+                    </span>
+                    Đang soạn trả lời...
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
           <form
             onSubmit={handleSend}
-            className="p-3 bg-white rounded-b-xl shadow-sm flex gap-2"
+            className="p-3 bg-slate-50 rounded-b-2xl border-t border-slate-200 flex gap-2"
           >
             <input
               type="text"
-              placeholder="Nhập tin nhắn..."
+              placeholder="Nhập câu hỏi..."
               className="
-                flex-1 px-3 py-2 rounded-lg bg-gray-100 text-gray-900 
-                focus:outline-none focus:ring-2 focus:ring-blue-500 transition
+                flex-1 px-3 py-2 rounded-xl bg-white text-gray-900 text-[13px]
+                border border-slate-200
+                focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                placeholder:text-slate-400
+                transition
               "
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -154,8 +199,10 @@ export default function ChatbotWidget() {
               type="submit"
               disabled={loading || !input.trim()}
               className="
-                px-3 py-2 rounded-lg text-sm font-medium
+                px-3 py-2 rounded-xl text-xs font-semibold
                 bg-blue-600 text-white disabled:opacity-50
+                hover:bg-blue-700 transition
+                shadow-sm
               "
             >
               Gửi

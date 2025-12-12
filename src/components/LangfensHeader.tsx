@@ -128,13 +128,6 @@ export default function LangfensHeader() {
 
                     <div className="py-1">
                       <button
-                        onClick={handleProfile}
-                        className="w-full text-left px-3 py-2 text-xs hover:bg-slate-50 flex items-center gap-3"
-                      >
-                        Trang cá nhân
-                      </button>
-
-                      <button
                         onClick={handleLogout}
                         className="w-full text-left px-3 py-2 text-xs text-rose-600 hover:bg-rose-50 flex items-center gap-3"
                       >

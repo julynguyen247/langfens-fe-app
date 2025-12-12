@@ -15,7 +15,7 @@ export default function SleepPenguinMini() {
   if (!animationData) return null;
 
   return (
-    <div className="w-10 h-10 flex items-center justify-center pointer-events-none">
+    <div className="w-10 h-10 flex items-center justify-center pointer-events-none bg-transparent">
       <Lottie animationData={animationData} loop autoplay />
     </div>
   );

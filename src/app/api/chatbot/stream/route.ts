@@ -1,5 +1,6 @@
+import { apisChatbot } from "@/utils/api.customize";
 import { NextRequest } from "next/server";
-import { apisChatbot } from "./api.customize";
+
 import { Readable } from "stream";
 
 export async function POST(req: NextRequest) {
@@ -7,6 +8,7 @@ export async function POST(req: NextRequest) {
   const res = await apisChatbot.post("/ielts/chat-stream", body, {
     responseType: "stream",
   });
+  console.log(res);
 
   const nodeStream = res.data as Readable;
 
