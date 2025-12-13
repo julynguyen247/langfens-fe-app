@@ -18,11 +18,8 @@ function detectSkill(
 }
 
 function detectPartFromQuery(itemParam: string): "1" | "2" | "3" | null {
-  const s = itemParam.toLowerCase();
-  if (s.includes("part1")) return "1";
-  if (s.includes("part2")) return "2";
-  if (s.includes("part3")) return "3";
-  return null;
+  const m = itemParam.toLowerCase().match(/part[\s_]?([123])/);
+  return m ? (m[1] as "1" | "2" | "3") : null;
 }
 
 export default function GroupPage() {
@@ -86,14 +83,12 @@ export default function GroupPage() {
     let base = items.filter(
       (it: any) => String(it.skill).toLowerCase() === groupId
     );
-    if (groupId === "writing" || groupId === "speaking") {
-      if (partFilter) {
-        const needle = `part ${partFilter}`;
-        base = base.filter((it) => {
-          const meta = `${it.title} ${it.summary ?? ""}`.toLowerCase();
-          return meta.includes(needle);
-        });
-      }
+
+    if ((groupId === "writing" || groupId === "speaking") && partFilter) {
+      base = base.filter((it) => {
+        const meta = `${it.title} ${it.summary ?? ""}`.toLowerCase();
+        return new RegExp(`part[\\s_]?${partFilter}`).test(meta);
+      });
     }
 
     return base;
