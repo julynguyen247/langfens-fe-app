@@ -59,6 +59,13 @@ export default function LangfensHeader() {
     }
   };
 
+  const handleVerifyEmail = () => {
+    setUserOpen(false);
+    if (!email) return;
+    if (!pathname.startsWith("/auth/verify")) setRouteLoading(true);
+    router.push(`/auth/verify?email=${encodeURIComponent(email)}`);
+  };
+
   return (
     <>
       {routeLoading && (
@@ -123,6 +130,20 @@ export default function LangfensHeader() {
                         {emailConfirmed ? "Verified" : "Unverified"}
                       </span>
                     </div>
+
+                    {!emailConfirmed && (
+                      <>
+                        <div className="h-px bg-slate-200" />
+                        <div className="py-1">
+                          <button
+                            onClick={handleVerifyEmail}
+                            className="w-full text-left px-3 py-2 text-xs text-blue-700 hover:bg-blue-50 flex items-center gap-3"
+                          >
+                            Xác thực email
+                          </button>
+                        </div>
+                      </>
+                    )}
 
                     <div className="h-px bg-slate-200" />
 

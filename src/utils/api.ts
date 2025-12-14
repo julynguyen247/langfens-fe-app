@@ -58,6 +58,25 @@ export async function resendEmail(email: string) {
   });
   return res;
 }
+export async function forgotPassword(email: string) {
+  return apisAuth.post("/auth/forgot-password", null, { params: { email } });
+}
+
+export async function resendEmailForgot(email: string) {
+  return apisAuth.post("/auth/resend-otp-reset-password", null, {
+    params: { email },
+  });
+}
+
+export async function verifyEmailForgot(
+  email: string,
+  otp: string,
+  newPassword: string
+) {
+  return apisAuth.post("/auth/confirm-otp-reset-password", null, {
+    params: { email, otp, newPassword },
+  });
+}
 
 export async function startAttempt(examId: string) {
   const res = await apisAttempt.post("/attempt/attempts:start", { examId });

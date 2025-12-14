@@ -29,15 +29,6 @@ import {
   mapWritingHistoryToAttempt,
 } from "./components/utils";
 
-type Course = {
-  id: string;
-  name: string;
-  level: "Beginner" | "Intermediate" | "Advanced";
-  progress: number;
-  lessonsDone: number;
-  lessonsTotal: number;
-};
-
 export type Attempt = {
   id: string;
   title: string;
@@ -63,124 +54,165 @@ export default function Home() {
   const router = useRouter();
   const { setAttempt } = useAttemptStore();
 
-  const courses: Course[] = [
-    {
-      id: "c1",
-      name: "IELTS Reading Mastery",
-      level: "Intermediate",
-      progress: 42,
-      lessonsDone: 21,
-      lessonsTotal: 50,
-    },
-    {
-      id: "c2",
-      name: "IELTS Listening Intensive",
-      level: "Beginner",
-      progress: 73,
-      lessonsDone: 22,
-      lessonsTotal: 30,
-    },
-    {
-      id: "c3",
-      name: "Writing 7.0+ Task 2",
-      level: "Advanced",
-      progress: 18,
-      lessonsDone: 4,
-      lessonsTotal: 22,
-    },
-  ];
+  const [coreAttempts, setCoreAttempts] = useState<Attempt[]>([]);
+  const [writingAttempts, setWritingAttempts] = useState<Attempt[]>([]);
+  const [speakingAttempts, setSpeakingAttempts] = useState<Attempt[]>([]);
 
-  const [attempts, setAttempts] = useState<Attempt[]>([]);
-  const [loadingAttempts, setLoadingAttempts] = useState(true);
-  const [attemptErr, setAttemptErr] = useState<string | null>(null);
+  const [loadingCore, setLoadingCore] = useState(true);
+  const [loadingWriting, setLoadingWriting] = useState(false);
+  const [loadingSpeaking, setLoadingSpeaking] = useState(false);
+
+  const [coreErr, setCoreErr] = useState<string | null>(null);
+
+  const [showAllHistory, setShowAllHistory] = useState(false);
+
   const [placementTestId, setPlacementTestId] = useState("");
   const [placementStatus, setPlacementStatus] =
     useState<PlacementStatus | null>(null);
+  const [loadingPlacement, setLoadingPlacement] = useState(true);
 
   useEffect(() => {
+    let alive = true;
+
     getMe().catch(() => {});
 
     (async () => {
-      setLoadingAttempts(true);
-      setAttemptErr(null);
+      setLoadingCore(true);
+      setCoreErr(null);
 
       try {
         const res = await getAttempt(1, 10);
-        const raw = res?.data?.items ?? res?.data?.data ?? res?.data ?? [];
+        const raw =
+          (res as any)?.data?.items ??
+          (res as any)?.data?.data ??
+          (res as any)?.data ??
+          [];
 
         const list: Attempt[] = Array.isArray(raw)
           ? raw.map(normalizeAttemptItem)
           : [];
 
-        const wres = await getWritingHistory();
-        const wraw = wres?.data?.data ?? [];
-        const writingList: Attempt[] = Array.isArray(wraw)
-          ? wraw.map(mapWritingHistoryToAttempt)
-          : [];
-
-        const sres = await getSpeakingHistory();
-        const sraw = sres?.data?.data ?? [];
-        const speakingList: Attempt[] = Array.isArray(sraw)
-          ? sraw.map(mapSpeakingHistoryToAttempt)
-          : [];
-
-        const merged = [...list, ...writingList, ...speakingList];
-        merged.sort(
-          (a, b) =>
-            new Date(b.dateISO).getTime() - new Date(a.dateISO).getTime()
-        );
-        setAttempts(merged);
+        if (!alive) return;
+        setCoreAttempts(list);
       } catch (e: any) {
-        setAttemptErr(e?.message || "Không thể tải lịch sử làm bài.");
+        if (!alive) return;
+        setCoreErr(e?.message || "Không thể tải lịch sử làm bài.");
       } finally {
-        setLoadingAttempts(false);
+        if (!alive) return;
+        setLoadingCore(false);
       }
     })();
+
+    (async () => {
+      setLoadingWriting(true);
+      try {
+        const wres = await getWritingHistory();
+        const wraw = (wres as any)?.data?.data ?? [];
+        const list: Attempt[] = Array.isArray(wraw)
+          ? wraw.map(mapWritingHistoryToAttempt)
+          : [];
+        if (!alive) return;
+        setWritingAttempts(list);
+      } catch {
+        if (!alive) return;
+        setWritingAttempts([]);
+      } finally {
+        if (!alive) return;
+        setLoadingWriting(false);
+      }
+    })();
+
+    (async () => {
+      setLoadingSpeaking(true);
+      try {
+        const sres = await getSpeakingHistory();
+        const sraw = (sres as any)?.data?.data ?? [];
+        const list: Attempt[] = Array.isArray(sraw)
+          ? sraw.map(mapSpeakingHistoryToAttempt)
+          : [];
+        if (!alive) return;
+        setSpeakingAttempts(list);
+      } catch {
+        if (!alive) return;
+        setSpeakingAttempts([]);
+      } finally {
+        if (!alive) return;
+        setLoadingSpeaking(false);
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
   }, []);
 
   useEffect(() => {
-    async function fetchTests() {
+    let alive = true;
+
+    (async () => {
+      setLoadingPlacement(true);
       try {
-        const res = await getPublicExams(1, 24);
-        const data = (res as any)?.data?.data ?? (res as any)?.data ?? [];
-        const placement = Array.isArray(data)
-          ? data.find((item: any) =>
-              String(item.title || "").includes("English Placement")
-            )
-          : null;
-        if (placement?.id) {
-          setPlacementTestId(String(placement.id));
+        const [testsRes, statusRes] = await Promise.allSettled([
+          getPublicExams(1, 24),
+          getPlacementStatus(),
+        ]);
+
+        if (!alive) return;
+
+        if (testsRes.status === "fulfilled") {
+          const data =
+            (testsRes.value as any)?.data?.data ??
+            (testsRes.value as any)?.data ??
+            [];
+
+          const placement = Array.isArray(data)
+            ? data.find((item: any) =>
+                String(item.title || "").includes("English Placement")
+              )
+            : null;
+
+          if (placement?.id) setPlacementTestId(String(placement.id));
         }
-      } catch {}
-    }
-    fetchTests();
+
+        if (statusRes.status === "fulfilled") {
+          const raw =
+            (statusRes.value as any)?.data?.data ??
+            (statusRes.value as any)?.data ??
+            (statusRes.value as any) ??
+            null;
+
+          if (raw) {
+            setPlacementStatus({
+              completed: !!raw.completed,
+              attemptId: String(raw.attemptId ?? ""),
+              examId: String(raw.examId ?? ""),
+              status: String(raw.status ?? ""),
+              startedAt: raw.startedAt,
+              submittedAt: raw.submittedAt,
+              gradedAt: raw.gradedAt,
+              level: String(raw.level ?? ""),
+              band: Number(raw.band ?? 0),
+            });
+          }
+        }
+      } finally {
+        if (!alive) return;
+        setLoadingPlacement(false);
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
   }, []);
 
-  useEffect(() => {
-    async function fetchPlacementStatus() {
-      try {
-        const res = await getPlacementStatus();
-        const raw =
-          (res as any)?.data?.data ??
-          (res as any)?.data ??
-          (res as any) ??
-          null;
-        if (!raw) return;
-        setPlacementStatus({
-          completed: !!raw.completed,
-          attemptId: String(raw.attemptId),
-          examId: String(raw.examId),
-          status: String(raw.status),
-          startedAt: raw.startedAt,
-          submittedAt: raw.submittedAt,
-          gradedAt: raw.gradedAt,
-          level: String(raw.level),
-          band: Number(raw.band ?? 0),
-        });
-      } catch {}
-    }
-    fetchPlacementStatus();
-  }, []);
+  const attempts = useMemo(() => {
+    const merged = [...coreAttempts, ...writingAttempts, ...speakingAttempts];
+    merged.sort(
+      (a, b) => new Date(b.dateISO).getTime() - new Date(a.dateISO).getTime()
+    );
+    return merged;
+  }, [coreAttempts, writingAttempts, speakingAttempts]);
 
   const analytics = useMemo(() => {
     const total = attempts.length;
@@ -191,14 +223,25 @@ export default function Home() {
     return { total, avg: Math.round(avg), streakDays };
   }, [attempts]);
 
+  const visibleAttempts = useMemo(() => {
+    return showAllHistory ? attempts : attempts.slice(0, 3);
+  }, [attempts, showAllHistory]);
+
+  const extraLoading = loadingWriting || loadingSpeaking;
+
+  const skeletonFillCount = useMemo(() => {
+    if (showAllHistory) return 0;
+    if (!extraLoading) return 0;
+    const need = 3 - visibleAttempts.length;
+    return need > 0 ? need : 0;
+  }, [showAllHistory, extraLoading, visibleAttempts.length]);
+
   async function handleStart(id: string) {
     try {
       const res = await startAttempt(id);
       const payload = (res as any)?.data?.data ?? (res as any)?.data ?? res;
       const attemptId: string | undefined = payload?.attemptId ?? payload?.id;
-      if (!attemptId) {
-        throw new Error("Missing attemptId");
-      }
+      if (!attemptId) throw new Error("Missing attemptId");
       setAttempt(payload);
       router.push(`/placement/${attemptId}`);
     } catch (err) {
@@ -207,32 +250,30 @@ export default function Home() {
     }
   }
 
-  // 🔹 Helper: build URL chi tiết theo skill
   function buildAttemptDetailUrl(a: Attempt) {
-    if (a.skill === "Writing") {
-      return `/attempts/${a.id}?source=writing`;
-    }
-    if (a.skill === "Speaking") {
-      return `/attempts/${a.id}?source=speaking`;
-    }
-    // Reading / Listening / Placement
+    if (a.skill === "Writing") return `/attempts/${a.id}?source=writing`;
+    if (a.skill === "Speaking") return `/attempts/${a.id}?source=speaking`;
     return `/attempts/${a.id}?source=attempt`;
   }
 
   const hasPlacementTest = !!placementStatus?.completed;
-  const placementProgress = placementStatus?.completed ? 100 : 0;
+  const placementProgress = hasPlacementTest ? 100 : 0;
+
   const placementSummary =
     placementStatus && typeof placementStatus.band === "number"
       ? `Bạn đã hoàn thành bài kiểm tra đầu vào. Band hiện tại: ${placementStatus.band.toFixed(
           1
-        )} • Level: ${placementStatus.level}.`
+        )} • Level: ${placementStatus.level || "N/A"}.`
       : "Bạn đã hoàn thành bài kiểm tra đầu vào.";
 
   return (
     <div className="w-full min-h-screen bg-gradient-to-b from-blue-50 to-white">
       <main className="mx-auto max-w-6xl px-4 sm:px-6 py-8 space-y-6">
         <HeroHeader />
-        {hasPlacementTest ? (
+
+        {loadingPlacement ? (
+          <SkeletonPlacement />
+        ) : hasPlacementTest ? (
           <Card>
             <div className="space-y-5">
               <div className="flex items-center justify-between">
@@ -313,11 +354,9 @@ export default function Home() {
                   </p>
 
                   <button
-                    onClick={() => {
-                      if (placementTestId) {
-                        handleStart(placementTestId);
-                      }
-                    }}
+                    onClick={() =>
+                      placementTestId && handleStart(placementTestId)
+                    }
                     className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed"
                     disabled={!placementTestId}
                   >
@@ -329,9 +368,22 @@ export default function Home() {
           </Card>
         )}
 
-        <SectionTitle> Lịch sử làm bài </SectionTitle>
+        <div className="flex items-center justify-between gap-3">
+          <SectionTitle> Lịch sử làm bài </SectionTitle>
+
+          {!loadingCore && !coreErr && attempts.length > 3 && (
+            <motion.button
+              whileHover={{ y: -1 }}
+              onClick={() => setShowAllHistory((s) => !s)}
+              className="text-sm font-semibold text-blue-600 hover:text-blue-700"
+            >
+              {showAllHistory ? "Thu gọn" : "Xem tất cả"}
+            </motion.button>
+          )}
+        </div>
+
         <AnimatePresence mode="popLayout">
-          {loadingAttempts ? (
+          {loadingCore ? (
             <motion.div
               key="loading"
               initial={{ opacity: 0 }}
@@ -343,14 +395,26 @@ export default function Home() {
               <SkeletonAttempt />
               <SkeletonAttempt />
             </motion.div>
-          ) : attemptErr ? (
+          ) : coreErr ? (
             <motion.div
               key="error"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               className="text-sm text-rose-600"
             >
-              {attemptErr}
+              {coreErr}
+            </motion.div>
+          ) : attempts.length === 0 && extraLoading ? (
+            <motion.div
+              key="extra-loading"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="grid grid-cols-1 gap-3"
+            >
+              <SkeletonAttempt />
+              <SkeletonAttempt />
+              <SkeletonAttempt />
             </motion.div>
           ) : attempts.length === 0 ? (
             <motion.div
@@ -369,7 +433,7 @@ export default function Home() {
               animate="show"
               variants={staggerContainer}
             >
-              {attempts.map((a) => (
+              {visibleAttempts.map((a) => (
                 <motion.div key={a.id} variants={fadeInUp}>
                   <Card hover>
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -400,6 +464,21 @@ export default function Home() {
                   </Card>
                 </motion.div>
               ))}
+
+              {Array.from({ length: skeletonFillCount }).map((_, i) => (
+                <motion.div key={`sk-fill-${i}`} variants={fadeInUp}>
+                  <SkeletonAttempt />
+                </motion.div>
+              ))}
+
+              {!showAllHistory && extraLoading && (
+                <motion.div
+                  variants={fadeInUp}
+                  className="text-xs text-slate-500 pt-1"
+                >
+                  Đang tải thêm lịch sử Writing và Speaking...
+                </motion.div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -458,7 +537,7 @@ export default function Home() {
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
     <motion.h2
-      className="text-sm font-semibold text-white bg-blue-500 inline-block px-3 py-1 rounded-xl "
+      className="text-sm font-semibold text-white bg-blue-500 inline-block px-3 py-1 rounded-xl"
       initial={{ opacity: 0, x: -10 }}
       whileInView={{ opacity: 1, x: 0 }}
       viewport={{ once: true, amount: 0.6 }}
@@ -478,7 +557,7 @@ function Card({
 }) {
   return (
     <motion.div
-      className={`rounded-2xl  bg-white p-4 shadow-sm ${
+      className={`rounded-2xl bg-white p-4 shadow-sm ${
         hover ? "hover:shadow-lg" : ""
       }`}
       whileHover={{ y: hover ? -2 : 0 }}
@@ -539,6 +618,27 @@ function SkeletonAttempt() {
   );
 }
 
+function SkeletonPlacement() {
+  return (
+    <div className="rounded-2xl bg-white p-4 shadow-sm">
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="h-4 w-40 bg-slate-100 rounded" />
+          <div className="h-3 w-16 bg-slate-100 rounded" />
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full bg-slate-100" />
+          <div className="flex-1 space-y-2">
+            <div className="h-4 w-64 bg-slate-100 rounded" />
+            <div className="h-3 w-48 bg-slate-100 rounded" />
+          </div>
+        </div>
+        <div className="h-9 w-28 bg-slate-100 rounded-xl" />
+      </div>
+    </div>
+  );
+}
+
 function formatDate(iso: string) {
   try {
     const d = new Date(iso);
@@ -561,7 +661,7 @@ function normalizeAttemptItem(item: any): Attempt {
     (item?.startedAt || item?.submittedAt)
   ) {
     const id = String(item.attemptId);
-    const title = String(item.title);
+    const title = String(item.title || "Practice Attempt");
     const dateISO = item.submittedAt || item.startedAt;
     const durationMin = diffMinutesSafe(item.startedAt, item.submittedAt);
     let score: number | undefined = undefined;
@@ -575,11 +675,14 @@ function normalizeAttemptItem(item: any): Attempt {
     item?.attemptId ??
     item?._id ??
     String(item?.uid ?? cryptoRandom());
+
   const title =
     item?.title ?? item?.paper?.title ?? item?.name ?? "Practice Attempt";
+
   const skillRaw =
     item?.skill ?? item?.section?.skill ?? item?.paper?.skill ?? "reading";
   const skill = toSkill(skillRaw);
+
   const dateISO =
     item?.finishedAt ??
     item?.submittedAt ??
@@ -609,8 +712,8 @@ function normalizeAttemptItem(item: any): Attempt {
 
 function toSkill(s: string): Attempt["skill"] {
   const t = String(s || "").toLowerCase();
-  if (t.startsWith("read")) return "Reading";
-  if (t.startsWith("listen")) return "Listening";
-  if (t.startsWith("writ")) return "Writing";
+  if (t.includes("speak")) return "Speaking";
+  if (t.includes("writ")) return "Writing";
+  if (t.includes("listen")) return "Listening";
   return "Reading";
 }

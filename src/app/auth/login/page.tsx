@@ -116,14 +116,6 @@ export default function Login() {
           {error && <div className="text-[#B91C1C] text-sm mt-3">{error}</div>}
 
           <div className="flex items-center justify-between mt-5">
-            <label className="flex items-center gap-2 text-sm text-[#0A0A0A]">
-              <input
-                id="remember"
-                type="checkbox"
-                className="w-4 h-4 rounded accent-[#EAB308]"
-              />
-              Remember me
-            </label>
             <Link
               href="/auth/reset-password"
               className="text-sm font-medium text-[#1E40AF] hover:underline"
