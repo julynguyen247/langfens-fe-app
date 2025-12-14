@@ -42,59 +42,6 @@ export default function DoTestAttemptPage() {
   return <div className="p-6">Unknown skill: {String(skill)}</div>;
 }
 
-type SpeakingPartId = "part1" | "part2" | "part3";
-
-const SPEAKING_PARTS: {
-  id: SpeakingPartId;
-  label: string;
-  title: string;
-  description: string;
-  bulletPoints?: string[];
-  recommendedTime: string;
-}[] = [
-  {
-    id: "part1",
-    label: "Part 1",
-    title: "Introduction & Interview",
-    description:
-      "The examiner will ask you general questions about yourself, your home, studies, work and interests.",
-    bulletPoints: [
-      "Where do you live?",
-      "Do you work or are you a student?",
-      "What do you usually do in your free time?",
-    ],
-    recommendedTime: "4–5 minutes",
-  },
-  {
-    id: "part2",
-    label: "Part 2",
-    title: "Individual Long Turn (Cue Card)",
-    description:
-      "You will receive a task card and have 1 minute to prepare. Then you should speak for 1–2 minutes.",
-    bulletPoints: [
-      "Describe a memorable trip you have taken.",
-      "where you went",
-      "who you went with",
-      "what you did there",
-      "and explain why this trip was memorable for you",
-    ],
-    recommendedTime: "3–4 minutes",
-  },
-  {
-    id: "part3",
-    label: "Part 3",
-    title: "Two-way Discussion",
-    description:
-      "The examiner will ask more abstract questions related to Part 2. You should give longer, thoughtful answers.",
-    bulletPoints: [
-      "How has tourism changed in your country?",
-      "Do you think people travel too much nowadays?",
-      "What are the effects of tourism on local culture?",
-    ],
-    recommendedTime: "4–5 minutes",
-  },
-];
-
 function formatTime(totalSeconds: number) {
   const m = Math.floor(totalSeconds / 60);
   const s = totalSeconds % 60;
@@ -106,15 +53,14 @@ function formatTime(totalSeconds: number) {
 function ReadingScreen({ attemptId }: { attemptId: string }) {
   const router = useRouter();
   const { user } = useUserStore();
+  const { setLoading } = useLoadingStore();
   const attempt = useAttemptStore((s) => s.byId[attemptId])!;
-
   const sections = useMemo(
     () => [...(attempt.paper.sections ?? [])].sort((a, b) => a.idx - b.idx),
     [attempt.paper.sections]
   );
 
   const lastAnswersRef = useRef<QA>({});
-
   const sp = useSearchParams();
   const secFromUrl = sp.get("sec");
   const activeSec = sections.find((s) => s.id === secFromUrl) ?? sections[0];
@@ -130,9 +76,7 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
 
   const questionUiKindMap = useMemo(() => {
     const m: Record<string, QuestionUiKind> = {};
-    for (const q of panelQuestions) {
-      m[String(q.id)] = q.uiKind;
-    }
+    for (const q of panelQuestions) m[String(q.id)] = q.uiKind;
     return m;
   }, [panelQuestions]);
 
@@ -141,109 +85,125 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
     attemptId
   );
 
-  const buildSectionId = (qid: string) => activeSec?.id;
-
   const buildTextAnswer = (qid: string, value: string) => {
     if (!value) return undefined;
-    const kind = questionUiKindMap[qid];
-    if (kind === "choice_single") return undefined;
+    if (questionUiKindMap[qid] === "choice_single") return undefined;
     return value;
   };
 
   const [submitting, setSubmitting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
-  async function handleSubmit() {
-    if (submitting) return;
-    if (!window.confirm("Bạn chắc chắn muốn nộp bài?")) return;
-
+  const doSubmit = async () => {
     try {
       setSubmitting(true);
+      setLoading(true);
       cancelAutoSave();
 
-      const makePayload = (answers: QA) => ({
-        answers: Object.entries(answers).map(([questionId, value]) => {
-          const sectionId = buildSectionId(questionId) ?? "";
-          const textAnswer = buildTextAnswer(questionId, value);
-          const hasText = !!textAnswer && textAnswer.trim().length > 0;
-
-          return {
-            questionId,
-            sectionId,
-            selectedOptionIds: !hasText && value ? [value] : [],
-            textAnswer: hasText ? textAnswer : undefined,
-          };
-        }),
+      const payload = {
+        answers: Object.entries(lastAnswersRef.current).map(
+          ([questionId, value]) => {
+            const textAnswer = buildTextAnswer(questionId, value);
+            const hasText = !!textAnswer && textAnswer.trim().length > 0;
+            return {
+              questionId,
+              sectionId: activeSec.id,
+              selectedOptionIds: !hasText && value ? [value] : [],
+              textAnswer: hasText ? textAnswer : undefined,
+            };
+          }
+        ),
         clientRevision: Date.now(),
-      });
+      };
 
-      await autoSaveAttempt(attemptId, makePayload(lastAnswersRef.current));
+      await autoSaveAttempt(attemptId, payload);
       await submitAttempt(attemptId);
       router.replace(`/attempts/${attemptId}`);
-    } catch (e) {
-      console.error(e);
-      setSubmitting(false);
+    } catch {
       alert("Nộp bài thất bại. Vui lòng thử lại.");
+    } finally {
+      setSubmitting(false);
+      setLoading(false);
     }
-  }
-
-  if (!activeSec) {
-    return <div className="p-6">Không tìm thấy section.</div>;
-  }
+  };
 
   return (
-    <div className="flex h-full min-h-0 bg-white rounded-xl shadow overflow-hidden">
-      <div className="flex-1 min-h-0 overflow-hidden border-r bg-gray-50 mb-20">
-        <PassageView
-          passage={{
-            title: activeSec.title,
-            content: activeSec.instructionsMd,
-          }}
-        />
-      </div>
-
-      <div className="w-[480px] flex flex-col h-full min-h-0 overflow-hidden">
-        <div className="border-b p-4 bg-white sticky top-0 z-10 flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-slate-800">Questions</h2>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleSubmit}
-              disabled={submitting}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold transition
-                ${
-                  submitting
-                    ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                    : "bg-[#317EFF] text-white hover:bg-[#74a4f6]"
-                }`}
-            >
-              {submitting ? "Đang nộp…" : "Nộp bài"}
-            </button>
-          </div>
-        </div>
-
-        <div className="flex-1 min-h-0 overflow-auto">
-          <QuestionPanel
-            attemptId={attemptId}
-            questions={panelQuestions}
-            onAnswersChange={(next) => {
-              const casted = next as QA;
-              lastAnswersRef.current = {
-                ...lastAnswersRef.current,
-                ...casted,
-              };
-              debouncedSave(casted, buildSectionId, buildTextAnswer);
+    <>
+      <div className="flex h-full bg-white rounded-xl shadow overflow-hidden">
+        <div className="flex-1 overflow-hidden border-r bg-gray-50 mb-20">
+          <PassageView
+            passage={{
+              title: activeSec.title,
+              content: activeSec.instructionsMd,
             }}
           />
         </div>
+
+        <div className="w-[480px] flex flex-col overflow-hidden">
+          <div className="border-b p-4 bg-white sticky top-0 z-10 flex justify-between">
+            <h2 className="text-lg font-semibold">Questions</h2>
+            <button
+              onClick={() => setConfirmOpen(true)}
+              disabled={submitting}
+              className="px-4 py-2 rounded-lg text-sm font-semibold bg-[#317EFF] text-white"
+            >
+              Nộp bài
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-auto">
+            <QuestionPanel
+              attemptId={attemptId}
+              questions={panelQuestions}
+              onAnswersChange={(next) => {
+                lastAnswersRef.current = {
+                  ...lastAnswersRef.current,
+                  ...(next as QA),
+                };
+                debouncedSave(next as QA, () => activeSec.id, buildTextAnswer);
+              }}
+            />
+          </div>
+        </div>
       </div>
-    </div>
+
+      <Modal
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        title="Xác nhận nộp bài Reading"
+        footer={
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={() => setConfirmOpen(false)}
+              className="px-4 py-2 rounded-lg border text-slate-600"
+            >
+              Hủy
+            </button>
+            <button
+              onClick={() => {
+                setConfirmOpen(false);
+                doSubmit();
+              }}
+              className="px-4 py-2 rounded-lg bg-[#317EFF] text-white"
+            >
+              Đồng ý
+            </button>
+          </div>
+        }
+      >
+        <p className="text-sm text-slate-700">
+          Bạn chắc chắn muốn nộp bài Reading? Sau khi nộp, bạn không thể thay
+          đổi câu trả lời.
+        </p>
+      </Modal>
+    </>
   );
 }
-
-/* -------------------- LISTENING -------------------- */
 
 function ListeningScreen({ attemptId }: { attemptId: string }) {
   const router = useRouter();
   const { user } = useUserStore();
+  const { setLoading } = useLoadingStore();
   const attempt = useAttemptStore((s) => s.byId[attemptId])!;
   const clearAttempt = useAttemptStore((s) => s.clear);
 
@@ -257,13 +217,9 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
 
   const sectionOfQuestion = useMemo(() => {
     const m = new Map<string, string>();
-    for (const s of sections) {
-      for (const q of s.questions ?? []) {
-        if (String(q.skill).toLowerCase() === "listening") {
-          m.set(String(q.id), s.id);
-        }
-      }
-    }
+    for (const s of sections)
+      for (const q of s.questions ?? [])
+        if (q.skill?.toLowerCase() === "listening") m.set(String(q.id), s.id);
     return m;
   }, [sections]);
 
@@ -271,16 +227,14 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
     .flatMap((s) => s.questions ?? [])
     .filter((q) => q.skill?.toLowerCase() === "listening");
 
-  const panelQuestions: UiQuestion[] = qs
+  const panelQuestions = qs
     .slice()
     .sort((a, b) => a.idx - b.idx)
     .map((q: any) => mapApiQuestionToUi(q));
 
   const questionUiKindMap = useMemo(() => {
     const m: Record<string, QuestionUiKind> = {};
-    for (const q of panelQuestions) {
-      m[String(q.id)] = q.uiKind;
-    }
+    for (const q of panelQuestions) m[String(q.id)] = q.uiKind;
     return m;
   }, [panelQuestions]);
 
@@ -290,71 +244,97 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
   );
 
   const lastAnswersRef = useRef<QA>({});
-
-  const buildSectionId = (qid: string) => sectionOfQuestion.get(qid);
+  const [submitting, setSubmitting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const buildTextAnswer = (qid: string, value: string) => {
     if (!value) return undefined;
-    const kind = questionUiKindMap[qid];
-    if (kind === "choice_single") return undefined;
+    if (questionUiKindMap[qid] === "choice_single") return undefined;
     return value;
   };
 
-  const [submitting, setSubmitting] = useState(false);
-
-  async function handleSubmit() {
-    if (submitting) return;
-    if (!window.confirm("Bạn chắc chắn muốn nộp bài?")) return;
-
+  const doSubmit = async () => {
     try {
       setSubmitting(true);
+      setLoading(true);
       cancelAutoSave();
       await submitAttempt(attemptId);
       clearAttempt?.(attemptId);
       router.replace(`/attempts/${attemptId}`);
-    } catch (e) {
-      console.error("Submit failed:", e);
+    } catch {
+      alert("Nộp bài thất bại.");
+    } finally {
       setSubmitting(false);
-      alert("Nộp bài thất bại. Vui lòng thử lại.");
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <div className="flex flex-col h-full min-h-0 bg-white rounded-xl shadow overflow-hidden">
-      <div className="border-b p-4 bg-white sticky top-0 z-10 flex flex-col gap-3">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-slate-800">Listening</h2>
-          <button
-            onClick={handleSubmit}
-            disabled={submitting}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
-              submitting
-                ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                : "bg-[#317EFF] text-white hover:bg-[#74a4f6]"
-            }`}
-          >
-            {submitting ? "Đang nộp…" : "Nộp bài"}
-          </button>
+    <>
+      <div className="flex flex-col h-full bg-white rounded-xl shadow overflow-hidden">
+        <div className="border-b p-4 bg-white sticky top-0 z-10">
+          <div className="flex justify-between mb-3">
+            <h2 className="text-lg font-semibold">Listening</h2>
+            <button
+              onClick={() => setConfirmOpen(true)}
+              disabled={submitting}
+              className="px-4 py-2 rounded-lg text-sm font-semibold bg-[#317EFF] text-white"
+            >
+              Nộp bài
+            </button>
+          </div>
+          <ListeningAudioBar src={listeningAudioUrl} />
         </div>
 
-        <ListeningAudioBar src={listeningAudioUrl} />
+        <div className="flex-1 overflow-auto p-6">
+          <QuestionPanel
+            attemptId={attemptId}
+            questions={panelQuestions}
+            onAnswersChange={(next) => {
+              lastAnswersRef.current = {
+                ...lastAnswersRef.current,
+                ...(next as QA),
+              };
+              debouncedSave(
+                next as QA,
+                (qid) => sectionOfQuestion.get(qid),
+                buildTextAnswer
+              );
+            }}
+          />
+        </div>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-auto p-6">
-        <QuestionPanel
-          attemptId={attemptId}
-          questions={panelQuestions}
-          onAnswersChange={(next) => {
-            const casted = next as QA;
-            lastAnswersRef.current = {
-              ...lastAnswersRef.current,
-              ...casted,
-            };
-            debouncedSave(casted, buildSectionId, buildTextAnswer);
-          }}
-        />
-      </div>
-    </div>
+      <Modal
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        title="Xác nhận nộp bài Listening"
+        footer={
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={() => setConfirmOpen(false)}
+              className="px-4 py-2 rounded-lg border text-slate-600"
+            >
+              Hủy
+            </button>
+            <button
+              onClick={() => {
+                setConfirmOpen(false);
+                doSubmit();
+              }}
+              className="px-4 py-2 rounded-lg bg-[#317EFF] text-white"
+            >
+              Đồng ý
+            </button>
+          </div>
+        }
+      >
+        <p className="text-sm text-slate-700">
+          Bạn chắc chắn muốn nộp bài Listening? Sau khi nộp, bạn không thể thay
+          đổi câu trả lời.
+        </p>
+      </Modal>
+    </>
   );
 }
 
@@ -468,7 +448,7 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
         timeSpentSeconds: seconds,
         speech: blob,
       });
-      const payload = res.data.data;
+      const payload = res.data.data.res;
 
       if (!payload) {
         alert("Không nhận được dữ liệu chấm điểm.");

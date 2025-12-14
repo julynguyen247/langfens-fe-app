@@ -161,20 +161,6 @@ export default function ChatbotWidget() {
                 </div>
               </div>
             ))}
-
-            {loading && (
-              <div className="flex justify-start">
-                <div className="px-3 py-2 rounded-2xl bg-white border border-slate-100 text-[12px] text-gray-500 shadow-sm">
-                  <span className="inline-flex items-center gap-1">
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
-                    </span>
-                    Đang soạn trả lời...
-                  </span>
-                </div>
-              </div>
-            )}
           </div>
 
           <form
