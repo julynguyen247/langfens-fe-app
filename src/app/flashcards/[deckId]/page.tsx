@@ -7,8 +7,8 @@ import ProgressBar from "../components/study/ProgressBar";
 import Flashcard from "../components/study/Flashcard";
 import SRFooter from "../components/study/SRFooter";
 import useDeckStudy from "../components/study/useDeckStudy";
-import { getDeckCards } from "@/utils/api";
 import {
+  getDeckCards,
   getDueFlashcards,
   reviewFlashcard,
   getFlashcardProgress,
@@ -46,11 +46,14 @@ export default function StudyPage() {
 
   useEffect(() => {
     let mounted = true;
+
     async function loadAll() {
       setLoading(true);
       setError(null);
+
       try {
         let list: ApiCard[] = [];
+
         if (user?.id) {
           const res = await getDueFlashcards(user.id, 50);
           const payload = Array.isArray(res.data)
@@ -60,6 +63,7 @@ export default function StudyPage() {
             .slice()
             .sort((a: any, b: any) => (a.idx ?? 0) - (b.idx ?? 0));
         }
+
         if ((!list || list.length === 0) && deckId) {
           const res = await getDeckCards(String(deckId));
           const payload = Array.isArray(res.data)
@@ -69,6 +73,7 @@ export default function StudyPage() {
             .slice()
             .sort((a: any, b: any) => (a.idx ?? 0) - (b.idx ?? 0));
         }
+
         if (mounted) setCards(list);
 
         if (user?.id) {
@@ -77,12 +82,14 @@ export default function StudyPage() {
             const sdata = Array.isArray(sres.data)
               ? sres.data[0]
               : sres.data?.data ?? sres.data;
+
             const nextStats: SRStats = {
               new: Number(sdata?.new ?? 0),
               learning: Number(sdata?.learning ?? 0),
               review: Number(sdata?.review ?? 0),
               dueToday: Number(sdata?.dueToday ?? sdata?.due ?? 0),
             };
+
             if (mounted) setStats(nextStats);
           } catch {}
         }
@@ -92,7 +99,9 @@ export default function StudyPage() {
         if (mounted) setLoading(false);
       }
     }
+
     loadAll();
+
     return () => {
       mounted = false;
     };
@@ -113,11 +122,13 @@ export default function StudyPage() {
 
   const refreshProgress = useCallback(async () => {
     if (!user?.id) return;
+
     try {
       const sres = await getFlashcardProgress(user.id);
       const sdata = Array.isArray(sres.data)
         ? sres.data[0]
         : sres.data?.data ?? sres.data;
+
       setStats({
         new: Number(sdata?.new ?? 0),
         learning: Number(sdata?.learning ?? 0),
@@ -130,27 +141,32 @@ export default function StudyPage() {
   const handleGrade = useCallback(
     async (g: "again" | "hard" | "good" | "easy") => {
       if (!study?.card) return;
+
       const gradeMap: Record<"again" | "hard" | "good" | "easy", number> = {
         again: 0,
         hard: 1,
         good: 2,
         easy: 3,
       };
+
       if (typeof (study as any).grade === "function") {
         (study as any).grade(g);
       } else {
         if (g === "again") study.again();
         else study.know();
       }
+
       try {
         if (user?.id) {
           await reviewFlashcard(user.id, study.card.id, gradeMap[g]);
           refreshProgress();
         }
       } catch {}
+
       if (study.index >= study.total - 1) {
         try {
           let list: ApiCard[] = [];
+
           if (user?.id) {
             const res = await getDueFlashcards(user.id, 50);
             const payload = Array.isArray(res.data)
@@ -160,6 +176,7 @@ export default function StudyPage() {
               .slice()
               .sort((a: any, b: any) => (a.idx ?? 0) - (b.idx ?? 0));
           }
+
           if ((!list || list.length === 0) && deckId) {
             const res = await getDeckCards(String(deckId));
             const payload = Array.isArray(res.data)
@@ -169,16 +186,18 @@ export default function StudyPage() {
               .slice()
               .sort((a: any, b: any) => (a.idx ?? 0) - (b.idx ?? 0));
           }
+
           setCards(list);
         } catch {}
       }
     },
-    [study, user?.id, refreshProgress]
+    [study, user?.id, refreshProgress, deckId]
   );
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!study) return;
+
       if (e.code === "Space") {
         e.preventDefault();
         study.flip();
@@ -197,29 +216,33 @@ export default function StudyPage() {
       if (e.key === "1") {
         e.preventDefault();
         handleGrade("again");
-      } else if (e.key === "2") {
+        return;
+      }
+      if (e.key === "2") {
         e.preventDefault();
         handleGrade("hard");
-      } else if (e.key === "3") {
+        return;
+      }
+      if (e.key === "3") {
         e.preventDefault();
         handleGrade("good");
-      } else if (e.key === "4") {
+        return;
+      }
+      if (e.key === "4") {
         e.preventDefault();
         handleGrade("easy");
+        return;
       }
     };
+
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [study, handleGrade]);
 
   const hasCard = !!study?.card;
-  const booting = cards.length > 0 && !hasCard;
-  const uiStats: SRStats = study?.stats ?? {
-    new: stats.new || (study?.total ?? cards.length),
-    learning: stats.learning || 0,
-    review: stats.review || 0,
-    dueToday: stats.dueToday || (study?.total ?? cards.length),
-  };
+  const finished = !!study && study.total > 0 && study.index >= study.total;
+  const booting = cards.length > 0 && !hasCard && !finished;
+
   const progressPct = study?.total
     ? Math.round(((study.index + 1) / study.total) * 100)
     : 0;
@@ -252,7 +275,7 @@ export default function StudyPage() {
     <main className="mx-auto w-full max-w-4xl px-4 py-6">
       <StudyHeader
         deckTitle={`Học bộ thẻ: ${deckId}`}
-        current={study.index + 1}
+        current={Math.min(study.index + 1, study.total)}
         total={study.total}
         onExit={study.handleExit}
       />
@@ -260,13 +283,36 @@ export default function StudyPage() {
       <div className="mt-4">
         <div className="flex items-center justify-between text-xs text-slate-500">
           <span>Tiến độ</span>
-          <span>{progressPct}%</span>
+          <span>{Math.min(progressPct, 100)}%</span>
         </div>
-        <ProgressBar value={progressPct} />
+        <ProgressBar value={Math.min(progressPct, 100)} />
       </div>
 
       <section className="mt-6">
-        {booting ? (
+        {finished ? (
+          <div className="rounded-2xl border bg-white p-8 text-center shadow-sm">
+            <div className="text-xl font-semibold text-slate-900">
+              Đã hết thẻ 🎉
+            </div>
+            <div className="mt-2 text-sm text-slate-600">
+              Bạn đã ôn xong toàn bộ thẻ trong lượt này.
+            </div>
+            <div className="mt-5 flex items-center justify-center gap-2">
+              <button
+                onClick={() => window.location.reload()}
+                className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-slate-800 hover:bg-gray-50"
+              >
+                Tải lại
+              </button>
+              <button
+                onClick={study.handleExit}
+                className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:opacity-95"
+              >
+                Thoát
+              </button>
+            </div>
+          </div>
+        ) : booting ? (
           <div className="rounded-2xl border bg-white p-6 shadow-sm">
             <div className="h-5 w-28 animate-pulse rounded bg-gray-200" />
             <div className="mt-4 h-8 w-3/5 animate-pulse rounded bg-gray-200" />

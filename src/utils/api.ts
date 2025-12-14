@@ -2,6 +2,7 @@ import axios from "axios";
 import api, {
   apisAttempt,
   apisAuth,
+  apisDictionary,
   apisExam,
   apisSpeaking,
   apisVocabulary,
@@ -380,4 +381,17 @@ export async function getWritingHistoryById(submissionId: string) {
 export async function getSpeakingHistoryById(submissionId: string) {
   const res = await apisSpeaking.get(`/speaking/history/${submissionId}`);
   return res;
+}
+export async function suggestDictionary(word: string, pos?: string) {
+  const res = await apisDictionary.get("/dictionary/suggest", {
+    params: {
+      word,
+      pos,
+    },
+  });
+  return res.data;
+}
+export async function getDictionaryDetails(id: number) {
+  const res = await apisDictionary.get(`/dictionary/details/${id}`);
+  return res.data;
 }

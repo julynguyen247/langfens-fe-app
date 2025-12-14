@@ -28,6 +28,16 @@ import {
   mapSpeakingHistoryToAttempt,
   mapWritingHistoryToAttempt,
 } from "./components/utils";
+import { HistoryModal } from "./components/HistoryModal";
+
+type Course = {
+  id: string;
+  name: string;
+  level: "Beginner" | "Intermediate" | "Advanced";
+  progress: number;
+  lessonsDone: number;
+  lessonsTotal: number;
+};
 
 export type Attempt = {
   id: string;
@@ -54,17 +64,38 @@ export default function Home() {
   const router = useRouter();
   const { setAttempt } = useAttemptStore();
 
-  const [coreAttempts, setCoreAttempts] = useState<Attempt[]>([]);
-  const [writingAttempts, setWritingAttempts] = useState<Attempt[]>([]);
-  const [speakingAttempts, setSpeakingAttempts] = useState<Attempt[]>([]);
+  const courses: Course[] = [
+    {
+      id: "c1",
+      name: "IELTS Reading Mastery",
+      level: "Intermediate",
+      progress: 42,
+      lessonsDone: 21,
+      lessonsTotal: 50,
+    },
+    {
+      id: "c2",
+      name: "IELTS Listening Intensive",
+      level: "Beginner",
+      progress: 73,
+      lessonsDone: 22,
+      lessonsTotal: 30,
+    },
+    {
+      id: "c3",
+      name: "Writing 7.0+ Task 2",
+      level: "Advanced",
+      progress: 18,
+      lessonsDone: 4,
+      lessonsTotal: 22,
+    },
+  ];
 
-  const [loadingCore, setLoadingCore] = useState(true);
-  const [loadingWriting, setLoadingWriting] = useState(false);
-  const [loadingSpeaking, setLoadingSpeaking] = useState(false);
+  const [attempts, setAttempts] = useState<Attempt[]>([]);
+  const [loadingAttempts, setLoadingAttempts] = useState(true);
+  const [attemptErr, setAttemptErr] = useState<string | null>(null);
 
-  const [coreErr, setCoreErr] = useState<string | null>(null);
-
-  const [showAllHistory, setShowAllHistory] = useState(false);
+  const [openHistoryModal, setOpenHistoryModal] = useState(false);
 
   const [placementTestId, setPlacementTestId] = useState("");
   const [placementStatus, setPlacementStatus] =
@@ -72,83 +103,52 @@ export default function Home() {
   const [loadingPlacement, setLoadingPlacement] = useState(true);
 
   useEffect(() => {
-    let alive = true;
-
     getMe().catch(() => {});
 
     (async () => {
-      setLoadingCore(true);
-      setCoreErr(null);
-
+      setLoadingAttempts(true);
+      setAttemptErr(null);
       try {
-        const res = await getAttempt(1, 10);
+        const [res, wres, sres] = await Promise.all([
+          getAttempt(1, 10),
+          getWritingHistory(),
+          getSpeakingHistory(),
+        ]);
+
         const raw =
           (res as any)?.data?.items ??
           (res as any)?.data?.data ??
           (res as any)?.data ??
           [];
-
         const list: Attempt[] = Array.isArray(raw)
           ? raw.map(normalizeAttemptItem)
           : [];
 
-        if (!alive) return;
-        setCoreAttempts(list);
-      } catch (e: any) {
-        if (!alive) return;
-        setCoreErr(e?.message || "Không thể tải lịch sử làm bài.");
-      } finally {
-        if (!alive) return;
-        setLoadingCore(false);
-      }
-    })();
-
-    (async () => {
-      setLoadingWriting(true);
-      try {
-        const wres = await getWritingHistory();
         const wraw = (wres as any)?.data?.data ?? [];
-        const list: Attempt[] = Array.isArray(wraw)
+        const writingList: Attempt[] = Array.isArray(wraw)
           ? wraw.map(mapWritingHistoryToAttempt)
           : [];
-        if (!alive) return;
-        setWritingAttempts(list);
-      } catch {
-        if (!alive) return;
-        setWritingAttempts([]);
-      } finally {
-        if (!alive) return;
-        setLoadingWriting(false);
-      }
-    })();
 
-    (async () => {
-      setLoadingSpeaking(true);
-      try {
-        const sres = await getSpeakingHistory();
         const sraw = (sres as any)?.data?.data ?? [];
-        const list: Attempt[] = Array.isArray(sraw)
+        const speakingList: Attempt[] = Array.isArray(sraw)
           ? sraw.map(mapSpeakingHistoryToAttempt)
           : [];
-        if (!alive) return;
-        setSpeakingAttempts(list);
-      } catch {
-        if (!alive) return;
-        setSpeakingAttempts([]);
+
+        const merged = [...list, ...writingList, ...speakingList];
+        merged.sort(
+          (a, b) =>
+            new Date(b.dateISO).getTime() - new Date(a.dateISO).getTime()
+        );
+        setAttempts(merged);
+      } catch (e: any) {
+        setAttemptErr(e?.message || "Không thể tải lịch sử làm bài.");
       } finally {
-        if (!alive) return;
-        setLoadingSpeaking(false);
+        setLoadingAttempts(false);
       }
     })();
-
-    return () => {
-      alive = false;
-    };
   }, []);
 
   useEffect(() => {
-    let alive = true;
-
     (async () => {
       setLoadingPlacement(true);
       try {
@@ -156,8 +156,6 @@ export default function Home() {
           getPublicExams(1, 24),
           getPlacementStatus(),
         ]);
-
-        if (!alive) return;
 
         if (testsRes.status === "fulfilled") {
           const data =
@@ -196,23 +194,10 @@ export default function Home() {
           }
         }
       } finally {
-        if (!alive) return;
         setLoadingPlacement(false);
       }
     })();
-
-    return () => {
-      alive = false;
-    };
   }, []);
-
-  const attempts = useMemo(() => {
-    const merged = [...coreAttempts, ...writingAttempts, ...speakingAttempts];
-    merged.sort(
-      (a, b) => new Date(b.dateISO).getTime() - new Date(a.dateISO).getTime()
-    );
-    return merged;
-  }, [coreAttempts, writingAttempts, speakingAttempts]);
 
   const analytics = useMemo(() => {
     const total = attempts.length;
@@ -223,18 +208,7 @@ export default function Home() {
     return { total, avg: Math.round(avg), streakDays };
   }, [attempts]);
 
-  const visibleAttempts = useMemo(() => {
-    return showAllHistory ? attempts : attempts.slice(0, 3);
-  }, [attempts, showAllHistory]);
-
-  const extraLoading = loadingWriting || loadingSpeaking;
-
-  const skeletonFillCount = useMemo(() => {
-    if (showAllHistory) return 0;
-    if (!extraLoading) return 0;
-    const need = 3 - visibleAttempts.length;
-    return need > 0 ? need : 0;
-  }, [showAllHistory, extraLoading, visibleAttempts.length]);
+  const visibleAttempts = useMemo(() => attempts.slice(0, 3), [attempts]);
 
   async function handleStart(id: string) {
     try {
@@ -371,19 +345,19 @@ export default function Home() {
         <div className="flex items-center justify-between gap-3">
           <SectionTitle> Lịch sử làm bài </SectionTitle>
 
-          {!loadingCore && !coreErr && attempts.length > 3 && (
+          {!loadingAttempts && !attemptErr && attempts.length > 3 && (
             <motion.button
               whileHover={{ y: -1 }}
-              onClick={() => setShowAllHistory((s) => !s)}
+              onClick={() => setOpenHistoryModal(true)}
               className="text-sm font-semibold text-blue-600 hover:text-blue-700"
             >
-              {showAllHistory ? "Thu gọn" : "Xem tất cả"}
+              Xem tất cả
             </motion.button>
           )}
         </div>
 
         <AnimatePresence mode="popLayout">
-          {loadingCore ? (
+          {loadingAttempts ? (
             <motion.div
               key="loading"
               initial={{ opacity: 0 }}
@@ -395,26 +369,14 @@ export default function Home() {
               <SkeletonAttempt />
               <SkeletonAttempt />
             </motion.div>
-          ) : coreErr ? (
+          ) : attemptErr ? (
             <motion.div
               key="error"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               className="text-sm text-rose-600"
             >
-              {coreErr}
-            </motion.div>
-          ) : attempts.length === 0 && extraLoading ? (
-            <motion.div
-              key="extra-loading"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="grid grid-cols-1 gap-3"
-            >
-              <SkeletonAttempt />
-              <SkeletonAttempt />
-              <SkeletonAttempt />
+              {attemptErr}
             </motion.div>
           ) : attempts.length === 0 ? (
             <motion.div
@@ -464,21 +426,6 @@ export default function Home() {
                   </Card>
                 </motion.div>
               ))}
-
-              {Array.from({ length: skeletonFillCount }).map((_, i) => (
-                <motion.div key={`sk-fill-${i}`} variants={fadeInUp}>
-                  <SkeletonAttempt />
-                </motion.div>
-              ))}
-
-              {!showAllHistory && extraLoading && (
-                <motion.div
-                  variants={fadeInUp}
-                  className="text-xs text-slate-500 pt-1"
-                >
-                  Đang tải thêm lịch sử Writing và Speaking...
-                </motion.div>
-              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -530,6 +477,15 @@ export default function Home() {
           </div>
         </Card>
       </main>
+      <HistoryModal
+        open={openHistoryModal}
+        attempts={attempts}
+        onClose={() => setOpenHistoryModal(false)}
+        onSelect={(a) => {
+          setOpenHistoryModal(false);
+          router.push(buildAttemptDetailUrl(a));
+        }}
+      />
     </div>
   );
 }
@@ -570,7 +526,7 @@ function Card({
 
 function Badge({ children }: { children: React.ReactNode }) {
   return (
-    <span className="text-[11px] leading-none rounded-full px-2 py-1 bg-blue-50 text-blue-700 border border-blue-100">
+    <span className="text-[11px] leading-none rounded-full px-2 py-1 bg-blue-50 text-blue-700 ">
       {children}
     </span>
   );
@@ -578,7 +534,7 @@ function Badge({ children }: { children: React.ReactNode }) {
 
 function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-2xl border bg-white p-4 shadow-sm">
+    <div className="rounded-2xl  bg-white p-4 shadow-sm">
       <div className="text-xs text-slate-500">{label}</div>
       <div className="mt-1 text-2xl font-semibold text-slate-900">{value}</div>
     </div>
@@ -605,7 +561,7 @@ function MotionLink({
 
 function SkeletonAttempt() {
   return (
-    <div className="rounded-2xl border bg-white p-4 shadow-sm">
+    <div className="rounded-2xl bg-white p-4 shadow-sm">
       <div className="flex items-center gap-3">
         <div className="h-6 w-16 rounded-full bg-slate-100" />
         <div className="flex-1 space-y-2">
