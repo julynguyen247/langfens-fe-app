@@ -84,7 +84,6 @@ export default function DictionaryPage() {
 
   return (
     <div className="min-h-screen bg-[#F7F8FA] text-gray-900">
-      {/* soft background */}
       <div className="pointer-events-none fixed inset-0">
         <div className="absolute -top-24 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-blue-200/40 blur-3xl" />
         <div className="absolute -bottom-24 right-10 h-72 w-72 rounded-full bg-indigo-200/40 blur-3xl" />
@@ -99,8 +98,6 @@ export default function DictionaryPage() {
             Gõ từ để xem gợi ý. Chọn một gợi ý để mở trang chi tiết theo id.
           </p>
         </div>
-
-        {/* Search Card */}
         <div className="mx-auto mt-8 max-w-2xl">
           <div
             ref={boxRef}
@@ -123,8 +120,6 @@ export default function DictionaryPage() {
                 Enter
               </kbd>
             </div>
-
-            {/* Suggest dropdown */}
             {showSuggest && suggests.length > 0 && (
               <div className="absolute left-0 right-0 z-50 mt-3 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl">
                 <div className="max-h-[360px] overflow-auto">
@@ -148,10 +143,6 @@ export default function DictionaryPage() {
                             {s.pos}
                           </span>
                         </div>
-                        <div className="mt-0.5 text-xs text-gray-500">
-                          ID: {s.id} • Score:{" "}
-                          {Math.round((s.score ?? 0) * 100) / 100}
-                        </div>
                       </div>
 
                       <span className="ml-3 shrink-0 text-gray-400">→</span>
@@ -161,8 +152,6 @@ export default function DictionaryPage() {
               </div>
             )}
           </div>
-
-          {/* helper */}
           <div className="mt-4 grid gap-2 sm:grid-cols-3 text-center text-xs text-gray-600">
             <div className="rounded-xl border border-gray-200 bg-white p-3">
               <div className="font-semibold text-gray-900">Gợi ý</div>
