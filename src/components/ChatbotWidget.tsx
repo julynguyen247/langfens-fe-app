@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { FiMessageCircle, FiX } from "react-icons/fi";
+import SleepPenguinMini from "./SleepPenguinMini";
 
 type ChatMessage = {
   role: "user" | "assistant";
@@ -99,14 +100,15 @@ export default function ChatbotWidget() {
         <button
           onClick={() => setOpen(true)}
           className="
-            fixed bottom-6 right-6 bg-gradient-to-r from-blue-500 to-indigo-500
-            text-white p-4 rounded-full shadow-xl z-[9999]
-            hover:brightness-110 transition-all duration-300
-            animate-[chatbot-pop_0.35s_ease-out]
-            flex items-center justify-center
-          "
+    fixed bottom-6 right-6
+    bg-white
+    p-2 rounded-full shadow-xl z-[9999]
+    hover:scale-105 transition-all duration-300
+    animate-[chatbot-pop_0.35s_ease-out]
+    flex items-center justify-center
+  "
         >
-          <FiMessageCircle size={24} />
+          <SleepPenguinMini />
         </button>
       )}
 
