@@ -331,8 +331,8 @@ export default function Home() {
                     onClick={() =>
                       placementTestId && handleStart(placementTestId)
                     }
-                    className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed"
-                    disabled={!placementTestId}
+                    className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                    disabled={!Boolean(placementTestId)}
                   >
                     Bắt đầu làm
                   </button>
