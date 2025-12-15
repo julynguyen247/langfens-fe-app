@@ -22,9 +22,20 @@ function normalizeOptionLabel(contentMd: string): string {
   return m ? m[1] : trimmed;
 }
 
+function parseMatchingPrompt(promptMd: string) {
+  const trimmed = promptMd.trim();
+  const m = trimmed.match(/^(\d+)\s+(.*)$/);
+  if (!m) {
+    return { order: "", text: trimmed };
+  }
+  return {
+    order: m[1],
+    text: m[2],
+  };
+}
+
 function mapBackendTypeToUiKind(type: BackendQuestionType): QuestionUiKind {
   switch (type) {
-    // radio
     case "TRUE_FALSE_NOT_GIVEN":
     case "YES_NO_NOT_GIVEN":
     case "MULTIPLE_CHOICE_SINGLE":
@@ -32,7 +43,6 @@ function mapBackendTypeToUiKind(type: BackendQuestionType): QuestionUiKind {
     case "CLASSIFICATION":
       return "choice_single";
 
-    // input text
     case "FORM_COMPLETION":
     case "NOTE_COMPLETION":
     case "SENTENCE_COMPLETION":
@@ -42,13 +52,11 @@ function mapBackendTypeToUiKind(type: BackendQuestionType): QuestionUiKind {
     case "DIAGRAM_LABEL":
     case "MAP_LABEL":
       return "completion";
-
-    // matching: nhập A–F
     case "MATCHING_HEADING":
     case "MATCHING_INFORMATION":
     case "MATCHING_FEATURES":
     case "MATCHING_ENDINGS":
-      return "matching_letter";
+      return "matching_paragraph";
 
     case "FLOW_CHART":
       return "flow_chart";
@@ -60,7 +68,18 @@ function mapBackendTypeToUiKind(type: BackendQuestionType): QuestionUiKind {
 
 export function mapApiQuestionToUi(q: ApiQuestion): Question {
   const uiKind = mapBackendTypeToUiKind(q.type);
+  if (uiKind === "matching_paragraph") {
+    const { order, text } = parseMatchingPrompt(q.promptMd);
 
+    return {
+      id: q.id,
+      order,
+      stem: text,
+      backendType: q.type,
+      uiKind,
+      placeholder: "A",
+    };
+  }
   const base: Question = {
     id: q.id,
     stem: q.promptMd,
@@ -84,6 +103,5 @@ export function mapApiQuestionToUi(q: ApiQuestion): Question {
     };
   }
 
-  // Completion & others
   return base;
 }
