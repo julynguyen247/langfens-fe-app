@@ -19,6 +19,7 @@
     "react-icons": "^5.5.0",
     "react-markdown": "^10.1.0",
     "react-media-recorder": "^1.7.2",
+    "remark-gfm": "^4.0.1",
     "zustand": "^5.0.8"
   },
   "devDependencies": {

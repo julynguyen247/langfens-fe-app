@@ -50,7 +50,9 @@ export default function ChatbotWidget() {
 
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_GATEWAY_URL}/api-chatbot/ielts/chat-stream`,
+        `${
+          process.env.NEXT_PUBLIC_GATEWAY_URL ?? ""
+        }/api-chatbot/ielts/chat-stream`,
         {
           method: "POST",
           headers: {
