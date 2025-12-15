@@ -14,6 +14,16 @@ const WELCOME_MESSAGE: ChatMessage = {
     "Xin chào, mình là trợ lý Langfens.\nHãy hỏi mình bất cứ điều gì về tiếng Anh, bài test hoặc cách dùng Langfens nhé!",
 };
 
+function TypingIndicator() {
+  return (
+    <div className="flex items-center gap-1 px-3 py-2">
+      <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:-0.2s]" />
+      <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:-0.1s]" />
+      <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" />
+    </div>
+  );
+}
+
 export default function ChatbotWidget() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
@@ -38,21 +48,12 @@ export default function ChatbotWidget() {
     setLoading(true);
 
     try {
-      const payload = {
-        messages: [
-          {
-            content: trimmed,
-            role: "user",
-          },
-        ],
-      };
-
       const res = await fetch("/api/chatbot/stream", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [{ role: "user", content: trimmed }],
+        }),
       });
 
       if (!res.body) {
@@ -68,8 +69,7 @@ export default function ChatbotWidget() {
         const { value, done } = await reader.read();
         if (done) break;
 
-        const chunkText = decoder.decode(value, { stream: true });
-        botText += chunkText;
+        botText += decoder.decode(value, { stream: true });
 
         setMessages((prev) => {
           if (botIndex < 0 || botIndex >= prev.length) return prev;
@@ -82,7 +82,7 @@ export default function ChatbotWidget() {
         });
       }
     } catch (err) {
-      console.error("Chat stream error:", err);
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -95,9 +95,8 @@ export default function ChatbotWidget() {
           onClick={() => setOpen(true)}
           className="
             fixed bottom-6 right-6 bg-gradient-to-r from-blue-500 to-indigo-500
-            hover:brightness-110
             text-white p-4 rounded-full shadow-xl z-[9999]
-            transition-all duration-300 
+            hover:brightness-110 transition-all duration-300
             animate-[chatbot-pop_0.35s_ease-out]
             flex items-center justify-center
           "
@@ -109,19 +108,18 @@ export default function ChatbotWidget() {
       {open && (
         <div
           className="
-            fixed bottom-6 right-6 w-80 h-96 
+            fixed bottom-6 right-6 w-80 h-96
             bg-gradient-to-b from-slate-50 to-slate-100
-            rounded-2xl shadow-2xl z-[9999] 
+            rounded-2xl shadow-2xl z-[9999]
             flex flex-col border border-slate-200
             animate-[chatbot-open_0.35s_ease-out]
           "
         >
           <div
             className="
-              px-4 py-3 flex justify-between items-center 
-              rounded-t-2xl
-              bg-gradient-to-r from-blue-600 to-indigo-500
-              text-white shadow-sm
+              px-4 py-3 flex justify-between items-center
+              rounded-t-2xl bg-gradient-to-r from-blue-600 to-indigo-500
+              text-white
             "
           >
             <div className="flex flex-col">
@@ -137,7 +135,8 @@ export default function ChatbotWidget() {
               <FiX size={18} />
             </button>
           </div>
-          <div className="flex-1 px-3 py-2 overflow-y-auto text-sm text-gray-800 space-y-2">
+
+          <div className="flex-1 px-3 py-2 overflow-y-auto text-sm space-y-2">
             {messages.map((m, i) => (
               <div
                 key={i}
@@ -148,16 +147,17 @@ export default function ChatbotWidget() {
               >
                 <div
                   className={
-                    "max-w-[85%] px-3 py-2 rounded-2xl whitespace-pre-wrap text-[13px] shadow-sm " +
+                    "max-w-[85%] px-3 py-2 rounded-2xl whitespace-pre-wrap text-[13px] shadow-sm transition-all duration-150 " +
                     (m.role === "user"
                       ? "bg-blue-600 text-white rounded-br-sm"
                       : "bg-white text-gray-900 rounded-bl-sm border border-slate-100")
                   }
                 >
-                  {m.content ||
-                    (m.role === "assistant" && loading
-                      ? "Đang trả lời..."
-                      : "")}
+                  {m.role === "assistant" && !m.content && loading ? (
+                    <TypingIndicator />
+                  ) : (
+                    m.content
+                  )}
                 </div>
               </div>
             ))}
@@ -165,7 +165,10 @@ export default function ChatbotWidget() {
 
           <form
             onSubmit={handleSend}
-            className="p-3 bg-slate-50 rounded-b-2xl border-t border-slate-200 flex gap-2"
+            className="
+              p-3 bg-slate-50 rounded-b-2xl
+              border-t border-slate-200 flex gap-2
+            "
           >
             <input
               type="text"
@@ -173,9 +176,8 @@ export default function ChatbotWidget() {
               className="
                 flex-1 px-3 py-2 rounded-xl bg-white text-gray-900 text-[13px]
                 border border-slate-200
-                focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                placeholder:text-slate-400
-                transition
+                focus:outline-none focus:ring-2 focus:ring-blue-500
+                placeholder:text-slate-400 transition
               "
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -187,8 +189,7 @@ export default function ChatbotWidget() {
               className="
                 px-3 py-2 rounded-xl text-xs font-semibold
                 bg-blue-600 text-white disabled:opacity-50
-                hover:bg-blue-700 transition
-                shadow-sm
+                hover:bg-blue-700 transition shadow-sm
               "
             >
               Gửi

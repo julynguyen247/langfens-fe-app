@@ -231,7 +231,7 @@ export async function getPublicHandler(params?: {
   page?: number;
   pageSize?: number;
 }) {
-  const res = await apisVocabulary.get("/", {
+  const res = await apisVocabulary.get("/decks", {
     params: {
       status: params?.status ?? "",
       category: params?.category ?? "",
@@ -242,11 +242,11 @@ export async function getPublicHandler(params?: {
   return res;
 }
 export async function subscribeDeck(userId: string, deckId: string) {
-  const res = await apisVocabulary.post(`/${userId}/subscribe/${deckId}`);
+  const res = await apisVocabulary.post(`/users/${userId}/subscribe/${deckId}`);
   return res;
 }
 export async function getUserSubscriptions(userId: string) {
-  const res = await apisVocabulary.get(`/${userId}/subscribe`);
+  const res = await apisVocabulary.get(`/users/${userId}/subscribe`);
   return res;
 }
 export async function audioSubmitFromUrl(mediaBlobUrl: string) {

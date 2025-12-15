@@ -274,7 +274,7 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
       <div className="flex flex-col h-full bg-white rounded-xl shadow overflow-hidden">
         <div className="border-b p-4 bg-white sticky top-0 z-10">
           <div className="flex justify-between mb-3">
-            <h2 className="text-lg font-semibold">Listening</h2>
+            <h2 className="text-lg font-semibold text-black">Listening</h2>
             <button
               onClick={() => setConfirmOpen(true)}
               disabled={submitting}
@@ -633,31 +633,6 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
                       ? "Grade & generate transcript"
                       : "Record first to grade"}
                   </button>
-                </div>
-
-                <div className="bg-white border rounded-2xl p-5 shadow-md flex-1 min-h-[220px]">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-semibold text-slate-800">
-                      Transcript
-                    </h3>
-                    {transcript && (
-                      <span className="text-[11px] px-2 py-1 rounded-full bg-slate-100 text-slate-600">
-                        AI generated
-                      </span>
-                    )}
-                  </div>
-
-                  {transcript ? (
-                    <p className="text-sm text-slate-700 whitespace-pre-line leading-relaxed">
-                      {transcript}
-                    </p>
-                  ) : (
-                    <p className="text-xs text-slate-500">
-                      Sau khi ghi âm và bấm{" "}
-                      <b>Grade &amp; generate transcript</b>, transcript phần
-                      nói của bạn sẽ hiển thị ở đây.
-                    </p>
-                  )}
                 </div>
               </section>
             </div>

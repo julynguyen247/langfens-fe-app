@@ -1,7 +1,6 @@
-// app/do-test/[skill]/[attemptId]/layout.tsx
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   useParams,
   usePathname,
@@ -12,6 +11,9 @@ import TopBar from "./components/common/TopBar";
 import TimerDisplay from "./components/common/TimerDisplay";
 import PassageFooter from "./components/reading/PassageFooter";
 import { useAttemptStore } from "@/app/store/useAttemptStore";
+import { useLoadingStore } from "@/app/store/loading";
+import Modal from "@/components/Modal";
+import { submitAttempt } from "@/utils/api";
 
 type Skill = "reading" | "listening" | "writing" | "speaking";
 
@@ -35,8 +37,17 @@ export default function DoTestAttemptLayout({
     skill: Skill;
     attemptId: string;
   };
+  const isAutoGraded = skill === "reading" || skill === "listening";
 
   const attempt = useAttemptStore((s) => s.byId[attemptId]);
+  const { setLoading } = useLoadingStore();
+
+  const router = useRouter();
+  const pathname = usePathname();
+  const sp = useSearchParams();
+
+  const [openConfirm, setOpenConfirm] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const initialSeconds = useMemo(() => {
     if (!attempt) return 0;
@@ -50,8 +61,7 @@ export default function DoTestAttemptLayout({
   }, [attempt, skill]);
 
   const passages = useMemo(() => {
-    if (!attempt) return [];
-    if (skill !== "reading") return [];
+    if (!attempt || skill !== "reading") return [];
     return [...attempt.paper.sections]
       .sort((a, b) => a.idx - b.idx)
       .map((sec) => {
@@ -67,10 +77,6 @@ export default function DoTestAttemptLayout({
       });
   }, [attempt, skill]);
 
-  const router = useRouter();
-  const pathname = usePathname();
-  const sp = useSearchParams();
-
   const currentSecId =
     sp.get("sec") ?? (passages.length > 0 ? passages[0].id : "");
 
@@ -78,6 +84,7 @@ export default function DoTestAttemptLayout({
     0,
     passages.findIndex((p) => p.id === currentSecId)
   );
+
   const currentPassage = passages[currentIndex] ?? passages[0];
 
   const gotoSection = (id: string) => {
@@ -113,31 +120,87 @@ export default function DoTestAttemptLayout({
 
   const showTimer = skill === "reading" || skill === "listening";
 
+  const handleExit = () => {
+    setOpenConfirm(true);
+  };
+
+  const confirmExit = async () => {
+    if (submitting) return;
+
+    try {
+      setSubmitting(true);
+      setLoading(true);
+
+      if (isAutoGraded && attempt) {
+        await submitAttempt(attempt.attemptId);
+        router.replace(`/attempts/${attempt.attemptId}`);
+        return;
+      }
+
+      router.replace("/home");
+    } finally {
+      setLoading(false);
+      setSubmitting(false);
+    }
+  };
+
   return (
-    <div className="h-screen flex flex-col bg-[#F3F4F6] overflow-hidden">
-      <TopBar
-        title={`Làm bài ${prettySkill}`}
-        subtitle={subtitle}
-        rightSlot={
-          showTimer ? <TimerDisplay initialSeconds={initialSeconds} /> : null
-        }
-      />
-
-      <main className="flex-1 min-h-0 w-full mx-auto overflow-y-auto">
-        {children}
-      </main>
-
-      {skill === "reading" && attempt && passages.length > 0 && (
-        <PassageFooter
-          passages={passages}
-          currentPassageId={currentSecId}
-          onChangePassage={(id) => gotoSection(id)}
-          onJumpRange={(dir) => jumpRange(dir)}
-          onGridClick={() => console.log("open answer sheet")}
-          rangeLabel={currentPassage?.label ?? ""}
-          rangePrevLabel={passages[currentIndex - 1]?.label ?? ""}
+    <>
+      <div className="h-screen flex flex-col bg-[#F3F4F6] overflow-hidden">
+        <TopBar
+          title={`Làm bài ${prettySkill}`}
+          subtitle={subtitle}
+          onClose={handleExit}
+          rightSlot={
+            showTimer ? <TimerDisplay initialSeconds={initialSeconds} /> : null
+          }
         />
-      )}
-    </div>
+
+        <main className="flex-1 min-h-0 w-full mx-auto overflow-y-auto">
+          {children}
+        </main>
+
+        {skill === "reading" && attempt && passages.length > 0 && (
+          <PassageFooter
+            passages={passages}
+            currentPassageId={currentSecId}
+            onChangePassage={gotoSection}
+            onJumpRange={jumpRange}
+            onGridClick={() => {}}
+            rangeLabel={currentPassage?.label ?? ""}
+            rangePrevLabel={passages[currentIndex - 1]?.label ?? ""}
+          />
+        )}
+      </div>
+
+      <Modal
+        open={openConfirm}
+        onClose={() => setOpenConfirm(false)}
+        title="Xác nhận thoát bài"
+        footer={
+          <>
+            <button
+              onClick={() => setOpenConfirm(false)}
+              className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200"
+            >
+              Ở lại làm tiếp
+            </button>
+            <button
+              onClick={confirmExit}
+              disabled={submitting}
+              className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+            >
+              Nộp bài & thoát
+            </button>
+          </>
+        }
+      >
+        <p className="text-sm text-gray-700">
+          {isAutoGraded
+            ? "Nếu bạn thoát bây giờ, bài làm sẽ được nộp và chấm điểm ngay."
+            : "Nếu bạn thoát bây giờ, phần làm hiện tại sẽ không được lưu."}
+        </p>
+      </Modal>
+    </>
   );
 }
