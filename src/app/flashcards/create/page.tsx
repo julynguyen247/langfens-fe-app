@@ -18,51 +18,64 @@ type SingleCard = {
   term: string;
   meaning: string;
   example?: string;
-  imageUrl?: string;
 };
 
 export default function CreateDeckPage() {
   const router = useRouter();
+  const { user } = useUserStore();
 
+  /* ---------------- deck ---------------- */
   const [deckTitle, setDeckTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState<string>("");
+  const [category, setCategory] = useState("");
   const [status, setStatus] = useState<"draft" | "published">("published");
 
-  const [tags, setTags] = useState<string>("");
-  const [hasImage, setHasImage] = useState(false);
+  /* ---------------- cards ---------------- */
+  const [cards, setCards] = useState<SingleCard[]>([
+    { term: "", meaning: "", example: "" },
+  ]);
 
-  const [card, setCard] = useState<SingleCard>({
-    term: "",
-    meaning: "",
-    example: "",
-    imageUrl: "",
-  });
-  const { user } = useUserStore();
+  /* ---------------- ui state ---------------- */
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string>("");
+  const [error, setError] = useState("");
 
-  const termErr = !card.term.trim();
-  const meaningErr = !card.meaning.trim();
+  /* ---------------- validate ---------------- */
   const titleErr = deckTitle.trim().length < 3;
   const categoryErr = !category.trim();
 
+  const isValidCard = (c: SingleCard) => c.term.trim() && c.meaning.trim();
+
   const totalValidCards = useMemo(
-    () => (termErr || meaningErr ? 0 : 1),
-    [termErr, meaningErr]
+    () => cards.filter(isValidCard).length,
+    [cards]
   );
 
   const canSubmit =
-    !titleErr && !categoryErr && totalValidCards === 1 && !submitting;
+    !titleErr && !categoryErr && totalValidCards >= 1 && !submitting;
+
+  /* ---------------- handlers ---------------- */
+  const addCard = () => {
+    setCards((prev) => [...prev, { term: "", meaning: "", example: "" }]);
+  };
+
+  const removeCard = (index: number) => {
+    setCards((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const updateCard = (index: number, patch: Partial<SingleCard>) => {
+    setCards((prev) =>
+      prev.map((c, i) => (i === index ? { ...c, ...patch } : c))
+    );
+  };
 
   const handleSubmit = async () => {
-    if (!user) return;
+    if (!user || !canSubmit) return;
     setError("");
-    if (!canSubmit) return;
 
     try {
       setSubmitting(true);
 
+      /* ---- create deck ---- */
       const deckRes = await createDeck({
         slug: slugify(deckTitle.trim()),
         title: deckTitle.trim(),
@@ -79,75 +92,80 @@ export default function CreateDeckPage() {
         resData?.deckId ??
         resData?.data?.deckId;
 
-      if (!deckId) throw new Error("Không tìm thấy deckId từ API /deck.");
+      if (!deckId) {
+        throw new Error("Không lấy được deckId từ API");
+      }
 
-      await createDeckCard(deckId, {
-        frontMd: card.term.trim(),
-        backMd: card.meaning.trim(),
-        hintMd: card.example?.trim() || undefined,
-      });
+      /* ---- create cards ---- */
+      const validCards = cards.filter(isValidCard);
+
+      await Promise.all(
+        validCards.map((card) =>
+          createDeckCard(deckId, {
+            frontMd: card.term.trim(),
+            backMd: card.meaning.trim(),
+            hintMd: card.example?.trim() || undefined,
+          })
+        )
+      );
 
       router.push("/flashcards");
     } catch (e: any) {
-      const msg =
+      setError(
         e?.response?.data?.message ||
-        e?.message ||
-        "Có lỗi xảy ra. Vui lòng thử lại.";
-      setError(String(msg));
+          e?.message ||
+          "Có lỗi xảy ra, vui lòng thử lại."
+      );
     } finally {
       setSubmitting(false);
     }
   };
 
+  /* ---------------- render ---------------- */
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-6 text-indigo-900">
+      {/* header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Tạo bộ từ vựng (Deck)</h1>
+        <h1 className="text-2xl font-bold">Tạo bộ từ vựng</h1>
         <div className="text-sm text-indigo-700/70">
-          Hợp lệ: {totalValidCards}/1 thẻ
+          Thẻ hợp lệ: {totalValidCards}/{cards.length}
         </div>
       </div>
 
-      <section className="mt-6 rounded-xl border border-indigo-100 bg-white p-5 shadow-sm">
+      {/* deck info */}
+      <section className="mt-6 rounded-xl border bg-white p-5 shadow-sm">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label className="mb-1 block text-sm font-medium">Tên Deck *</label>
+            <label className="text-sm font-medium">Tên Deck *</label>
             <input
-              className={`w-full rounded-lg border px-3 py-2 outline-none focus:border-indigo-500 ${
+              className={`mt-1 w-full rounded-lg border px-3 py-2 ${
                 titleErr ? "border-rose-300" : "border-slate-300"
               }`}
-              placeholder="Ví dụ: 900 từ IELTS (1 thẻ mẫu)"
               value={deckTitle}
               onChange={(e) => setDeckTitle(e.target.value)}
             />
-            <p className="mt-1 text-xs text-slate-500">Tối thiểu 3 ký tự.</p>
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium">Category *</label>
+            <label className="text-sm font-medium">Category *</label>
             <select
-              className={`w-full rounded-lg border px-3 py-2 outline-none focus:border-indigo-500 ${
+              className={`mt-1 w-full rounded-lg border px-3 py-2 ${
                 categoryErr ? "border-rose-300" : "border-slate-300"
               }`}
               value={category}
               onChange={(e) => setCategory(e.target.value)}
             >
-              <option value="">-- Chọn category --</option>
+              <option value="">-- Chọn --</option>
               <option value="ielts">IELTS</option>
               <option value="toeic">TOEIC</option>
               <option value="general">General</option>
-              <option value="business">Business</option>
-              <option value="academic">Academic</option>
             </select>
-            {categoryErr && (
-              <p className="mt-1 text-xs text-rose-600">Bắt buộc.</p>
-            )}
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium">Status *</label>
+            <label className="text-sm font-medium">Status</label>
             <select
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-indigo-500"
+              className="mt-1 w-full rounded-lg border px-3 py-2"
               value={status}
               onChange={(e) =>
                 setStatus(e.target.value as "draft" | "published")
@@ -156,28 +174,12 @@ export default function CreateDeckPage() {
               <option value="published">Published</option>
               <option value="draft">Draft</option>
             </select>
-            <p className="mt-1 text-xs text-slate-500">
-              Có thể tạo ở dạng bản nháp để sửa sau.
-            </p>
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium">
-              Tags (chỉ hiển thị)
-            </label>
-            <input
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-indigo-500"
-              placeholder="ielts, vocabulary"
-              value={tags}
-              onChange={(e) => setTags(e.target.value)}
-            />
           </div>
 
           <div className="md:col-span-2">
-            <label className="mb-1 block text-sm font-medium">Mô tả</label>
+            <label className="text-sm font-medium">Mô tả</label>
             <textarea
-              className="min-h-[90px] w-full resize-y rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-indigo-500"
-              placeholder="Mô tả ngắn về bộ từ vựng..."
+              className="mt-1 min-h-[90px] w-full rounded-lg border px-3 py-2"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
@@ -185,98 +187,90 @@ export default function CreateDeckPage() {
         </div>
       </section>
 
-      <section className="mt-6 rounded-xl border border-indigo-100 bg-white p-5 shadow-sm">
+      {/* cards */}
+      <section className="mt-6 rounded-xl border bg-white p-5 shadow-sm">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Thẻ (Cards)</h2>
+          <h2 className="text-lg font-semibold">Cards</h2>
+          <button
+            onClick={addCard}
+            className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm text-white"
+          >
+            + Thêm card
+          </button>
         </div>
 
-        <div className="rounded-lg border border-slate-200 p-4 shadow-sm">
-          <div className="mb-3 text-sm font-medium text-slate-600">Thẻ #1</div>
+        <div className="space-y-4">
+          {cards.map((card, i) => {
+            const termErr = !card.term.trim();
+            const meaningErr = !card.meaning.trim();
 
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            <div>
-              <label className="mb-1 block text-sm">
-                Từ/Thuật ngữ (term) *
-              </label>
-              <input
-                className={`w-full rounded-lg border px-3 py-2 outline-none focus:border-indigo-500 ${
-                  termErr ? "border-rose-300" : "border-slate-300"
-                }`}
-                placeholder="Ex: alleviate"
-                value={card.term}
-                onChange={(e) =>
-                  setCard((p) => ({ ...p, term: e.target.value }))
-                }
-              />
-              {termErr && (
-                <p className="mt-1 text-xs text-rose-600">Bắt buộc.</p>
-              )}
-            </div>
+            return (
+              <div key={i} className="rounded-lg border border-slate-200 p-4">
+                <div className="mb-2 flex justify-between">
+                  <span className="text-sm font-medium">Thẻ #{i + 1}</span>
+                  {cards.length > 1 && (
+                    <button
+                      onClick={() => removeCard(i)}
+                      className="text-sm text-rose-600"
+                    >
+                      Xóa
+                    </button>
+                  )}
+                </div>
 
-            <div>
-              <label className="mb-1 block text-sm">
-                Nghĩa/Định nghĩa (meaning) *
-              </label>
-              <input
-                className={`w-full rounded-lg border px-3 py-2 outline-none focus:border-indigo-500 ${
-                  meaningErr ? "border-rose-300" : "border-slate-300"
-                }`}
-                placeholder="Ex: to make something less severe"
-                value={card.meaning}
-                onChange={(e) =>
-                  setCard((p) => ({ ...p, meaning: e.target.value }))
-                }
-              />
-              {meaningErr && (
-                <p className="mt-1 text-xs text-rose-600">Bắt buộc.</p>
-              )}
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="mb-1 block text-sm">Ví dụ (optional)</label>
-              <textarea
-                className="min-h-[70px] w-full resize-y rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-indigo-500"
-                placeholder="Ex: The new policies aim to alleviate traffic congestion."
-                value={card.example || ""}
-                onChange={(e) =>
-                  setCard((p) => ({ ...p, example: e.target.value }))
-                }
-              />
-            </div>
-          </div>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <input
+                    placeholder="Term *"
+                    className={`rounded-lg border px-3 py-2 ${
+                      termErr ? "border-rose-300" : "border-slate-300"
+                    }`}
+                    value={card.term}
+                    onChange={(e) => updateCard(i, { term: e.target.value })}
+                  />
+                  <input
+                    placeholder="Meaning *"
+                    className={`rounded-lg border px-3 py-2 ${
+                      meaningErr ? "border-rose-300" : "border-slate-300"
+                    }`}
+                    value={card.meaning}
+                    onChange={(e) => updateCard(i, { meaning: e.target.value })}
+                  />
+                  <textarea
+                    placeholder="Example (optional)"
+                    className="md:col-span-2 rounded-lg border px-3 py-2"
+                    value={card.example || ""}
+                    onChange={(e) => updateCard(i, { example: e.target.value })}
+                  />
+                </div>
+              </div>
+            );
+          })}
         </div>
       </section>
-      <section className="sticky bottom-0 mt-6 border-t border-indigo-100 bg-white/80 py-4 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+
+      {/* footer */}
+      <section className="sticky bottom-0 mt-6 border-t bg-white/80 py-4 backdrop-blur">
         {error && (
-          <div className="mb-3 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+          <div className="mb-3 rounded-lg bg-rose-50 p-3 text-sm text-rose-700">
             {error}
           </div>
         )}
 
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-slate-500">
-            Tối thiểu 1 thẻ hợp lệ. * là bắt buộc.
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => router.push("/flashcards")}
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm hover:bg-slate-50"
-              disabled={submitting}
-            >
-              Hủy
-            </button>
-            <button
-              onClick={handleSubmit}
-              disabled={!canSubmit}
-              className={`rounded-lg px-4 py-2 text-sm font-semibold ${
-                canSubmit
-                  ? "bg-[#3B82F6] text-white hover:brightness-95"
-                  : "bg-slate-200 text-slate-500"
-              }`}
-            >
-              {submitting ? "Đang tạo..." : "Tạo deck"}
-            </button>
-          </div>
+        <div className="flex justify-between">
+          <span className="text-sm text-slate-500">
+            Tối thiểu 1 card hợp lệ
+          </span>
+          <button
+            onClick={handleSubmit}
+            disabled={!canSubmit}
+            className={`rounded-lg px-4 py-2 text-sm font-semibold ${
+              canSubmit
+                ? "bg-indigo-600 text-white"
+                : "bg-slate-200 text-slate-500"
+            }`}
+          >
+            {submitting ? "Đang tạo..." : "Tạo deck"}
+          </button>
         </div>
       </section>
     </main>
