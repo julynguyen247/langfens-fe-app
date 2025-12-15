@@ -6,14 +6,14 @@ import { getPublicExams, getWritingExams, getSpeakingExams } from "@/utils/api";
 import { useUserStore } from "@/app/store/userStore";
 import PracticeBank, { PracticeItem } from "@/components/PracticeBank";
 
-function detectSkill(
-  title: string
+function detectSkillFromSlug(
+  slug: string
 ): "reading" | "listening" | "writing" | "speaking" | "unknown" {
-  const t = title.toLowerCase();
-  if (t.includes("reading")) return "reading";
-  if (t.includes("listening")) return "listening";
-  if (t.includes("writing")) return "writing";
-  if (t.includes("speaking")) return "speaking";
+  const s = slug.toLowerCase();
+  if (s.includes("reading")) return "reading";
+  if (s.includes("listening")) return "listening";
+  if (s.includes("writing")) return "writing";
+  if (s.includes("speaking")) return "speaking";
   return "unknown";
 }
 
@@ -36,8 +36,8 @@ export default function GroupPage() {
     async function fetchTests() {
       if (groupId === "writing") {
         const res = await getWritingExams();
-        const data: PracticeItem[] = (res as any).data.data.map(
-          (item: any) => ({
+        setItems(
+          (res as any).data.data.map((item: any) => ({
             id: item.id,
             title: item.title,
             summary: item.taskText ?? "",
@@ -45,16 +45,15 @@ export default function GroupPage() {
             attemps: 0,
             done: false,
             skill: "writing",
-          })
+          }))
         );
-        setItems(data);
         return;
       }
 
       if (groupId === "speaking") {
         const res = await getSpeakingExams();
-        const data: PracticeItem[] = (res as any).data.data.map(
-          (item: any) => ({
+        setItems(
+          (res as any).data.data.map((item: any) => ({
             id: item.id,
             title: item.title,
             summary: item.taskText ?? "",
@@ -62,36 +61,36 @@ export default function GroupPage() {
             attemps: 0,
             done: false,
             skill: "speaking",
-          })
+          }))
         );
-        setItems(data);
         return;
       }
 
-      const res = await getPublicExams(1, 24, { category: groupId });
-      const data: PracticeItem[] = (res as any).data.data.map((item: any) => ({
-        ...item,
-        skill: detectSkill(item.title),
-      }));
-      setItems(data);
+      const res = await getPublicExams(1, 500, { category: groupId });
+      setItems(
+        (res as any).data.data.map((item: any) => ({
+          ...item,
+          skill: detectSkillFromSlug(item.slug),
+        }))
+      );
     }
 
     fetchTests();
   }, [groupId]);
 
   const filtered = useMemo(() => {
-    let base = items.filter(
-      (it: any) => String(it.skill).toLowerCase() === groupId
-    );
-
-    if ((groupId === "writing" || groupId === "speaking") && partFilter) {
-      base = base.filter((it) => {
-        const meta = `${it.title} ${it.summary ?? ""}`.toLowerCase();
-        return new RegExp(`part[\\s_]?${partFilter}`).test(meta);
-      });
+    if (groupId === "writing" || groupId === "speaking") {
+      let base = items;
+      if (partFilter) {
+        base = base.filter((it) => {
+          const meta = `${it.title} ${it.summary ?? ""}`.toLowerCase();
+          return new RegExp(`part[\\s_]?${partFilter}`).test(meta);
+        });
+      }
+      return base;
     }
 
-    return base;
+    return items.filter((it: any) => detectSkillFromSlug(it.slug) === groupId);
   }, [items, groupId, partFilter]);
 
   if (!user?.id) {

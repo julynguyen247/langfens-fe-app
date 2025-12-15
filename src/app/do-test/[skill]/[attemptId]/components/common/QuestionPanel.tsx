@@ -15,7 +15,8 @@ export type QuestionUiKind =
   | "choice_single"
   | "completion"
   | "matching_letter"
-  | "flow_chart";
+  | "flow_chart"
+  | "matching_paragraph";
 
 export type Question = {
   id: string;
@@ -24,6 +25,7 @@ export type Question = {
   uiKind: QuestionUiKind;
   choices?: Array<string | Choice>;
   placeholder?: string;
+  order?: string;
   flowChartNodes?: { key: string; label: string }[];
 };
 
@@ -109,6 +111,35 @@ export default function QuestionPanel({
                   onChange={(v) => handleAnswer(q.id, v)}
                 />
               );
+            case "matching_paragraph":
+              return (
+                <div
+                  key={q.id}
+                  className="flex items-start gap-3 py-3 border-b last:border-b-0"
+                >
+                  <span className="w-6 text-sm font-semibold text-slate-700">
+                    {q.order}.
+                  </span>
+
+                  <p className="flex-1 text-sm text-slate-800 leading-relaxed">
+                    {q.stem}
+                  </p>
+
+                  <input
+                    value={value}
+                    maxLength={1}
+                    placeholder={q.placeholder ?? "A"}
+                    onChange={(e) =>
+                      handleAnswer(
+                        q.id,
+                        e.target.value.toUpperCase().replace(/[^A-F]/g, "")
+                      )
+                    }
+                    className="w-12 h-10 rounded-lg border border-slate-300 text-center font-semibold
+                   focus:outline-none focus:ring-2 focus:ring-[#317EFF]"
+                  />
+                </div>
+              );
 
             case "matching_letter":
               return (
@@ -122,7 +153,6 @@ export default function QuestionPanel({
               );
 
             case "flow_chart":
-            default:
               return (
                 <FlowChartCard
                   key={q.id}
@@ -133,6 +163,7 @@ export default function QuestionPanel({
                   onChange={(v) => handleAnswer(q.id, v)}
                 />
               );
+            default:
           }
         })}
       </div>

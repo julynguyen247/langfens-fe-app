@@ -17,6 +17,7 @@ export type PracticeItem = {
   done: boolean;
   tags?: string[];
   skill?: string;
+  slug: string;
 };
 
 export type PracticeBankProps = {

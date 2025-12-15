@@ -21,7 +21,8 @@ export type QuestionUiKind =
   | "choice_single"
   | "completion"
   | "matching_letter"
-  | "flow_chart";
+  | "flow_chart"
+  | "matching_paragraph";
 type Choice = { value: string; label: string };
 
 export type QuestionUi = {
@@ -29,6 +30,7 @@ export type QuestionUi = {
   stem: string;
   backendType: BackendQuestionType;
   uiKind: QuestionUiKind;
+  order?: string;
   choices?: Choice[];
   placeholder?: string;
 };
