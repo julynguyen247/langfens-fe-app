@@ -178,10 +178,10 @@ export default function PracticeBank({
         {pageItems.map((it) => (
           <article
             key={it.id}
-            className="w-full sm:w-[48%] lg:w-[31%] xl:w-[23%] rounded-xl border border-slate-200 bg-white shadow-sm transition hover:shadow"
+            className="w-full sm:w-[48%] lg:w-[31%] xl:w-[23%] rounded-xl border border-slate-200 bg-white shadow-sm transition hover:shadow "
           >
             <button
-              className="relative block aspect-video w-full overflow-hidden"
+              className="relative block aspect-video w-full overflow-hidden cursor-pointer"
               onClick={() => handleStart(it)}
               disabled={loadingId === it.id}
             >
@@ -220,20 +220,7 @@ export default function PracticeBank({
                 • {it.summary}
               </p>
 
-              <div className="mt-2 text-[11px] text-slate-400">
-                {(it.attempts ?? 0).toLocaleString()} lượt làm bài
-              </div>
-
-              <div className="mt-3 flex items-center justify-between">
-                {it.done ? (
-                  <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
-                    Đã làm
-                  </span>
-                ) : (
-                  <span className="rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-[11px] font-medium text-sky-700">
-                    Chưa làm
-                  </span>
-                )}
+              <div className="mt-3 self-end">
                 <button
                   onClick={() => handleStart(it)}
                   disabled={loadingId === it.id}
