@@ -434,7 +434,7 @@ export default function Home() {
           )}
         </AnimatePresence>
 
-        <SectionTitle> Phân tích dữ liệu </SectionTitle>
+        {/* <SectionTitle> Phân tích dữ liệu </SectionTitle>
         <motion.div
           className="grid grid-cols-1 md:grid-cols-3 gap-4"
           initial="hidden"
@@ -479,7 +479,7 @@ export default function Home() {
           <div className="mt-2 text-xs text-slate-500">
             *Cột càng cao biểu thị kết quả tốt hơn (dữ liệu minh họa).
           </div>
-        </Card>
+        </Card> */}
       </main>
       <HistoryModal
         open={openHistoryModal}
