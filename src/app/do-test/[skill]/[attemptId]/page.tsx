@@ -141,7 +141,7 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
 
         <div className="w-[480px] flex flex-col overflow-hidden">
           <div className="border-b p-4 bg-white sticky top-0 z-10 flex justify-between">
-            <h2 className="text-lg font-semibold">Questions</h2>
+            <h2 className="text-lg font-semibold text-black">Questions</h2>
             <button
               onClick={() => setConfirmOpen(true)}
               disabled={submitting}
