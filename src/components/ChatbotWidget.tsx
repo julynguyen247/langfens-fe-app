@@ -48,13 +48,18 @@ export default function ChatbotWidget() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/chatbot/stream", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: [{ role: "user", content: trimmed }],
-        }),
-      });
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_GATEWAY_URL}/api-chatbot/ielts/chat-stream`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            messages: [{ role: "user", content: trimmed }],
+          }),
+        }
+      );
 
       if (!res.body) {
         setLoading(false);
