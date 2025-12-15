@@ -66,4 +66,4 @@ jobs:
                 docker compose -f compose.yaml down
                 docker compose -f compose.yaml up -d --remove-orphans
             fi
-            docker image prune -f
+            docker image prune -af

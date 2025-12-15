@@ -18,6 +18,7 @@ export type PracticeItem = {
   tags?: string[];
   skill?: string;
   slug: string;
+  durationMin?: number;
 };
 
 export type PracticeBankProps = {
@@ -215,6 +216,9 @@ export default function PracticeBank({
                 <h3 className="min-w-0 truncate text-sm font-semibold text-slate-800 hover:underline">
                   {it.title}
                 </h3>
+                <div className="mt-0.5 flex items-center gap-2 text-[11px] text-slate-500">
+                  <span>⏱ {it.durationMin ?? 20} phút</span>
+                </div>
               </button>
 
               <p className="mt-0.5 min-w-0 truncate text-[12px] text-slate-500">
