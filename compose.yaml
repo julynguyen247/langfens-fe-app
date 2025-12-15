@@ -1,10 +1,15 @@
 services:
-  langfens-frontend:
+  frontend-service:
+    image: ${DOCKERHUB_USER}/langfens-frontend:${TAG}
     build:
-      context: .
+      context: 
       dockerfile: Dockerfile
+    env_file:
+      - path: frontend.env
+        required: false
     environment:
-      NODE_ENV: production
+      - NODE_ENV=production
     ports:
-      - 3000:3000
+      - "3000:3000"
+
  

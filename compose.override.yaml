@@ -1,0 +1,12 @@
+services:
+  frontend-service:
+    image: ${DOCKERHUB_USER}/langfens-frontend:${TAG}
+    env_file:
+      - path: frontend.env
+        required: false
+    environment:
+      - NODE_ENV=production
+    ports:
+      - "3000:3000"
+
+ 
