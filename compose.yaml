@@ -2,7 +2,7 @@ services:
   frontend-service:
     image: ${DOCKERHUB_USER}/langfens-frontend:${TAG}
     build:
-      context: 
+      context: .
       dockerfile: Dockerfile
     env_file:
       - path: frontend.env

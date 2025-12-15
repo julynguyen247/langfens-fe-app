@@ -5,11 +5,11 @@ COPY package*.json ./
 RUN npm ci
 COPY . .
 RUN if [ ! -s "src/app/do-test/[skill]/page.tsx" ]; then \
-      printf "%s\n" \
-        "// auto-generated to satisfy Next.js in Docker build" \
-        "export default function Page() { return null; }" \
-        > "src/app/do-test/[skill]/page.tsx"; \
-    fi
+  printf "%s\n" \
+  "// auto-generated to satisfy Next.js in Docker build" \
+  "export default function Page() { return null; }" \
+  > "src/app/do-test/[skill]/page.tsx"; \
+  fi
 RUN npm run build
 
 FROM node:18-alpine
