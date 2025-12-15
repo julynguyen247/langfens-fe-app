@@ -712,7 +712,10 @@ function QuestionReview({ details }: { details: AttemptQuestionResult[] }) {
   );
 
   const normalized = useMemo(
-    () => (details ?? []).map(normalizeDetail),
+    () =>
+      (details ?? [])
+        .map(normalizeDetail)
+        .sort((a, b) => (a.index ?? 0) - (b.index ?? 0)),
     [details]
   );
 
