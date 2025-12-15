@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { useAttemptStore } from "@/app/store/useAttemptStore";
 import { useUserStore } from "@/app/store/userStore";
 import { autoSaveAttempt, submitAttempt, uploadFile } from "@/utils/api";
@@ -13,6 +14,7 @@ import ListeningAudioBar from "../../do-test/[skill]/[attemptId]/components/list
 import QuestionPanel from "../../do-test/[skill]/[attemptId]/components/common/QuestionPanel";
 import PassageView from "../../do-test/[skill]/[attemptId]/components/reading/PassageView";
 import { useReactMediaRecorder } from "react-media-recorder";
+import { useLoadingStore } from "@/app/store/loading";
 
 type QA = Record<string, string>;
 type Tab = "reading" | "listening" | "writing" | "speaking";
@@ -35,7 +37,7 @@ export default function MultiSkillAttemptPage() {
   const { user } = useUserStore();
   const attempt = useAttemptStore((s) => s.byId[attemptId]);
   const clearAttempt = useAttemptStore((s) => s.clear);
-
+  const { setLoading } = useLoadingStore();
   const [activeTab, setActiveTab] = useState<Tab>("reading");
   const [submitting, setSubmitting] = useState(false);
   const [answers, setAnswers] = useState<QA>({});
@@ -247,6 +249,7 @@ export default function MultiSkillAttemptPage() {
   });
 
   async function handleSubmit(auto = false) {
+    setLoading(true);
     if (submitting) return;
     if (!auto) {
       const ok = window.confirm("Bạn chắc chắn muốn nộp toàn bộ bài test?");
@@ -267,6 +270,8 @@ export default function MultiSkillAttemptPage() {
       console.error(e);
       setSubmitting(false);
       if (!auto) alert("Nộp bài thất bại. Vui lòng thử lại.");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -475,9 +480,11 @@ export default function MultiSkillAttemptPage() {
                   <h3 className="font-semibold text-slate-800 mb-2">
                     Instructions
                   </h3>
-                  <p className="text-sm text-slate-700 whitespace-pre-line leading-relaxed">
-                    {writingSection.instructionsMd}
-                  </p>
+                  <div className="prose prose-sm max-w-none text-slate-700">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {writingSection.instructionsMd}
+                    </ReactMarkdown>
+                  </div>
                 </div>
               )}
 
@@ -487,7 +494,7 @@ export default function MultiSkillAttemptPage() {
                     Writing task
                   </h3>
                   <p className="text-sm text-slate-700 whitespace-pre-line mb-4 leading-relaxed">
-                    {writingQuestion.promptMd}
+                    <ReactMarkdown>{writingQuestion.promptMd}</ReactMarkdown>
                   </p>
 
                   <textarea
@@ -573,7 +580,9 @@ export default function MultiSkillAttemptPage() {
                     Instructions
                   </h3>
                   <p className="text-sm text-slate-700 whitespace-pre-line leading-relaxed">
-                    {speakingSection.instructionsMd}
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {speakingSection.instructionsMd}
+                    </ReactMarkdown>
                   </p>
                 </div>
               )}
@@ -585,7 +594,9 @@ export default function MultiSkillAttemptPage() {
                       Speaking task
                     </h3>
                     <p className="text-sm text-slate-700 whitespace-pre-line leading-relaxed">
-                      {speakingQuestion.promptMd}
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {speakingQuestion.promptMd}
+                      </ReactMarkdown>
                     </p>
                   </div>
 
