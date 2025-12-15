@@ -110,27 +110,21 @@ export default function LandingPage() {
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true, amount: 0.3 }}
               transition={{ duration: 0.5, ease: "easeOut" }}
-              whileHover={{ scale: 1.02, rotate: -1 }}
-              whileTap={{ scale: 0.99 }}
-              className="aspect-[4/3] w-full rounded-2xl bg-gradient-to-tr from-blue-50 to-white border border-blue-100 flex items-center justify-center"
+              whileHover={{ scale: 1.02 }}
+              className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden border border-blue-100 shadow-sm"
             >
-              <motion.div
-                animate={{ y: [0, -8, 0] }}
-                transition={{
-                  repeat: Infinity,
-                  duration: 3,
-                  ease: "easeInOut",
-                }}
-                className="w-40 h-40 sm:w-48 sm:h-48 rounded-2xl border-4 border-blue-300 grid place-items-center text-blue-800 font-black text-3xl"
-              >
-                EXAM
-              </motion.div>
+              <Image
+                src="/landing/section1.png"
+                alt="Luyện thi IELTS Online"
+                fill
+                className="object-cover"
+                priority
+              />
             </motion.div>
           </div>
         </div>
       </section>
 
-      {/* STEPS */}
       <section className="py-14 bg-[#F5F5F5]">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <motion.h2
@@ -210,20 +204,15 @@ export default function LandingPage() {
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true, amount: 0.3 }}
               transition={{ duration: 0.5, ease: "easeOut" }}
-              whileHover={{ scale: 1.02, rotate: 1 }}
-              className="aspect-[4/3] w-full rounded-2xl bg-gradient-to-tr from-orange-50 to-white border border-orange-100 grid place-items-center"
+              whileHover={{ scale: 1.02 }}
+              className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden border border-orange-100 shadow-sm"
             >
-              <motion.div
-                animate={{ y: [0, -8, 0] }}
-                transition={{
-                  repeat: Infinity,
-                  duration: 3,
-                  ease: "easeInOut",
-                }}
-                className="w-40 h-40 sm:w-48 sm:h-48 rounded-2xl border-4 border-blue-300 grid place-items-center text-blue-800 font-black text-3xl"
-              >
-                EXAM
-              </motion.div>
+              <Image
+                src="/landing/section2.jpg"
+                alt="Thi thử IELTS Online"
+                fill
+                className="object-cover"
+              />
             </motion.div>
           </div>
 
