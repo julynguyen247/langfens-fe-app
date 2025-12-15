@@ -12,7 +12,6 @@ import { mapApiQuestionToUi } from "@/lib/mapApiQuestionToUi";
 import { BackendQuestionType } from "@/types/question.type";
 import ListeningAudioBar from "../../do-test/[skill]/[attemptId]/components/listening/ListeningAudioBar";
 import QuestionPanel from "../../do-test/[skill]/[attemptId]/components/common/QuestionPanel";
-import PassageView from "../../do-test/[skill]/[attemptId]/components/reading/PassageView";
 import { useReactMediaRecorder } from "react-media-recorder";
 import { useLoadingStore } from "@/app/store/loading";
 
@@ -24,6 +23,7 @@ type QuestionMeta = {
   type: BackendQuestionType;
   skill: string;
 };
+type SpeakingSource = "none" | "record" | "upload";
 
 function formatTime(totalSeconds: number) {
   const m = Math.floor(totalSeconds / 60);
@@ -36,23 +36,35 @@ export default function MultiSkillAttemptPage() {
   const { attemptId } = useParams() as { attemptId: string };
   const { user } = useUserStore();
   const attempt = useAttemptStore((s) => s.byId[attemptId]);
-  const clearAttempt = useAttemptStore((s) => s.clear);
   const { setLoading } = useLoadingStore();
   const [activeTab, setActiveTab] = useState<Tab>("reading");
   const [submitting, setSubmitting] = useState(false);
   const [answers, setAnswers] = useState<QA>({});
   const lastAnswersRef = useRef<QA>({});
-
+  const [speakingSource, setSpeakingSource] = useState<SpeakingSource>("none");
   const initialSecondsLeft = attempt?.timeLeft ?? attempt?.durationSec ?? 3600;
   const [secondsLeft, setSecondsLeft] = useState(initialSecondsLeft);
 
-  const { status, startRecording, stopRecording, mediaBlobUrl } =
+  const { status, startRecording, stopRecording, mediaBlobUrl, clearBlobUrl } =
     useReactMediaRecorder({ audio: true });
 
   const [seconds, setSeconds] = useState(0);
   const [uploading, setUploading] = useState(false);
 
   const isRecording = status === "recording";
+
+  const resetSpeaking = () => {
+    clearBlobUrl();
+    setSeconds(0);
+    setSpeakingSource("none");
+    if (speakingQuestion) {
+      const next = { ...lastAnswersRef.current };
+      delete next[String(speakingQuestion.id)];
+
+      lastAnswersRef.current = next;
+      setAnswers(next);
+    }
+  };
 
   const sections = useMemo(
     () =>
@@ -223,14 +235,6 @@ export default function MultiSkillAttemptPage() {
     return () => clearInterval(t);
   }, [isRecording]);
 
-  if (!attempt) {
-    return (
-      <div className="p-6">
-        Không có dữ liệu đề. Hãy quay lại và Start lại attempt.
-      </div>
-    );
-  }
-
   const buildPayload = (answersMap: QA) => ({
     answers: Object.entries(answersMap).map(([questionId, value]) => {
       const meta = questionMeta.get(questionId);
@@ -264,7 +268,6 @@ export default function MultiSkillAttemptPage() {
       await autoSaveAttempt(attemptId, payload);
       await submitAttempt(attemptId);
 
-      clearAttempt?.(attemptId);
       router.replace(`/attempts/${attemptId}`);
     } catch (e) {
       console.error(e);
@@ -276,8 +279,9 @@ export default function MultiSkillAttemptPage() {
   }
 
   const handleStartRecording = () => {
-    if (uploading) return;
+    if (uploading || speakingSource === "upload") return;
     setSeconds(0);
+    setSpeakingSource("record");
     startRecording();
   };
 
@@ -299,28 +303,52 @@ export default function MultiSkillAttemptPage() {
 
     try {
       setUploading(true);
+      setSpeakingSource("record");
+
       const blob = await fetch(mediaBlobUrl).then((r) => r.blob());
       const res = await uploadFile({ file: blob });
       const serializedAnswer = res.data?.serializedResponse;
+
       if (!serializedAnswer) {
         alert("Không nhận được serializedAnswer từ server.");
         return;
       }
+
       handleSpeakingChange(serializedAnswer);
       alert("Đã tải và lưu câu trả lời speaking.");
     } catch (e) {
       console.error(e);
-      alert("Tải audio thất bại, thử lại nhé.");
+      alert("Tải audio thất bại.");
     } finally {
       setUploading(false);
     }
   };
 
-  const readingSection = sections.find((s: any) =>
-    (s.questions ?? []).some(
-      (q: any) => String(q.skill).toLowerCase() === "reading"
-    )
-  );
+  const handleUploadAudio = async (file: File) => {
+    if (!speakingQuestion) return;
+
+    try {
+      setUploading(true);
+      setSpeakingSource("upload");
+
+      const res = await uploadFile({ file });
+      const serializedAnswer = res.data?.serializedResponse;
+
+      if (!serializedAnswer) {
+        alert("Không nhận được serializedAnswer từ server.");
+        return;
+      }
+
+      handleSpeakingChange(serializedAnswer);
+      alert("Đã upload và lưu câu trả lời speaking.");
+    } catch (e) {
+      console.error(e);
+      alert("Upload audio thất bại.");
+      setSpeakingSource("none");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const listeningAudioUrl = listeningSection?.audioUrl ?? "";
   const writingValue =
@@ -331,7 +359,7 @@ export default function MultiSkillAttemptPage() {
     mergeAndAutoSave({ [String(writingQuestion.id)]: value });
   };
 
-  const examTitle = attempt.paper?.title ?? "English Placement Test";
+  const examTitle = "English Placement Test";
 
   return (
     <div className="flex flex-col h-full min-h-0 bg-white rounded-xl shadow overflow-hidden">
@@ -482,9 +510,9 @@ export default function MultiSkillAttemptPage() {
                   <h3 className="font-semibold text-slate-800 mb-2">
                     Writing task
                   </h3>
-                  <p className="text-sm text-slate-700 whitespace-pre-line mb-4 leading-relaxed">
+                  <div className="text-sm text-slate-700 whitespace-pre-line mb-4 leading-relaxed">
                     <ReactMarkdown>{writingQuestion.promptMd}</ReactMarkdown>
-                  </p>
+                  </div>
 
                   <textarea
                     value={writingValue}
@@ -568,11 +596,11 @@ export default function MultiSkillAttemptPage() {
                   <h3 className="font-semibold text-slate-800 mb-2">
                     Instructions
                   </h3>
-                  <p className="text-sm text-slate-700 whitespace-pre-line leading-relaxed">
+                  <div className="text-sm text-slate-700 whitespace-pre-line leading-relaxed">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
                       {speakingSection.instructionsMd}
                     </ReactMarkdown>
-                  </p>
+                  </div>
                 </div>
               )}
 
@@ -582,22 +610,49 @@ export default function MultiSkillAttemptPage() {
                     <h3 className="font-semibold text-slate-800 mb-2">
                       Speaking task
                     </h3>
-                    <p className="text-sm text-slate-700 whitespace-pre-line leading-relaxed">
+                    <div className="text-sm text-slate-700 whitespace-pre-line leading-relaxed">
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>
                         {speakingQuestion.promptMd}
                       </ReactMarkdown>
-                    </p>
+                    </div>
                   </div>
 
                   <div className="flex flex-col lg:flex-row gap-6 items-center flex-1/2 justify-center">
+                    <input
+                      type="file"
+                      accept="audio/mp3,audio/wav"
+                      id="speaking-upload"
+                      className="hidden"
+                      disabled={speakingSource === "record" || uploading}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleUploadAudio(file);
+                      }}
+                    />
                     <section className="w-full lg:w-1/2 flex flex-col gap-4">
                       <div className="flex w-full gap-3 text-xs text-slate-500">
+                        <label
+                          htmlFor="speaking-upload"
+                          className={`flex-1 px-4 py-2.5 rounded-lg font-semibold text-sm text-center cursor-pointer transition ${
+                            speakingSource === "record" || uploading
+                              ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                              : "bg-white text-[#317EFF] hover:bg-indigo-100 border border-indigo-200"
+                          }`}
+                        >
+                          Upload mp3 / wav
+                        </label>
                         <button
                           type="button"
                           onClick={handleStartRecording}
-                          disabled={isRecording || uploading}
-                          className={`flex-1 px-4 py-2.5 rounded-lg font-semibold text-sm transition ${
-                            isRecording || uploading
+                          disabled={
+                            isRecording ||
+                            uploading ||
+                            speakingSource === "upload"
+                          }
+                          className={`flex-1 px-4 py-2.5 rounded-lg font-semibold text-sm transition cursor-pointer ${
+                            isRecording ||
+                            uploading ||
+                            speakingSource === "upload"
                               ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                               : "bg-[#317EFF] text-white hover:bg-[#74a4f6]"
                           }`}
@@ -635,6 +690,15 @@ export default function MultiSkillAttemptPage() {
                           ? "Tải lên & lưu câu trả lời"
                           : "Ghi âm xong để tải lên"}
                       </button>
+                      {(mediaBlobUrl || speakingSource === "upload") && (
+                        <button
+                          type="button"
+                          onClick={resetSpeaking}
+                          className="w-full text-xs text-slate-500 hover:text-red-600 underline mt-2"
+                        >
+                          Xóa audio & làm lại
+                        </button>
+                      )}
                     </section>
                   </div>
                 </div>

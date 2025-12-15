@@ -205,7 +205,6 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
   const { user } = useUserStore();
   const { setLoading } = useLoadingStore();
   const attempt = useAttemptStore((s) => s.byId[attemptId])!;
-  const clearAttempt = useAttemptStore((s) => s.clear);
 
   const sections = useMemo(
     () => [...(attempt.paper.sections ?? [])].sort((a, b) => a.idx - b.idx),
@@ -259,7 +258,6 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
       setLoading(true);
       cancelAutoSave();
       await submitAttempt(attemptId);
-      clearAttempt?.(attemptId);
       router.replace(`/attempts/${attemptId}`);
     } catch {
       alert("Nộp bài thất bại.");
@@ -345,24 +343,24 @@ type SpeakingExam = {
   title: string;
   description?: string;
   prompt?: string;
+  taskText?: string;
 };
+type AudioSource = "none" | "record" | "upload";
 
 function SpeakingScreen({ attemptId }: { attemptId: string }) {
   const examIdFromUrl = attemptId;
   const router = useRouter();
   const { setLoading } = useLoadingStore();
-
-  const { status, startRecording, stopRecording, mediaBlobUrl } =
+  const { status, startRecording, stopRecording, mediaBlobUrl, clearBlobUrl } =
     useReactMediaRecorder({ audio: true });
-
   const [seconds, setSeconds] = useState(0);
   const [exam, setExam] = useState<SpeakingExam | null>(null);
   const [loadingExam, setLoadingExam] = useState(true);
   const [errorExam, setErrorExam] = useState<string | null>(null);
-  const [transcript, setTranscript] = useState("");
   const [grading, setGrading] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
-
+  const [uploading, setUploading] = useState(false);
+  const [audioSource, setAudioSource] = useState<AudioSource>("none");
   const isRecording = status === "recording";
 
   useEffect(() => {
@@ -403,17 +401,27 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
       if (t) clearInterval(t);
     };
   }, [isRecording]);
-
   const handleStart = () => {
-    if (grading) return;
+    if (grading || audioSource === "upload") return;
     setSeconds(0);
-    setTranscript("");
+    setAudioSource("record");
     startRecording();
   };
 
   const handleStop = () => {
     if (!isRecording) return;
     stopRecording();
+  };
+
+  const resetAudio = () => {
+    clearBlobUrl();
+    setSeconds(0);
+    setAudioSource("none");
+
+    const input = document.getElementById(
+      "speaking-upload"
+    ) as HTMLInputElement;
+    if (input) input.value = "";
   };
 
   const handleOpenConfirmGrade = () => {
@@ -455,14 +463,6 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
         return;
       }
 
-      const newTranscript =
-        (payload as any).transcriptRaw ||
-        (payload as any).transcriptNormalized ||
-        "";
-      if (newTranscript) {
-        setTranscript(newTranscript);
-      }
-
       const submissionId = (payload as any).submissionId;
       if (submissionId) {
         router.push(`/attempts/${submissionId}?source=speaking`);
@@ -474,6 +474,40 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
       alert("Chấm điểm speaking thất bại, thử lại nhé.");
     } finally {
       setGrading(false);
+      setLoading(false);
+    }
+  };
+
+  const handleUploadAudio = async (file: File) => {
+    if (grading) return;
+    setAudioSource("upload");
+
+    try {
+      setLoading(true);
+
+      const res = await gradeSpeaking({
+        examId: exam?.id ?? examIdFromUrl,
+        timeSpentSeconds: 0,
+        speech: file,
+      });
+
+      const payload = res.data.data.res;
+      if (!payload) {
+        alert("Không nhận được dữ liệu chấm điểm.");
+        return;
+      }
+
+      const submissionId = (payload as any).submissionId;
+      if (submissionId) {
+        router.push(`/attempts/${submissionId}?source=speaking`);
+      } else {
+        alert("Không tìm thấy submissionId.");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Upload & chấm điểm thất bại.");
+      setAudioSource("none");
+    } finally {
       setLoading(false);
     }
   };
@@ -504,7 +538,7 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
   const title = exam.title || "Speaking test";
   const description =
     exam.description ??
-    exam.prompt ??
+    exam.taskText ??
     "You will speak about the topic below. Try to give full, natural answers.";
 
   return (
@@ -558,13 +592,30 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
               <section className="flex-1 bg-white border rounded-2xl p-7 shadow-md flex flex-col min-h-0">
                 <div>
                   <h3 className="text-base font-semibold text-slate-800">
-                    Task instructions
+                    Task question
                   </h3>
                   <p className="text-base text-slate-700 leading-relaxed whitespace-pre-line">
                     {description}
                   </p>
                 </div>
               </section>
+
+              <input
+                type="file"
+                accept="audio/mp3,audio/wav,audio/mpeg"
+                id="speaking-upload"
+                className="hidden"
+                disabled={
+                  isRecording ||
+                  grading ||
+                  uploading ||
+                  audioSource === "record"
+                }
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleUploadAudio(file);
+                }}
+              />
 
               <section className="w-full max-w-md flex flex-col gap-4">
                 <div className="bg-white border rounded-2xl p-6 shadow-md flex flex-col gap-4">
@@ -589,16 +640,34 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between gap-4 text-xs text-slate-500 mt-3">
+                  <div className="flex gap-3 text-xs text-slate-500 mt-3">
+                    <label
+                      htmlFor="speaking-upload"
+                      className={`flex-1 px-4 py-2.5 rounded-lg font-semibold text-sm text-center transition
+  ${
+    isRecording || grading || uploading || !!mediaBlobUrl
+      ? "bg-gray-200 text-gray-400 cursor-not-allowed pointer-events-none"
+      : "bg-white text-[#317EFF] hover:bg-indigo-100 border border-indigo-200 cursor-pointer"
+  }`}
+                    >
+                      Upload mp3 / wav
+                    </label>
                     <button
                       type="button"
                       onClick={handleStart}
-                      disabled={isRecording || grading}
-                      className={`flex-1 px-4 py-2.5 rounded-lg font-semibold text-sm transition ${
-                        isRecording || grading
-                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                          : "bg-[#317EFF] text-white hover:bg-[#74a4f6]"
-                      }`}
+                      disabled={
+                        isRecording ||
+                        grading ||
+                        uploading ||
+                        audioSource === "upload"
+                      }
+                      className={`flex-1 px-4 py-2.5 rounded-lg font-semibold text-sm transition
+    ${
+      isRecording || grading || uploading || audioSource === "upload"
+        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+        : "bg-[#317EFF] text-white hover:bg-[#74a4f6] active:scale-[0.98]"
+    }
+  `}
                     >
                       Start
                     </button>
@@ -607,11 +676,12 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
                       type="button"
                       onClick={handleStop}
                       disabled={!isRecording || grading}
-                      className={`flex-1 px-4 py-2.5 rounded-lg font-semibold text-sm transition ${
-                        !isRecording || grading
-                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                          : "bg-red-500 text-white hover:bg-red-600"
-                      }`}
+                      className={`flex-1 px-4 py-2.5 rounded-lg font-semibold text-sm transition
+    ${
+      !isRecording || grading
+        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+        : "bg-red-500 text-white hover:bg-red-600"
+    }`}
                     >
                       Stop
                     </button>
@@ -633,6 +703,16 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
                       ? "Grade & generate transcript"
                       : "Record first to grade"}
                   </button>
+
+                  {(mediaBlobUrl || audioSource === "upload") && !grading && (
+                    <button
+                      type="button"
+                      onClick={resetAudio}
+                      className="w-full text-xs text-slate-500 hover:text-red-600 underline mt-2"
+                    >
+                      Xóa audio & làm lại
+                    </button>
+                  )}
                 </div>
               </section>
             </div>

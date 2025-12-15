@@ -190,7 +190,7 @@ export default function DoTestAttemptLayout({
               disabled={submitting}
               className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
             >
-              Nộp bài & thoát
+              Thoát
             </button>
           </>
         }
