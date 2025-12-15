@@ -29,6 +29,7 @@ import {
   mapWritingHistoryToAttempt,
 } from "./components/utils";
 import { HistoryModal } from "./components/HistoryModal";
+import { useLoadingStore } from "../store/loading";
 
 type Course = {
   id: string;
@@ -96,7 +97,7 @@ export default function Home() {
   const [attemptErr, setAttemptErr] = useState<string | null>(null);
 
   const [openHistoryModal, setOpenHistoryModal] = useState(false);
-
+  const { setLoading } = useLoadingStore();
   const [placementTestId, setPlacementTestId] = useState("");
   const [placementStatus, setPlacementStatus] =
     useState<PlacementStatus | null>(null);
@@ -212,6 +213,7 @@ export default function Home() {
 
   async function handleStart(id: string) {
     try {
+      setLoading(true);
       const res = await startAttempt(id);
       const payload = (res as any)?.data?.data ?? (res as any)?.data ?? res;
       const attemptId: string | undefined = payload?.attemptId ?? payload?.id;
@@ -221,6 +223,8 @@ export default function Home() {
     } catch (err) {
       console.error(err);
       alert("Không thể bắt đầu bài. Vui lòng thử lại!");
+    } finally {
+      setLoading(false);
     }
   }
 
