@@ -35,7 +35,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       {!hideHeader && <LangfensHeader />}
       <main className="min-h-screen bg-gray-50">
         {content}
-        <ChatbotWidget />
+        {requireAuth && <ChatbotWidget />}
       </main>
     </>
   );
