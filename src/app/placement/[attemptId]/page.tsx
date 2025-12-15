@@ -391,48 +391,37 @@ export default function MultiSkillAttemptPage() {
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-hidden">
+      <div className="flex-1  min-h-0 overflow-hidden">
         {activeTab === "reading" && (
-          <div className="flex h-full min-h-0 overflow-hidden">
-            <div className="flex-1 min-h-0 overflow-hidden border-r bg-gray-50 mb-20">
-              {readingSection && (
-                <PassageView
-                  passage={{
-                    title: readingSection.title,
-                    content: readingSection.instructionsMd,
-                  }}
-                />
-              )}
-            </div>
-
-            <div className="w-[480px] flex flex-col h-full min-h-0 overflow-hidden">
-              <div className="border-b p-4 bg-white sticky top-0 z-10">
+          <div className="flex flex-col h-full min-h-0 bg-white justify-center items-center">
+            <div className=" flex flex-col h-full min-h-0  overflow-hidden w-2/3 shadow-xl rounded-2xl">
+              <div className="border-b p-4 bg-white sticky top-0 z-10 ">
                 <h2 className="text-sm font-semibold text-slate-800">
                   Reading questions
                 </h2>
                 <p className="text-xs text-slate-500">
                   Trả lời 15 câu hỏi nhiều lựa chọn.
                 </p>
-              </div>
 
-              <div className="flex-1 min-h-0 overflow-auto">
-                <QuestionPanel
-                  attemptId={attemptId}
-                  questions={readingUiQuestions}
-                  initialAnswers={lastAnswersRef.current}
-                  onAnswersChange={(next) => {
-                    lastAnswersRef.current = next;
-                    debouncedSave(next, buildSectionId, buildTextAnswer);
-                  }}
-                />
+                <div className="flex-1 min-h-0 overflow-auto">
+                  <QuestionPanel
+                    attemptId={attemptId}
+                    questions={readingUiQuestions}
+                    initialAnswers={lastAnswersRef.current}
+                    onAnswersChange={(next) => {
+                      lastAnswersRef.current = next;
+                      debouncedSave(next, buildSectionId, buildTextAnswer);
+                    }}
+                  />
+                </div>
               </div>
             </div>
           </div>
         )}
 
         {activeTab === "listening" && (
-          <div className="flex flex-col h-full min-h-0 bg-white">
-            <div className="border-b p-4 bg-white sticky top-0 z-10 flex flex-col gap-3">
+          <div className="flex flex-col h-full min-h-0 bg-white items-center">
+            <div className="border-b p-4 bg-white sticky top-0 z-10 flex flex-col gap-3 w-full ">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-sm font-semibold text-slate-800">
@@ -446,7 +435,7 @@ export default function MultiSkillAttemptPage() {
               <ListeningAudioBar src={listeningAudioUrl} />
             </div>
 
-            <div className="flex-1 min-h-0 overflow-auto p-6 bg-gray-50">
+            <div className="flex-1 min-h-0 overflow-auto p-6 bg-gray-50 w-2/3">
               <QuestionPanel
                 attemptId={attemptId}
                 questions={listeningUiQuestions}
@@ -588,8 +577,8 @@ export default function MultiSkillAttemptPage() {
               )}
 
               {speakingQuestion && (
-                <div className="bg-white border rounded-lg p-5 shadow-sm flex flex-col gap-6">
-                  <div>
+                <div className="bg-white border rounded-lg p-5 shadow-sm flex  gap-6 item">
+                  <div className="flex-1/2">
                     <h3 className="font-semibold text-slate-800 mb-2">
                       Speaking task
                     </h3>
@@ -600,7 +589,7 @@ export default function MultiSkillAttemptPage() {
                     </p>
                   </div>
 
-                  <div className="flex flex-col lg:flex-row gap-6 items-start">
+                  <div className="flex flex-col lg:flex-row gap-6 items-center flex-1/2 justify-center">
                     <section className="w-full lg:w-1/2 flex flex-col gap-4">
                       <div className="flex w-full gap-3 text-xs text-slate-500">
                         <button
