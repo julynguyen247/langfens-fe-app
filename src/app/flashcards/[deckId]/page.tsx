@@ -274,7 +274,7 @@ export default function StudyPage() {
   return (
     <main className="mx-auto w-full max-w-4xl px-4 py-6">
       <StudyHeader
-        deckTitle={`Học bộ thẻ: ${deckId}`}
+        deckTitle={``}
         current={Math.min(study.index + 1, study.total)}
         total={study.total}
         onExit={study.handleExit}
@@ -359,16 +359,5 @@ export default function StudyPage() {
         onToggleShuffle={study.toggleShuffle}
       />
     </main>
-  );
-}
-
-function StatPill({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-xl border bg-white px-3 py-2 text-center shadow-sm">
-      <div className="text-[11px] uppercase tracking-wide text-slate-500">
-        {label}
-      </div>
-      <div className="text-lg font-semibold text-slate-800">{value}</div>
-    </div>
   );
 }
