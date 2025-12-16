@@ -164,24 +164,48 @@ export default function AttemptResultPage() {
             questions: answers.map((a: any, i: number) => {
               const qid = String(a.questionId ?? a.id ?? i + 1);
               const meta = questionMetaById[qid];
-              const optionIds = a.selectedOptionIds ?? [];
-              let selectedText = a.selectedAnswerText ?? "";
+              const optionMap = meta?.options
+                ? mapOptionsById(meta.options)
+                : null;
 
-              if (!selectedText && optionIds.length > 0 && meta?.options) {
-                selectedText = meta.options
-                  .filter((o: any) => optionIds.includes(o.id))
-                  .map((o: any) => o.contentMd ?? "")
-                  .join(" | ");
-              }
+              const selectedOptionIds = Array.isArray(a.selectedOptionIds)
+                ? a.selectedOptionIds.map((v: any) => String(v))
+                : [];
+
+              const selectedText = mapAnswerContent({
+                optionMap,
+                ids: selectedOptionIds,
+                fallbackText:
+                  a.selectedAnswerText !== undefined &&
+                  a.selectedAnswerText !== null
+                    ? String(a.selectedAnswerText)
+                    : "",
+              });
+
+              const correctOptionIds = Array.isArray(
+                (a as any).correctOptionIds
+              )
+                ? (a as any).correctOptionIds.map((v: any) => String(v))
+                : [];
+
+              const correctText = mapAnswerContent({
+                optionMap,
+                ids: correctOptionIds,
+                fallbackText:
+                  a.correctAnswerText !== undefined &&
+                  a.correctAnswerText !== null
+                    ? String(a.correctAnswerText)
+                    : "",
+              });
 
               return {
                 questionId: qid,
                 skill: meta?.skill ?? "UNKNOWN",
                 index: a.index ?? meta?.idx ?? i + 1,
                 promptMd: a.promptMd ?? meta?.promptMd ?? "",
-                selectedOptionIds: optionIds,
+                selectedOptionIds,
                 selectedAnswerText: selectedText,
-                correctAnswerText: a.correctAnswerText ?? "",
+                correctAnswerText: correctText,
                 isCorrect:
                   typeof a.isCorrect === "boolean" ? a.isCorrect : null,
                 explanationMd: a.explanationMd ?? meta?.explanationMd ?? "",
@@ -932,6 +956,12 @@ function cleanAnswer(s: string) {
     .replace(/blank[-_]\w+:\s*/gi, "")
     .replace(/\[blank[-_]\w+\]/gi, "")
     .replace(/label[-_ ]*\w*:\s*/gi, "")
+    .replace(
+      /^\s*(?:paragraph|info|step|flow|node|part|section)?[-_ ]*\w*:\s*/i,
+      ""
+    )
+    .replace(/\b(?:paragraph|info)[-_ ]*\w*:\s*/gi, "")
+    .replace(/^\s*[\w-]+:\s*/, "")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -959,4 +989,67 @@ function parseSecondsAny(v: any) {
 
   const n = Number(v);
   return Number.isFinite(n) ? n : null;
+}
+
+type OptionMap = Record<string, any>;
+
+function mapOptionsById(options: any[]): OptionMap {
+  return options.reduce((acc, opt) => {
+    if (opt?.id === undefined || opt?.id === null) return acc;
+    acc[String(opt.id)] = opt;
+    return acc;
+  }, {} as OptionMap);
+}
+
+function extractOptionIdsFromText(
+  text: string | undefined,
+  optionMap: OptionMap
+) {
+  if (!text) return [];
+  const trimmed = String(text).trim();
+  if (!trimmed) return [];
+  if (optionMap[trimmed]) return [trimmed];
+  const parts = trimmed
+    .split(/[\s|,;]+/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  return parts.filter((p) => !!optionMap[p]);
+}
+
+function mapAnswerContent({
+  optionMap,
+  ids,
+  fallbackText,
+}: {
+  optionMap: OptionMap | null;
+  ids?: string[];
+  fallbackText?: string;
+}) {
+  if (!optionMap || Object.keys(optionMap).length === 0) {
+    return fallbackText ?? "";
+  }
+
+  const normalizedIds = (ids ?? []).map((v) => String(v)).filter(Boolean);
+  const idsToUse =
+    normalizedIds.length > 0
+      ? normalizedIds
+      : extractOptionIdsFromText(fallbackText, optionMap);
+
+  const texts = idsToUse
+    .map((id) => optionMap[id])
+    .map(
+      (opt) => opt?.contentMd ?? opt?.content ?? opt?.label ?? opt?.text ?? ""
+    )
+    .filter(Boolean);
+
+  if (texts.length > 0) return texts.join(" | ");
+
+  if (fallbackText && optionMap[fallbackText]) {
+    const opt = optionMap[fallbackText];
+    const text =
+      opt?.contentMd ?? opt?.content ?? opt?.label ?? opt?.text ?? "";
+    if (text) return text;
+  }
+
+  return fallbackText ?? "";
 }
