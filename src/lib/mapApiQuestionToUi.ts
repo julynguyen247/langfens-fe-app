@@ -32,6 +32,10 @@ function mapBackendTypeToUiKind(type: BackendQuestionType): QuestionUiKind {
     case "CLASSIFICATION":
       return "choice_single";
 
+    // checkbox (multiple correct answers)
+    case "MULTIPLE_CHOICE_MULTIPLE":
+      return "choice_multiple";
+
     // input text
     case "FORM_COMPLETION":
     case "NOTE_COMPLETION":
@@ -43,12 +47,15 @@ function mapBackendTypeToUiKind(type: BackendQuestionType): QuestionUiKind {
     case "MAP_LABEL":
       return "completion";
 
-    // matching: nhập A–F
-    case "MATCHING_HEADING":
+    // matching: nhập A–J
     case "MATCHING_INFORMATION":
     case "MATCHING_FEATURES":
     case "MATCHING_ENDINGS":
       return "matching_letter";
+
+    // matching heading: dropdown with roman numerals
+    case "MATCHING_HEADING":
+      return "matching_heading";
 
     case "FLOW_CHART":
       return "flow_chart";
@@ -77,10 +84,32 @@ export function mapApiQuestionToUi(q: ApiQuestion): Question {
     };
   }
 
+  // MULTIPLE_CHOICE_MULTIPLE: checkbox selection
+  if (uiKind === "choice_multiple") {
+    return {
+      ...base,
+      choices: (q.options ?? []).map((opt) => ({
+        value: opt.id,
+        label: normalizeOptionLabel(opt.contentMd),
+      })),
+    };
+  }
+
   if (uiKind === "flow_chart") {
     return {
       ...base,
       flowChartNodes: q.flowChartNodes ?? [],
+    };
+  }
+
+  // MATCHING_HEADING: pass options for dropdown
+  if (uiKind === "matching_heading" && q.options?.length) {
+    return {
+      ...base,
+      choices: q.options.map((opt) => ({
+        value: opt.contentMd.split(".")[0].trim(), // e.g., "i", "ii"
+        label: opt.contentMd, // full text
+      })),
     };
   }
 

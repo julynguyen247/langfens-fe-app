@@ -1029,7 +1029,20 @@ function mapAnswerContent({
     return fallbackText ?? "";
   }
 
-  const normalizedIds = (ids ?? []).map((v) => String(v)).filter(Boolean);
+  let normalizedIds = (ids ?? []).map((v) => String(v)).filter(Boolean);
+  
+  // Parse fallbackText if it looks like JSON array (for MULTIPLE_CHOICE_MULTIPLE)
+  if (normalizedIds.length === 0 && fallbackText && fallbackText.startsWith("[")) {
+    try {
+      const parsed = JSON.parse(fallbackText);
+      if (Array.isArray(parsed)) {
+        normalizedIds = parsed.map((v: any) => String(v)).filter(Boolean);
+      }
+    } catch {
+      // ignore
+    }
+  }
+  
   const idsToUse =
     normalizedIds.length > 0
       ? normalizedIds

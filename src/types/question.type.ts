@@ -2,6 +2,7 @@ export type BackendQuestionType =
   | "TRUE_FALSE_NOT_GIVEN"
   | "YES_NO_NOT_GIVEN"
   | "MULTIPLE_CHOICE_SINGLE"
+  | "MULTIPLE_CHOICE_MULTIPLE"
   | "MULTIPLE_CHOICE_SINGLE_IMAGE"
   | "CLASSIFICATION"
   | "FORM_COMPLETION"
@@ -19,8 +20,10 @@ export type BackendQuestionType =
   | "FLOW_CHART";
 export type QuestionUiKind =
   | "choice_single"
+  | "choice_multiple"
   | "completion"
   | "matching_letter"
+  | "matching_heading"
   | "flow_chart";
 type Choice = { value: string; label: string };
 
