@@ -5,6 +5,8 @@ import QuestionCard from "./QuestionCard";
 import FillInBlankCard from "../reading/FillInBlankCard";
 import MatchingLetterCard from "../reading/MatchingLetterCard";
 import FlowChartCard from "../reading/FlowChartCard";
+import MatchingHeadingCard from "../reading/MatchingHeadingSelectCard";
+import MatchingHeadingSelectCard from "../reading/MatchingHeadingSelectCard";
 
 type Choice = { value: string; label: string };
 type QA = Record<string, string>;
@@ -16,7 +18,8 @@ export type QuestionUiKind =
   | "completion"
   | "matching_letter"
   | "flow_chart"
-  | "matching_paragraph";
+  | "matching_paragraph"
+  | "matching_heading_select";
 
 export type Question = {
   id: string;
@@ -27,6 +30,7 @@ export type Question = {
   placeholder?: string;
   order?: string;
   flowChartNodes?: { key: string; label: string }[];
+  headings?: { key: string; text: string }[];
 };
 
 export default function QuestionPanel({
@@ -147,6 +151,21 @@ export default function QuestionPanel({
                   key={q.id}
                   id={q.id}
                   stem={q.stem}
+                  value={value}
+                  onChange={(v) => handleAnswer(q.id, v)}
+                />
+              );
+
+            case "matching_heading_select":
+              return (
+                <MatchingHeadingSelectCard
+                  key={q.id}
+                  id={q.id}
+                  prompt={q.stem}
+                  options={(q.choices ?? []).map((c) => ({
+                    id: c.value,
+                    text: c.label,
+                  }))}
                   value={value}
                   onChange={(v) => handleAnswer(q.id, v)}
                 />

@@ -83,43 +83,8 @@ export default function PracticeBank({
 
   const pages = buildPages();
 
-  async function handleStart(item: PracticeItem) {
-    try {
-      setLoadingId(item.id);
-
-      if (onClickItem) {
-        onClickItem(item);
-        return;
-      }
-
-      let res;
-
-      if (skill === "reading" || skill === "listening") {
-        res = await startAttempt(item.id);
-        console.log(res);
-      } else if (skill === "writing") {
-        res = await startWritingExam(item.id);
-      } else if (skill === "speaking") {
-        res = await startSpeakingExam(item.id);
-      } else {
-        throw new Error("Unknown skill: " + skill);
-      }
-
-      const payload = res.data?.data;
-
-      const attemptId: string | undefined = payload?.attemptId ?? payload?.id;
-
-      if (!attemptId) {
-        throw new Error("Missing attemptId");
-      }
-      setAttempt(payload);
-      router.push(`/do-test/${skill}/${attemptId}`);
-    } catch (err) {
-      console.error(err);
-      alert("Không thể bắt đầu bài. Vui lòng thử lại!");
-    } finally {
-      setLoadingId(null);
-    }
+  function handleGoToExam(item: PracticeItem) {
+    router.push(`/do-test/${skill}/start/${item.id}`);
   }
 
   return (
@@ -184,7 +149,7 @@ export default function PracticeBank({
           >
             <button
               className="relative block aspect-video w-full overflow-hidden cursor-pointer"
-              onClick={() => handleStart(it)}
+              onClick={() => handleGoToExam(it)}
               disabled={loadingId === it.id}
             >
               <Image
@@ -209,7 +174,7 @@ export default function PracticeBank({
             <div className="flex min-h-0 flex-col p-3">
               <button
                 className="text-left"
-                onClick={() => handleStart(it)}
+                onClick={() => handleGoToExam(it)}
                 disabled={loadingId === it.id}
                 title={it.title}
               >
@@ -227,7 +192,7 @@ export default function PracticeBank({
 
               <div className="mt-3 self-end">
                 <button
-                  onClick={() => handleStart(it)}
+                  onClick={() => handleGoToExam(it)}
                   disabled={loadingId === it.id}
                   className="rounded-full bg-slate-900 px-3 py-1.5 text-xs text-white disabled:opacity-60"
                 >

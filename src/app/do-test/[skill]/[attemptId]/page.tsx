@@ -1,14 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useParams, useSearchParams, useRouter } from "next/navigation";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import PassageView from "./components/reading/PassageView";
 import QuestionPanel, {
   Question as UiQuestion,
   QuestionUiKind,
 } from "./components/common/QuestionPanel";
+import ListeningAudioBar from "./components/listening/ListeningAudioBar";
 import { useAttemptStore } from "@/app/store/useAttemptStore";
 import { useUserStore } from "@/app/store/userStore";
+import { useLoadingStore } from "@/app/store/loading";
+import Modal from "@/components/Modal";
+import { useDebouncedAutoSave } from "@/app/utils/hook";
+import { mapApiQuestionToUi } from "@/lib/mapApiQuestionToUi";
+import { useReactMediaRecorder } from "react-media-recorder";
 import {
   autoSaveAttempt,
   getSpeakingExamsById,
@@ -17,12 +23,6 @@ import {
   gradeWriting,
   submitAttempt,
 } from "@/utils/api";
-import { useDebouncedAutoSave } from "@/app/utils/hook";
-import { mapApiQuestionToUi } from "@/lib/mapApiQuestionToUi";
-import ListeningAudioBar from "./components/listening/ListeningAudioBar";
-import { useReactMediaRecorder } from "react-media-recorder";
-import { useLoadingStore } from "@/app/store/loading";
-import Modal from "@/components/Modal";
 
 type Skill = "reading" | "listening" | "writing" | "speaking";
 type QA = Record<string, string>;
@@ -33,6 +33,15 @@ export default function DoTestAttemptPage() {
     attemptId: string;
   };
   const attempt = useAttemptStore((s) => s.byId[attemptId]);
+
+  if (!attempt) {
+    return (
+      <div className="p-6 text-sm text-slate-600">
+        Đang tải bài thi… Nếu bạn vừa refresh trang, vui lòng thử quay lại danh
+        sách và vào lại bài.
+      </div>
+    );
+  }
 
   if (skill === "reading") return <ReadingScreen attemptId={attemptId} />;
   if (skill === "listening") return <ListeningScreen attemptId={attemptId} />;
@@ -48,31 +57,36 @@ function formatTime(totalSeconds: number) {
   return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
 }
 
-/* -------------------- READING -------------------- */
-
 function ReadingScreen({ attemptId }: { attemptId: string }) {
   const router = useRouter();
+  const sp = useSearchParams();
   const { user } = useUserStore();
   const { setLoading } = useLoadingStore();
-  const attempt = useAttemptStore((s) => s.byId[attemptId])!;
-  const sections = useMemo(
-    () => [...(attempt.paper.sections ?? [])].sort((a, b) => a.idx - b.idx),
-    [attempt.paper.sections]
-  );
+
+  const attempt = useAttemptStore((s) => s.byId[attemptId]);
+  const [submitting, setSubmitting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const lastAnswersRef = useRef<QA>({});
-  const sp = useSearchParams();
-  const secFromUrl = sp.get("sec");
-  const activeSec = sections.find((s) => s.id === secFromUrl) ?? sections[0];
 
-  const panelQuestions = useMemo<UiQuestion[]>(
-    () =>
-      (activeSec?.questions ?? [])
-        .slice()
-        .sort((a, b) => a.idx - b.idx)
-        .map((q: any) => mapApiQuestionToUi(q)),
-    [activeSec]
-  );
+  const sections = useMemo(() => {
+    const secs = attempt?.paper?.sections ?? [];
+    return [...secs].sort((a: any, b: any) => a.idx - b.idx);
+  }, [attempt?.paper?.sections]);
+
+  const secFromUrl = sp.get("sec");
+  const activeSec = useMemo(() => {
+    if (!sections.length) return null;
+    return sections.find((s: any) => s.id === secFromUrl) ?? sections[0];
+  }, [sections, secFromUrl]);
+
+  const panelQuestions = useMemo<UiQuestion[]>(() => {
+    const qs = activeSec?.questions ?? [];
+    return qs
+      .slice()
+      .sort((a: any, b: any) => a.idx - b.idx)
+      .map((q: any) => mapApiQuestionToUi(q));
+  }, [activeSec]);
 
   const questionUiKindMap = useMemo(() => {
     const m: Record<string, QuestionUiKind> = {};
@@ -91,10 +105,9 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
     return value;
   };
 
-  const [submitting, setSubmitting] = useState(false);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-
   const doSubmit = async () => {
+    if (!activeSec?.id) return;
+
     try {
       setSubmitting(true);
       setLoading(true);
@@ -126,6 +139,14 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
       setLoading(false);
     }
   };
+
+  if (!attempt || !activeSec) {
+    return (
+      <div className="p-6 text-sm text-slate-600">
+        Không có dữ liệu bài Reading.
+      </div>
+    );
+  }
 
   return (
     <>
@@ -204,32 +225,43 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
   const router = useRouter();
   const { user } = useUserStore();
   const { setLoading } = useLoadingStore();
-  const attempt = useAttemptStore((s) => s.byId[attemptId])!;
 
-  const sections = useMemo(
-    () => [...(attempt.paper.sections ?? [])].sort((a, b) => a.idx - b.idx),
-    [attempt.paper.sections]
-  );
+  const attempt = useAttemptStore((s) => s.byId[attemptId]);
+  const [submitting, setSubmitting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
-  const listeningSection = sections.find((s: any) => s.audioUrl) ?? sections[0];
+  const sections = useMemo(() => {
+    const secs = attempt?.paper?.sections ?? [];
+    return [...secs].sort((a: any, b: any) => a.idx - b.idx);
+  }, [attempt?.paper?.sections]);
+
+  const listeningSection = useMemo(() => {
+    if (!sections.length) return null;
+    return sections.find((s: any) => s.audioUrl) ?? sections[0];
+  }, [sections]);
+
   const listeningAudioUrl = listeningSection?.audioUrl ?? "";
 
   const sectionOfQuestion = useMemo(() => {
     const m = new Map<string, string>();
-    for (const s of sections)
+    for (const s of sections as any[])
       for (const q of s.questions ?? [])
         if (q.skill?.toLowerCase() === "listening") m.set(String(q.id), s.id);
     return m;
   }, [sections]);
 
-  const qs = sections
-    .flatMap((s) => s.questions ?? [])
-    .filter((q) => q.skill?.toLowerCase() === "listening");
+  const qs = useMemo(() => {
+    return (sections as any[])
+      .flatMap((s) => s.questions ?? [])
+      .filter((q) => q.skill?.toLowerCase() === "listening");
+  }, [sections]);
 
-  const panelQuestions = qs
-    .slice()
-    .sort((a, b) => a.idx - b.idx)
-    .map((q: any) => mapApiQuestionToUi(q));
+  const panelQuestions = useMemo(() => {
+    return qs
+      .slice()
+      .sort((a: any, b: any) => a.idx - b.idx)
+      .map((q: any) => mapApiQuestionToUi(q));
+  }, [qs]);
 
   const questionUiKindMap = useMemo(() => {
     const m: Record<string, QuestionUiKind> = {};
@@ -243,8 +275,6 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
   );
 
   const lastAnswersRef = useRef<QA>({});
-  const [submitting, setSubmitting] = useState(false);
-  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const buildTextAnswer = (qid: string, value: string) => {
     if (!value) return undefined;
@@ -266,6 +296,14 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
       setLoading(false);
     }
   };
+
+  if (!attempt) {
+    return (
+      <div className="p-6 text-sm text-slate-600">
+        Không có dữ liệu bài Listening.
+      </div>
+    );
+  }
 
   return (
     <>
@@ -336,8 +374,6 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
   );
 }
 
-/* -------------------- SPEAKING -------------------- */
-
 type SpeakingExam = {
   id: string;
   title: string;
@@ -345,14 +381,20 @@ type SpeakingExam = {
   prompt?: string;
   taskText?: string;
 };
+
 type AudioSource = "none" | "record" | "upload";
 
 function SpeakingScreen({ attemptId }: { attemptId: string }) {
-  const examIdFromUrl = attemptId;
   const router = useRouter();
   const { setLoading } = useLoadingStore();
+
+  const attempt = useAttemptStore((s) => s.byId[attemptId]);
+  const examId =
+    (attempt as any)?.paper?.id ?? (attempt as any)?.examId ?? attemptId;
+
   const { status, startRecording, stopRecording, mediaBlobUrl, clearBlobUrl } =
     useReactMediaRecorder({ audio: true });
+
   const [seconds, setSeconds] = useState(0);
   const [exam, setExam] = useState<SpeakingExam | null>(null);
   const [loadingExam, setLoadingExam] = useState(true);
@@ -361,6 +403,7 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [audioSource, setAudioSource] = useState<AudioSource>("none");
+
   const isRecording = status === "recording";
 
   useEffect(() => {
@@ -370,15 +413,14 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
       try {
         setLoadingExam(true);
         setErrorExam(null);
-        const res = await getSpeakingExamsById(examIdFromUrl);
+        const res = await getSpeakingExamsById(examId);
         if (cancelled) return;
         const data = res.data?.data ?? res.data;
         setExam(data ?? null);
       } catch (e) {
         console.error(e);
-        if (!cancelled) {
+        if (!cancelled)
           setErrorExam("Không tải được đề Speaking. Hãy thử lại sau.");
-        }
       } finally {
         if (!cancelled) setLoadingExam(false);
       }
@@ -388,19 +430,18 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
     return () => {
       cancelled = true;
     };
-  }, [examIdFromUrl]);
+  }, [examId]);
 
   useEffect(() => {
     let t: any = null;
     if (isRecording) {
-      t = setInterval(() => {
-        setSeconds((s) => s + 1);
-      }, 1000);
+      t = setInterval(() => setSeconds((s) => s + 1), 1000);
     }
     return () => {
       if (t) clearInterval(t);
     };
   }, [isRecording]);
+
   const handleStart = () => {
     if (grading || audioSource === "upload") return;
     setSeconds(0);
@@ -429,46 +470,33 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
       alert("Chưa có đoạn ghi âm để chấm điểm.");
       return;
     }
-    if (!exam?.id && !examIdFromUrl) {
-      alert("Không tìm thấy examId để chấm.");
-      return;
-    }
     setConfirmOpen(true);
   };
 
   const doGrade = async () => {
-    const realExamId: string | undefined = exam?.id ?? examIdFromUrl;
     if (!mediaBlobUrl) {
       alert("Chưa có đoạn ghi âm để chấm điểm.");
-      return;
-    }
-    if (!realExamId) {
-      alert("Không tìm thấy examId để chấm.");
       return;
     }
 
     try {
       setGrading(true);
       setLoading(true);
+
       const blob = await fetch(mediaBlobUrl).then((r) => r.blob());
       const res = await gradeSpeaking({
-        examId: realExamId,
+        examId: exam?.id ?? examId,
         timeSpentSeconds: seconds,
         speech: blob,
       });
-      const payload = res.data.data.res;
 
-      if (!payload) {
-        alert("Không nhận được dữ liệu chấm điểm.");
-        return;
-      }
+      const payload = res.data?.data?.res;
+      const submissionId =
+        payload?.submissionId ?? (payload as any)?.submissionId;
 
-      const submissionId = (payload as any).submissionId;
-      if (submissionId) {
+      if (submissionId)
         router.push(`/attempts/${submissionId}?source=speaking`);
-      } else {
-        alert("Đã chấm xong nhưng không tìm thấy submissionId.");
-      }
+      else alert("Đã chấm xong nhưng không tìm thấy submissionId.");
     } catch (e) {
       console.error(e);
       alert("Chấm điểm speaking thất bại, thử lại nhé.");
@@ -486,23 +514,18 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
       setLoading(true);
 
       const res = await gradeSpeaking({
-        examId: exam?.id ?? examIdFromUrl,
+        examId: exam?.id ?? examId,
         timeSpentSeconds: 0,
         speech: file,
       });
 
-      const payload = res.data.data.res;
-      if (!payload) {
-        alert("Không nhận được dữ liệu chấm điểm.");
-        return;
-      }
+      const payload = res.data?.data?.res;
+      const submissionId =
+        payload?.submissionId ?? (payload as any)?.submissionId;
 
-      const submissionId = (payload as any).submissionId;
-      if (submissionId) {
+      if (submissionId)
         router.push(`/attempts/${submissionId}?source=speaking`);
-      } else {
-        alert("Không tìm thấy submissionId.");
-      }
+      else alert("Không tìm thấy submissionId.");
     } catch (e) {
       console.error(e);
       alert("Upload & chấm điểm thất bại.");
@@ -643,15 +666,15 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
                   <div className="flex gap-3 text-xs text-slate-500 mt-3">
                     <label
                       htmlFor="speaking-upload"
-                      className={`flex-1 px-4 py-2.5 rounded-lg font-semibold text-sm text-center transition
-  ${
-    isRecording || grading || uploading || !!mediaBlobUrl
-      ? "bg-gray-200 text-gray-400 cursor-not-allowed pointer-events-none"
-      : "bg-white text-[#317EFF] hover:bg-indigo-100 border border-indigo-200 cursor-pointer"
-  }`}
+                      className={`flex-1 px-4 py-2.5 rounded-lg font-semibold text-sm text-center transition ${
+                        isRecording || grading || uploading || !!mediaBlobUrl
+                          ? "bg-gray-200 text-gray-400 cursor-not-allowed pointer-events-none"
+                          : "bg-white text-[#317EFF] hover:bg-indigo-100 border border-indigo-200 cursor-pointer"
+                      }`}
                     >
                       Upload mp3 / wav
                     </label>
+
                     <button
                       type="button"
                       onClick={handleStart}
@@ -661,13 +684,14 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
                         uploading ||
                         audioSource === "upload"
                       }
-                      className={`flex-1 px-4 py-2.5 rounded-lg font-semibold text-sm transition
-    ${
-      isRecording || grading || uploading || audioSource === "upload"
-        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-        : "bg-[#317EFF] text-white hover:bg-[#74a4f6] active:scale-[0.98]"
-    }
-  `}
+                      className={`flex-1 px-4 py-2.5 rounded-lg font-semibold text-sm transition ${
+                        isRecording ||
+                        grading ||
+                        uploading ||
+                        audioSource === "upload"
+                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                          : "bg-[#317EFF] text-white hover:bg-[#74a4f6] active:scale-[0.98]"
+                      }`}
                     >
                       Start
                     </button>
@@ -676,12 +700,11 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
                       type="button"
                       onClick={handleStop}
                       disabled={!isRecording || grading}
-                      className={`flex-1 px-4 py-2.5 rounded-lg font-semibold text-sm transition
-    ${
-      !isRecording || grading
-        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-        : "bg-red-500 text-white hover:bg-red-600"
-    }`}
+                      className={`flex-1 px-4 py-2.5 rounded-lg font-semibold text-sm transition ${
+                        !isRecording || grading
+                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                          : "bg-red-500 text-white hover:bg-red-600"
+                      }`}
                     >
                       Stop
                     </button>
@@ -753,12 +776,13 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
   );
 }
 
-/* -------------------- WRITING -------------------- */
-
 function WritingScreen({ attemptId }: { attemptId: string }) {
-  const examIdFromUrl = attemptId;
   const router = useRouter();
   const { setLoading } = useLoadingStore();
+
+  const attempt = useAttemptStore((s) => s.byId[attemptId]);
+  const examId =
+    (attempt as any)?.paper?.id ?? (attempt as any)?.examId ?? attemptId;
 
   const [exam, setExam] = useState<any | null>(null);
   const [loadingExam, setLoadingExam] = useState(true);
@@ -777,14 +801,13 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
       try {
         setLoadingExam(true);
         setErrorExam(null);
-        const res = await getWritingExam(examIdFromUrl);
+        const res = await getWritingExam(examId);
         if (cancelled) return;
         setExam(res.data?.data ?? null);
       } catch (e) {
         console.error(e);
-        if (!cancelled) {
+        if (!cancelled)
           setErrorExam("Không tải được đề Writing. Hãy thử lại sau.");
-        }
       } finally {
         if (!cancelled) setLoadingExam(false);
       }
@@ -794,7 +817,7 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
     return () => {
       cancelled = true;
     };
-  }, [examIdFromUrl]);
+  }, [examId]);
 
   useEffect(() => {
     const t = setInterval(() => setSeconds((s) => s + 1), 1000);
@@ -816,12 +839,6 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
   };
 
   const doSubmit = async () => {
-    const realExamId: string | undefined = exam?.id ?? examIdFromUrl;
-
-    if (!realExamId) {
-      alert("Không tìm thấy examId");
-      return;
-    }
     if (!answer.trim()) {
       alert("Bạn chưa viết gì cả.");
       return;
@@ -830,20 +847,14 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
     try {
       setGrading(true);
       setLoading(true);
-      const res = await gradeWriting(realExamId, answer, seconds);
-      const payload = res.data.data;
 
-      if (!payload) {
-        alert("Không nhận được dữ liệu chấm điểm.");
-        return;
-      }
+      const res = await gradeWriting(exam?.id ?? examId, answer, seconds);
+      const payload = res.data?.data;
+      const submissionId =
+        payload?.submissionId ?? (payload as any)?.submissionId;
 
-      const submissionId = (payload as any).submissionId;
-      if (submissionId) {
-        router.push(`/attempts/${submissionId}?source=writing`);
-      } else {
-        alert("Đã chấm xong nhưng không tìm thấy submissionId.");
-      }
+      if (submissionId) router.push(`/attempts/${submissionId}?source=writing`);
+      else alert("Đã chấm xong nhưng không tìm thấy submissionId.");
     } catch (e) {
       console.error(e);
       alert("Chấm điểm thất bại!");
@@ -857,12 +868,6 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
     setConfirmOpen(false);
     await doSubmit();
   };
-
-  const examTitle: string = exam?.title ?? "Writing";
-
-  const writingPrompt: string =
-    exam?.taskText ??
-    "Write an essay of at least 150 words on the following topic:\n\nDo you think technology improves the quality of life? Why or why not?";
 
   if (loadingExam) {
     return (
@@ -882,6 +887,11 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
     );
   }
 
+  const examTitle: string = exam?.title ?? "Writing";
+  const writingPrompt: string =
+    exam?.taskText ??
+    "Write an essay of at least 150 words on the following topic:\n\nDo you think technology improves the quality of life? Why or why not?";
+
   return (
     <>
       <div className="flex flex-col h-full min-h-0 bg-white rounded-xl shadow overflow-hidden">
@@ -897,8 +907,7 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
           <button
             onClick={handleOpenConfirmSubmit}
             disabled={grading}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition
-            ${
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
               grading
                 ? "bg-gray-200 text-gray-500 cursor-not-allowed"
                 : "bg-[#317EFF] text-white hover:bg-[#74a4f6]"

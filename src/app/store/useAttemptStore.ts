@@ -58,28 +58,96 @@ type State = {
   clear: (id?: string) => void;
 };
 
+function loadAllFromSession(): Record<string, AttemptStartData> {
+  if (typeof window === "undefined") return {};
+  const out: Record<string, AttemptStartData> = {};
+
+  try {
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const k = sessionStorage.key(i);
+      if (!k || !k.startsWith("attempt:")) continue;
+
+      const raw = sessionStorage.getItem(k);
+      if (!raw) continue;
+
+      try {
+        const data = JSON.parse(raw) as AttemptStartData;
+        if (data?.attemptId) out[data.attemptId] = data;
+      } catch {}
+    }
+  } catch {}
+
+  return out;
+}
+
+function readOneFromSession(id: string): AttemptStartData | undefined {
+  if (typeof window === "undefined") return undefined;
+  try {
+    const raw = sessionStorage.getItem(`attempt:${id}`);
+    if (!raw) return undefined;
+    const data = JSON.parse(raw) as AttemptStartData;
+    if (!data?.attemptId) return undefined;
+    return data;
+  } catch {
+    return undefined;
+  }
+}
+
 export const useAttemptStore = create<State>((set, get) => ({
-  byId: {},
+  byId: loadAllFromSession(),
+
   setAttempt: (data) =>
     set((s) => {
-      const next = { ...s.byId, [data.attemptId]: data };
+      const attemptId = data?.attemptId;
+      if (!attemptId) return s;
+
+      const next = { ...s.byId, [attemptId]: data };
+
       if (typeof window !== "undefined") {
-        sessionStorage.setItem(
-          `attempt:${data.attemptId}`,
-          JSON.stringify(data)
-        );
+        try {
+          sessionStorage.setItem(`attempt:${attemptId}`, JSON.stringify(data));
+        } catch {}
       }
+
       return { byId: next };
     }),
-  getAttempt: (id) => get().byId[id],
+
+  getAttempt: (id) => {
+    const inMem = get().byId[id];
+    if (inMem) return inMem;
+
+    const fromSession = readOneFromSession(id);
+    if (!fromSession) return undefined;
+
+    set((s) => ({ byId: { ...s.byId, [fromSession.attemptId]: fromSession } }));
+    return fromSession;
+  },
+
   clear: (id) =>
     set((s) => {
-      if (!id) return { byId: {} };
+      if (!id) {
+        if (typeof window !== "undefined") {
+          try {
+            const keys: string[] = [];
+            for (let i = 0; i < sessionStorage.length; i++) {
+              const k = sessionStorage.key(i);
+              if (k && k.startsWith("attempt:")) keys.push(k);
+            }
+            for (const k of keys) sessionStorage.removeItem(k);
+          } catch {}
+        }
+        return { byId: {} };
+      }
+
       const next = { ...s.byId };
       delete next[id];
+
       if (typeof window !== "undefined") {
-        sessionStorage.removeItem(`attempt:${id}`);
+        try {
+          sessionStorage.removeItem(`attempt:${id}`);
+        } catch {}
       }
+
       return { byId: next };
     }),
 }));
