@@ -4,7 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import QuestionCard from "./QuestionCard";
 import FillInBlankCard from "../reading/FillInBlankCard";
 import MatchingLetterCard from "../reading/MatchingLetterCard";
+import HeadingDropdown from "../reading/HeadingDropdown";
 import FlowChartCard from "../reading/FlowChartCard";
+import MultiCheckboxCard from "../reading/MultiCheckboxCard";
 
 type Choice = { value: string; label: string };
 type QA = Record<string, string>;
@@ -13,8 +15,10 @@ export type BackendQuestionType = string;
 
 export type QuestionUiKind =
   | "choice_single"
+  | "choice_multiple"
   | "completion"
   | "matching_letter"
+  | "matching_heading"
   | "flow_chart"
   | "matching_paragraph";
 
@@ -141,12 +145,38 @@ export default function QuestionPanel({
                 </div>
               );
 
+            case "choice_multiple":
+              return (
+                <MultiCheckboxCard
+                  key={q.id}
+                  id={q.id}
+                  stem={q.stem}
+                  choices={q.choices ?? []}
+                  value={value}
+                  onChange={(v) => handleAnswer(q.id, v)}
+                />
+              );
+
             case "matching_letter":
               return (
                 <MatchingLetterCard
                   key={q.id}
                   id={q.id}
                   stem={q.stem}
+                  value={value}
+                  onChange={(v) => handleAnswer(q.id, v)}
+                />
+              );
+
+            case "matching_heading":
+              return (
+                <HeadingDropdown
+                  key={q.id}
+                  id={q.id}
+                  stem={q.stem}
+                  options={(q.choices ?? []).map((c) => ({
+                    contentMd: typeof c === "string" ? c : c.label,
+                  }))}
                   value={value}
                   onChange={(v) => handleAnswer(q.id, v)}
                 />
