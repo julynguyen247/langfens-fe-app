@@ -6,12 +6,8 @@ import FillInBlankCard from "../reading/FillInBlankCard";
 import MatchingLetterCard from "../reading/MatchingLetterCard";
 import HeadingDropdown from "../reading/HeadingDropdown";
 import FlowChartCard from "../reading/FlowChartCard";
-
-import MatchingHeadingCard from "../reading/MatchingHeadingSelectCard";
-import MatchingHeadingSelectCard from "../reading/MatchingHeadingSelectCard";
-
 import MultiCheckboxCard from "../reading/MultiCheckboxCard";
-
+import SummaryCompletionCard from "../reading/SummaryCompletionCard";
 
 type Choice = { value: string; label: string };
 type QA = Record<string, string>;
@@ -26,7 +22,8 @@ export type QuestionUiKind =
   | "matching_heading"
   | "flow_chart"
   | "matching_paragraph"
-  | "matching_heading_select";
+  | "matching_heading_select"
+  | "summary_completion";
 
 export type Question = {
   id: string;
@@ -66,27 +63,21 @@ export default function QuestionPanel({
       })),
     [questions]
   );
+
   const [answers, setAnswers] = useState<QA>(() => initialAnswers ?? {});
 
   useEffect(() => {
     if (initialAnswers) setAnswers(initialAnswers);
   }, [initialAnswers]);
+
   useEffect(() => {
-    if (onAnswersChange) {
-      onAnswersChange(answers);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [answers]);
+    onAnswersChange?.(answers);
+  }, [answers, onAnswersChange]);
 
   const handleAnswer = (id: string, value: string) => {
     setAnswers((prev) => {
       const next = { ...prev, [id]: value };
-      onAnswer?.({
-        attemptId,
-        questionId: id,
-        value,
-      });
-
+      onAnswer?.({ attemptId, questionId: id, value });
       return next;
     });
   };
@@ -112,16 +103,35 @@ export default function QuestionPanel({
                 />
               );
 
-            case "completion":
+            // case "completion":
+            //   return (
+            //     <FillInBlankCard
+            //       key={q.id}
+            //       id={q.id}
+            //       stem={q.stem}
+            //       value={value}
+            //       onChange={(v) => handleAnswer(q.id, v)}
+            //     />
+            //   );
+
+            case "completion": {
+              const arr = unpackBlanks(value);
+
               return (
-                <FillInBlankCard
+                <SummaryCompletionCard
                   key={q.id}
                   id={q.id}
                   stem={q.stem}
-                  value={value}
-                  onChange={(v) => handleAnswer(q.id, v)}
+                  values={arr}
+                  onChange={(blankIndex, v) => {
+                    const next = [...arr];
+                    next[blankIndex] = v;
+                    handleAnswer(q.id, packBlanks(next));
+                  }}
                 />
               );
+            }
+
             case "matching_paragraph":
               return (
                 <div
@@ -200,7 +210,9 @@ export default function QuestionPanel({
                   onChange={(v) => handleAnswer(q.id, v)}
                 />
               );
+
             default:
+              return null;
           }
         })}
       </div>
@@ -215,4 +227,16 @@ function normalizeChoices(
   return choices.map((c, i) =>
     typeof c === "string" ? { value: String(i + 1), label: c } : c
   );
+}
+
+function unpackBlanks(value: string): string[] {
+  if (!value) return [];
+  if (value.includes("\n")) return value.split("\n");
+  return [value];
+}
+
+function packBlanks(values: string[]): string {
+  const cleaned = values.map((v) => (v ?? "").trim());
+  while (cleaned.length && cleaned[cleaned.length - 1] === "") cleaned.pop();
+  return cleaned.join("\n");
 }

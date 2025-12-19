@@ -66,7 +66,7 @@ const apis = Object.fromEntries(
             const r = await apisAuth.post("/auth/refresh", undefined, {
               withCredentials: true,
             });
-            const newToken = (r.data as any)?.accessToken ?? null;
+            const newToken = r.data.data;
 
             if (newToken) {
               setToken(newToken);

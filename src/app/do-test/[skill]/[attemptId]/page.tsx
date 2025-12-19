@@ -63,7 +63,7 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
   const { user } = useUserStore();
   const { setLoading } = useLoadingStore();
   const attempt = useAttemptStore((s) => s.byId[attemptId]);
-  
+
   // All hooks must be called before any conditional returns
   const lastAnswersRef = useRef<QA>({});
 
@@ -73,12 +73,7 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
   }, [attempt?.paper?.sections]);
 
   const secFromUrl = sp.get("sec");
-  
-  const sections = useMemo(
-    () => [...(attempt?.paper?.sections ?? [])].sort((a, b) => a.idx - b.idx),
-    [attempt?.paper?.sections]
-  );
-  
+
   const activeSec = sections.find((s) => s.id === secFromUrl) ?? sections[0];
 
   const panelQuestions = useMemo<UiQuestion[]>(
@@ -104,16 +99,22 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
   const buildTextAnswer = (qid: string, value: string) => {
     if (!value) return undefined;
     // Skip single/multiple choice types - they use selectedOptionIds
-    if (questionUiKindMap[qid] === "choice_single" || questionUiKindMap[qid] === "choice_multiple") return undefined;
+    if (
+      questionUiKindMap[qid] === "choice_single" ||
+      questionUiKindMap[qid] === "choice_multiple"
+    )
+      return undefined;
     return value;
   };
 
   const [submitting, setSubmitting] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
-  
+
   // Loading guard - after all hooks
   if (!attempt?.paper) {
-    return <div className="p-6 text-center text-slate-500">Đang tải đề thi…</div>;
+    return (
+      <div className="p-6 text-center text-slate-500">Đang tải đề thi…</div>
+    );
   }
 
   const doSubmit = async () => {
@@ -129,7 +130,7 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
           ([questionId, value]) => {
             const textAnswer = buildTextAnswer(questionId, value);
             const hasText = !!textAnswer && textAnswer.trim().length > 0;
-            
+
             // Parse selectedOptionIds: handle JSON array string for MULTIPLE_CHOICE_MULTIPLE
             let selectedOptionIds: string[] = [];
             if (!hasText && value) {
@@ -144,7 +145,7 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
                 selectedOptionIds = [value];
               }
             }
-            
+
             return {
               questionId,
               sectionId: activeSec.id,

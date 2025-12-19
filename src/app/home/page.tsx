@@ -11,6 +11,7 @@ import {
   getPlacementStatus,
   getWritingHistory,
   getSpeakingHistory,
+  refresh,
 } from "@/utils/api";
 import { FiPlay } from "react-icons/fi";
 import { TbTargetArrow } from "react-icons/tb";
