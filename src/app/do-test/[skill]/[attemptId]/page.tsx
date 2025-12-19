@@ -62,11 +62,9 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
   const sp = useSearchParams();
   const { user } = useUserStore();
   const { setLoading } = useLoadingStore();
-
   const attempt = useAttemptStore((s) => s.byId[attemptId]);
-  const [submitting, setSubmitting] = useState(false);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-
+  
+  // All hooks must be called before any conditional returns
   const lastAnswersRef = useRef<QA>({});
 
   const sections = useMemo(() => {
@@ -75,18 +73,22 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
   }, [attempt?.paper?.sections]);
 
   const secFromUrl = sp.get("sec");
-  const activeSec = useMemo(() => {
-    if (!sections.length) return null;
-    return sections.find((s: any) => s.id === secFromUrl) ?? sections[0];
-  }, [sections, secFromUrl]);
+  
+  const sections = useMemo(
+    () => [...(attempt?.paper?.sections ?? [])].sort((a, b) => a.idx - b.idx),
+    [attempt?.paper?.sections]
+  );
+  
+  const activeSec = sections.find((s) => s.id === secFromUrl) ?? sections[0];
 
-  const panelQuestions = useMemo<UiQuestion[]>(() => {
-    const qs = activeSec?.questions ?? [];
-    return qs
-      .slice()
-      .sort((a: any, b: any) => a.idx - b.idx)
-      .map((q: any) => mapApiQuestionToUi(q));
-  }, [activeSec]);
+  const panelQuestions = useMemo<UiQuestion[]>(
+    () =>
+      (activeSec?.questions ?? [])
+        .slice()
+        .sort((a, b) => a.idx - b.idx)
+        .map((q: any) => mapApiQuestionToUi(q)),
+    [activeSec]
+  );
 
   const questionUiKindMap = useMemo(() => {
     const m: Record<string, QuestionUiKind> = {};
@@ -101,9 +103,18 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
 
   const buildTextAnswer = (qid: string, value: string) => {
     if (!value) return undefined;
-    if (questionUiKindMap[qid] === "choice_single") return undefined;
+    // Skip single/multiple choice types - they use selectedOptionIds
+    if (questionUiKindMap[qid] === "choice_single" || questionUiKindMap[qid] === "choice_multiple") return undefined;
     return value;
   };
+
+  const [submitting, setSubmitting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  
+  // Loading guard - after all hooks
+  if (!attempt?.paper) {
+    return <div className="p-6 text-center text-slate-500">Đang tải đề thi…</div>;
+  }
 
   const doSubmit = async () => {
     if (!activeSec?.id) return;
@@ -118,10 +129,26 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
           ([questionId, value]) => {
             const textAnswer = buildTextAnswer(questionId, value);
             const hasText = !!textAnswer && textAnswer.trim().length > 0;
+            
+            // Parse selectedOptionIds: handle JSON array string for MULTIPLE_CHOICE_MULTIPLE
+            let selectedOptionIds: string[] = [];
+            if (!hasText && value) {
+              if (typeof value === "string" && value.startsWith("[")) {
+                try {
+                  const parsed = JSON.parse(value);
+                  selectedOptionIds = Array.isArray(parsed) ? parsed : [value];
+                } catch {
+                  selectedOptionIds = [value];
+                }
+              } else {
+                selectedOptionIds = [value];
+              }
+            }
+            
             return {
               questionId,
               sectionId: activeSec.id,
-              selectedOptionIds: !hasText && value ? [value] : [],
+              selectedOptionIds,
               textAnswer: hasText ? textAnswer : undefined,
             };
           }
