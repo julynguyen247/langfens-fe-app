@@ -6,7 +6,12 @@ import FillInBlankCard from "../reading/FillInBlankCard";
 import MatchingLetterCard from "../reading/MatchingLetterCard";
 import HeadingDropdown from "../reading/HeadingDropdown";
 import FlowChartCard from "../reading/FlowChartCard";
+
+import MatchingHeadingCard from "../reading/MatchingHeadingSelectCard";
+import MatchingHeadingSelectCard from "../reading/MatchingHeadingSelectCard";
+
 import MultiCheckboxCard from "../reading/MultiCheckboxCard";
+
 
 type Choice = { value: string; label: string };
 type QA = Record<string, string>;
@@ -20,7 +25,8 @@ export type QuestionUiKind =
   | "matching_letter"
   | "matching_heading"
   | "flow_chart"
-  | "matching_paragraph";
+  | "matching_paragraph"
+  | "matching_heading_select";
 
 export type Question = {
   id: string;
@@ -31,6 +37,7 @@ export type Question = {
   placeholder?: string;
   order?: string;
   flowChartNodes?: { key: string; label: string }[];
+  headings?: { key: string; text: string }[];
 };
 
 export default function QuestionPanel({

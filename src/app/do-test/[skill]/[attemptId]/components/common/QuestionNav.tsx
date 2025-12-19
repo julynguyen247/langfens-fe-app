@@ -23,11 +23,11 @@ export default function QuestionNav({
   const handleClick = (n: number) => {
     if (onSelect) return onSelect(n);
 
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("q", String(n));
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.set("q", String(n));
 
     const basePath = `/do-test/${skill ?? "reading"}/${attemptId}`;
-    router.push(`${basePath}?${params.toString()}`);
+    router.push(`${basePath}?${nextParams.toString()}`);
   };
 
   return (
