@@ -86,11 +86,12 @@ export default function DoTestAttemptLayout({
   );
 
   const currentPassage = passages[currentIndex] ?? passages[0];
+  const searchParams = useSearchParams();
 
   const gotoSection = (id: string) => {
-    const params = new URLSearchParams(sp.toString());
-    params.set("sec", id);
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.set("sec", id);
+    router.replace(`${pathname}?${nextParams.toString()}`, { scroll: false });
   };
 
   const jumpRange = (dir: "prev" | "next") => {
