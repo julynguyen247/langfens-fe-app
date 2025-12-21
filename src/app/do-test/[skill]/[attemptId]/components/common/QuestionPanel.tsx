@@ -96,8 +96,8 @@ export default function QuestionPanel({
             q.explanationMd && q.explanationMd !== prevQ?.explanationMd;
 
           const explanationBlock = showExplanation ? (
-            <div className="mt-6 mb-4 px-4  py-3 bg-gradient-to-r from-slate-50 to-white border border-slate-200 rounded-xl shadow-sm">
-              <p className="text-sm  font-medium  text-slate-700 leading-relaxed">
+            <div className="mt-4 mb-3 p-3 bg-gradient-to-r from-slate-50 to-blue-50 border border-slate-200 rounded-xl shadow-sm">
+              <p className="text-sm text-slate-700 leading-relaxed">
                 {q.explanationMd}
               </p>
             </div>

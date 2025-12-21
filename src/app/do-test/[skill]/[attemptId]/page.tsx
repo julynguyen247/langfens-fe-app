@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import PassageView from "./components/reading/PassageView";
+import YouTubePlayer from "./components/listening/YouTubePlayer";
 import QuestionPanel, {
   Question as UiQuestion,
   QuestionUiKind,
@@ -70,11 +71,11 @@ function AudioBar({ src }: { src: string }) {
     }
     const embed = `https://www.youtube.com/embed/${id}?controls=1&rel=0&modestbranding=1`;
     return (
-      <div className="rounded-lg overflow-hidden border bg-white">
+      <div className="rounded-lg  overflow-hidden border bg-white">
         <iframe
           src={embed}
           title="Listening Audio (YouTube)"
-          className="w-full h-16"
+          className="w-full  h-16"
           allow="autoplay; encrypted-media; picture-in-picture"
           allowFullScreen
         />
@@ -211,8 +212,8 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
           />
         </div>
 
-        <div className="w-[480px] flex flex-col overflow-hidden">
-          <div className="border-b p-4 bg-white sticky top-0 z-10 flex justify-between">
+        <div className="w-[400px] lg:w-[480px] xl:w-[550px] flex flex-col overflow-hidden border-l bg-white shadow-xl z-20">
+          <div className="border-b px-5 py-4 bg-white sticky top-0 z-10 flex justify-between shadow-sm">
             <h2 className="text-lg font-semibold text-black">Questions</h2>
             <button
               onClick={() => setConfirmOpen(true)}
@@ -224,13 +225,19 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
           </div>
 
           <div className="flex-1 overflow-auto p-4">
-            {/* Section Instructions */}
             {activeSec?.instructionsMd && (
-              <div className="mb-4 p-4 bg-amber-50 border-l-2 rounded  border-amber-400 rounded-r-lg prose prose-sm text-gray-800">
-                <ReactMarkdown>{activeSec.instructionsMd}</ReactMarkdown>
+              <div className="mb-6 p-4 text-slate-800 bg-amber-50 border border-amber-100 rounded-lg">
+                <div
+                  className="prose prose-sm prose-slate max-w-none 
+                  prose-headings:text-slate-900 prose-p:text-slate-800 prose-strong:text-slate-900 
+                  prose-li:text-slate-800 prose-table:text-slate-800 prose-td:text-slate-800 prose-th:text-slate-900
+                  prose-blockquote:text-slate-800 prose-blockquote:border-slate-400 prose-blockquote:not-italic
+                  [&>p]:text-slate-800 [&>p]:leading-relaxed"
+                >
+                  <ReactMarkdown>{activeSec.instructionsMd}</ReactMarkdown>
+                </div>
               </div>
             )}
-
             <QuestionPanel
               attemptId={attemptId}
               questions={panelQuestions}
@@ -384,17 +391,23 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
 
   return (
     <>
-      <div className="flex flex-col h-full bg-white rounded-xl shadow overflow-hidden">
-        <div className="border-b p-4 bg-white sticky top-0 z-10">
-          <div className="flex justify-between mb-3">
+      <div className="flex h-full bg-white rounded-xl shadow overflow-hidden">
+        {/* Left panel - YouTube/Audio player */}
+        <div className="flex-1 overflow-hidden border-r">
+          <YouTubePlayer src={listeningAudioUrl} />
+        </div>
+
+        {/* Right panel - Questions */}
+        <div className="w-[400px] lg:w-[480px] xl:w-[550px] flex flex-col overflow-hidden border-l bg-white shadow-xl z-20">
+          <div className="border-b px-5 py-4 bg-white sticky top-0 z-10 flex justify-between items-center shadow-sm">
             <div>
-              <h2 className="text-lg font-semibold text-black">Listening</h2>
+              <h2 className="text-lg font-bold text-slate-800">Listening</h2>
               {allQs.length > 0 &&
                 allQs.filter(
                   (q) => String(q.skill ?? "").toLowerCase() === "listening"
                 ).length === 0 && (
-                  <div className="mt-1 text-xs text-amber-600">
-                    Không có câu skill=LISTENING, đang hiển thị toàn bộ câu hỏi.
+                  <div className="mt-1 text-xs text-amber-600 font-medium">
+                    Toàn bộ câu hỏi (không filter skill)
                   </div>
                 )}
             </div>
@@ -402,37 +415,50 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
             <button
               onClick={() => setConfirmOpen(true)}
               disabled={submitting}
-              className="px-4 py-2 rounded-lg text-sm font-semibold bg-[#317EFF] text-white disabled:opacity-60"
+              className="px-5 py-2 rounded-full text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-60 transition-colors shadow-sm"
             >
               Nộp bài
             </button>
           </div>
 
-          <AudioBar src={listeningAudioUrl} />
-        </div>
-
-        <div className="flex-1 overflow-auto p-6">
-          {panelQuestions.length === 0 ? (
-            <div className="text-sm text-slate-600">
-              Không có câu hỏi để hiển thị.
-            </div>
-          ) : (
-            <QuestionPanel
-              attemptId={attemptId}
-              questions={panelQuestions}
-              onAnswersChange={(next) => {
-                lastAnswersRef.current = {
-                  ...lastAnswersRef.current,
-                  ...(next as QA),
-                };
-                debouncedSave(
-                  next as QA,
-                  (qid) => sectionOfQuestion.get(qid),
-                  buildTextAnswer
-                );
-              }}
-            />
-          )}
+          <div className="flex-1 overflow-auto p-5 scroll-smooth">
+            {listeningSection?.instructionsMd && (
+              <div className="mb-6 p-4 bg-amber-50 border border-amber-100 rounded-lg">
+                <div
+                  className="prose prose-sm prose-slate max-w-none 
+                  prose-headings:text-slate-900 prose-p:text-slate-800 prose-strong:text-slate-900 
+                  prose-li:text-slate-800 prose-table:text-slate-800 prose-td:text-slate-800 prose-th:text-slate-900
+                  prose-blockquote:text-slate-800 prose-blockquote:border-slate-400 prose-blockquote:not-italic
+                  [&>p]:text-slate-800 [&>p]:leading-relaxed"
+                >
+                  <ReactMarkdown>
+                    {listeningSection.instructionsMd}
+                  </ReactMarkdown>
+                </div>
+              </div>
+            )}
+            {panelQuestions.length === 0 ? (
+              <div className="text-sm text-slate-600">
+                Không có câu hỏi để hiển thị.
+              </div>
+            ) : (
+              <QuestionPanel
+                attemptId={attemptId}
+                questions={panelQuestions}
+                onAnswersChange={(next) => {
+                  lastAnswersRef.current = {
+                    ...lastAnswersRef.current,
+                    ...(next as QA),
+                  };
+                  debouncedSave(
+                    next as QA,
+                    (qid) => sectionOfQuestion.get(qid),
+                    buildTextAnswer
+                  );
+                }}
+              />
+            )}
+          </div>
         </div>
       </div>
 
@@ -986,8 +1012,8 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
 
   return (
     <>
-      <div className="flex flex-col h-full min-h-0 bg-white rounded-xl shadow overflow-hidden">
-        <div className="border-b p-4 bg-white sticky top-0 z-10 flex items-center justify-between">
+      <div className="w-[400px] lg:w-[480px] xl:w-[550px] flex flex-col overflow-hidden border-l bg-white shadow-xl z-20">
+        <div className="border-b px-5 py-4 bg-white sticky top-0 z-10 flex justify-between shadow-sm">
           <div>
             <h2 className="text-lg font-semibold text-slate-800">
               {examTitle}
