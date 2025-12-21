@@ -142,10 +142,11 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
     return m;
   }, [panelQuestions]);
 
-  const { run: debouncedSave, cancel: cancelAutoSave } = useDebouncedAutoSave(
-    user?.id,
-    attemptId
-  );
+  const {
+    run: debouncedSave,
+    cancel: cancelAutoSave,
+    saveNow,
+  } = useDebouncedAutoSave(user?.id, attemptId);
 
   const buildTextAnswer = (qid: string, value: string) => {
     if (!value) return undefined;
@@ -172,46 +173,13 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
       setLoading(true);
       cancelAutoSave();
 
-      const payload = {
-        answers: Object.entries(lastAnswersRef.current).map(
-          ([questionId, v]) => {
-            const textAnswer = buildTextAnswer(questionId, v);
-            const hasText = !!textAnswer && textAnswer.trim().length > 0;
+      // Use saveNow from hook - autosave before submit
+      await saveNow(
+        lastAnswersRef.current,
+        () => activeSec.id,
+        buildTextAnswer
+      );
 
-            // Check if value is a valid GUID format
-            const isValidGuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
-
-            let selectedOptionIds: string[] = [];
-            if (!hasText && v && isValidGuid) {
-              if (typeof v === "string" && v.startsWith("[")) {
-                try {
-                  const parsed = JSON.parse(v);
-                  selectedOptionIds = Array.isArray(parsed) ? parsed : [v];
-                } catch {
-                  selectedOptionIds = [v];
-                }
-              } else {
-                selectedOptionIds = [v];
-              }
-            }
-
-            // For non-GUID values, use textAnswer
-            const finalTextAnswer = hasText 
-              ? textAnswer 
-              : (!isValidGuid && v ? v : undefined);
-
-            return {
-              questionId,
-              sectionId: activeSec.id,
-              selectedOptionIds,
-              textAnswer: finalTextAnswer,
-            };
-          }
-        ),
-        clientRevision: Date.now(),
-      };
-
-      await autoSaveAttempt(attemptId, payload);
       await submitAttempt(attemptId);
       router.replace(`/attempts/${attemptId}`);
     } catch {
@@ -359,10 +327,11 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
     return m;
   }, [panelQuestions]);
 
-  const { run: debouncedSave, cancel: cancelAutoSave } = useDebouncedAutoSave(
-    user?.id,
-    attemptId
-  );
+  const {
+    run: debouncedSave,
+    cancel: cancelAutoSave,
+    saveNow,
+  } = useDebouncedAutoSave(user?.id, attemptId);
 
   const lastAnswersRef = useRef<QA>({});
 
@@ -379,6 +348,14 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
       setSubmitting(true);
       setLoading(true);
       cancelAutoSave();
+
+      // Use saveNow from hook - autosave before submit
+      await saveNow(
+        lastAnswersRef.current,
+        (qid) => sectionOfQuestion.get(qid),
+        buildTextAnswer
+      );
+
       await submitAttempt(attemptId);
       router.replace(`/attempts/${attemptId}`);
     } catch {

@@ -55,6 +55,17 @@ export function useDebouncedAutoSave(
     }, 2000);
   };
 
+  // Immediate save (no debounce) - use before submit
+  const saveNow = async (
+    answers: QA,
+    buildSectionId: (qid: string) => string | undefined,
+    buildTextAnswer?: (qid: string, value: string) => string | undefined
+  ) => {
+    if (t.current) clearTimeout(t.current);
+    const payload = buildPayload(answers, buildSectionId, buildTextAnswer);
+    await autoSaveAttempt(attemptId, payload);
+  };
+
   const cancel = () => {
     if (t.current) {
       clearTimeout(t.current);
@@ -62,5 +73,5 @@ export function useDebouncedAutoSave(
     }
   };
 
-  return { run, cancel };
+  return { run, cancel, saveNow };
 }
