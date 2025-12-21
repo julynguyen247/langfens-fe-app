@@ -22,6 +22,7 @@ import {
   gradeWriting,
   submitAttempt,
 } from "@/utils/api";
+import ReactMarkdown from "react-markdown";
 
 type Skill = "reading" | "listening" | "writing" | "speaking";
 type QA = Record<string, string>;
@@ -204,8 +205,8 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
         <div className="flex-1 overflow-hidden border-r bg-gray-50 mb-20">
           <PassageView
             passage={{
-              title: activeSec.title,
-              content: activeSec.instructionsMd,
+              title: attempt?.paper?.title || "Reading Passage",
+              content: sections[0]?.passageMd || "",
             }}
           />
         </div>
@@ -222,7 +223,14 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
             </button>
           </div>
 
-          <div className="flex-1 overflow-auto">
+          <div className="flex-1 overflow-auto p-4">
+            {/* Section Instructions */}
+            {activeSec?.instructionsMd && (
+              <div className="mb-4 p-4 bg-amber-50 border-l-2 rounded  border-amber-400 rounded-r-lg prose prose-sm text-gray-800">
+                <ReactMarkdown>{activeSec.instructionsMd}</ReactMarkdown>
+              </div>
+            )}
+
             <QuestionPanel
               attemptId={attemptId}
               questions={panelQuestions}

@@ -29,6 +29,7 @@ export type AttemptSection = {
   idx: number;
   title: string;
   instructionsMd: string;
+  passageMd: string;
   audioUrl?: string;
   transcriptMd?: string;
   questions: AttemptQuestion[];

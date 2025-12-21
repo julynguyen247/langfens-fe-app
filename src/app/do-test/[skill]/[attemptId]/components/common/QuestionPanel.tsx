@@ -37,6 +37,7 @@ export type Question = {
   order?: string;
   flowChartNodes?: { key: string; label: string }[];
   headings?: { key: string; text: string }[];
+  explanationMd?: string;
 };
 
 export default function QuestionPanel({
@@ -87,14 +88,27 @@ export default function QuestionPanel({
   return (
     <div className="flex flex-col h-full min-h-0 rounded-xl shadow bg-white overflow-hidden text-sm">
       <div className="flex-1 min-h-0 overflow-auto bg-white p-4 space-y-2 leading-relaxed mb-12">
-        {qList.map((q) => {
+        {qList.map((q, idx) => {
           const value = answers[q.id] ?? "";
+
+          const prevQ = idx > 0 ? qList[idx - 1] : null;
+          const showExplanation =
+            q.explanationMd && q.explanationMd !== prevQ?.explanationMd;
+
+          const explanationBlock = showExplanation ? (
+            <div className="mt-6 mb-4 px-4  py-3 bg-gradient-to-r from-slate-50 to-white border border-slate-200 rounded-xl shadow-sm">
+              <p className="text-sm  font-medium  text-slate-700 leading-relaxed">
+                {q.explanationMd}
+              </p>
+            </div>
+          ) : null;
+
+          let questionContent: React.ReactNode = null;
 
           switch (q.uiKind) {
             case "choice_single":
-              return (
+              questionContent = (
                 <QuestionCard
-                  key={q.id}
                   question={{
                     id: q.id,
                     stem: q.stem,
@@ -104,24 +118,12 @@ export default function QuestionPanel({
                   onSelect={(_, v) => handleAnswer(q.id, v)}
                 />
               );
-
-            // case "completion":
-            //   return (
-            //     <FillInBlankCard
-            //       key={q.id}
-            //       id={q.id}
-            //       stem={q.stem}
-            //       value={value}
-            //       onChange={(v) => handleAnswer(q.id, v)}
-            //     />
-            //   );
+              break;
 
             case "completion": {
               const arr = unpackBlanks(value);
-
-              return (
+              questionContent = (
                 <SummaryCompletionCard
-                  key={q.id}
                   id={q.id}
                   stem={q.stem}
                   values={arr}
@@ -132,14 +134,13 @@ export default function QuestionPanel({
                   }}
                 />
               );
+              break;
             }
 
             case "matching_information": {
               const arr = unpackBlanks(value);
-
-              return (
+              questionContent = (
                 <MatchingInformation
-                  key={q.id}
                   stem={q.stem}
                   values={arr}
                   onChange={(blankIndex, v) => {
@@ -149,22 +150,18 @@ export default function QuestionPanel({
                   }}
                 />
               );
+              break;
             }
 
             case "matching_paragraph":
-              return (
-                <div
-                  key={q.id}
-                  className="flex items-start gap-3 py-3 border-b last:border-b-0"
-                >
+              questionContent = (
+                <div className="flex items-start gap-3 py-3 border-b last:border-b-0">
                   <span className="w-6 text-sm font-semibold text-slate-700">
                     {q.order}.
                   </span>
-
                   <p className="flex-1 text-sm text-slate-800 leading-relaxed">
                     {q.stem}
                   </p>
-
                   <input
                     value={value}
                     maxLength={1}
@@ -175,16 +172,16 @@ export default function QuestionPanel({
                         e.target.value.toUpperCase().replace(/[^A-F]/g, "")
                       )
                     }
-                    className="w-12 h-10 rounded-lg border border-slate-300 text-center font-semibold
+                    className="w-12 h-10 rounded-lg border border-slate-300 text-center font-semibold text-black
                    focus:outline-none focus:ring-2 focus:ring-[#317EFF]"
                   />
                 </div>
               );
+              break;
 
             case "choice_multiple":
-              return (
+              questionContent = (
                 <MultiCheckboxCard
-                  key={q.id}
                   id={q.id}
                   stem={q.stem}
                   choices={q.choices ?? []}
@@ -192,22 +189,22 @@ export default function QuestionPanel({
                   onChange={(v) => handleAnswer(q.id, v)}
                 />
               );
+              break;
 
             case "matching_letter":
-              return (
+              questionContent = (
                 <MatchingLetterCard
-                  key={q.id}
                   id={q.id}
                   stem={q.stem}
                   value={value}
                   onChange={(v) => handleAnswer(q.id, v)}
                 />
               );
+              break;
 
             case "matching_heading":
-              return (
+              questionContent = (
                 <HeadingDropdown
-                  key={q.id}
                   id={q.id}
                   stem={q.stem}
                   options={(q.choices ?? []).map((c) => ({
@@ -217,11 +214,11 @@ export default function QuestionPanel({
                   onChange={(v) => handleAnswer(q.id, v)}
                 />
               );
+              break;
 
             case "flow_chart":
-              return (
+              questionContent = (
                 <FlowChartCard
-                  key={q.id}
                   id={q.id}
                   stem={q.stem}
                   nodes={q.flowChartNodes ?? []}
@@ -229,10 +226,23 @@ export default function QuestionPanel({
                   onChange={(v) => handleAnswer(q.id, v)}
                 />
               );
+              break;
 
             default:
-              return null;
+              questionContent = null;
           }
+
+          return (
+            <div key={q.id}>
+              {explanationBlock}
+              <div className="flex items-baseline gap-2">
+                <span className="inline-flex items-center justify-center min-w-[1.5rem] h-5 px-1.5 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold">
+                  {idx + 1}
+                </span>
+                <div className="flex-1">{questionContent}</div>
+              </div>
+            </div>
+          );
         })}
       </div>
     </div>
