@@ -18,11 +18,22 @@ export function useDebouncedAutoSave(
       const textAnswer = buildTextAnswer?.(questionId, value);
       const hasText = !!textAnswer && textAnswer.trim().length > 0;
 
+      // Check if value is a valid UUID (GUID format)
+      const isValidGuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+      
+      // Only use selectedOptionIds if value is a valid GUID (not text like "D", "TRUE", etc.)
+      const selectedOptionIds = !hasText && value && isValidGuid ? [value] : [];
+      
+      // For non-GUID values, use textAnswer instead
+      const finalTextAnswer = hasText 
+        ? textAnswer 
+        : (!isValidGuid && value ? value : undefined);
+
       return {
         questionId,
         sectionId: buildSectionId(questionId) ?? "",
-        selectedOptionIds: !hasText && value ? [value] : [],
-        textAnswer: hasText ? textAnswer : undefined,
+        selectedOptionIds,
+        textAnswer: finalTextAnswer,
       };
     }),
     clientRevision: Date.now(),

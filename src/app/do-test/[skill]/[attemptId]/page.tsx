@@ -178,8 +178,11 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
             const textAnswer = buildTextAnswer(questionId, v);
             const hasText = !!textAnswer && textAnswer.trim().length > 0;
 
+            // Check if value is a valid GUID format
+            const isValidGuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
+
             let selectedOptionIds: string[] = [];
-            if (!hasText && v) {
+            if (!hasText && v && isValidGuid) {
               if (typeof v === "string" && v.startsWith("[")) {
                 try {
                   const parsed = JSON.parse(v);
@@ -192,11 +195,16 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
               }
             }
 
+            // For non-GUID values, use textAnswer
+            const finalTextAnswer = hasText 
+              ? textAnswer 
+              : (!isValidGuid && v ? v : undefined);
+
             return {
               questionId,
               sectionId: activeSec.id,
               selectedOptionIds,
-              textAnswer: hasText ? textAnswer : undefined,
+              textAnswer: finalTextAnswer,
             };
           }
         ),
