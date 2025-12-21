@@ -217,7 +217,9 @@ export default function AttemptResultPage() {
           };
 
           setAttemptData(mapped);
-          setActiveSkill("READING");
+          // Auto-detect skill from questions (e.g., LISTENING for listening exams)
+          const firstSkill = mapped.questions?.[0]?.skill ?? "READING";
+          setActiveSkill(firstSkill as any);
         } else if (source === "writing") {
           // ========= CASE 2: WRITING DETAIL =========
           const res = await getWritingHistoryById(attemptId);
