@@ -24,7 +24,11 @@ export type QuestionUiKind =
   | "completion"
   | "matching_letter"
   | "matching_heading"
-  | "flow_chart";
+  | "flow_chart"
+  | "matching_paragraph"
+  | "matching_heading_select"
+  | "summary_completion"
+  | "matching_information";
 type Choice = { value: string; label: string };
 
 export type QuestionUi = {

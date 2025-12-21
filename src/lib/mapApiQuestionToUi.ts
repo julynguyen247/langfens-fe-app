@@ -22,6 +22,11 @@ function normalizeOptionLabel(contentMd: string): string {
   return m ? m[1] : trimmed;
 }
 
+function isWordListBlank(promptMd: string): boolean {
+  const s = promptMd ?? "";
+  return s.includes("**Word List:**") && s.includes("___");
+}
+
 function mapBackendTypeToUiKind(type: BackendQuestionType): QuestionUiKind {
   switch (type) {
     // radio
@@ -32,7 +37,7 @@ function mapBackendTypeToUiKind(type: BackendQuestionType): QuestionUiKind {
     case "CLASSIFICATION":
       return "choice_single";
 
-    // checkbox (multiple correct answers)
+    // checkbox
     case "MULTIPLE_CHOICE_MULTIPLE":
       return "choice_multiple";
 
@@ -47,13 +52,12 @@ function mapBackendTypeToUiKind(type: BackendQuestionType): QuestionUiKind {
     case "MAP_LABEL":
       return "completion";
 
-    // matching: nhập A–J
-    case "MATCHING_INFORMATION":
+    // matching letter
     case "MATCHING_FEATURES":
     case "MATCHING_ENDINGS":
       return "matching_letter";
 
-    // matching heading: dropdown with roman numerals
+    // matching heading
     case "MATCHING_HEADING":
       return "matching_heading";
 
@@ -66,14 +70,21 @@ function mapBackendTypeToUiKind(type: BackendQuestionType): QuestionUiKind {
 }
 
 export function mapApiQuestionToUi(q: ApiQuestion): Question {
-  const uiKind = mapBackendTypeToUiKind(q.type);
+  const uiKind: QuestionUiKind =
+    q.type === "MATCHING_INFORMATION"
+      ? isWordListBlank(q.promptMd)
+        ? "matching_information"
+        : "matching_paragraph"
+      : mapBackendTypeToUiKind(q.type);
 
   const base: Question = {
     id: q.id,
-    stem: q.promptMd,
+    stem: q.promptMd, // giữ nguyên promptMd full (có Word List) để component tự parse
     backendType: q.type,
     uiKind,
   };
+
+  // choice single
   if (uiKind === "choice_single") {
     return {
       ...base,
@@ -84,7 +95,7 @@ export function mapApiQuestionToUi(q: ApiQuestion): Question {
     };
   }
 
-  // MULTIPLE_CHOICE_MULTIPLE: checkbox selection
+  // choice multiple
   if (uiKind === "choice_multiple") {
     return {
       ...base,
@@ -95,6 +106,7 @@ export function mapApiQuestionToUi(q: ApiQuestion): Question {
     };
   }
 
+  // flow chart
   if (uiKind === "flow_chart") {
     return {
       ...base,
@@ -102,17 +114,29 @@ export function mapApiQuestionToUi(q: ApiQuestion): Question {
     };
   }
 
-  // MATCHING_HEADING: pass options for dropdown
+  // matching heading
   if (uiKind === "matching_heading" && q.options?.length) {
     return {
       ...base,
       choices: q.options.map((opt) => ({
-        value: opt.contentMd.split(".")[0].trim(), // e.g., "i", "ii"
-        label: opt.contentMd, // full text
+        value: opt.contentMd.split(".")[0].trim(), // e.g. "i", "ii"
+        label: opt.contentMd,
       })),
     };
   }
 
-  // Completion & others
+  // matching_information_wordlist: không cần choices từ BE (nằm trong promptMd)
+  if (uiKind === "matching_information") {
+    return base;
+  }
+
+  // matching_paragraph: hiện bạn đang render input A-F theo q.order/placeholder
+  if (uiKind === "matching_paragraph") {
+    return {
+      ...base,
+    };
+  }
+
+  // completion & others
   return base;
 }

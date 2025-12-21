@@ -7,7 +7,6 @@ import QuestionPanel, {
   Question as UiQuestion,
   QuestionUiKind,
 } from "./components/common/QuestionPanel";
-import ListeningAudioBar from "./components/listening/ListeningAudioBar";
 import { useAttemptStore } from "@/app/store/useAttemptStore";
 import { useUserStore } from "@/app/store/userStore";
 import { useLoadingStore } from "@/app/store/loading";
@@ -26,6 +25,68 @@ import {
 
 type Skill = "reading" | "listening" | "writing" | "speaking";
 type QA = Record<string, string>;
+
+function formatTime(totalSeconds: number) {
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+}
+
+function isYouTubeUrl(url: string) {
+  return /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)/.test(
+    url
+  );
+}
+
+function getYouTubeId(url: string) {
+  try {
+    const m1 = url.match(/youtu\.be\/([^?]+)/);
+    if (m1?.[1]) return m1[1];
+
+    const m2 = url.match(/youtube\.com\/embed\/([^?]+)/);
+    if (m2?.[1]) return m2[1];
+
+    const u = new URL(url);
+    const v = u.searchParams.get("v");
+    if (v) return v;
+  } catch {}
+  return "";
+}
+
+function AudioBar({ src }: { src: string }) {
+  if (!src) {
+    return (
+      <div className="text-xs text-amber-600">Đề này chưa có audioUrl.</div>
+    );
+  }
+
+  if (isYouTubeUrl(src)) {
+    const id = getYouTubeId(src);
+    if (!id) {
+      return (
+        <div className="text-xs text-red-600">YouTube URL không hợp lệ.</div>
+      );
+    }
+    const embed = `https://www.youtube.com/embed/${id}?controls=1&rel=0&modestbranding=1`;
+    return (
+      <div className="rounded-lg overflow-hidden border bg-white">
+        <iframe
+          src={embed}
+          title="Listening Audio (YouTube)"
+          className="w-full h-16"
+          allow="autoplay; encrypted-media; picture-in-picture"
+          allowFullScreen
+        />
+      </div>
+    );
+  }
+
+  return (
+    <audio className="w-full" controls preload="metadata">
+      <source src={src} />
+    </audio>
+  );
+}
 
 export default function DoTestAttemptPage() {
   const { skill, attemptId } = useParams() as {
@@ -51,12 +112,6 @@ export default function DoTestAttemptPage() {
   return <div className="p-6">Unknown skill: {String(skill)}</div>;
 }
 
-function formatTime(totalSeconds: number) {
-  const m = Math.floor(totalSeconds / 60);
-  const s = totalSeconds % 60;
-  return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-}
-
 function ReadingScreen({ attemptId }: { attemptId: string }) {
   const router = useRouter();
   const sp = useSearchParams();
@@ -64,7 +119,6 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
   const { setLoading } = useLoadingStore();
   const attempt = useAttemptStore((s) => s.byId[attemptId]);
 
-  // All hooks must be called before any conditional returns
   const lastAnswersRef = useRef<QA>({});
 
   const sections = useMemo(() => {
@@ -73,17 +127,14 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
   }, [attempt?.paper?.sections]);
 
   const secFromUrl = sp.get("sec");
-
   const activeSec = sections.find((s) => s.id === secFromUrl) ?? sections[0];
 
-  const panelQuestions = useMemo<UiQuestion[]>(
-    () =>
-      (activeSec?.questions ?? [])
-        .slice()
-        .sort((a, b) => a.idx - b.idx)
-        .map((q: any) => mapApiQuestionToUi(q)),
-    [activeSec]
-  );
+  const panelQuestions = useMemo<UiQuestion[]>(() => {
+    return (activeSec?.questions ?? [])
+      .slice()
+      .sort((a: any, b: any) => a.idx - b.idx)
+      .map((q: any) => mapApiQuestionToUi(q));
+  }, [activeSec]);
 
   const questionUiKindMap = useMemo(() => {
     const m: Record<string, QuestionUiKind> = {};
@@ -98,11 +149,8 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
 
   const buildTextAnswer = (qid: string, value: string) => {
     if (!value) return undefined;
-    // Skip single/multiple choice types - they use selectedOptionIds
-    if (
-      questionUiKindMap[qid] === "choice_single" ||
-      questionUiKindMap[qid] === "choice_multiple"
-    )
+    const kind = questionUiKindMap[qid];
+    if (kind === "choice_single" || kind === "choice_multiple")
       return undefined;
     return value;
   };
@@ -110,7 +158,6 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
   const [submitting, setSubmitting] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
-  // Loading guard - after all hooks
   if (!attempt?.paper) {
     return (
       <div className="p-6 text-center text-slate-500">Đang tải đề thi…</div>
@@ -127,22 +174,21 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
 
       const payload = {
         answers: Object.entries(lastAnswersRef.current).map(
-          ([questionId, value]) => {
-            const textAnswer = buildTextAnswer(questionId, value);
+          ([questionId, v]) => {
+            const textAnswer = buildTextAnswer(questionId, v);
             const hasText = !!textAnswer && textAnswer.trim().length > 0;
 
-            // Parse selectedOptionIds: handle JSON array string for MULTIPLE_CHOICE_MULTIPLE
             let selectedOptionIds: string[] = [];
-            if (!hasText && value) {
-              if (typeof value === "string" && value.startsWith("[")) {
+            if (!hasText && v) {
+              if (typeof v === "string" && v.startsWith("[")) {
                 try {
-                  const parsed = JSON.parse(value);
-                  selectedOptionIds = Array.isArray(parsed) ? parsed : [value];
+                  const parsed = JSON.parse(v);
+                  selectedOptionIds = Array.isArray(parsed) ? parsed : [v];
                 } catch {
-                  selectedOptionIds = [value];
+                  selectedOptionIds = [v];
                 }
               } else {
-                selectedOptionIds = [value];
+                selectedOptionIds = [v];
               }
             }
 
@@ -194,7 +240,7 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
             <button
               onClick={() => setConfirmOpen(true)}
               disabled={submitting}
-              className="px-4 py-2 rounded-lg text-sm font-semibold bg-[#317EFF] text-white"
+              className="px-4 py-2 rounded-lg text-sm font-semibold bg-[#317EFF] text-white disabled:opacity-60"
             >
               Nộp bài
             </button>
@@ -255,6 +301,7 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
   const { setLoading } = useLoadingStore();
 
   const attempt = useAttemptStore((s) => s.byId[attemptId]);
+
   const [submitting, setSubmitting] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -272,24 +319,31 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
 
   const sectionOfQuestion = useMemo(() => {
     const m = new Map<string, string>();
-    for (const s of sections as any[])
-      for (const q of s.questions ?? [])
-        if (q.skill?.toLowerCase() === "listening") m.set(String(q.id), s.id);
+    for (const s of sections as any[]) {
+      for (const q of s.questions ?? []) {
+        m.set(String(q.id), s.id);
+      }
+    }
     return m;
   }, [sections]);
 
-  const qs = useMemo(() => {
-    return (sections as any[])
-      .flatMap((s) => s.questions ?? [])
-      .filter((q) => q.skill?.toLowerCase() === "listening");
+  const allQs = useMemo(() => {
+    return (sections as any[]).flatMap((s) => s.questions ?? []);
   }, [sections]);
 
+  const listeningQs = useMemo(() => {
+    const filtered = allQs.filter(
+      (q) => String(q.skill ?? "").toLowerCase() === "listening"
+    );
+    return filtered.length ? filtered : allQs;
+  }, [allQs]);
+
   const panelQuestions = useMemo(() => {
-    return qs
+    return listeningQs
       .slice()
       .sort((a: any, b: any) => a.idx - b.idx)
       .map((q: any) => mapApiQuestionToUi(q));
-  }, [qs]);
+  }, [listeningQs]);
 
   const questionUiKindMap = useMemo(() => {
     const m: Record<string, QuestionUiKind> = {};
@@ -306,7 +360,9 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
 
   const buildTextAnswer = (qid: string, value: string) => {
     if (!value) return undefined;
-    if (questionUiKindMap[qid] === "choice_single") return undefined;
+    const kind = questionUiKindMap[qid];
+    if (kind === "choice_single" || kind === "choice_multiple")
+      return undefined;
     return value;
   };
 
@@ -338,34 +394,52 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
       <div className="flex flex-col h-full bg-white rounded-xl shadow overflow-hidden">
         <div className="border-b p-4 bg-white sticky top-0 z-10">
           <div className="flex justify-between mb-3">
-            <h2 className="text-lg font-semibold text-black">Listening</h2>
+            <div>
+              <h2 className="text-lg font-semibold text-black">Listening</h2>
+              {allQs.length > 0 &&
+                allQs.filter(
+                  (q) => String(q.skill ?? "").toLowerCase() === "listening"
+                ).length === 0 && (
+                  <div className="mt-1 text-xs text-amber-600">
+                    Không có câu skill=LISTENING, đang hiển thị toàn bộ câu hỏi.
+                  </div>
+                )}
+            </div>
+
             <button
               onClick={() => setConfirmOpen(true)}
               disabled={submitting}
-              className="px-4 py-2 rounded-lg text-sm font-semibold bg-[#317EFF] text-white"
+              className="px-4 py-2 rounded-lg text-sm font-semibold bg-[#317EFF] text-white disabled:opacity-60"
             >
               Nộp bài
             </button>
           </div>
-          <ListeningAudioBar src={listeningAudioUrl} />
+
+          <AudioBar src={listeningAudioUrl} />
         </div>
 
         <div className="flex-1 overflow-auto p-6">
-          <QuestionPanel
-            attemptId={attemptId}
-            questions={panelQuestions}
-            onAnswersChange={(next) => {
-              lastAnswersRef.current = {
-                ...lastAnswersRef.current,
-                ...(next as QA),
-              };
-              debouncedSave(
-                next as QA,
-                (qid) => sectionOfQuestion.get(qid),
-                buildTextAnswer
-              );
-            }}
-          />
+          {panelQuestions.length === 0 ? (
+            <div className="text-sm text-slate-600">
+              Không có câu hỏi để hiển thị.
+            </div>
+          ) : (
+            <QuestionPanel
+              attemptId={attemptId}
+              questions={panelQuestions}
+              onAnswersChange={(next) => {
+                lastAnswersRef.current = {
+                  ...lastAnswersRef.current,
+                  ...(next as QA),
+                };
+                debouncedSave(
+                  next as QA,
+                  (qid) => sectionOfQuestion.get(qid),
+                  buildTextAnswer
+                );
+              }}
+            />
+          )}
         </div>
       </div>
 
@@ -462,9 +536,7 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
 
   useEffect(() => {
     let t: any = null;
-    if (isRecording) {
-      t = setInterval(() => setSeconds((s) => s + 1), 1000);
-    }
+    if (isRecording) t = setInterval(() => setSeconds((s) => s + 1), 1000);
     return () => {
       if (t) clearInterval(t);
     };
@@ -486,7 +558,6 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
     clearBlobUrl();
     setSeconds(0);
     setAudioSource("none");
-
     const input = document.getElementById(
       "speaking-upload"
     ) as HTMLInputElement;

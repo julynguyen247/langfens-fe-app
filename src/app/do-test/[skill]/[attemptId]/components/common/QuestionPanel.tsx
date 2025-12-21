@@ -8,6 +8,7 @@ import HeadingDropdown from "../reading/HeadingDropdown";
 import FlowChartCard from "../reading/FlowChartCard";
 import MultiCheckboxCard from "../reading/MultiCheckboxCard";
 import SummaryCompletionCard from "../reading/SummaryCompletionCard";
+import MatchingInformation from "../reading/WordListCompletionCard";
 
 type Choice = { value: string; label: string };
 type QA = Record<string, string>;
@@ -23,7 +24,8 @@ export type QuestionUiKind =
   | "flow_chart"
   | "matching_paragraph"
   | "matching_heading_select"
-  | "summary_completion";
+  | "summary_completion"
+  | "matching_information";
 
 export type Question = {
   id: string;
@@ -121,6 +123,23 @@ export default function QuestionPanel({
                 <SummaryCompletionCard
                   key={q.id}
                   id={q.id}
+                  stem={q.stem}
+                  values={arr}
+                  onChange={(blankIndex, v) => {
+                    const next = [...arr];
+                    next[blankIndex] = v;
+                    handleAnswer(q.id, packBlanks(next));
+                  }}
+                />
+              );
+            }
+
+            case "matching_information": {
+              const arr = unpackBlanks(value);
+
+              return (
+                <MatchingInformation
+                  key={q.id}
                   stem={q.stem}
                   values={arr}
                   onChange={(blankIndex, v) => {
