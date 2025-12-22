@@ -1,7 +1,7 @@
 "use client";
 
+import React, { memo, useMemo, useState, useEffect, useRef, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
-import { useState, useEffect, useRef } from "react";
 
 type Choice = {
   value: string;
@@ -16,27 +16,34 @@ type Props = {
   onChange: (value: string) => void;
 };
 
+// Memoized markdown components
+const markdownComponents = {
+  p: ({ node, ...props }: any) => (
+    <p className="mb-2 last:mb-0 whitespace-pre-wrap" {...props} />
+  ),
+};
+
 /**
  * Checkbox component for MULTIPLE_CHOICE_MULTIPLE questions.
  * User can select multiple options, order doesn't matter.
  */
-export default function MultiCheckboxCard({
+const MultiCheckboxCard = memo(function MultiCheckboxCard({
   stem,
   choices,
   value,
   onChange,
 }: Props) {
-  const text = stem.replace(/\\n/g, "\n");
+  const text = useMemo(() => stem.replace(/\\n/g, "\n"), [stem]);
   
   // Parse current selections from JSON array or empty array
-  const parseValue = (v: string): string[] => {
+  const parseValue = useCallback((v: string): string[] => {
     try {
       const parsed = JSON.parse(v || "[]");
       return Array.isArray(parsed) ? parsed : [];
     } catch {
       return [];
     }
-  };
+  }, []);
   
   const [selected, setSelected] = useState<string[]>(() => parseValue(value));
   const isInitialMount = useRef(true);
@@ -47,7 +54,7 @@ export default function MultiCheckboxCard({
     if (JSON.stringify(parsed) !== JSON.stringify(selected)) {
       setSelected(parsed);
     }
-  }, [value]);
+  }, [value, parseValue]);
   
   // Notify parent when selection changes (but not on initial mount)
   useEffect(() => {
@@ -59,26 +66,20 @@ export default function MultiCheckboxCard({
     if (jsonValue !== value) {
       onChange(jsonValue);
     }
-  }, [selected]);
+  }, [selected, value, onChange]);
   
-  const handleToggle = (choiceValue: string) => {
+  const handleToggle = useCallback((choiceValue: string) => {
     setSelected(prev =>
       prev.includes(choiceValue)
         ? prev.filter(v => v !== choiceValue)
         : [...prev, choiceValue]
     );
-  };
+  }, []);
 
   return (
     <div className="border border-slate-200 rounded-lg p-4 space-y-3 bg-white">
       <div className="text-slate-900 leading-relaxed font-bold">
-        <ReactMarkdown
-          components={{
-            p: ({ node, ...props }) => (
-              <p className="mb-2 last:mb-0 whitespace-pre-wrap" {...props} />
-            ),
-          }}
-        >
+        <ReactMarkdown components={markdownComponents}>
           {text}
         </ReactMarkdown>
       </div>
@@ -115,4 +116,6 @@ export default function MultiCheckboxCard({
       </span>
     </div>
   );
-}
+});
+
+export default MultiCheckboxCard;

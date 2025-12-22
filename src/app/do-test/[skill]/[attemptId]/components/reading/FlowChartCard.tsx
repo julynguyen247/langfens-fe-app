@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import React, { memo, useEffect, useMemo, useState, useCallback } from "react";
 
 type FlowChartNode = {
   key: string;
@@ -15,7 +15,7 @@ type Props = {
   onChange: (v: string) => void;
 };
 
-export default function FlowChartCard({
+const FlowChartCard = memo(function FlowChartCard({
   id,
   stem,
   nodes,
@@ -26,7 +26,7 @@ export default function FlowChartCard({
 
   const [order, setOrder] = useState<(number | "")[]>(steps.map(() => ""));
 
-  const updateOrder = (idx: number, val: string) => {
+  const updateOrder = useCallback((idx: number, val: string) => {
     const num = Number(val);
 
     setOrder((prev) => {
@@ -38,7 +38,7 @@ export default function FlowChartCard({
       }
       return next;
     });
-  };
+  }, []);
 
   useEffect(() => {
     const allFilled = order.every((x) => x !== "");
@@ -52,7 +52,7 @@ export default function FlowChartCard({
       arranged.push(steps[index]);
     }
     onChange(JSON.stringify(arranged));
-  }, [order, steps]);
+  }, [order, steps, onChange]);
 
   return (
     <div className="p-4 border border-slate-200 rounded-lg bg-white space-y-4 text-black">
@@ -75,4 +75,6 @@ export default function FlowChartCard({
       </div>
     </div>
   );
-}
+});
+
+export default FlowChartCard;

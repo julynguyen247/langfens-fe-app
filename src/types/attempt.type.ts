@@ -20,6 +20,7 @@ export interface Paper {
   category: string; // ví dụ: 'listening'
   level: string; // ví dụ: 'c1'
   durationMin: number;
+  imageUrl?: string;
   sections: Section[];
 }
 
