@@ -175,12 +175,15 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
       setLoading(true);
       cancelAutoSave();
 
-      // Use saveNow from hook - autosave before submit
-      await saveNow(
-        lastAnswersRef.current,
-        () => activeSec.id,
-        buildTextAnswer
-      );
+      try {
+        await saveNow(
+          lastAnswersRef.current,
+          () => activeSec.id,
+          buildTextAnswer
+        );
+      } catch (e) {
+        console.warn("Autosave before submit failed, continuing with submit:", e);
+      }
 
       await submitAttempt(attemptId);
       router.replace(`/attempts/${attemptId}`);
@@ -191,6 +194,7 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
       setLoading(false);
     }
   };
+
 
   if (!attempt || !activeSec) {
     return (
@@ -364,12 +368,16 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
       setLoading(true);
       cancelAutoSave();
 
-      // Use saveNow from hook - autosave before submit
-      await saveNow(
-        lastAnswersRef.current,
-        (qid) => sectionOfQuestion.get(qid),
-        buildTextAnswer
-      );
+      // Try to save first, but don't block submit if it fails
+      try {
+        await saveNow(
+          lastAnswersRef.current,
+          (qid) => sectionOfQuestion.get(qid),
+          buildTextAnswer
+        );
+      } catch (e) {
+        console.warn("Autosave before submit failed, continuing with submit:", e);
+      }
 
       await submitAttempt(attemptId);
       router.replace(`/attempts/${attemptId}`);
@@ -378,6 +386,7 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
     } finally {
       setSubmitting(false);
       setLoading(false);
+
     }
   };
 

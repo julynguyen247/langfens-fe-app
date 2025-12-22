@@ -90,19 +90,6 @@ export default function QuestionPanel({
       <div className="flex-1 min-h-0 overflow-auto bg-white p-4 space-y-2 leading-relaxed mb-12">
         {qList.map((q, idx) => {
           const value = answers[q.id] ?? "";
-
-          const prevQ = idx > 0 ? qList[idx - 1] : null;
-          const showExplanation =
-            q.explanationMd && q.explanationMd !== prevQ?.explanationMd;
-
-          const explanationBlock = showExplanation ? (
-            <div className="mt-4 mb-3 p-3 bg-gradient-to-r from-slate-50 to-blue-50 border border-slate-200 rounded-xl shadow-sm">
-              <p className="text-sm text-slate-700 leading-relaxed">
-                {q.explanationMd}
-              </p>
-            </div>
-          ) : null;
-
           let questionContent: React.ReactNode = null;
 
           switch (q.uiKind) {
@@ -234,7 +221,6 @@ export default function QuestionPanel({
 
           return (
             <div key={q.id}>
-              {explanationBlock}
               <div className="flex items-baseline gap-2">
                 <span className="inline-flex items-center justify-center min-w-[1.5rem] h-5 px-1.5 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold">
                   {idx + 1}

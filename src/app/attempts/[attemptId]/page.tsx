@@ -872,8 +872,10 @@ function ReviewItem({ data }: { data: ReturnType<typeof normalizeDetail> }) {
       </div>
 
       {open && data.explanation && (
-        <div className="mt-3 p-3 rounded bg-emerald-50 border border-emerald-100 text-sm text-emerald-900 whitespace-pre-wrap">
-          {data.explanation}
+        <div className="mt-3 p-3 rounded bg-emerald-50 border border-emerald-100 text-sm text-emerald-900">
+          <div className="prose prose-sm prose-emerald max-w-none prose-p:my-1 prose-strong:text-emerald-900">
+            <ReactMarkdown>{data.explanation}</ReactMarkdown>
+          </div>
         </div>
       )}
     </li>
