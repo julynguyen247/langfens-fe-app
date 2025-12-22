@@ -25,6 +25,8 @@ import {
 } from "@/utils/api";
 import ReactMarkdown from "react-markdown";
 
+
+
 type Skill = "reading" | "listening" | "writing" | "speaking";
 type QA = Record<string, string>;
 
@@ -217,16 +219,30 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
         </div>
 
         <div className="w-[400px] lg:w-[480px] xl:w-[550px] flex flex-col overflow-hidden border-l bg-white shadow-xl z-20">
-          <div className="border-b px-5 py-4 bg-white sticky top-0 z-10 flex justify-between shadow-sm">
-            <h2 className="text-lg font-semibold text-black">Questions</h2>
+          <div className="border-b px-5 py-4 bg-white sticky top-0 z-10 flex justify-between items-center shadow-sm">
+            <div className="flex items-center gap-4">
+              <h2 className="text-lg font-semibold text-black">Questions</h2>
+            </div>
             <button
               onClick={() => setConfirmOpen(true)}
               disabled={submitting}
-              className="px-4 py-2 rounded-lg text-sm font-semibold bg-[#317EFF] text-white disabled:opacity-60"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white disabled:opacity-60 transition-all shadow-md hover:shadow-lg active:scale-95"
             >
-              Nộp bài
+              {submitting ? (
+                <>
+                  <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Đang nộp...
+                </>
+              ) : (
+                "Nộp bài"
+              )}
             </button>
+
           </div>
+
 
           <div className="flex-1 overflow-auto p-4">
             {activeSec?.instructionsMd && (
@@ -409,25 +425,39 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
         {/* Right panel - Questions */}
         <div className="w-[400px] lg:w-[480px] xl:w-[550px] flex flex-col overflow-hidden border-l bg-white shadow-xl z-20">
           <div className="border-b px-5 py-4 bg-white sticky top-0 z-10 flex justify-between items-center shadow-sm">
-            <div>
-              <h2 className="text-lg font-bold text-slate-800">Listening</h2>
-              {allQs.length > 0 &&
-                allQs.filter(
-                  (q) => String(q.skill ?? "").toLowerCase() === "listening"
-                ).length === 0 && (
-                  <div className="mt-1 text-xs text-amber-600 font-medium">
-                    Toàn bộ câu hỏi (không filter skill)
-                  </div>
-                )}
+            <div className="flex items-center gap-4">
+              <div>
+                <h2 className="text-lg font-bold text-slate-800">Listening</h2>
+                {allQs.length > 0 &&
+                  allQs.filter(
+                    (q) => String(q.skill ?? "").toLowerCase() === "listening"
+                  ).length === 0 && (
+                    <div className="mt-1 text-xs text-amber-600 font-medium">
+                      Toàn bộ câu hỏi (không filter skill)
+                    </div>
+                  )}
+              </div>
             </div>
+
 
             <button
               onClick={() => setConfirmOpen(true)}
               disabled={submitting}
-              className="px-5 py-2 rounded-full text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-60 transition-colors shadow-sm"
+              className="inline-flex items-center gap-2 px-5 py-2 rounded-full text-sm font-semibold bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white disabled:opacity-60 transition-all shadow-md hover:shadow-lg active:scale-95"
             >
-              Nộp bài
+              {submitting ? (
+                <>
+                  <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Đang nộp...
+                </>
+              ) : (
+                "Nộp bài"
+              )}
             </button>
+
           </div>
 
           <div className="flex-1 overflow-auto p-5 scroll-smooth">
