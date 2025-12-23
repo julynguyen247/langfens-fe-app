@@ -45,6 +45,7 @@ export type AttemptStartData = {
     category: string;
     level: string;
     durationMin: number;
+    imageUrl: string
     sections: AttemptSection[];
   };
   startedAt: string;
