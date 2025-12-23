@@ -30,7 +30,7 @@ function getYouTubeId(url: string) {
 export default function YouTubePlayer({ src }: YouTubePlayerProps) {
   if (!src) {
     return (
-      <div className="h-full flex items-center justify-center bg-slate-50">
+      <div className="flex flex-col items-center justify-center bg-slate-50">
         <div className="text-center text-slate-500">
           <div className="text-4xl mb-2">🎧</div>
           <div className="text-sm">Chưa có audio</div>
@@ -49,28 +49,22 @@ export default function YouTubePlayer({ src }: YouTubePlayerProps) {
       );
     }
     const embed = `https://www.youtube.com/embed/${id}?controls=1&rel=0&modestbranding=1`;
-    return (
-      <div className="h-full flex flex-col bg-slate-50">
-        {/* YouTube player */}
-        <div className="bg-black">
-          <iframe
-            src={embed}
-            title="Listening Audio"
-            className="w-full aspect-video"
-            allow="autoplay; encrypted-media; picture-in-picture"
-            allowFullScreen
-          />
-        </div>
-        
-        {/* Simple instructions */}
-        <div className="flex-1 p-5 text-sm text-slate-600 space-y-2">
-          <p>• Nhấn Play để bắt đầu nghe</p>
-          <p>• Trả lời câu hỏi ở panel bên phải</p>
-          <p>• Nhấn Nộp bài khi hoàn thành</p>
+   return (
+      <div className="h-full w-full bg-black overflow-hidden relative">
+        {/* căn giữa 1 khung 16:9 theo chiều cao */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="h-full aspect-video">
+            <iframe
+              src={embed}
+              title="Listening Audio"
+              className="w-full h-full"
+              allow="autoplay; encrypted-media; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
         </div>
       </div>
     );
-  }
 
   // Regular audio file
   return (
@@ -83,4 +77,5 @@ export default function YouTubePlayer({ src }: YouTubePlayerProps) {
       </div>
     </div>
   );
+  }
 }

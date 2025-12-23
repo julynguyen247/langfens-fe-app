@@ -17,7 +17,6 @@ import { useDebouncedAutoSave } from "@/app/utils/hook";
 import { mapApiQuestionToUi } from "@/lib/mapApiQuestionToUi";
 import { useReactMediaRecorder } from "react-media-recorder";
 import {
-  autoSaveAttempt,
   getSpeakingExamsById,
   getWritingExam,
   gradeSpeaking,
@@ -216,7 +215,6 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
             passage={{
               title: attempt?.paper?.title || "Reading Passage",
               content: sections[0]?.passageMd || "",
-              imageUrl: attempt?.paper?.imageUrl,
             }}
             imageUrl={attempt?.paper?.imageUrl}
           />
@@ -421,12 +419,38 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
 
   return (
     <>
-      <div className="flex h-full bg-white rounded-xl shadow overflow-hidden">
-        {/* Left panel - YouTube/Audio player */}
-        <div className="flex-1 overflow-hidden border-r">
-          <YouTubePlayer src={listeningAudioUrl} />
-        </div>
+      <div className="flex h-full w-full max-h-full bg-white rounded-xl shadow overflow-hidden">
+        <div className="flex-1 min-w-0 min-h-0 flex flex-col border-r">
+          {/* Video fixed at top */}
+          <div className="shrink-0 h-[280px] overflow-hidden border-b bg-black relative">
+            <YouTubePlayer src={listeningAudioUrl} />
+          </div>
 
+        <div className="flex-1 min-h-0 overflow-y-auto p-5">
+           {/* Passage/Notes display - similar to ReadingScreen */}
+            {listeningSection?.passageMd && (
+              <div className="mb-6 p-5 bg-white border border-slate-200 rounded-lg shadow-sm">
+                <div
+                  className="prose prose-sm max-w-none 
+                  [&_h1]:text-gray-900 [&_h1]:font-bold [&_h1]:text-xl [&_h1]:mb-4
+                  [&_h2]:text-gray-900 [&_h2]:font-bold [&_h2]:text-lg [&_h2]:mt-5 [&_h2]:mb-3
+                  [&_h3]:text-gray-900 [&_h3]:font-semibold [&_h3]:text-base
+                  [&_p]:text-gray-900 [&_p]:leading-relaxed
+                  [&_strong]:text-gray-900 [&_strong]:font-semibold
+                  [&_li]:text-gray-900 [&_li]:my-1
+                  [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5
+                  [&_table]:text-gray-900 [&_table]:w-full
+                  [&_th]:text-gray-900 [&_th]:font-semibold [&_th]:text-left [&_th]:p-2 [&_th]:border [&_th]:border-gray-300 [&_th]:bg-gray-100
+                  [&_td]:text-gray-900 [&_td]:p-2 [&_td]:border [&_td]:border-gray-300
+                  [&_hr]:border-gray-300 [&_hr]:my-4"
+                >
+                  <ReactMarkdown>{listeningSection.passageMd}</ReactMarkdown>
+                </div>
+              </div>
+            )}
+
+        </div>
+      </div>
         {/* Right panel - Questions */}
         <div className="w-[400px] lg:w-[480px] xl:w-[550px] flex flex-col overflow-hidden border-l bg-white shadow-xl z-20">
           <div className="border-b px-5 py-4 bg-white sticky top-0 z-10 flex justify-between items-center shadow-sm">
@@ -466,27 +490,7 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
           </div>
 
           <div className="flex-1 overflow-auto p-5 scroll-smooth">
-            {/* Passage/Notes display - similar to ReadingScreen */}
-            {listeningSection?.passageMd && (
-              <div className="mb-6 p-5 bg-white border border-slate-200 rounded-lg shadow-sm">
-                <div
-                  className="prose prose-sm max-w-none 
-                  [&_h1]:text-gray-900 [&_h1]:font-bold [&_h1]:text-xl [&_h1]:mb-4
-                  [&_h2]:text-gray-900 [&_h2]:font-bold [&_h2]:text-lg [&_h2]:mt-5 [&_h2]:mb-3
-                  [&_h3]:text-gray-900 [&_h3]:font-semibold [&_h3]:text-base
-                  [&_p]:text-gray-900 [&_p]:leading-relaxed
-                  [&_strong]:text-gray-900 [&_strong]:font-semibold
-                  [&_li]:text-gray-900 [&_li]:my-1
-                  [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5
-                  [&_table]:text-gray-900 [&_table]:w-full
-                  [&_th]:text-gray-900 [&_th]:font-semibold [&_th]:text-left [&_th]:p-2 [&_th]:border [&_th]:border-gray-300 [&_th]:bg-gray-100
-                  [&_td]:text-gray-900 [&_td]:p-2 [&_td]:border [&_td]:border-gray-300
-                  [&_hr]:border-gray-300 [&_hr]:my-4"
-                >
-                  <ReactMarkdown>{listeningSection.passageMd}</ReactMarkdown>
-                </div>
-              </div>
-            )}
+           
             {listeningSection?.instructionsMd && (
               <div className="mb-6 p-4 bg-amber-50 border border-amber-100 rounded-lg">
                 <div
@@ -984,6 +988,13 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
       try {
         setLoadingExam(true);
         setErrorExam(null);
+        
+        if (attempt && (attempt as any).taskText) {
+          if (!cancelled) setExam(attempt);
+          return;
+        }
+        
+        // Otherwise fetch from API
         const res = await getWritingExam(examId);
         if (cancelled) return;
         setExam(res.data?.data ?? null);
@@ -1000,7 +1011,7 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
     return () => {
       cancelled = true;
     };
-  }, [examId]);
+  }, [examId, attempt]);
 
   useEffect(() => {
     const t = setInterval(() => setSeconds((s) => s + 1), 1000);
@@ -1077,7 +1088,7 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
 
   return (
     <>
-      <div className="w-[400px] lg:w-[480px] xl:w-[550px] flex flex-col overflow-hidden border-l bg-white shadow-xl z-20">
+      <div className="w-full  flex flex-col overflow-hidden border-l bg-white shadow-xl z-20">
         <div className="border-b px-5 py-4 bg-white sticky top-0 z-10 flex justify-between shadow-sm">
           <div>
             <h2 className="text-lg font-semibold text-slate-800">

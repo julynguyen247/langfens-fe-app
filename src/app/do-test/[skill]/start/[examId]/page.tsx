@@ -35,8 +35,15 @@ export default function StartAttemptPage() {
         }
 
         if (skill === "writing") {
-          await startWritingExam(examId);
-          if (!cancelled) router.replace(`/do-test/${skill}/${examId}`);
+          const res = await startWritingExam(examId);
+          const payload = res?.data?.data ?? res?.data;
+          const writingExamId: string = payload?.id ?? examId;
+          
+          if (!cancelled) {
+            // Store the exam data so WritingScreen can use it directly
+            setAttempt({ ...payload, examId: writingExamId, attemptId: writingExamId });
+            router.replace(`/do-test/${skill}/${writingExamId}`);
+          }
           return;
         }
 

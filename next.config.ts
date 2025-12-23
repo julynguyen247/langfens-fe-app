@@ -35,6 +35,10 @@ const nextConfig: NextConfig = {
         hostname: "**.wordpress.com",
       },
       {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+      },
+      {
         protocol: "https", 
         hostname: "**",  // Allow all domains - you can restrict this later
       },
