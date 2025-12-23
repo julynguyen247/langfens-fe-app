@@ -2,6 +2,7 @@
 
 import React, { memo, useMemo } from "react";
 import ReactMarkdown from "react-markdown";
+import Image from "next/image";
 
 // Memoized markdown components for title
 const titleComponents = {

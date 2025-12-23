@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
 import PassageView from "./components/reading/PassageView";
 import YouTubePlayer from "./components/listening/YouTubePlayer";
 import QuestionPanel, {
@@ -210,15 +211,18 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
     <>
       <div className="flex h-full bg-white rounded-xl shadow overflow-hidden">
         <div className="flex-1 overflow-hidden border-r bg-gray-50 mb-20">
+         
           <PassageView
             passage={{
               title: attempt?.paper?.title || "Reading Passage",
               content: sections[0]?.passageMd || "",
+              imageUrl: attempt?.paper?.imageUrl,
             }}
             imageUrl={attempt?.paper?.imageUrl}
           />
+          
         </div>
-
+        
         <div className="w-[400px] lg:w-[480px] xl:w-[550px] flex flex-col overflow-hidden border-l bg-white shadow-xl z-20">
           <div className="border-b px-5 py-4 bg-white sticky top-0 z-10 flex justify-between items-center shadow-sm">
             <div className="flex items-center gap-4">
