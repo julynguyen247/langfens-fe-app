@@ -1,5 +1,6 @@
 "use client";
 
+import React, { memo, useMemo, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
 
 type Props = {
@@ -9,8 +10,15 @@ type Props = {
   onChange: (value: string) => void;
 };
 
-export default function MatchingLetterCard({ stem, value, onChange }: Props) {
-  const handleChange = (raw: string) => {
+// Memoized markdown components
+const markdownComponents = {
+  p: ({ node, ...props }: any) => (
+    <p className="mb-2 last:mb-0 whitespace-pre-wrap" {...props} />
+  ),
+};
+
+const MatchingLetterCard = memo(function MatchingLetterCard({ stem, value, onChange }: Props) {
+  const handleChange = useCallback((raw: string) => {
     const v = raw.trim().toUpperCase();
     if (!v) {
       onChange("");
@@ -19,20 +27,14 @@ export default function MatchingLetterCard({ stem, value, onChange }: Props) {
     // Allow A-J (10 paragraphs max)
     if (!/^[A-J]$/.test(v)) return;
     onChange(v);
-  };
+  }, [onChange]);
 
-  const text = stem.replace(/\\n/g, "\n");
+  const text = useMemo(() => stem.replace(/\\n/g, "\n"), [stem]);
 
   return (
     <div className="border border-slate-200 rounded-lg p-4 space-y-3 bg-white">
       <div className="text-slate-900 leading-relaxed font-bold">
-        <ReactMarkdown
-          components={{
-            p: ({ node, ...props }) => (
-              <p className="mb-2 last:mb-0 whitespace-pre-wrap" {...props} />
-            ),
-          }}
-        >
+        <ReactMarkdown components={markdownComponents}>
           {text}
         </ReactMarkdown>
       </div>
@@ -52,4 +54,6 @@ export default function MatchingLetterCard({ stem, value, onChange }: Props) {
       </div>
     </div>
   );
-}
+});
+
+export default MatchingLetterCard;

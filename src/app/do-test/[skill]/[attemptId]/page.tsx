@@ -215,6 +215,7 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
               title: attempt?.paper?.title || "Reading Passage",
               content: sections[0]?.passageMd || "",
             }}
+            imageUrl={attempt?.paper?.imageUrl}
           />
         </div>
 
@@ -246,13 +247,13 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
 
           <div className="flex-1 overflow-auto p-4">
             {activeSec?.instructionsMd && (
-              <div className="mb-6 p-4 text-slate-800 bg-amber-50 border border-amber-100 rounded-lg">
+              <div className="mb-6 p-4 text-gray-900 bg-amber-50 border border-amber-100 rounded-lg">
                 <div
-                  className="prose prose-sm prose-slate max-w-none 
-                  prose-headings:text-slate-900 prose-p:text-slate-800 prose-strong:text-slate-900 
-                  prose-li:text-slate-800 prose-table:text-slate-800 prose-td:text-slate-800 prose-th:text-slate-900
-                  prose-blockquote:text-slate-800 prose-blockquote:border-slate-400 prose-blockquote:not-italic
-                  [&>p]:text-slate-800 [&>p]:leading-relaxed"
+                  className="prose prose-sm max-w-none 
+                  [&_h1]:text-gray-900 [&_h2]:text-gray-900 [&_h3]:text-gray-900
+                  [&_p]:text-gray-900 [&_strong]:text-gray-900 [&_strong]:font-semibold
+                  [&_li]:text-gray-900 [&_td]:text-gray-900 [&_th]:text-gray-900
+                  [&_blockquote]:text-gray-900"
                 >
                   <ReactMarkdown>{activeSec.instructionsMd}</ReactMarkdown>
                 </div>
@@ -461,6 +462,27 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
           </div>
 
           <div className="flex-1 overflow-auto p-5 scroll-smooth">
+            {/* Passage/Notes display - similar to ReadingScreen */}
+            {listeningSection?.passageMd && (
+              <div className="mb-6 p-5 bg-white border border-slate-200 rounded-lg shadow-sm">
+                <div
+                  className="prose prose-sm max-w-none 
+                  [&_h1]:text-gray-900 [&_h1]:font-bold [&_h1]:text-xl [&_h1]:mb-4
+                  [&_h2]:text-gray-900 [&_h2]:font-bold [&_h2]:text-lg [&_h2]:mt-5 [&_h2]:mb-3
+                  [&_h3]:text-gray-900 [&_h3]:font-semibold [&_h3]:text-base
+                  [&_p]:text-gray-900 [&_p]:leading-relaxed
+                  [&_strong]:text-gray-900 [&_strong]:font-semibold
+                  [&_li]:text-gray-900 [&_li]:my-1
+                  [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5
+                  [&_table]:text-gray-900 [&_table]:w-full
+                  [&_th]:text-gray-900 [&_th]:font-semibold [&_th]:text-left [&_th]:p-2 [&_th]:border [&_th]:border-gray-300 [&_th]:bg-gray-100
+                  [&_td]:text-gray-900 [&_td]:p-2 [&_td]:border [&_td]:border-gray-300
+                  [&_hr]:border-gray-300 [&_hr]:my-4"
+                >
+                  <ReactMarkdown>{listeningSection.passageMd}</ReactMarkdown>
+                </div>
+              </div>
+            )}
             {listeningSection?.instructionsMd && (
               <div className="mb-6 p-4 bg-amber-50 border border-amber-100 rounded-lg">
                 <div

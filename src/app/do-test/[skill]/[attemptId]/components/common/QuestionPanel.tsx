@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import React, { memo, useEffect, useMemo, useState, useCallback, useRef } from "react";
 import QuestionCard from "./QuestionCard";
 import FillInBlankCard from "../reading/FillInBlankCard";
 import MatchingLetterCard from "../reading/MatchingLetterCard";
@@ -40,7 +40,28 @@ export type Question = {
   explanationMd?: string;
 };
 
-export default function QuestionPanel({
+function normalizeChoices(
+  choices: Array<string | Choice> | undefined
+): Choice[] {
+  if (!choices || choices.length === 0) return [];
+  return choices.map((c, i) =>
+    typeof c === "string" ? { value: String(i + 1), label: c } : c
+  );
+}
+
+function unpackBlanks(value: string): string[] {
+  if (!value) return [];
+  if (value.includes("\n")) return value.split("\n");
+  return [value];
+}
+
+function packBlanks(values: string[]): string {
+  const cleaned = values.map((v) => (v ?? "").trim());
+  while (cleaned.length && cleaned[cleaned.length - 1] === "") cleaned.pop();
+  return cleaned.join("\n");
+}
+
+const QuestionPanel = memo(function QuestionPanel({
   questions,
   attemptId,
   initialAnswers,
@@ -68,22 +89,26 @@ export default function QuestionPanel({
   );
 
   const [answers, setAnswers] = useState<QA>(() => initialAnswers ?? {});
+  const onAnswersChangeRef = useRef(onAnswersChange);
+  
+  // Keep the callback ref updated
+  useEffect(() => {
+    onAnswersChangeRef.current = onAnswersChange;
+  }, [onAnswersChange]);
 
   useEffect(() => {
     if (initialAnswers) setAnswers(initialAnswers);
   }, [initialAnswers]);
 
-  useEffect(() => {
-    onAnswersChange?.(answers);
-  }, [answers, onAnswersChange]);
-
-  const handleAnswer = (id: string, value: string) => {
+  const handleAnswer = useCallback((id: string, value: string) => {
     setAnswers((prev) => {
       const next = { ...prev, [id]: value };
-      onAnswer?.({ attemptId, questionId: id, value });
+      // Call onAnswersChange directly with the new state
+      onAnswersChangeRef.current?.(next);
       return next;
     });
-  };
+    onAnswer?.({ attemptId, questionId: id, value });
+  }, [attemptId, onAnswer]);
 
   return (
     <div className="flex flex-col h-full min-h-0 rounded-xl shadow bg-white overflow-hidden text-sm">
@@ -233,25 +258,6 @@ export default function QuestionPanel({
       </div>
     </div>
   );
-}
+});
 
-function normalizeChoices(
-  choices: Array<string | Choice> | undefined
-): Choice[] {
-  if (!choices || choices.length === 0) return [];
-  return choices.map((c, i) =>
-    typeof c === "string" ? { value: String(i + 1), label: c } : c
-  );
-}
-
-function unpackBlanks(value: string): string[] {
-  if (!value) return [];
-  if (value.includes("\n")) return value.split("\n");
-  return [value];
-}
-
-function packBlanks(values: string[]): string {
-  const cleaned = values.map((v) => (v ?? "").trim());
-  while (cleaned.length && cleaned[cleaned.length - 1] === "") cleaned.pop();
-  return cleaned.join("\n");
-}
+export default QuestionPanel;

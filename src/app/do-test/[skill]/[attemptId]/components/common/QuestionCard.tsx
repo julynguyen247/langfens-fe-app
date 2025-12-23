@@ -1,5 +1,6 @@
 "use client";
 
+import React, { memo, useMemo } from "react";
 import ReactMarkdown from "react-markdown";
 import InstructionBox from "./InstructionBox";
 
@@ -10,7 +11,14 @@ type Choice =
       label: string;
     };
 
-export default function QuestionCard({
+// Memoized markdown components to prevent recreation on every render
+const markdownComponents = {
+  p: ({ node, ...props }: any) => (
+    <p className="whitespace-pre-wrap" {...props} />
+  ),
+};
+
+const QuestionCard = memo(function QuestionCard({
   question,
   selected,
   onSelect,
@@ -22,13 +30,7 @@ export default function QuestionCard({
   return (
     <div className="rounded-lg p-4 bg-white text-black">
       <div className="font-bold mb-3">
-        <ReactMarkdown
-          components={{
-            p: ({ node, ...props }) => (
-              <p className="whitespace-pre-wrap" {...props} />
-            ),
-          }}
-        >
+        <ReactMarkdown components={markdownComponents}>
           {question.stem}
         </ReactMarkdown>
       </div>
@@ -49,13 +51,7 @@ export default function QuestionCard({
                   : "border-gray-200 hover:bg-gray-50"
               }`}
             >
-              <ReactMarkdown
-                components={{
-                  p: ({ node, ...props }) => (
-                    <p className="whitespace-pre-wrap" {...props} />
-                  ),
-                }}
-              >
+              <ReactMarkdown components={markdownComponents}>
                 {label}
               </ReactMarkdown>
             </button>
@@ -64,4 +60,6 @@ export default function QuestionCard({
       </div>
     </div>
   );
-}
+});
+
+export default QuestionCard;

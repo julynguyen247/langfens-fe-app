@@ -13,6 +13,7 @@ export type PracticeItem = {
   summary: string;
   section?: string;
   thumb?: string;
+  imageUrl?: string;  
   attempts?: number;
   done: boolean;
   tags?: string[];
@@ -154,7 +155,7 @@ export default function PracticeBank({
             >
               <Image
                 src={
-                  it.thumb ??
+                  it.imageUrl ??
                   "https://th.bing.com/th/id/R.0901589eef10038b5f3298ca9e4bb370?rik=EcrM4tIYeQ%2bfYQ&pid=ImgRaw&r=0"
                 }
                 alt={it.title}

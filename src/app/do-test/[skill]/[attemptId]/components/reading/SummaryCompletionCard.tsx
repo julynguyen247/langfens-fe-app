@@ -1,5 +1,6 @@
 "use client";
 
+import React, { memo, useMemo } from "react";
 import ReactMarkdown from "react-markdown";
 
 type Props = {
@@ -10,7 +11,7 @@ type Props = {
 };
 
 function splitInstructionAndNotes(promptMd: string) {
-  const text = promptMd.replace(/\\n/g, "\n");
+  const text = (promptMd ?? "").replace(/\\n/g, "\n");
   const re = /answer sheet\.?/i;
   const m = re.exec(text);
 
@@ -25,7 +26,7 @@ function splitInstructionAndNotes(promptMd: string) {
 
   const instructionMd = instruction
     .replace(/_{3,}/g, "____")
-    .replace(/\(\.\.\.\)/g, "(...)");
+    .replace(/\(\.\{3\}\)/g, "(...)");
 
   return { instructionMd, notesRaw: notes };
 }
@@ -53,13 +54,29 @@ function tokenizeNotes(notes: string) {
   return tokens;
 }
 
-export default function SummaryCompletionCard({
+// Memoized markdown components
+const instructionComponents = {
+  p: ({ ...props }: any) => (
+    <p className="mb-2 last:mb-0 whitespace-pre-wrap" {...props} />
+  ),
+};
+
+const textComponents = {
+  p: ({ ...props }: any) => (
+    <span className="whitespace-pre-wrap" {...props} />
+  ),
+};
+
+const SummaryCompletionCard = memo(function SummaryCompletionCard({
   stem,
   values,
   onChange,
 }: Props) {
-  const { instructionMd, notesRaw } = splitInstructionAndNotes(stem);
-  const tokens = tokenizeNotes(notesRaw);
+  const { instructionMd, notesRaw } = useMemo(
+    () => splitInstructionAndNotes(stem),
+    [stem]
+  );
+  const tokens = useMemo(() => tokenizeNotes(notesRaw), [notesRaw]);
 
   let blankIndex = -1;
 
@@ -67,13 +84,7 @@ export default function SummaryCompletionCard({
     <div className="border border-slate-200 rounded-lg p-4 space-y-3 bg-white">
       {instructionMd && (
         <div className="text-slate-700 text-sm leading-relaxed">
-          <ReactMarkdown
-            components={{
-              p: ({ ...props }) => (
-                <p className="mb-2 last:mb-0 whitespace-pre-wrap" {...props} />
-              ),
-            }}
-          >
+          <ReactMarkdown components={instructionComponents}>
             {instructionMd}
           </ReactMarkdown>
         </div>
@@ -85,11 +96,7 @@ export default function SummaryCompletionCard({
             return (
               <ReactMarkdown
                 key={i}
-                components={{
-                  p: ({ ...props }) => (
-                    <span className="whitespace-pre-wrap" {...props} />
-                  ),
-                }}
+                components={textComponents}
               >
                 {t.value}
               </ReactMarkdown>
@@ -97,12 +104,13 @@ export default function SummaryCompletionCard({
           }
 
           blankIndex += 1;
+          const currentBlankIndex = blankIndex;
 
           return (
             <input
               key={i}
-              value={values[blankIndex] ?? ""}
-              onChange={(e) => onChange(blankIndex, e.target.value)}
+              value={values[currentBlankIndex] ?? ""}
+              onChange={(e) => onChange(currentBlankIndex, e.target.value)}
               className="inline-block align-baseline mx-1 w-[14ch] rounded-md border border-slate-300 px-2 py-1 text-sm
                          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black"
               placeholder=""
@@ -112,4 +120,6 @@ export default function SummaryCompletionCard({
       </div>
     </div>
   );
-}
+});
+
+export default SummaryCompletionCard;

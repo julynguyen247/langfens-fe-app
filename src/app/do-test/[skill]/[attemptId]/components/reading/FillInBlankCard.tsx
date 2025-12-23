@@ -1,5 +1,6 @@
 "use client";
 
+import React, { memo, useMemo } from "react";
 import ReactMarkdown from "react-markdown";
 
 type Props = {
@@ -9,19 +10,23 @@ type Props = {
   onChange: (value: string) => void;
 };
 
-export default function FillInBlankCard({ stem, value, onChange }: Props) {
-  const text = stem.replace(/\\n/g, "\n").replace(/\[blank[-_]\w+\]/gi, "____");
+// Memoized markdown components
+const markdownComponents = {
+  p: ({ node, ...props }: any) => (
+    <p className="mb-2 last:mb-0 whitespace-pre-wrap" {...props} />
+  ),
+};
+
+const FillInBlankCard = memo(function FillInBlankCard({ stem, value, onChange }: Props) {
+  const text = useMemo(
+    () => stem.replace(/\\n/g, "\n").replace(/\[blank[-_]\w+\]/gi, "____"),
+    [stem]
+  );
 
   return (
     <div className="border border-slate-200 rounded-lg p-4 space-y-3 bg-white">
       <div className="text-slate-900 leading-relaxed font-bold">
-        <ReactMarkdown
-          components={{
-            p: ({ node, ...props }) => (
-              <p className="mb-2 last:mb-0 whitespace-pre-wrap" {...props} />
-            ),
-          }}
-        >
+        <ReactMarkdown components={markdownComponents}>
           {text}
         </ReactMarkdown>
       </div>
@@ -35,4 +40,6 @@ export default function FillInBlankCard({ stem, value, onChange }: Props) {
       />
     </div>
   );
-}
+});
+
+export default FillInBlankCard;

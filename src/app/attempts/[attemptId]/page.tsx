@@ -753,6 +753,21 @@ function QuestionReview({ details }: { details: AttemptQuestionResult[] }) {
       return normalized.filter((d) => d.isCorrect === false);
     return normalized.filter((d) => d.state === "none");
   }, [normalized, filter]);
+  
+  // Track which items are expanded
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  
+  const toggleExpand = (id: string) => {
+    setExpandedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
 
   return (
     <div className="px-8 pb-8">
@@ -790,18 +805,82 @@ function QuestionReview({ details }: { details: AttemptQuestionResult[] }) {
           Không có dữ liệu chi tiết câu hỏi.
         </div>
       ) : (
-        <ul className="space-y-3">
-          {filtered.map((d) => (
-            <ReviewItem key={d.questionId} data={d} />
+        <div className="space-y-3" style={{ maxHeight: '600px', overflowY: 'auto' }}>
+          {filtered.slice(0, 10).map((d) => (
+            <ReviewItem 
+              key={d.questionId} 
+              data={d} 
+              isExpanded={expandedIds.has(d.questionId)}
+              onToggleExpand={() => toggleExpand(d.questionId)}
+            />
           ))}
-        </ul>
+          {filtered.length > 10 && (
+            <LoadMoreReviewItems 
+              items={filtered.slice(10)} 
+              expandedIds={expandedIds}
+              onToggleExpand={toggleExpand}
+            />
+          )}
+        </div>
       )}
     </div>
   );
 }
 
-function ReviewItem({ data }: { data: ReturnType<typeof normalizeDetail> }) {
-  const [open, setOpen] = useState(false);
+// Lazy load remaining items to avoid initial render bottleneck
+function LoadMoreReviewItems({ 
+  items, 
+  expandedIds,
+  onToggleExpand 
+}: { 
+  items: ReturnType<typeof normalizeDetail>[]; 
+  expandedIds: Set<string>;
+  onToggleExpand: (id: string) => void;
+}) {
+  const [visibleCount, setVisibleCount] = useState(0);
+  
+  useEffect(() => {
+    // Load 5 more items every 100ms for smooth progressive loading
+    if (visibleCount < items.length) {
+      const timer = setTimeout(() => {
+        setVisibleCount(prev => Math.min(prev + 5, items.length));
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [visibleCount, items.length]);
+  
+  return (
+    <>
+      {items.slice(0, visibleCount).map((d) => (
+        <ReviewItem 
+          key={d.questionId} 
+          data={d} 
+          isExpanded={expandedIds.has(d.questionId)}
+          onToggleExpand={() => onToggleExpand(d.questionId)}
+        />
+      ))}
+      {visibleCount < items.length && (
+        <div className="p-4 text-center text-slate-500">
+          Đang tải thêm câu hỏi... ({visibleCount}/{items.length})
+        </div>
+      )}
+    </>
+  );
+}
+
+function ReviewItem({ 
+  data, 
+  isExpanded, 
+  onToggleExpand 
+}: { 
+  data: ReturnType<typeof normalizeDetail>;
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
+}) {
+  // Fall back to internal state if props not provided
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = isExpanded !== undefined ? isExpanded : internalOpen;
+  const toggleOpen = onToggleExpand || (() => setInternalOpen((v) => !v));
 
   const badge =
     data.state === "none" ? (
@@ -833,8 +912,8 @@ function ReviewItem({ data }: { data: ReturnType<typeof normalizeDetail> }) {
               </span>
             )}
           </div>
-          <div className="prose prose-slate max-w-none">
-            <ReactMarkdown>{data.prompt}</ReactMarkdown>
+          <div className="prose prose-slate max-w-none text-sm">
+            {data.prompt}
           </div>
 
           <div className="mt-3 grid sm:grid-cols-2 gap-3">
@@ -863,7 +942,7 @@ function ReviewItem({ data }: { data: ReturnType<typeof normalizeDetail> }) {
         </div>
 
         <button
-          onClick={() => setOpen((v) => !v)}
+          onClick={toggleOpen}
           className="shrink-0 inline-flex items-center gap-1 text-sm px-3 py-2 rounded-md border hover:bg-slate-50"
         >
           {open ? <FiChevronUp /> : <FiChevronDown />}
