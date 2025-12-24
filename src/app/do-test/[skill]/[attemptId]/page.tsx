@@ -337,15 +337,21 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
   const sectionOfQuestion = useMemo(() => {
     const m = new Map<string, string>();
     for (const s of sections as any[]) {
-      for (const q of s.questions ?? []) {
-        m.set(String(q.id), s.id);
+      // Read from questionGroups like allQs does
+      for (const grp of s.questionGroups ?? []) {
+        for (const q of grp.questions ?? []) {
+          m.set(String(q.id), s.id);
+        }
       }
     }
     return m;
   }, [sections]);
 
   const allQs = useMemo(() => {
-    return (sections as any[]).flatMap((s) => s.questions ?? []);
+    // Flatten questions from all questionGroups (same as ReadingScreen)
+    return (sections as any[]).flatMap((s) =>
+      (s.questionGroups ?? []).flatMap((grp: any) => grp.questions ?? [])
+    );
   }, [sections]);
 
   const listeningQs = useMemo(() => {
@@ -515,6 +521,7 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
               <QuestionPanel
                 attemptId={attemptId}
                 questions={panelQuestions}
+                questionGroups={listeningSection?.questionGroups}
                 onAnswersChange={(next) => {
                   lastAnswersRef.current = {
                     ...lastAnswersRef.current,

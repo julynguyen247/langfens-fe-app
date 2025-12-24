@@ -2,6 +2,7 @@
 
 import React, { memo, useEffect, useMemo, useState, useCallback, useRef } from "react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import QuestionCard from "./QuestionCard";
 import FillInBlankCard from "../reading/FillInBlankCard";
 import MatchingLetterCard from "../reading/MatchingLetterCard";
@@ -71,6 +72,27 @@ const instructionComponents = {
   ),
   li: ({ node, ...props }: any) => (
     <li className="text-sm text-slate-800" {...props} />
+  ),
+  // Add table components
+  table: ({ node, ...props }: any) => (
+    <div className="overflow-x-auto my-4 border border-slate-200 rounded-lg">
+      <table className="min-w-full divide-y divide-slate-200 text-sm" {...props} />
+    </div>
+  ),
+  thead: ({ node, ...props }: any) => (
+    <thead className="bg-slate-50" {...props} />
+  ),
+  tbody: ({ node, ...props }: any) => (
+    <tbody className="divide-y divide-slate-200 bg-white" {...props} />
+  ),
+  tr: ({ node, ...props }: any) => (
+    <tr className="hover:bg-slate-50" {...props} />
+  ),
+  th: ({ node, ...props }: any) => (
+    <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider font-bold border-b border-slate-200" {...props} />
+  ),
+  td: ({ node, ...props }: any) => (
+    <td className="px-4 py-3 whitespace-pre-wrap text-slate-700 border-b border-slate-100" {...props} />
   ),
 };
 
@@ -303,7 +325,10 @@ const QuestionPanel = memo(function QuestionPanel({
               {/* Show group instruction before the first question of each group */}
               {groupInstruction && (
                 <div className="mb-4 p-4 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg shadow-sm">
-                  <ReactMarkdown components={instructionComponents}>
+                  <ReactMarkdown 
+                    components={instructionComponents} 
+                    remarkPlugins={[remarkGfm]}
+                  >
                     {groupInstruction.replace(/\\n/g, "\n")}
                   </ReactMarkdown>
                 </div>
