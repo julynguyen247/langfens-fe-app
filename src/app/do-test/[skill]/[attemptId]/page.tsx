@@ -132,7 +132,11 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
   const activeSec = sections.find((s) => s.id === secFromUrl) ?? sections[0];
 
   const panelQuestions = useMemo<UiQuestion[]>(() => {
-    return (activeSec?.questions ?? [])
+    // Flatten questions from all questionGroups
+    const allQuestions = (activeSec?.questionGroups ?? []).flatMap(
+      (grp) => grp.questions ?? []
+    );
+    return allQuestions
       .slice()
       .sort((a: any, b: any) => a.idx - b.idx)
       .map((q: any) => mapApiQuestionToUi(q));
@@ -216,7 +220,6 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
               content: sections[0]?.passageMd || "",
             }}
             imageUrl={attempt?.paper?.imageUrl}
-            instructionMd={sections[0]?.instructionsMd}
           />
         </div>
 
@@ -263,6 +266,7 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
             <QuestionPanel
               attemptId={attemptId}
               questions={panelQuestions}
+              questionGroups={sections[0]?.questionGroups}
               onAnswersChange={(next) => {
                 lastAnswersRef.current = {
                   ...lastAnswersRef.current,

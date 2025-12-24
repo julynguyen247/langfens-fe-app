@@ -29,6 +29,17 @@ export interface Section {
   idx: number;
   title: string;
   instructionsMd: string;
+  passageMd?: string;
+  audioUrl?: string;
+  questionGroups: QuestionGroup[];  // Questions are now only inside groups
+}
+
+export interface QuestionGroup {
+  id: string;
+  idx: number;
+  startIdx: number;
+  endIdx: number;
+  instructionMd: string;
   questions: Question[];
 }
 
@@ -48,3 +59,4 @@ export interface Option {
   idx: number;
   contentMd: string;
 }
+
