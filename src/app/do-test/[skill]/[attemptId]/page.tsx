@@ -25,8 +25,6 @@ import {
 } from "@/utils/api";
 import ReactMarkdown from "react-markdown";
 
-
-
 type Skill = "reading" | "listening" | "writing" | "speaking";
 type QA = Record<string, string>;
 
@@ -184,7 +182,10 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
           buildTextAnswer
         );
       } catch (e) {
-        console.warn("Autosave before submit failed, continuing with submit:", e);
+        console.warn(
+          "Autosave before submit failed, continuing with submit:",
+          e
+        );
       }
 
       await submitAttempt(attemptId);
@@ -196,7 +197,6 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
       setLoading(false);
     }
   };
-
 
   if (!attempt || !activeSec) {
     return (
@@ -210,17 +210,16 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
     <>
       <div className="flex h-full bg-white rounded-xl shadow overflow-hidden">
         <div className="flex-1 overflow-hidden border-r bg-gray-50 mb-20">
-         
           <PassageView
             passage={{
               title: attempt?.paper?.title || "Reading Passage",
               content: sections[0]?.passageMd || "",
             }}
             imageUrl={attempt?.paper?.imageUrl}
+            instructionMd={sections[0]?.instructionsMd}
           />
-          
         </div>
-        
+
         <div className="w-[400px] lg:w-[480px] xl:w-[550px] flex flex-col overflow-hidden border-l bg-white shadow-xl z-20">
           <div className="border-b px-5 py-4 bg-white sticky top-0 z-10 flex justify-between items-center shadow-sm">
             <div className="flex items-center gap-4">
@@ -233,9 +232,24 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
             >
               {submitting ? (
                 <>
-                  <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  <svg
+                    className="animate-spin w-4 h-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
                   </svg>
                   Đang nộp...
                 </>
@@ -243,24 +257,9 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
                 "Nộp bài"
               )}
             </button>
-
           </div>
 
-
           <div className="flex-1 overflow-auto p-4">
-            {activeSec?.instructionsMd && (
-              <div className="mb-6 p-4 text-gray-900 bg-amber-50 border border-amber-100 rounded-lg">
-                <div
-                  className="prose prose-sm max-w-none 
-                  [&_h1]:text-gray-900 [&_h2]:text-gray-900 [&_h3]:text-gray-900
-                  [&_p]:text-gray-900 [&_strong]:text-gray-900 [&_strong]:font-semibold
-                  [&_li]:text-gray-900 [&_td]:text-gray-900 [&_th]:text-gray-900
-                  [&_blockquote]:text-gray-900"
-                >
-                  <ReactMarkdown>{activeSec.instructionsMd}</ReactMarkdown>
-                </div>
-              </div>
-            )}
             <QuestionPanel
               attemptId={attemptId}
               questions={panelQuestions}
@@ -395,7 +394,10 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
           buildTextAnswer
         );
       } catch (e) {
-        console.warn("Autosave before submit failed, continuing with submit:", e);
+        console.warn(
+          "Autosave before submit failed, continuing with submit:",
+          e
+        );
       }
 
       await submitAttempt(attemptId);
@@ -405,7 +407,6 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
     } finally {
       setSubmitting(false);
       setLoading(false);
-
     }
   };
 
@@ -426,8 +427,8 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
             <YouTubePlayer src={listeningAudioUrl} />
           </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto p-5">
-           {/* Passage/Notes display - similar to ReadingScreen */}
+          <div className="flex-1 min-h-0 overflow-y-auto p-5">
+            {/* Passage/Notes display - similar to ReadingScreen */}
             {listeningSection?.passageMd && (
               <div className="mb-6 p-5 bg-white border border-slate-200 rounded-lg shadow-sm">
                 <div
@@ -448,9 +449,8 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
                 </div>
               </div>
             )}
-
+          </div>
         </div>
-      </div>
         {/* Right panel - Questions */}
         <div className="w-[400px] lg:w-[480px] xl:w-[550px] flex flex-col overflow-hidden border-l bg-white shadow-xl z-20">
           <div className="border-b px-5 py-4 bg-white sticky top-0 z-10 flex justify-between items-center shadow-sm">
@@ -468,7 +468,6 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
               </div>
             </div>
 
-
             <button
               onClick={() => setConfirmOpen(true)}
               disabled={submitting}
@@ -476,9 +475,24 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
             >
               {submitting ? (
                 <>
-                  <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  <svg
+                    className="animate-spin w-4 h-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
                   </svg>
                   Đang nộp...
                 </>
@@ -486,26 +500,9 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
                 "Nộp bài"
               )}
             </button>
-
           </div>
 
           <div className="flex-1 overflow-auto p-5 scroll-smooth">
-           
-            {listeningSection?.instructionsMd && (
-              <div className="mb-6 p-4 bg-amber-50 border border-amber-100 rounded-lg">
-                <div
-                  className="prose prose-sm prose-slate max-w-none 
-                  prose-headings:text-slate-900 prose-p:text-slate-800 prose-strong:text-slate-900 
-                  prose-li:text-slate-800 prose-table:text-slate-800 prose-td:text-slate-800 prose-th:text-slate-900
-                  prose-blockquote:text-slate-800 prose-blockquote:border-slate-400 prose-blockquote:not-italic
-                  [&>p]:text-slate-800 [&>p]:leading-relaxed"
-                >
-                  <ReactMarkdown>
-                    {listeningSection.instructionsMd}
-                  </ReactMarkdown>
-                </div>
-              </div>
-            )}
             {panelQuestions.length === 0 ? (
               <div className="text-sm text-slate-600">
                 Không có câu hỏi để hiển thị.
@@ -988,12 +985,12 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
       try {
         setLoadingExam(true);
         setErrorExam(null);
-        
+
         if (attempt && (attempt as any).taskText) {
           if (!cancelled) setExam(attempt);
           return;
         }
-        
+
         // Otherwise fetch from API
         const res = await getWritingExam(examId);
         if (cancelled) return;

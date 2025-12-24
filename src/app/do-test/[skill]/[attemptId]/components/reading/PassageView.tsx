@@ -60,11 +60,13 @@ const contentComponents = {
 interface PassageViewProps {
   passage: { title: string; content: string };
   imageUrl?: string;
+  instructionMd?: string;
 }
 
 const PassageView = memo(function PassageView({
   passage,
   imageUrl,
+  instructionMd,
 }: PassageViewProps) {
   const title = useMemo(
     () => passage.title.replace(/\\n/g, "\n"),
@@ -73,6 +75,10 @@ const PassageView = memo(function PassageView({
   const content = useMemo(
     () => passage.content.replace(/\\n/g, "\n"),
     [passage.content]
+  );
+  const instruction = useMemo(
+    () => instructionMd?.replace(/\\n/g, "\n") || "",
+    [instructionMd]
   );
 
   return (
@@ -101,9 +107,22 @@ const PassageView = memo(function PassageView({
         <ReactMarkdown components={contentComponents}>
           {content}
         </ReactMarkdown>
+
+        {/* Display instruction_md after passage content */}
+        {instruction && (
+          <>
+            <hr className="my-6 border-gray-300" />
+            <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+              <ReactMarkdown components={contentComponents}>
+                {instruction}
+              </ReactMarkdown>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
 });
 
 export default PassageView;
+
