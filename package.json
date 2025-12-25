@@ -20,6 +20,7 @@
     "react-icons": "^5.5.0",
     "react-markdown": "^10.1.0",
     "react-media-recorder": "^1.7.2",
+    "react-resizable-panels": "^4.0.15",
     "react-window": "^2.2.3",
     "react-window-infinite-loader": "^2.0.0",
     "remark-gfm": "^4.0.1",
