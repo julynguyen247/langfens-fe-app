@@ -2,7 +2,9 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
 import PassageView from "./components/reading/PassageView";
+import YouTubePlayer from "./components/listening/YouTubePlayer";
 import QuestionPanel, {
   Question as UiQuestion,
   QuestionUiKind,
@@ -15,13 +17,13 @@ import { useDebouncedAutoSave } from "@/app/utils/hook";
 import { mapApiQuestionToUi } from "@/lib/mapApiQuestionToUi";
 import { useReactMediaRecorder } from "react-media-recorder";
 import {
-  autoSaveAttempt,
   getSpeakingExamsById,
   getWritingExam,
   gradeSpeaking,
   gradeWriting,
   submitAttempt,
 } from "@/utils/api";
+import ReactMarkdown from "react-markdown";
 
 type Skill = "reading" | "listening" | "writing" | "speaking";
 type QA = Record<string, string>;
@@ -69,11 +71,11 @@ function AudioBar({ src }: { src: string }) {
     }
     const embed = `https://www.youtube.com/embed/${id}?controls=1&rel=0&modestbranding=1`;
     return (
-      <div className="rounded-lg overflow-hidden border bg-white">
+      <div className="rounded-lg  overflow-hidden border bg-white">
         <iframe
           src={embed}
           title="Listening Audio (YouTube)"
-          className="w-full h-16"
+          className="w-full  h-16"
           allow="autoplay; encrypted-media; picture-in-picture"
           allowFullScreen
         />
@@ -130,7 +132,11 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
   const activeSec = sections.find((s) => s.id === secFromUrl) ?? sections[0];
 
   const panelQuestions = useMemo<UiQuestion[]>(() => {
-    return (activeSec?.questions ?? [])
+    // Flatten questions from all questionGroups
+    const allQuestions = (activeSec?.questionGroups ?? []).flatMap(
+      (grp) => grp.questions ?? []
+    );
+    return allQuestions
       .slice()
       .sort((a: any, b: any) => a.idx - b.idx)
       .map((q: any) => mapApiQuestionToUi(q));
@@ -142,10 +148,11 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
     return m;
   }, [panelQuestions]);
 
-  const { run: debouncedSave, cancel: cancelAutoSave } = useDebouncedAutoSave(
-    user?.id,
-    attemptId
-  );
+  const {
+    run: debouncedSave,
+    cancel: cancelAutoSave,
+    saveNow,
+  } = useDebouncedAutoSave(user?.id, attemptId);
 
   const buildTextAnswer = (qid: string, value: string) => {
     if (!value) return undefined;
@@ -172,38 +179,19 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
       setLoading(true);
       cancelAutoSave();
 
-      const payload = {
-        answers: Object.entries(lastAnswersRef.current).map(
-          ([questionId, v]) => {
-            const textAnswer = buildTextAnswer(questionId, v);
-            const hasText = !!textAnswer && textAnswer.trim().length > 0;
+      try {
+        await saveNow(
+          lastAnswersRef.current,
+          () => activeSec.id,
+          buildTextAnswer
+        );
+      } catch (e) {
+        console.warn(
+          "Autosave before submit failed, continuing with submit:",
+          e
+        );
+      }
 
-            let selectedOptionIds: string[] = [];
-            if (!hasText && v) {
-              if (typeof v === "string" && v.startsWith("[")) {
-                try {
-                  const parsed = JSON.parse(v);
-                  selectedOptionIds = Array.isArray(parsed) ? parsed : [v];
-                } catch {
-                  selectedOptionIds = [v];
-                }
-              } else {
-                selectedOptionIds = [v];
-              }
-            }
-
-            return {
-              questionId,
-              sectionId: activeSec.id,
-              selectedOptionIds,
-              textAnswer: hasText ? textAnswer : undefined,
-            };
-          }
-        ),
-        clientRevision: Date.now(),
-      };
-
-      await autoSaveAttempt(attemptId, payload);
       await submitAttempt(attemptId);
       router.replace(`/attempts/${attemptId}`);
     } catch {
@@ -228,28 +216,57 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
         <div className="flex-1 overflow-hidden border-r bg-gray-50 mb-20">
           <PassageView
             passage={{
-              title: activeSec.title,
-              content: activeSec.instructionsMd,
+              title: attempt?.paper?.title || "Reading Passage",
+              content: sections[0]?.passageMd || "",
             }}
+            imageUrl={attempt?.paper?.imageUrl}
           />
         </div>
 
-        <div className="w-[480px] flex flex-col overflow-hidden">
-          <div className="border-b p-4 bg-white sticky top-0 z-10 flex justify-between">
-            <h2 className="text-lg font-semibold text-black">Questions</h2>
+        <div className="w-[400px] lg:w-[480px] xl:w-[550px] flex flex-col overflow-hidden border-l bg-white shadow-xl z-20">
+          <div className="border-b px-5 py-4 bg-white sticky top-0 z-10 flex justify-between items-center shadow-sm">
+            <div className="flex items-center gap-4">
+              <h2 className="text-lg font-semibold text-black">Questions</h2>
+            </div>
             <button
               onClick={() => setConfirmOpen(true)}
               disabled={submitting}
-              className="px-4 py-2 rounded-lg text-sm font-semibold bg-[#317EFF] text-white disabled:opacity-60"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white disabled:opacity-60 transition-all shadow-md hover:shadow-lg active:scale-95"
             >
-              Nộp bài
+              {submitting ? (
+                <>
+                  <svg
+                    className="animate-spin w-4 h-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </svg>
+                  Đang nộp...
+                </>
+              ) : (
+                "Nộp bài"
+              )}
             </button>
           </div>
 
-          <div className="flex-1 overflow-auto">
+          <div className="flex-1 overflow-auto p-4">
             <QuestionPanel
               attemptId={attemptId}
               questions={panelQuestions}
+              questionGroups={sections[0]?.questionGroups}
               onAnswersChange={(next) => {
                 lastAnswersRef.current = {
                   ...lastAnswersRef.current,
@@ -320,15 +337,21 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
   const sectionOfQuestion = useMemo(() => {
     const m = new Map<string, string>();
     for (const s of sections as any[]) {
-      for (const q of s.questions ?? []) {
-        m.set(String(q.id), s.id);
+      // Read from questionGroups like allQs does
+      for (const grp of s.questionGroups ?? []) {
+        for (const q of grp.questions ?? []) {
+          m.set(String(q.id), s.id);
+        }
       }
     }
     return m;
   }, [sections]);
 
   const allQs = useMemo(() => {
-    return (sections as any[]).flatMap((s) => s.questions ?? []);
+    // Flatten questions from all questionGroups (same as ReadingScreen)
+    return (sections as any[]).flatMap((s) =>
+      (s.questionGroups ?? []).flatMap((grp: any) => grp.questions ?? [])
+    );
   }, [sections]);
 
   const listeningQs = useMemo(() => {
@@ -351,10 +374,11 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
     return m;
   }, [panelQuestions]);
 
-  const { run: debouncedSave, cancel: cancelAutoSave } = useDebouncedAutoSave(
-    user?.id,
-    attemptId
-  );
+  const {
+    run: debouncedSave,
+    cancel: cancelAutoSave,
+    saveNow,
+  } = useDebouncedAutoSave(user?.id, attemptId);
 
   const lastAnswersRef = useRef<QA>({});
 
@@ -371,6 +395,21 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
       setSubmitting(true);
       setLoading(true);
       cancelAutoSave();
+
+      // Try to save first, but don't block submit if it fails
+      try {
+        await saveNow(
+          lastAnswersRef.current,
+          (qid) => sectionOfQuestion.get(qid),
+          buildTextAnswer
+        );
+      } catch (e) {
+        console.warn(
+          "Autosave before submit failed, continuing with submit:",
+          e
+        );
+      }
+
       await submitAttempt(attemptId);
       router.replace(`/attempts/${attemptId}`);
     } catch {
@@ -391,55 +430,112 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
 
   return (
     <>
-      <div className="flex flex-col h-full bg-white rounded-xl shadow overflow-hidden">
-        <div className="border-b p-4 bg-white sticky top-0 z-10">
-          <div className="flex justify-between mb-3">
-            <div>
-              <h2 className="text-lg font-semibold text-black">Listening</h2>
-              {allQs.length > 0 &&
-                allQs.filter(
-                  (q) => String(q.skill ?? "").toLowerCase() === "listening"
-                ).length === 0 && (
-                  <div className="mt-1 text-xs text-amber-600">
-                    Không có câu skill=LISTENING, đang hiển thị toàn bộ câu hỏi.
-                  </div>
-                )}
+      <div className="flex h-full w-full max-h-full bg-white rounded-xl shadow overflow-hidden">
+        <div className="flex-1 min-w-0 min-h-0 flex flex-col border-r">
+          {/* Video fixed at top */}
+          <div className="shrink-0 h-[280px] overflow-hidden border-b bg-black relative">
+            <YouTubePlayer src={listeningAudioUrl} />
+          </div>
+
+          <div className="flex-1 min-h-0 overflow-y-auto p-5">
+            {/* Passage/Notes display - similar to ReadingScreen */}
+            {listeningSection?.passageMd && (
+              <div className="mb-6 p-5 bg-white border border-slate-200 rounded-lg shadow-sm">
+                <div
+                  className="prose prose-sm max-w-none 
+                  [&_h1]:text-gray-900 [&_h1]:font-bold [&_h1]:text-xl [&_h1]:mb-4
+                  [&_h2]:text-gray-900 [&_h2]:font-bold [&_h2]:text-lg [&_h2]:mt-5 [&_h2]:mb-3
+                  [&_h3]:text-gray-900 [&_h3]:font-semibold [&_h3]:text-base
+                  [&_p]:text-gray-900 [&_p]:leading-relaxed
+                  [&_strong]:text-gray-900 [&_strong]:font-semibold
+                  [&_li]:text-gray-900 [&_li]:my-1
+                  [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5
+                  [&_table]:text-gray-900 [&_table]:w-full
+                  [&_th]:text-gray-900 [&_th]:font-semibold [&_th]:text-left [&_th]:p-2 [&_th]:border [&_th]:border-gray-300 [&_th]:bg-gray-100
+                  [&_td]:text-gray-900 [&_td]:p-2 [&_td]:border [&_td]:border-gray-300
+                  [&_hr]:border-gray-300 [&_hr]:my-4"
+                >
+                  <ReactMarkdown>{listeningSection.passageMd}</ReactMarkdown>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+        {/* Right panel - Questions */}
+        <div className="w-[400px] lg:w-[480px] xl:w-[550px] flex flex-col overflow-hidden border-l bg-white shadow-xl z-20">
+          <div className="border-b px-5 py-4 bg-white sticky top-0 z-10 flex justify-between items-center shadow-sm">
+            <div className="flex items-center gap-4">
+              <div>
+                <h2 className="text-lg font-bold text-slate-800">Listening</h2>
+                {allQs.length > 0 &&
+                  allQs.filter(
+                    (q) => String(q.skill ?? "").toLowerCase() === "listening"
+                  ).length === 0 && (
+                    <div className="mt-1 text-xs text-amber-600 font-medium">
+                      Toàn bộ câu hỏi (không filter skill)
+                    </div>
+                  )}
+              </div>
             </div>
 
             <button
               onClick={() => setConfirmOpen(true)}
               disabled={submitting}
-              className="px-4 py-2 rounded-lg text-sm font-semibold bg-[#317EFF] text-white disabled:opacity-60"
+              className="inline-flex items-center gap-2 px-5 py-2 rounded-full text-sm font-semibold bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white disabled:opacity-60 transition-all shadow-md hover:shadow-lg active:scale-95"
             >
-              Nộp bài
+              {submitting ? (
+                <>
+                  <svg
+                    className="animate-spin w-4 h-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </svg>
+                  Đang nộp...
+                </>
+              ) : (
+                "Nộp bài"
+              )}
             </button>
           </div>
 
-          <AudioBar src={listeningAudioUrl} />
-        </div>
-
-        <div className="flex-1 overflow-auto p-6">
-          {panelQuestions.length === 0 ? (
-            <div className="text-sm text-slate-600">
-              Không có câu hỏi để hiển thị.
-            </div>
-          ) : (
-            <QuestionPanel
-              attemptId={attemptId}
-              questions={panelQuestions}
-              onAnswersChange={(next) => {
-                lastAnswersRef.current = {
-                  ...lastAnswersRef.current,
-                  ...(next as QA),
-                };
-                debouncedSave(
-                  next as QA,
-                  (qid) => sectionOfQuestion.get(qid),
-                  buildTextAnswer
-                );
-              }}
-            />
-          )}
+          <div className="flex-1 overflow-auto p-5 scroll-smooth">
+            {panelQuestions.length === 0 ? (
+              <div className="text-sm text-slate-600">
+                Không có câu hỏi để hiển thị.
+              </div>
+            ) : (
+              <QuestionPanel
+                attemptId={attemptId}
+                questions={panelQuestions}
+                questionGroups={listeningSection?.questionGroups}
+                onAnswersChange={(next) => {
+                  lastAnswersRef.current = {
+                    ...lastAnswersRef.current,
+                    ...(next as QA),
+                  };
+                  debouncedSave(
+                    next as QA,
+                    (qid) => sectionOfQuestion.get(qid),
+                    buildTextAnswer
+                  );
+                }}
+              />
+            )}
+          </div>
         </div>
       </div>
 
@@ -900,6 +996,13 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
       try {
         setLoadingExam(true);
         setErrorExam(null);
+
+        if (attempt && (attempt as any).taskText) {
+          if (!cancelled) setExam(attempt);
+          return;
+        }
+
+        // Otherwise fetch from API
         const res = await getWritingExam(examId);
         if (cancelled) return;
         setExam(res.data?.data ?? null);
@@ -916,7 +1019,7 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
     return () => {
       cancelled = true;
     };
-  }, [examId]);
+  }, [examId, attempt]);
 
   useEffect(() => {
     const t = setInterval(() => setSeconds((s) => s + 1), 1000);
@@ -993,8 +1096,8 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
 
   return (
     <>
-      <div className="flex flex-col h-full min-h-0 bg-white rounded-xl shadow overflow-hidden">
-        <div className="border-b p-4 bg-white sticky top-0 z-10 flex items-center justify-between">
+      <div className="w-full  flex flex-col overflow-hidden border-l bg-white shadow-xl z-20">
+        <div className="border-b px-5 py-4 bg-white sticky top-0 z-10 flex justify-between shadow-sm">
           <div>
             <h2 className="text-lg font-semibold text-slate-800">
               {examTitle}

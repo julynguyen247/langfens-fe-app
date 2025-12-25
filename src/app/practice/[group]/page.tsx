@@ -18,7 +18,8 @@ function detectSkillFromSlug(
 }
 
 function detectPartFromQuery(itemParam: string): "1" | "2" | "3" | null {
-  const m = itemParam.toLowerCase().match(/part[\s_]?([123])/);
+  // Check for both "part1" and "task1" patterns
+  const m = itemParam.toLowerCase().match(/(?:part|task)[\s_]?([123])/);
   return m ? (m[1] as "1" | "2" | "3") : null;
 }
 
@@ -41,10 +42,14 @@ export default function GroupPage() {
             id: item.id,
             title: item.title,
             summary: item.taskText ?? "",
+            imageUrl: item.imageUrl,
             thumb: undefined,
             attemps: 0,
             done: false,
             skill: "writing",
+            slug: item.slug ?? "",
+            tags: (item.tag ?? "").split(",").map((t: string) => t.trim()),
+            examType: item.examType,
           }))
         );
         return;
@@ -58,9 +63,11 @@ export default function GroupPage() {
             title: item.title,
             summary: item.taskText ?? "",
             thumb: undefined,
+            imageUrl: item.imageUrl,
             attemps: 0,
             done: false,
             skill: "speaking",
+            slug: item.slug ?? "",
           }))
         );
         return;
@@ -81,17 +88,23 @@ export default function GroupPage() {
   const filtered = useMemo(() => {
     if (groupId === "writing" || groupId === "speaking") {
       let base = items;
-      if (partFilter) {
-        base = base.filter((it) => {
-          const meta = `${it.title} ${it.summary ?? ""}`.toLowerCase();
-          return new RegExp(`part[\\s_]?${partFilter}`).test(meta);
-        });
+      if (itemParam) {
+        const keyword = itemParam.toLowerCase().replace(/writing_?/gi, "").replace(/speaking_?/gi, "");
+        if (keyword) {
+          const partMatch = keyword.match(/(?:part|task)_?([123])/);
+          if (partMatch) {
+            const taskNum = Number(partMatch[1]);
+            base = base.filter((it: any) => it.examType === taskNum);
+          } else {
+            base = base.filter((it: any) => it.slug?.toLowerCase().includes(keyword));
+          }
+        }
       }
       return base;
     }
 
     return items.filter((it: any) => detectSkillFromSlug(it.slug) === groupId);
-  }, [items, groupId, partFilter]);
+  }, [items, groupId, itemParam]);
 
   if (!user?.id) {
     return (

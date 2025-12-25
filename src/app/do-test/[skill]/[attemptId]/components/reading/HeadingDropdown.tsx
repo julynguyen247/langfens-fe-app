@@ -1,5 +1,6 @@
 "use client";
 
+import React, { memo, useMemo } from "react";
 import ReactMarkdown from "react-markdown";
 
 type HeadingOption = {
@@ -16,28 +17,29 @@ type Props = {
   onChange: (value: string) => void;
 };
 
+// Memoized markdown components
+const markdownComponents = {
+  p: ({ node, ...props }: any) => (
+    <p className="mb-2 last:mb-0 whitespace-pre-wrap" {...props} />
+  ),
+};
+
 /**
  * Dropdown component for MATCHING_HEADING questions.
  * Shows a select with roman numeral options (i, ii, iii... x).
  */
-export default function HeadingDropdown({
+const HeadingDropdown = memo(function HeadingDropdown({
   stem,
   options,
   value,
   onChange,
 }: Props) {
-  const text = stem.replace(/\\n/g, "\n");
+  const text = useMemo(() => stem.replace(/\\n/g, "\n"), [stem]);
 
   return (
     <div className="border border-slate-200 rounded-lg p-4 space-y-3 bg-white">
       <div className="text-slate-900 leading-relaxed font-bold">
-        <ReactMarkdown
-          components={{
-            p: ({ node, ...props }) => (
-              <p className="mb-2 last:mb-0 whitespace-pre-wrap" {...props} />
-            ),
-          }}
-        >
+        <ReactMarkdown components={markdownComponents}>
           {text}
         </ReactMarkdown>
       </div>
@@ -63,4 +65,6 @@ export default function HeadingDropdown({
       </div>
     </div>
   );
-}
+});
+
+export default HeadingDropdown;

@@ -24,14 +24,24 @@ export type AttemptQuestion = {
   flowChartNodes?: FlowChartNode[];
 };
 
+export type AttemptQuestionGroup = {
+  id: string;
+  idx: number;
+  startIdx: number;
+  endIdx: number;
+  instructionMd: string;
+  questions: AttemptQuestion[];
+};
+
 export type AttemptSection = {
   id: string;
   idx: number;
   title: string;
   instructionsMd: string;
+  passageMd: string;
   audioUrl?: string;
   transcriptMd?: string;
-  questions: AttemptQuestion[];
+  questionGroups: AttemptQuestionGroup[];  // Questions are only inside groups now
 };
 
 export type AttemptStartData = {
@@ -44,6 +54,7 @@ export type AttemptStartData = {
     category: string;
     level: string;
     durationMin: number;
+    imageUrl?: string;
     sections: AttemptSection[];
   };
   startedAt: string;

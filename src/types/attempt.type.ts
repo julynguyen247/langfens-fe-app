@@ -20,6 +20,7 @@ export interface Paper {
   category: string; // ví dụ: 'listening'
   level: string; // ví dụ: 'c1'
   durationMin: number;
+  imageUrl?: string;
   sections: Section[];
 }
 
@@ -28,6 +29,17 @@ export interface Section {
   idx: number;
   title: string;
   instructionsMd: string;
+  passageMd?: string;
+  audioUrl?: string;
+  questionGroups: QuestionGroup[];  // Questions are now only inside groups
+}
+
+export interface QuestionGroup {
+  id: string;
+  idx: number;
+  startIdx: number;
+  endIdx: number;
+  instructionMd: string;
   questions: Question[];
 }
 
@@ -47,3 +59,4 @@ export interface Option {
   idx: number;
   contentMd: string;
 }
+

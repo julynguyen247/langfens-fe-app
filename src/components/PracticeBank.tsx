@@ -13,6 +13,7 @@ export type PracticeItem = {
   summary: string;
   section?: string;
   thumb?: string;
+  imageUrl?: string;  
   attempts?: number;
   done: boolean;
   tags?: string[];
@@ -148,21 +149,18 @@ export default function PracticeBank({
             className="w-full sm:w-[48%] lg:w-[31%] xl:w-[23%] rounded-xl border border-slate-200 bg-white shadow-sm transition hover:shadow "
           >
             <button
-              className="relative block aspect-video w-full overflow-hidden cursor-pointer"
+              className="relative block h-48 w-full overflow-hidden cursor-pointer bg-slate-100"
               onClick={() => handleGoToExam(it)}
               disabled={loadingId === it.id}
             >
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src={
-                  it.thumb ??
+                  it.imageUrl ??
                   "https://th.bing.com/th/id/R.0901589eef10038b5f3298ca9e4bb370?rik=EcrM4tIYeQ%2bfYQ&pid=ImgRaw&r=0"
                 }
                 alt={it.title}
-                fill
-                className="object-cover"
-                unoptimized
-                priority={false}
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                className="absolute inset-0 w-full h-full object-cover"
               />
               {it.section && (
                 <span className="absolute right-2 top-2 rounded-full bg-blue-600 px-2 py-0.5 text-[10px] font-medium text-white shadow">

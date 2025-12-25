@@ -12,6 +12,7 @@ type ApiQuestion = {
   idx: number;
   type: BackendQuestionType;
   promptMd: string;
+  explanationMd?: string;
   options?: ApiOption[];
   flowChartNodes?: { key: string; label: string }[];
 };
@@ -79,9 +80,10 @@ export function mapApiQuestionToUi(q: ApiQuestion): Question {
 
   const base: Question = {
     id: q.id,
-    stem: q.promptMd, // giữ nguyên promptMd full (có Word List) để component tự parse
+    stem: q.promptMd, 
     backendType: q.type,
     uiKind,
+    explanationMd: q.explanationMd,
   };
 
   // choice single
