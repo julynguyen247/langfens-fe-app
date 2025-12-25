@@ -24,6 +24,7 @@ import {
   submitAttempt,
 } from "@/utils/api";
 import ReactMarkdown from "react-markdown";
+import { Group, Panel } from "react-resizable-panels";
 
 type Skill = "reading" | "listening" | "writing" | "speaking";
 type QA = Record<string, string>;
@@ -213,70 +214,54 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
   return (
     <>
       <div className="flex h-full bg-white rounded-xl shadow overflow-hidden">
-        <div className="flex-1 overflow-hidden border-r bg-gray-50 mb-20">
-          <PassageView
-            passage={{
-              title: attempt?.paper?.title || "Reading Passage",
-              content: sections[0]?.passageMd || "",
-            }}
-            imageUrl={attempt?.paper?.imageUrl}
-          />
-        </div>
-
-        <div className="w-[400px] lg:w-[480px] xl:w-[550px] flex flex-col overflow-hidden border-l bg-white shadow-xl z-20">
-          <div className="border-b px-5 py-4 bg-white sticky top-0 z-10 flex justify-between items-center shadow-sm">
-            <div className="flex items-center gap-4">
-              <h2 className="text-lg font-semibold text-black">Questions</h2>
+        <Group>
+          <Panel defaultSize={65} minSize={40} className="overflow-hidden">
+            <div className="h-full overflow-hidden border-r bg-gray-50 mb-20">
+              <PassageView
+                passage={{
+                  title: attempt?.paper?.title || "Reading Passage",
+                  content: sections[0]?.passageMd || "",
+                }}
+                imageUrl={attempt?.paper?.imageUrl}
+              />
             </div>
-            <button
-              onClick={() => setConfirmOpen(true)}
-              disabled={submitting}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white disabled:opacity-60 transition-all shadow-md hover:shadow-lg active:scale-95"
-            >
-              {submitting ? (
-                <>
-                  <svg
-                    className="animate-spin w-4 h-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
-                  Đang nộp...
-                </>
-              ) : (
-                "Nộp bài"
-              )}
-            </button>
-          </div>
+          </Panel>
 
-          <div className="flex-1 overflow-auto p-4">
-            <QuestionPanel
-              attemptId={attemptId}
-              questions={panelQuestions}
-              questionGroups={sections[0]?.questionGroups}
-              onAnswersChange={(next) => {
-                lastAnswersRef.current = {
-                  ...lastAnswersRef.current,
-                  ...(next as QA),
-                };
-                debouncedSave(next as QA, () => activeSec.id, buildTextAnswer);
-              }}
-            />
-          </div>
-        </div>
+          <Panel defaultSize={35} minSize={40} className="overflow-hidden">
+            <div className="h-full flex flex-col overflow-hidden border-l bg-white shadow-xl z-20">
+              <div className="border-b px-5 py-4 bg-white sticky top-0 z-10 flex justify-between items-center shadow-sm">
+                <h2 className="text-lg font-semibold text-black">Questions</h2>
+
+                <button
+                  onClick={() => setConfirmOpen(true)}
+                  disabled={submitting}
+                  className="px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-blue-600 to-blue-700 text-white"
+                >
+                  {submitting ? "Đang nộp..." : "Nộp bài"}
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-auto p-4">
+                <QuestionPanel
+                  attemptId={attemptId}
+                  questions={panelQuestions}
+                  questionGroups={sections[0]?.questionGroups}
+                  onAnswersChange={(next) => {
+                    lastAnswersRef.current = {
+                      ...lastAnswersRef.current,
+                      ...(next as QA),
+                    };
+                    debouncedSave(
+                      next as QA,
+                      () => activeSec.id,
+                      buildTextAnswer
+                    );
+                  }}
+                />
+              </div>
+            </div>
+          </Panel>
+        </Group>
       </div>
 
       <Modal
