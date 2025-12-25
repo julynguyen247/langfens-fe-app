@@ -126,6 +126,8 @@ export default function DoTestAttemptLayout({
     setOpenConfirm(true);
   };
 
+  const clearAttempt = useAttemptStore((s) => s.clear);
+
   const confirmExit = async () => {
     if (isSubmitting) return;
 
@@ -135,6 +137,8 @@ export default function DoTestAttemptLayout({
 
       if (isAutoGraded && attempt) {
         await submitAttempt(attempt.attemptId);
+        // Clear attempt from session to prevent re-triggering on revisit
+        clearAttempt(attemptId);
         router.replace(`/attempts/${attempt.attemptId}`);
         return;
       }
