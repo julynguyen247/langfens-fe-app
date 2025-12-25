@@ -335,7 +335,7 @@ const QuestionPanel = memo(function QuestionPanel({
               )}
               <div className="flex items-baseline gap-2">
                 <span className="inline-flex items-center justify-center min-w-[1.5rem] h-5 px-1.5 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold">
-                  {displayIdx + 1}
+                  {questionIdx}
                 </span>
                 <div className="flex-1">{questionContent}</div>
               </div>

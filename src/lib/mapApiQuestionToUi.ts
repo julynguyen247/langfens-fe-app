@@ -84,6 +84,7 @@ export function mapApiQuestionToUi(q: ApiQuestion): Question {
     backendType: q.type,
     uiKind,
     explanationMd: q.explanationMd,
+    idx: q.idx,  // Pass through idx for question group matching
   };
 
   // choice single

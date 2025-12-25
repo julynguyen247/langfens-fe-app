@@ -136,7 +136,14 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
     const allQuestions = (activeSec?.questionGroups ?? []).flatMap(
       (grp) => grp.questions ?? []
     );
-    return allQuestions
+    // Deduplicate by question ID (groups may overlap)
+    const seen = new Set<string>();
+    const uniqueQuestions = allQuestions.filter((q: any) => {
+      if (seen.has(q.id)) return false;
+      seen.add(q.id);
+      return true;
+    });
+    return uniqueQuestions
       .slice()
       .sort((a: any, b: any) => a.idx - b.idx)
       .map((q: any) => mapApiQuestionToUi(q));
@@ -162,8 +169,10 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
     return value;
   };
 
-  const [submitting, setSubmitting] = useState(false);
+  const isSubmitting = useAttemptStore((s) => s.isSubmitting);
+  const setIsSubmitting = useAttemptStore((s) => s.setIsSubmitting);
   const [confirmOpen, setConfirmOpen] = useState(false);
+
 
   if (!attempt?.paper) {
     return (
@@ -175,7 +184,7 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
     if (!activeSec?.id) return;
 
     try {
-      setSubmitting(true);
+      setIsSubmitting(true);
       setLoading(true);
       cancelAutoSave();
 
@@ -197,7 +206,7 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
     } catch {
       alert("Nộp bài thất bại. Vui lòng thử lại.");
     } finally {
-      setSubmitting(false);
+      setIsSubmitting(false);
       setLoading(false);
     }
   };
@@ -216,8 +225,8 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
         <div className="flex-1 overflow-hidden border-r bg-gray-50 mb-20">
           <PassageView
             passage={{
-              title: attempt?.paper?.title || "Reading Passage",
-              content: sections[0]?.passageMd || "",
+              title: activeSec?.title || attempt?.paper?.title || "Reading Passage",
+              content: activeSec?.passageMd || "",
             }}
             imageUrl={attempt?.paper?.imageUrl}
           />
@@ -230,10 +239,10 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
             </div>
             <button
               onClick={() => setConfirmOpen(true)}
-              disabled={submitting}
+              disabled={isSubmitting}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white disabled:opacity-60 transition-all shadow-md hover:shadow-lg active:scale-95"
             >
-              {submitting ? (
+              {isSubmitting ? (
                 <>
                   <svg
                     className="animate-spin w-4 h-4"
@@ -266,7 +275,7 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
             <QuestionPanel
               attemptId={attemptId}
               questions={panelQuestions}
-              questionGroups={sections[0]?.questionGroups}
+              questionGroups={activeSec?.questionGroups}
               onAnswersChange={(next) => {
                 lastAnswersRef.current = {
                   ...lastAnswersRef.current,
@@ -319,7 +328,8 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
 
   const attempt = useAttemptStore((s) => s.byId[attemptId]);
 
-  const [submitting, setSubmitting] = useState(false);
+  const isSubmitting = useAttemptStore((s) => s.isSubmitting);
+  const setIsSubmitting = useAttemptStore((s) => s.setIsSubmitting);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const sections = useMemo(() => {
@@ -349,9 +359,16 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
 
   const allQs = useMemo(() => {
     // Flatten questions from all questionGroups (same as ReadingScreen)
-    return (sections as any[]).flatMap((s) =>
+    const flattened = (sections as any[]).flatMap((s) =>
       (s.questionGroups ?? []).flatMap((grp: any) => grp.questions ?? [])
     );
+    // Deduplicate by question ID (groups may overlap)
+    const seen = new Set<string>();
+    return flattened.filter((q: any) => {
+      if (seen.has(q.id)) return false;
+      seen.add(q.id);
+      return true;
+    });
   }, [sections]);
 
   const listeningQs = useMemo(() => {
@@ -392,7 +409,7 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
 
   const doSubmit = async () => {
     try {
-      setSubmitting(true);
+      setIsSubmitting(true);
       setLoading(true);
       cancelAutoSave();
 
@@ -415,7 +432,7 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
     } catch {
       alert("Nộp bài thất bại.");
     } finally {
-      setSubmitting(false);
+      setIsSubmitting(false);
       setLoading(false);
     }
   };
@@ -480,10 +497,11 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
 
             <button
               onClick={() => setConfirmOpen(true)}
-              disabled={submitting}
+              disabled={isSubmitting}
               className="inline-flex items-center gap-2 px-5 py-2 rounded-full text-sm font-semibold bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white disabled:opacity-60 transition-all shadow-md hover:shadow-lg active:scale-95"
             >
-              {submitting ? (
+              {isSubmitting ? (
+
                 <>
                   <svg
                     className="animate-spin w-4 h-4"

@@ -64,7 +64,9 @@ export type AttemptStartData = {
 
 type State = {
   byId: Record<string, AttemptStartData>;
+  isSubmitting: boolean;
   setAttempt: (data: AttemptStartData) => void;
+  setIsSubmitting: (submitting: boolean) => void;
   getAttempt: (id: string) => AttemptStartData | undefined;
   clear: (id?: string) => void;
 };
@@ -106,6 +108,9 @@ function readOneFromSession(id: string): AttemptStartData | undefined {
 
 export const useAttemptStore = create<State>((set, get) => ({
   byId: loadAllFromSession(),
+  isSubmitting: false,
+
+  setIsSubmitting: (submitting) => set({ isSubmitting: submitting }),
 
   setAttempt: (data) =>
     set((s) => {
