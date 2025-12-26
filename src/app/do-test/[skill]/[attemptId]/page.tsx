@@ -227,7 +227,7 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
             </div>
           </Panel>
 
-          <Panel defaultSize={35} minSize={40} className="overflow-hidden">
+          <Panel defaultSize={35} minSize={25} className="overflow-hidden">
             <div className="h-full flex flex-col overflow-hidden border-l bg-white shadow-xl z-20">
               <div className="border-b px-5 py-4 bg-white sticky top-0 z-10 flex justify-between items-center shadow-sm">
                 <h2 className="text-lg font-semibold text-black">Questions</h2>
