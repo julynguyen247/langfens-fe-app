@@ -24,6 +24,7 @@ import {
   submitAttempt,
 } from "@/utils/api";
 import ReactMarkdown from "react-markdown";
+import { Group, Panel } from "react-resizable-panels";
 
 type Skill = "reading" | "listening" | "writing" | "speaking";
 type QA = Record<string, string>;

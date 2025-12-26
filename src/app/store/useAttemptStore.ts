@@ -41,7 +41,7 @@ export type AttemptSection = {
   passageMd: string;
   audioUrl?: string;
   transcriptMd?: string;
-  questionGroups: AttemptQuestionGroup[];  // Questions are only inside groups now
+  questionGroups: AttemptQuestionGroup[]; // Questions are only inside groups now
 };
 
 export type AttemptStartData = {
