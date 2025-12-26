@@ -40,6 +40,8 @@ export default function DoTestAttemptLayout({
   const isAutoGraded = skill === "reading" || skill === "listening";
 
   const attempt = useAttemptStore((s) => s.byId[attemptId]);
+  const isSubmitting = useAttemptStore((s) => s.isSubmitting);
+  const setIsSubmitting = useAttemptStore((s) => s.setIsSubmitting);
   const { setLoading } = useLoadingStore();
 
   const router = useRouter();
@@ -47,7 +49,6 @@ export default function DoTestAttemptLayout({
   const sp = useSearchParams();
 
   const [openConfirm, setOpenConfirm] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
 
   const initialSeconds = useMemo(() => {
     if (!attempt) return 0;
@@ -65,9 +66,7 @@ export default function DoTestAttemptLayout({
     return [...attempt.paper.sections]
       .sort((a, b) => a.idx - b.idx)
       .map((sec) => {
-        const qs = [...((sec as any).questions ?? [])].sort(
-          (a, b) => a.idx - b.idx
-        );
+        const qs = [...(sec.questionGroups ?? [])].sort((a, b) => a.idx - b.idx);
         const total = qs.length;
         const start = total ? qs[0].idx : sec.idx;
         const label = total
@@ -127,15 +126,19 @@ export default function DoTestAttemptLayout({
     setOpenConfirm(true);
   };
 
+  const clearAttempt = useAttemptStore((s) => s.clear);
+
   const confirmExit = async () => {
-    if (submitting) return;
+    if (isSubmitting) return;
 
     try {
-      setSubmitting(true);
+      setIsSubmitting(true);
       setLoading(true);
 
       if (isAutoGraded && attempt) {
         await submitAttempt(attempt.attemptId);
+        // Clear attempt from session to prevent re-triggering on revisit
+        clearAttempt(attemptId);
         router.replace(`/attempts/${attempt.attemptId}`);
         return;
       }
@@ -143,7 +146,7 @@ export default function DoTestAttemptLayout({
       router.replace("/home");
     } finally {
       setLoading(false);
-      setSubmitting(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -196,7 +199,7 @@ export default function DoTestAttemptLayout({
             </button>
             <button
               onClick={confirmExit}
-              disabled={submitting}
+              disabled={isSubmitting}
               className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
             >
               Thoát
