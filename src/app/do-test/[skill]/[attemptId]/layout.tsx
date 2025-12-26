@@ -66,7 +66,9 @@ export default function DoTestAttemptLayout({
     return [...attempt.paper.sections]
       .sort((a, b) => a.idx - b.idx)
       .map((sec) => {
-        const qs = [...(sec.questionGroups ?? [])].sort((a, b) => a.idx - b.idx);
+        const qs = [...(sec.questionGroups ?? [])].sort(
+          (a, b) => a.idx - b.idx
+        );
         const total = qs.length;
         const start = total ? qs[0].idx : sec.idx;
         const label = total

@@ -222,71 +222,84 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
   return (
     <>
       <div className="flex h-full bg-white rounded-xl shadow overflow-hidden">
-        <div className="flex-1 overflow-hidden border-r bg-gray-50 mb-20">
-          <PassageView
-            passage={{
-              title:
-                activeSec?.title || attempt?.paper?.title || "Reading Passage",
-              content: activeSec?.passageMd || "",
-            }}
-            imageUrl={attempt?.paper?.imageUrl}
-          />
-        </div>
-
-        <div className="w-[400px] lg:w-[480px] xl:w-[550px] flex flex-col overflow-hidden border-l bg-white shadow-xl z-20">
-          <div className="border-b px-5 py-4 bg-white sticky top-0 z-10 flex justify-between items-center shadow-sm">
-            <div className="flex items-center gap-4">
-              <h2 className="text-lg font-semibold text-black">Questions</h2>
+        <Group>
+          <Panel defaultSize={65} minSize={40} className="overflow-hidden">
+            <div className="h-full overflow-hidden border-r bg-gray-50 ">
+              <PassageView
+                passage={{
+                  title:
+                    activeSec?.title ||
+                    attempt?.paper?.title ||
+                    "Reading Passage",
+                  content: activeSec?.passageMd || "",
+                }}
+                imageUrl={attempt?.paper?.imageUrl}
+              />
             </div>
-            <button
-              onClick={() => setConfirmOpen(true)}
-              disabled={isSubmitting}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white disabled:opacity-60 transition-all shadow-md hover:shadow-lg active:scale-95"
-            >
-              {isSubmitting ? (
-                <>
-                  <svg
-                    className="animate-spin w-4 h-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
-                  Đang nộp...
-                </>
-              ) : (
-                "Nộp bài"
-              )}
-            </button>
-          </div>
+          </Panel>
+          <Panel defaultSize={35} minSize={25} className="overflow-hidden">
+            <div className="h-full flex flex-col overflow-hidden border-l bg-white shadow-xl z-20">
+              <div className="border-b px-5 py-4 bg-white sticky top-0 z-10 flex justify-between items-center shadow-sm">
+                <div className="flex items-center gap-4">
+                  <h2 className="text-lg font-semibold text-black">
+                    Questions
+                  </h2>
+                </div>
+                <button
+                  onClick={() => setConfirmOpen(true)}
+                  disabled={isSubmitting}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white disabled:opacity-60 transition-all shadow-md hover:shadow-lg active:scale-95"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <svg
+                        className="animate-spin w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                      </svg>
+                      Đang nộp...
+                    </>
+                  ) : (
+                    "Nộp bài"
+                  )}
+                </button>
+              </div>
 
-          <div className="flex-1 overflow-auto p-4">
-            <QuestionPanel
-              attemptId={attemptId}
-              questions={panelQuestions}
-              questionGroups={activeSec?.questionGroups}
-              onAnswersChange={(next) => {
-                lastAnswersRef.current = {
-                  ...lastAnswersRef.current,
-                  ...(next as QA),
-                };
-                debouncedSave(next as QA, () => activeSec.id, buildTextAnswer);
-              }}
-            />
-          </div>
-        </div>
+              <div className="flex-1 overflow-auto p-4">
+                <QuestionPanel
+                  attemptId={attemptId}
+                  questions={panelQuestions}
+                  questionGroups={activeSec?.questionGroups}
+                  onAnswersChange={(next) => {
+                    lastAnswersRef.current = {
+                      ...lastAnswersRef.current,
+                      ...(next as QA),
+                    };
+                    debouncedSave(
+                      next as QA,
+                      () => activeSec.id,
+                      buildTextAnswer
+                    );
+                  }}
+                />
+              </div>
+            </div>
+          </Panel>
+        </Group>
       </div>
 
       <Modal
@@ -449,18 +462,17 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
   return (
     <>
       <div className="flex h-full w-full max-h-full bg-white rounded-xl shadow overflow-hidden">
-        <div className="flex-1 min-w-0 min-h-0 flex flex-col border-r">
-          {/* Video fixed at top */}
-          <div className="shrink-0 h-[280px] overflow-hidden border-b bg-black relative">
-            <YouTubePlayer src={listeningAudioUrl} />
-          </div>
-
-          <div className="flex-1 min-h-0 overflow-y-auto p-5">
-            {/* Passage/Notes display - similar to ReadingScreen */}
-            {listeningSection?.passageMd && (
-              <div className="mb-6 p-5 bg-white border border-slate-200 rounded-lg shadow-sm">
-                <div
-                  className="prose prose-sm max-w-none 
+        <Group>
+          <Panel>
+            <div className="h-full flex flex-col overflow-hidden border-l bg-white shadow-xl z-20">
+              <div className="shrink-0 h-[280px] overflow-hidden border-b bg-black relative">
+                <YouTubePlayer src={listeningAudioUrl} />
+              </div>
+              <div className="flex-1 min-h-0 overflow-y-auto p-5">
+                {listeningSection?.passageMd && (
+                  <div className="mb-6 p-5 bg-white border border-slate-200 rounded-lg shadow-sm">
+                    <div
+                      className="prose prose-sm max-w-none 
                   [&_h1]:text-gray-900 [&_h1]:font-bold [&_h1]:text-xl [&_h1]:mb-4
                   [&_h2]:text-gray-900 [&_h2]:font-bold [&_h2]:text-lg [&_h2]:mt-5 [&_h2]:mb-3
                   [&_h3]:text-gray-900 [&_h3]:font-semibold [&_h3]:text-base
@@ -472,89 +484,99 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
                   [&_th]:text-gray-900 [&_th]:font-semibold [&_th]:text-left [&_th]:p-2 [&_th]:border [&_th]:border-gray-300 [&_th]:bg-gray-100
                   [&_td]:text-gray-900 [&_td]:p-2 [&_td]:border [&_td]:border-gray-300
                   [&_hr]:border-gray-300 [&_hr]:my-4"
-                >
-                  <ReactMarkdown>{listeningSection.passageMd}</ReactMarkdown>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-        {/* Right panel - Questions */}
-        <div className="w-[400px] lg:w-[480px] xl:w-[550px] flex flex-col overflow-hidden border-l bg-white shadow-xl z-20">
-          <div className="border-b px-5 py-4 bg-white sticky top-0 z-10 flex justify-between items-center shadow-sm">
-            <div className="flex items-center gap-4">
-              <div>
-                <h2 className="text-lg font-bold text-slate-800">Listening</h2>
-                {allQs.length > 0 &&
-                  allQs.filter(
-                    (q) => String(q.skill ?? "").toLowerCase() === "listening"
-                  ).length === 0 && (
-                    <div className="mt-1 text-xs text-amber-600 font-medium">
-                      Toàn bộ câu hỏi (không filter skill)
+                    >
+                      <ReactMarkdown>
+                        {listeningSection.passageMd}
+                      </ReactMarkdown>
                     </div>
-                  )}
+                  </div>
+                )}
               </div>
             </div>
+          </Panel>
+          <Panel>
+            <div className="h-full flex flex-col overflow-hidden border-l bg-white shadow-xl z-20">
+              <div className="border-b px-5 py-4 bg-white sticky top-0 z-10 flex justify-between items-center shadow-sm">
+                <div className="flex items-center gap-4">
+                  <div>
+                    <h2 className="text-lg font-bold text-slate-800">
+                      Listening
+                    </h2>
+                    {allQs.length > 0 &&
+                      allQs.filter(
+                        (q) =>
+                          String(q.skill ?? "").toLowerCase() === "listening"
+                      ).length === 0 && (
+                        <div className="mt-1 text-xs text-amber-600 font-medium">
+                          Toàn bộ câu hỏi (không filter skill)
+                        </div>
+                      )}
+                  </div>
+                </div>
 
-            <button
-              onClick={() => setConfirmOpen(true)}
-              disabled={isSubmitting}
-              className="inline-flex items-center gap-2 px-5 py-2 rounded-full text-sm font-semibold bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white disabled:opacity-60 transition-all shadow-md hover:shadow-lg active:scale-95"
-            >
-              {isSubmitting ? (
-                <>
-                  <svg
-                    className="animate-spin w-4 h-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
-                  Đang nộp...
-                </>
-              ) : (
-                "Nộp bài"
-              )}
-            </button>
-          </div>
-
-          <div className="flex-1 overflow-auto p-5 scroll-smooth">
-            {panelQuestions.length === 0 ? (
-              <div className="text-sm text-slate-600">
-                Không có câu hỏi để hiển thị.
+                <button
+                  onClick={() => setConfirmOpen(true)}
+                  disabled={isSubmitting}
+                  className="inline-flex items-center gap-2 px-5 py-2 rounded-full text-sm font-semibold bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white disabled:opacity-60 transition-all shadow-md hover:shadow-lg active:scale-95"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <svg
+                        className="animate-spin w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                      </svg>
+                      Đang nộp...
+                    </>
+                  ) : (
+                    "Nộp bài"
+                  )}
+                </button>
               </div>
-            ) : (
-              <QuestionPanel
-                attemptId={attemptId}
-                questions={panelQuestions}
-                questionGroups={listeningSection?.questionGroups}
-                onAnswersChange={(next) => {
-                  lastAnswersRef.current = {
-                    ...lastAnswersRef.current,
-                    ...(next as QA),
-                  };
-                  debouncedSave(
-                    next as QA,
-                    (qid) => sectionOfQuestion.get(qid),
-                    buildTextAnswer
-                  );
-                }}
-              />
-            )}
-          </div>
-        </div>
+
+              <div className="flex-1 overflow-auto p-5 scroll-smooth">
+                {panelQuestions.length === 0 ? (
+                  <div className="text-sm text-slate-600">
+                    Không có câu hỏi để hiển thị.
+                  </div>
+                ) : (
+                  <QuestionPanel
+                    attemptId={attemptId}
+                    questions={panelQuestions}
+                    questionGroups={listeningSection?.questionGroups}
+                    onAnswersChange={(next) => {
+                      lastAnswersRef.current = {
+                        ...lastAnswersRef.current,
+                        ...(next as QA),
+                      };
+                      debouncedSave(
+                        next as QA,
+                        (qid) => sectionOfQuestion.get(qid),
+                        buildTextAnswer
+                      );
+                    }}
+                  />
+                )}
+              </div>
+            </div>
+          </Panel>
+        </Group>
+
+        {/* Right panel - Questions */}
       </div>
 
       <Modal
