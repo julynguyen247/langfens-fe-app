@@ -25,6 +25,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body
         className={`antialiased ${nunito.variable} font-nunito text-gray-900`}
+        suppressHydrationWarning
       >
         <Suspense
           fallback={

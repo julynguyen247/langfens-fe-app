@@ -14,6 +14,7 @@ import ListeningAudioBar from "../../do-test/[skill]/[attemptId]/components/list
 import QuestionPanel from "../../do-test/[skill]/[attemptId]/components/common/QuestionPanel";
 import { useReactMediaRecorder } from "react-media-recorder";
 import { useLoadingStore } from "@/app/store/loading";
+import BookmarkButton from "@/components/BookmarkButton";
 
 type QA = Record<string, string>;
 type Tab = "reading" | "listening" | "writing" | "speaking";
@@ -77,12 +78,14 @@ export default function MultiSkillAttemptPage() {
   const questionMeta = useMemo(() => {
     const m = new Map<string, QuestionMeta>();
     for (const s of sections) {
-      for (const q of s.questions) {
-        m.set(q.id, {
-          sectionId: s.id,
-          type: q.type as BackendQuestionType,
-          skill: q.skill.toLowerCase(),
-        });
+      for (const g of s.questionGroups ?? []) {
+        for (const q of g.questions ?? []) {
+          m.set(q.id, {
+            sectionId: s.id,
+            type: q.type as BackendQuestionType,
+            skill: q.skill.toLowerCase(),
+          });
+        }
       }
     }
     return m;
@@ -91,9 +94,20 @@ export default function MultiSkillAttemptPage() {
   const readingQuestionsApi = useMemo(
     () =>
       sections
-        .map((s) => s.questions)
-        .flat()
-        .filter((a) => a.skill.toLowerCase() === "reading"),
+        .flatMap((s) => (s.questionGroups ?? []).flatMap((g) => g.questions ?? []))
+        .filter((a) => a?.skill?.toLowerCase() === "reading"),
+    [sections]
+  );
+
+  const readingSection = useMemo(
+    () =>
+      sections.find((s: any) =>
+        (s.questionGroups ?? []).some((g: any) =>
+          (g.questions ?? []).some(
+            (q: any) => String(q.skill).toLowerCase() === "reading"
+          )
+        )
+      ),
     [sections]
   );
 
@@ -101,8 +115,10 @@ export default function MultiSkillAttemptPage() {
     () =>
       sections.find((s: any) => !!s.audioUrl) ??
       sections.find((s: any) =>
-        (s.questions ?? []).some(
-          (q: any) => String(q.skill).toLowerCase() === "listening"
+        (s.questionGroups ?? []).some((g: any) =>
+          (g.questions ?? []).some(
+            (q: any) => String(q.skill).toLowerCase() === "listening"
+          )
         )
       ),
     [sections]
@@ -111,7 +127,7 @@ export default function MultiSkillAttemptPage() {
   const listeningQuestionsApi = useMemo(
     () =>
       sections
-        .flatMap((s: any) => s.questions ?? [])
+        .flatMap((s: any) => (s.questionGroups ?? []).flatMap((g: any) => g.questions ?? []))
         .filter((q: any) => String(q.skill).toLowerCase() === "listening"),
     [sections]
   );
@@ -119,8 +135,10 @@ export default function MultiSkillAttemptPage() {
   const writingSection = useMemo(
     () =>
       sections.find((s: any) =>
-        (s.questions ?? []).some(
-          (q: any) => String(q.skill).toLowerCase() === "writing"
+        (s.questionGroups ?? []).some((g: any) =>
+          (g.questions ?? []).some(
+            (q: any) => String(q.skill).toLowerCase() === "writing"
+          )
         )
       ),
     [sections]
@@ -128,8 +146,9 @@ export default function MultiSkillAttemptPage() {
 
   const writingQuestion = useMemo(() => {
     if (!writingSection) return null;
+    const allQuestions = (writingSection.questionGroups ?? []).flatMap((g: any) => g.questions ?? []);
     return (
-      (writingSection.questions ?? []).find(
+      allQuestions.find(
         (q: any) => String(q.skill).toLowerCase() === "writing"
       ) ?? null
     );
@@ -138,8 +157,10 @@ export default function MultiSkillAttemptPage() {
   const speakingSection = useMemo(
     () =>
       sections.find((s: any) =>
-        (s.questions ?? []).some(
-          (q: any) => String(q.skill).toLowerCase() === "speaking"
+        (s.questionGroups ?? []).some((g: any) =>
+          (g.questions ?? []).some(
+            (q: any) => String(q.skill).toLowerCase() === "speaking"
+          )
         )
       ),
     [sections]
@@ -147,8 +168,9 @@ export default function MultiSkillAttemptPage() {
 
   const speakingQuestion = useMemo(() => {
     if (!speakingSection) return null;
+    const allQuestions = (speakingSection.questionGroups ?? []).flatMap((g: any) => g.questions ?? []);
     return (
-      (speakingSection.questions ?? []).find(
+      allQuestions.find(
         (q: any) => String(q.skill).toLowerCase() === "speaking"
       ) ?? null
     );
@@ -253,28 +275,35 @@ export default function MultiSkillAttemptPage() {
   });
 
   async function handleSubmit(auto = false) {
-    setLoading(true);
-    if (submitting) return;
-    if (!auto) {
-      const ok = window.confirm("Bạn chắc chắn muốn nộp toàn bộ bài test?");
-      if (!ok) return;
+    console.log("[handleSubmit] called, auto:", auto, "submitting:", submitting);
+    if (submitting) {
+      console.log("[handleSubmit] Already submitting, returning early");
+      return;
     }
 
+    console.log("[handleSubmit] Starting submission...");
+    setLoading(true);
     try {
       setSubmitting(true);
       cancelAutoSave();
 
       const payload = buildPayload(lastAnswersRef.current);
+      console.log("[handleSubmit] payload:", payload);
+      
+      console.log("[handleSubmit] Calling autoSaveAttempt...");
       await autoSaveAttempt(attemptId, payload);
+      console.log("[handleSubmit] autoSaveAttempt done, calling submitAttempt...");
       await submitAttempt(attemptId);
+      console.log("[handleSubmit] submitAttempt done, redirecting...");
 
-      router.replace(`/attempts/${attemptId}`);
-    } catch (e) {
-      console.error(e);
-      setSubmitting(false);
-      if (!auto) alert("Nộp bài thất bại. Vui lòng thử lại.");
-    } finally {
+      // Reset loading before navigation
       setLoading(false);
+      router.push(`/attempts/${attemptId}`);
+    } catch (e) {
+      console.error("[handleSubmit] Error:", e);
+      setSubmitting(false);
+      setLoading(false);
+      if (!auto) alert("Nộp bài thất bại. Vui lòng thử lại.");
     }
   }
 
@@ -421,17 +450,28 @@ export default function MultiSkillAttemptPage() {
 
       <div className="flex-1  min-h-0 overflow-hidden">
         {activeTab === "reading" && (
-          <div className="flex flex-col h-full min-h-0 bg-white justify-center items-center">
-            <div className=" flex flex-col h-full min-h-0  overflow-hidden w-2/3 shadow-xl rounded-2xl">
-              <div className="border-b p-4 bg-white sticky top-0 z-10 ">
-                <h2 className="text-sm font-semibold text-slate-800">
-                  Reading questions
-                </h2>
-                <p className="text-xs text-slate-500">
-                  Trả lời 15 câu hỏi nhiều lựa chọn.
-                </p>
-
-                <div className="flex-1 min-h-0 overflow-auto">
+          <div className="flex h-full min-h-0 bg-gray-50">
+            {/* Passage Panel */}
+            {readingSection?.passageMd && (
+              <div className="w-1/2 h-full overflow-auto border-r p-6 bg-white">
+                <div className="prose prose-sm max-w-none text-slate-800">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {readingSection.passageMd}
+                  </ReactMarkdown>
+                </div>
+              </div>
+            )}
+            
+            {/* Questions Panel */}
+            <div className={`${readingSection?.passageMd ? 'w-1/2' : 'w-full flex justify-center'} h-full overflow-auto p-6`}>
+              <div className={`${readingSection?.passageMd ? 'w-full' : 'w-2/3'}`}>
+                <div className="bg-white rounded-2xl shadow-xl p-4">
+                  <h2 className="text-sm font-semibold text-slate-800">
+                    Reading questions
+                  </h2>
+                  <p className="text-xs text-slate-500 mb-4">
+                    Trả lời 15 câu hỏi nhiều lựa chọn.
+                  </p>
                   <QuestionPanel
                     attemptId={attemptId}
                     questions={readingUiQuestions}

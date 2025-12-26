@@ -86,7 +86,7 @@ export default function CoursesPage() {
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-6">
       {/* Header */}
-      <div className="rounded-2xl border bg-gradient-to-br from-indigo-50 to-blue-100 p-5">
+      <div className="rounded-2xl border border-slate-300 bg-gradient-to-br from-indigo-50 to-blue-100 p-5">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-2xl font-semibold text-[#3B82F6]">Khóa học</h1>

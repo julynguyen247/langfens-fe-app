@@ -137,7 +137,7 @@ export default function CourseLearnPage() {
   const sortedLessons = [...(course.lessons || [])].sort((a, b) => a.idx - b.idx);
 
   return (
-    <div className="h-screen flex flex-col bg-slate-50">
+    <div className="h-screen flex flex-col bg-slate-800">
       <header className="h-14 bg-white border-b border-slate-200 flex items-center px-4 flex-shrink-0">
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}

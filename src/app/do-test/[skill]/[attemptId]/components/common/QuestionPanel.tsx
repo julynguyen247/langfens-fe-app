@@ -12,6 +12,7 @@ import MultiCheckboxCard from "../reading/MultiCheckboxCard";
 import SummaryCompletionCard from "../reading/SummaryCompletionCard";
 import MatchingInformation from "../reading/WordListCompletionCard";
 import { AttemptQuestionGroup } from "@/app/store/useAttemptStore";
+import BookmarkButton from "@/components/BookmarkButton";
 
 type Choice = { value: string; label: string };
 type QA = Record<string, string>;
@@ -337,6 +338,11 @@ const QuestionPanel = memo(function QuestionPanel({
                 <span className="inline-flex items-center justify-center min-w-[1.5rem] h-5 px-1.5 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold">
                   {displayIdx + 1}
                 </span>
+                <BookmarkButton 
+                  questionId={q.id} 
+                  questionContent={q.stem}
+                  className="opacity-50 hover:opacity-100" 
+                />
                 <div className="flex-1">{questionContent}</div>
               </div>
             </div>

@@ -575,3 +575,79 @@ export async function completeLesson(userId: string, lessonId: string) {
   const res = await apisCourse.post(`/${userId}/${lessonId}:complete`);
   return res;
 }
+
+export async function getWrongAnswers(opts?: {
+  skill?: string;
+  questionType?: string;
+  fromDate?: string;
+  page?: number;
+  pageSize?: number;
+}) {
+  const res = await apisAnalytics.get("/analytics/errors", {
+    params: opts,
+  });
+  return res;
+}
+
+// Bookmark APIs
+export async function createBookmark(
+  questionId: string,
+  opts?: {
+    questionContent?: string;
+    skill?: string;
+    questionType?: string;
+    note?: string;
+  }
+) {
+  const res = await apisAttempt.post("/bookmarks", {
+    questionId,
+    questionContent: opts?.questionContent,
+    skill: opts?.skill,
+    questionType: opts?.questionType,
+    note: opts?.note,
+  });
+  return res;
+}
+
+export async function getBookmarks(opts?: {
+  skill?: string;
+  questionType?: string;
+  hasNote?: boolean;
+  page?: number;
+  pageSize?: number;
+}) {
+  const res = await apisAttempt.get("/bookmarks", {
+    params: opts,
+  });
+  return res;
+}
+
+export async function deleteBookmark(questionId: string) {
+  const res = await apisAttempt.delete(`/bookmarks/${questionId}`);
+  return res;
+}
+
+export async function checkBookmark(questionId: string) {
+  const res = await apisAttempt.get(`/bookmarks/check/${questionId}`);
+  return res;
+}
+
+// Predicted Band
+export async function getPredictedBand() {
+  const res = await apisAnalytics.get("/analytics/predicted-band");
+  return res;
+}
+
+// AI Insights
+export async function getAiInsights() {
+  const res = await apisAnalytics.get("/analytics/ai-insights");
+  return res;
+}
+
+// Exam Recommendations
+export async function getRecommendations(limit: number = 5) {
+  const res = await apisAnalytics.get("/analytics/recommendations", {
+    params: { limit },
+  });
+  return res;
+}

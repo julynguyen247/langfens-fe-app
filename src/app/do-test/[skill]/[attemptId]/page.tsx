@@ -24,7 +24,7 @@ import {
   submitAttempt,
 } from "@/utils/api";
 import ReactMarkdown from "react-markdown";
-import { Group, Panel } from "react-resizable-panels";
+import { Group, Panel, Separator } from "react-resizable-panels";
 
 type Skill = "reading" | "listening" | "writing" | "speaking";
 type QA = Record<string, string>;
@@ -222,7 +222,7 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
   return (
     <>
       <div className="flex h-full bg-white rounded-xl shadow overflow-hidden">
-        <Group>
+        <Group orientation="horizontal">
           <Panel defaultSize={65} minSize={40} className="overflow-hidden">
             <div className="h-full overflow-hidden border-r bg-gray-50 ">
               <PassageView
@@ -462,7 +462,7 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
   return (
     <>
       <div className="flex h-full w-full max-h-full bg-white rounded-xl shadow overflow-hidden">
-        <Group>
+        <Group orientation="horizontal">
           <Panel>
             <div className="h-full flex flex-col overflow-hidden border-l bg-white shadow-xl z-20">
               <div className="shrink-0 h-[280px] overflow-hidden border-b bg-black relative">

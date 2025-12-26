@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   getAnalyticsSummary,
@@ -9,9 +10,12 @@ import {
   getStrengthsWeaknesses,
   getRecentAnalyticsActivity,
   getGamificationStats,
+  getWrongAnswers,
+  getRecommendations,
 } from "@/utils/api";
-import { FiTrendingUp, FiClock, FiTarget, FiActivity, FiCheck, FiX } from "react-icons/fi";
+import { FiTrendingUp, FiClock, FiTarget, FiActivity, FiCheck, FiX, FiAlertCircle, FiArrowRight } from "react-icons/fi";
 import { HiOutlineFire } from "react-icons/hi";
+import PredictedBandWidget from "@/components/PredictedBandWidget";
 
 // Types
 type AnalyticsSummary = {
@@ -49,6 +53,29 @@ type RecentActivity = {
   durationMin: number;
 };
 
+type WrongAnswer = {
+  answerId: string;
+  questionId: string;
+  questionContent: string;
+  questionType: string;
+  skill: string;
+  userAnswer: string;
+  correctAnswer: string;
+  explanation?: string;
+  attemptDate: string;
+  examId: string;
+  attemptId: string;
+};
+
+type Recommendation = {
+  examId: string;
+  title: string;
+  category: string;
+  reasons: string[];
+  relevanceScore: number;
+  questionCount: number;
+};
+
 export default function AnalyticsPage() {
   const router = useRouter();
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
@@ -57,6 +84,9 @@ export default function AnalyticsPage() {
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [gamificationStreak, setGamificationStreak] = useState<number | null>(null);
+  const [recentErrors, setRecentErrors] = useState<WrongAnswer[]>([]);
+  const [totalErrors, setTotalErrors] = useState(0);
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
 
   useEffect(() => {
     loadData();
@@ -65,12 +95,14 @@ export default function AnalyticsPage() {
   async function loadData() {
     setLoading(true);
     try {
-      const [summaryRes, trendRes, strengthsRes, activityRes, gamificationRes] = await Promise.all([
+      const [summaryRes, trendRes, strengthsRes, activityRes, gamificationRes, errorsRes, recommendationsRes] = await Promise.all([
         getAnalyticsSummary(),
         getScoreTrend(30),
         getStrengthsWeaknesses(),
         getRecentAnalyticsActivity(10),
         getGamificationStats().catch(() => null),
+        getWrongAnswers({ pageSize: 5 }).catch(() => null),
+        getRecommendations(5).catch(() => null),
       ]);
 
       const summaryData = (summaryRes as any)?.data?.data ?? (summaryRes as any)?.data;
@@ -88,6 +120,17 @@ export default function AnalyticsPage() {
       if (gamificationData?.currentStreak !== undefined) {
         setGamificationStreak(gamificationData.currentStreak);
       }
+
+      // Get recent errors
+      const errorsData = (errorsRes as any)?.data?.data;
+      if (errorsData) {
+        setRecentErrors(errorsData.items ?? []);
+        setTotalErrors(errorsData.total ?? 0);
+      }
+      
+      // Get recommendations
+      const recommendationsData = (recommendationsRes as any)?.data?.data?.recommendations ?? [];
+      setRecommendations(recommendationsData);
     } catch (error) {
       console.error("Failed to load analytics:", error);
     } finally {
@@ -169,6 +212,15 @@ export default function AnalyticsPage() {
           </motion.div>
         )}
 
+        {/* Predicted Band Score */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+        >
+          <PredictedBandWidget />
+        </motion.div>
+
         {/* Score Trend */}
         {scoreTrend.length > 0 && (
           <motion.div
@@ -235,6 +287,140 @@ export default function AnalyticsPage() {
             )}
           </motion.div>
         </div>
+
+        {/* Recent Errors */}
+        {recentErrors.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.28 }}
+            className="bg-white rounded-2xl p-6 shadow-sm border-l-4 border-red-500"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                <FiAlertCircle className="w-5 h-5 text-red-500" />
+                Câu sai gần đây
+                <span className="ml-2 px-2 py-0.5 text-xs bg-red-100 text-red-600 rounded-full">
+                  {totalErrors} câu
+                </span>
+              </h2>
+              <Link
+                href="/error-review"
+                className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
+              >
+                Xem tất cả <FiArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+            <div className="space-y-4">
+              {recentErrors.slice(0, 5).map((error) => (
+                <div key={error.answerId} className="p-4 bg-red-50 rounded-xl border border-red-100">
+                  {/* Header */}
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xs px-2 py-0.5 bg-red-100 text-red-700 rounded-full font-medium">
+                      {error.skill}
+                    </span>
+                    <span className="text-xs px-2 py-0.5 bg-orange-100 text-orange-700 rounded-full">
+                      {formatQuestionType(error.questionType)}
+                    </span>
+                    <span className="text-xs text-slate-400 ml-auto">
+                      {new Date(error.attemptDate).toLocaleDateString("vi-VN")}
+                    </span>
+                  </div>
+                  
+                  {/* Question */}
+                  <p className="text-sm text-slate-800 mb-3">
+                    {error.questionContent}
+                  </p>
+                  
+                  {/* Answers */}
+                  <div className="flex flex-wrap items-center gap-2 text-sm mb-3">
+                    <span className="text-slate-500">Bạn:</span>
+                    <span className="px-2 py-0.5 bg-red-200 text-red-700 rounded line-through">
+                      {error.userAnswer || "(Bỏ trống)"}
+                    </span>
+                    <span className="text-slate-400">→</span>
+                    <span className="text-slate-500">Đáp án:</span>
+                    <span className="px-2 py-0.5 bg-emerald-500 text-white rounded font-medium">
+                      {error.correctAnswer || "—"}
+                    </span>
+                  </div>
+                  
+                  {/* Explanation */}
+                  {error.explanation && (
+                    <div className="p-3 bg-blue-50 rounded-lg text-sm text-slate-700 mb-3 border border-blue-100">
+                      <span className="font-medium text-blue-700">💡 Giải thích: </span>
+                      {error.explanation}
+                    </div>
+                  )}
+                  
+                  {/* Link to attempt */}
+                  <Link
+                    href={`/attempts/${error.attemptId}`}
+                    className="text-xs text-blue-600 hover:text-blue-700 hover:underline flex items-center gap-1"
+                  >
+                    Xem chi tiết bài làm <FiArrowRight className="w-3 h-3" />
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Exam Recommendations */}
+        {recommendations.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+            className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-6 shadow-sm border border-emerald-100"
+          >
+            <h2 className="text-lg font-semibold text-emerald-800 mb-4 flex items-center gap-2">
+              <FiTarget className="w-5 h-5" />
+              Bài tập đề xuất
+            </h2>
+            <p className="text-sm text-emerald-700 mb-4">
+              Các bài thi được gợi ý dựa trên điểm yếu của bạn
+            </p>
+            <div className="grid gap-3 md:grid-cols-2">
+              {recommendations.map((rec) => (
+                <Link
+                  key={rec.examId}
+                  href={`/practice?examId=${rec.examId}`}
+                  className="bg-white rounded-xl p-4 border border-emerald-100 hover:border-emerald-300 hover:shadow-md transition group"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-slate-900 group-hover:text-emerald-700 transition truncate">
+                        {rec.title}
+                      </h3>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="px-2 py-0.5 text-xs rounded-full bg-emerald-100 text-emerald-700">
+                          {rec.category}
+                        </span>
+                        <span className="text-xs text-slate-500">
+                          {rec.questionCount} câu
+                        </span>
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {rec.reasons.map((reason, idx) => (
+                          <span
+                            key={idx}
+                            className="text-xs px-2 py-0.5 bg-amber-50 text-amber-700 rounded-full border border-amber-100"
+                          >
+                            {reason}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 text-emerald-600 group-hover:translate-x-1 transition">
+                      <FiArrowRight className="w-4 h-4" />
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </motion.div>
+        )}
 
         {/* Recent Activity */}
         {recentActivity.length > 0 && (
@@ -447,17 +633,18 @@ function formatShortDate(iso: string): string {
 
 function formatQuestionType(type: string): string {
   const typeMap: Record<string, string> = {
-    MCQ_SINGLE: "Trắc nghiệm đơn",
-    MCQ_MULTIPLE: "Trắc nghiệm nhiều",
+    MCQ_SINGLE: "Multiple Choice",
+    MCQ_MULTIPLE: "Multiple Select",
     TRUE_FALSE_NOT_GIVEN: "T/F/NG",
     YES_NO_NOT_GIVEN: "Y/N/NG",
-    MATCHING_HEADING: "Nối tiêu đề",
-    MATCHING_INFORMATION: "Nối thông tin",
-    MATCHING_FEATURES: "Nối đặc điểm",
-    SUMMARY_COMPLETION: "Điền tóm tắt",
-    TABLE_COMPLETION: "Điền bảng",
-    SHORT_ANSWER: "Trả lời ngắn",
-    DIAGRAM_LABEL: "Gán nhãn sơ đồ",
+    MATCHING_HEADING: "Matching Heading",
+    MATCHING_INFORMATION: "Matching Information",
+    MATCHING_FEATURES: "Matching Features",
+    SUMMARY_COMPLETION: "Summary Completion",
+    TABLE_COMPLETION: "Table Completion",
+    SHORT_ANSWER: "Short Answer",
+    DIAGRAM_LABEL: "Diagram Label",
+    MAP_LABEL: "Map Label",
   };
-  return typeMap[type] || type;
+  return typeMap[type] || type.replace(/_/g, " ");
 }

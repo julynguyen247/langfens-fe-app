@@ -16,6 +16,8 @@ const NAV = [
   { label: "Phân tích", href: "/analytics" },
   { label: "Hồ sơ", href: "/profile" },
   { label: "Khóa học", href: "/courses" },
+  { label: "Kế hoạch", href: "/study-plan" },
+  { label: "Bookmarks", href: "/bookmarks" },
 ];
 
 export default function LangfensHeader() {

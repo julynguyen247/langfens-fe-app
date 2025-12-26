@@ -9,6 +9,7 @@ import {
 } from "@/utils/api";
 import { FiChevronDown, FiChevronUp } from "react-icons/fi";
 import ReactMarkdown from "react-markdown";
+import BookmarkButton from "@/components/BookmarkButton";
 
 type PageSource = "attempt" | "writing" | "speaking";
 
@@ -24,6 +25,8 @@ type AttemptResult = {
   bandScore?: number;
   writingBand?: number;
   speakingBand?: number;
+  writingGrade?: WritingDetail;
+  speakingGrade?: SpeakingDetail;
   questions: AttemptQuestionResult[];
   totalTime: string;
 };
@@ -32,6 +35,7 @@ type AttemptQuestionResult = {
   questionId: string;
   index: number;
   skill: string;
+  questionType?: string;
   promptMd?: string;
   selectedOptionIds?: string[];
   selectedAnswerText?: string;
@@ -117,14 +121,18 @@ export default function AttemptResultPage() {
 
           if (paper?.sections) {
             for (const sec of paper.sections) {
-              for (const q of sec.questions ?? []) {
+              // Support both direct questions and questionGroups structure
+              const questions = sec.questions ?? 
+                (sec.questionGroups ?? []).flatMap((g: any) => g.questions ?? []);
+              for (const q of questions) {
                 if (!q?.id) continue;
                 questionMetaById[String(q.id)] = {
                   idx: q.idx,
                   promptMd: q.promptMd ?? "",
                   explanationMd: q.explanationMd ?? "",
                   options: q.options ?? null,
-                  skill: q.skill ?? "UNKNOWN",
+                  skill: q.skill ?? sec.skill ?? "UNKNOWN",
+                  questionType: q.type ?? q.questionType ?? "UNKNOWN",
                 };
               }
             }
@@ -161,6 +169,8 @@ export default function AttemptResultPage() {
             bandScore: (raw as any).ieltsBand ?? (raw as any).bandScore,
             writingBand: (raw as any).writingBand,
             speakingBand: (raw as any).speakingBand,
+            writingGrade: (raw as any).writingGrade ?? undefined,
+            speakingGrade: (raw as any).speakingGrade ?? undefined,
             questions: answers.map((a: any, i: number) => {
               const qid = String(a.questionId ?? a.id ?? i + 1);
               const meta = questionMetaById[qid];
@@ -201,6 +211,7 @@ export default function AttemptResultPage() {
               return {
                 questionId: qid,
                 skill: meta?.skill ?? "UNKNOWN",
+                questionType: meta?.questionType ?? "UNKNOWN",
                 index: a.index ?? meta?.idx ?? i + 1,
                 promptMd: a.promptMd ?? meta?.promptMd ?? "",
                 selectedOptionIds,
@@ -426,6 +437,8 @@ export default function AttemptResultPage() {
                 ? attemptData.writingBand
                 : attemptData.speakingBand
             }
+            writingGrade={attemptData.writingGrade}
+            speakingGrade={attemptData.speakingGrade}
           />
         ) : (
           <QuestionReview details={skillFiltered} />
@@ -691,9 +704,13 @@ export default function AttemptResultPage() {
 function ProductiveBandSection({
   skill,
   band,
+  writingGrade,
+  speakingGrade,
 }: {
   skill: "WRITING" | "SPEAKING";
   band?: number;
+  writingGrade?: WritingDetail;
+  speakingGrade?: SpeakingDetail;
 }) {
   const label = skill === "WRITING" ? "Writing band" : "Speaking band";
 
@@ -701,7 +718,7 @@ function ProductiveBandSection({
     <div className="px-8 pb-10">
       <h2 className="text-xl font-semibold mb-4 text-slate-800">{label}</h2>
 
-      <div className="flex flex-col items-center">
+      <div className="flex flex-col items-center mb-6">
         <div className="w-32 h-32 rounded-full bg-gradient-to-b from-emerald-400 to-blue-400 text-white flex items-center justify-center shadow-lg">
           <span className="text-4xl font-extrabold">
             {typeof band === "number" ? band.toFixed(1) : "--"}
@@ -713,6 +730,103 @@ function ProductiveBandSection({
             : "Chưa có điểm band cho kỹ năng này."}
         </p>
       </div>
+
+      {/* Writing Grade Details */}
+      {skill === "WRITING" && writingGrade && (
+        <div className="space-y-6">
+          {writingGrade.taskText && (
+            <section className="bg-slate-50 border rounded-lg p-4">
+              <h3 className="text-sm font-semibold text-slate-800 mb-2">Task prompt</h3>
+              <div className="text-sm text-slate-700 whitespace-pre-wrap">{writingGrade.taskText}</div>
+            </section>
+          )}
+
+          <section className="grid md:grid-cols-2 gap-4">
+            {writingGrade.taskResponse && (
+              <CriterionCard title="Task Response" criterion={writingGrade.taskResponse} />
+            )}
+            {writingGrade.coherenceAndCohesion && (
+              <CriterionCard title="Coherence & Cohesion" criterion={writingGrade.coherenceAndCohesion} />
+            )}
+            {writingGrade.lexicalResource && (
+              <CriterionCard title="Lexical Resource" criterion={writingGrade.lexicalResource} />
+            )}
+            {writingGrade.grammaticalRangeAndAccuracy && (
+              <CriterionCard title="Grammatical Range & Accuracy" criterion={writingGrade.grammaticalRangeAndAccuracy} />
+            )}
+          </section>
+
+          {writingGrade.suggestions && writingGrade.suggestions.length > 0 && (
+            <section className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+              <h3 className="text-sm font-semibold text-emerald-900 mb-2">Gợi ý cải thiện</h3>
+              <ul className="list-disc list-inside text-sm text-emerald-900 space-y-1">
+                {writingGrade.suggestions.map((s, i) => (
+                  <li key={i}>{s}</li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {writingGrade.improvedParagraph && (
+            <section className="bg-slate-50 border rounded-lg p-4">
+              <h3 className="text-sm font-semibold text-slate-800 mb-2">Đoạn cải thiện gợi ý</h3>
+              <div className="text-sm text-slate-700 whitespace-pre-wrap">{writingGrade.improvedParagraph}</div>
+            </section>
+          )}
+        </div>
+      )}
+
+      {/* Speaking Grade Details */}
+      {skill === "SPEAKING" && speakingGrade && (
+        <div className="space-y-6">
+          {speakingGrade.taskText && (
+            <section className="bg-slate-50 border rounded-lg p-4">
+              <h3 className="text-sm font-semibold text-slate-800 mb-2">Task prompt</h3>
+              <div className="text-sm text-slate-700 whitespace-pre-wrap">{speakingGrade.taskText}</div>
+            </section>
+          )}
+
+          {speakingGrade.transcript && (
+            <section className="bg-slate-50 border rounded-lg p-4">
+              <h3 className="text-sm font-semibold text-slate-800 mb-2">Transcript</h3>
+              <div className="text-sm text-slate-700 whitespace-pre-wrap">{speakingGrade.transcript}</div>
+            </section>
+          )}
+
+          <section className="grid md:grid-cols-2 gap-4">
+            {speakingGrade.fluencyAndCoherence && (
+              <CriterionCard title="Fluency & Coherence" criterion={speakingGrade.fluencyAndCoherence} />
+            )}
+            {speakingGrade.lexicalResource && (
+              <CriterionCard title="Lexical Resource" criterion={speakingGrade.lexicalResource} />
+            )}
+            {speakingGrade.grammaticalRangeAndAccuracy && (
+              <CriterionCard title="Grammatical Range & Accuracy" criterion={speakingGrade.grammaticalRangeAndAccuracy} />
+            )}
+            {speakingGrade.pronunciation && (
+              <CriterionCard title="Pronunciation" criterion={speakingGrade.pronunciation} />
+            )}
+          </section>
+
+          {speakingGrade.suggestions && speakingGrade.suggestions.length > 0 && (
+            <section className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+              <h3 className="text-sm font-semibold text-emerald-900 mb-2">Gợi ý cải thiện</h3>
+              <ul className="list-disc list-inside text-sm text-emerald-900 space-y-1">
+                {speakingGrade.suggestions.map((s, i) => (
+                  <li key={i}>{s}</li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {speakingGrade.improvedAnswer && (
+            <section className="bg-slate-50 border rounded-lg p-4">
+              <h3 className="text-sm font-semibold text-slate-800 mb-2">Câu trả lời cải thiện</h3>
+              <div className="text-sm text-slate-700 whitespace-pre-wrap">{speakingGrade.improvedAnswer}</div>
+            </section>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -901,19 +1015,35 @@ function ReviewItem({
     <li className="border rounded-lg p-4">
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1">
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex items-center gap-3 mb-1 flex-wrap">
             <span className="text-sm font-mono text-slate-500">
               Q{data.index ?? "?"}
             </span>
             {badge}
+            {data.skill && data.skill !== "UNKNOWN" && (
+              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                {data.skill}
+              </span>
+            )}
+            {data.questionType && data.questionType !== "UNKNOWN" && (
+              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-orange-50 text-orange-700 border border-orange-100">
+                {data.questionType.replace(/_/g, " ")}
+              </span>
+            )}
             {typeof data.timeSpentSec === "number" && (
               <span className="px-2 py-0.5 rounded-full text-xs bg-slate-50 border text-slate-600">
                 {fmtMinSec(data.timeSpentSec)}
               </span>
             )}
+            <BookmarkButton 
+              questionId={data.questionId} 
+              questionContent={data.prompt}
+              skill={data.skill}
+              questionType={data.questionType}
+            />
           </div>
           <div className="prose prose-slate max-w-none text-sm">
-            {data.prompt}
+            <ReactMarkdown>{data.prompt}</ReactMarkdown>
           </div>
 
           <div className="mt-3 grid sm:grid-cols-2 gap-3">
@@ -1013,6 +1143,8 @@ function normalizeDetail(d: AttemptQuestionResult) {
   return {
     questionId: d.questionId,
     index: d.index,
+    skill: d.skill ?? "UNKNOWN",
+    questionType: d.questionType ?? "UNKNOWN",
     prompt: cleanQuestion(d.promptMd ?? ""),
     selectedText: d.selectedAnswerText ?? "",
     correctText: cleanAnswer(d.correctAnswerText ?? ""),

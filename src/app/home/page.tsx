@@ -17,6 +17,7 @@ import {
   getScoreTrend,
   getRecentAnalyticsActivity,
   getGamificationStats,
+  getRecommendations,
 } from "@/utils/api";
 import { FiPlay, FiCheck, FiX, FiActivity, FiTarget, FiClock, FiChevronRight } from "react-icons/fi";
 import { HiOutlineFire } from "react-icons/hi";
@@ -35,7 +36,7 @@ import {
   mapSpeakingHistoryToAttempt,
   mapWritingHistoryToAttempt,
 } from "./components/utils";
-import { HistoryModal } from "./components/HistoryModal";
+
 import { useLoadingStore } from "../store/loading";
 
 type Course = {
@@ -103,7 +104,7 @@ export default function Home() {
   const [loadingAttempts, setLoadingAttempts] = useState(true);
   const [attemptErr, setAttemptErr] = useState<string | null>(null);
 
-  const [openHistoryModal, setOpenHistoryModal] = useState(false);
+
   const { setLoading } = useLoadingStore();
   const [placementTestId, setPlacementTestId] = useState("");
   const [placementStatus, setPlacementStatus] =
@@ -124,6 +125,7 @@ export default function Home() {
   const [scoreTrend, setScoreTrend] = useState<{ date: string; avgScore: number; testCount: number }[]>([]);
   const [recentAnalytics, setRecentAnalytics] = useState<{ type: string; examId: string; examTitle?: string; score?: number; date: string; durationMin: number }[]>([]);
   const [gamificationStreak, setGamificationStreak] = useState<number | null>(null);
+  const [recommendations, setRecommendations] = useState<{ examId: string; title: string; category: string; reasons: string[]; relevanceScore: number; questionCount: number }[]>([]);
 
   useEffect(() => {
     getMe().catch(() => {});
@@ -132,7 +134,7 @@ export default function Home() {
       setLoadingAttempts(true);
       setAttemptErr(null);
       try {
-        const [res, wres, sres, analyticsRes, strengthsRes, trendRes, recentRes, gamificationRes] = await Promise.all([
+        const [res, wres, sres, analyticsRes, strengthsRes, trendRes, recentRes, gamificationRes, recommendationsRes] = await Promise.all([
           getAttempt(1, 10),
           getWritingHistory(),
           getSpeakingHistory(),
@@ -141,6 +143,7 @@ export default function Home() {
           getScoreTrend(30).catch(() => null),
           getRecentAnalyticsActivity(10).catch(() => null),
           getGamificationStats().catch(() => null),
+          getRecommendations(3).catch(() => null),
         ]);
 
         const raw =
@@ -186,6 +189,12 @@ export default function Home() {
         const gamificationData = (gamificationRes as any)?.data?.data ?? (gamificationRes as any)?.data;
         if (gamificationData?.currentStreak !== undefined) {
           setGamificationStreak(gamificationData.currentStreak);
+        }
+        
+        // Get recommendations
+        const recommendationsData = (recommendationsRes as any)?.data?.data?.recommendations ?? [];
+        if (Array.isArray(recommendationsData)) {
+          setRecommendations(recommendationsData);
         }
       } catch (e: any) {
         setAttemptErr(e?.message || "Không thể tải lịch sử làm bài.");
@@ -392,93 +401,64 @@ export default function Home() {
           </Card>
         )}
 
-        <div className="flex items-center justify-between gap-3">
-          <SectionTitle> Lịch sử làm bài </SectionTitle>
-
-          {!loadingAttempts && !attemptErr && attempts.length > 3 && (
+        {/* Quick Actions */}
+        <div className="space-y-4">
+          <SectionTitle>Bắt đầu luyện tập</SectionTitle>
+          
+          <div className="grid grid-cols-2 gap-3">
             <motion.button
-              whileHover={{ y: -1 }}
-              onClick={() => setOpenHistoryModal(true)}
-              className="text-sm font-semibold text-blue-600 hover:text-blue-700"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => router.push("/practice?skill=reading")}
+              className="p-4 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/20 flex flex-col items-start gap-2"
             >
-              Xem tất cả
+              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                <span className="text-xl">📖</span>
+              </div>
+              <div className="font-semibold">Reading</div>
+              <div className="text-xs text-white/80">Luyện đọc hiểu</div>
             </motion.button>
-          )}
-        </div>
 
-        <AnimatePresence mode="popLayout">
-          {loadingAttempts ? (
-            <motion.div
-              key="loading"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="grid grid-cols-1 gap-3"
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => router.push("/practice?skill=listening")}
+              className="p-4 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/20 flex flex-col items-start gap-2"
             >
-              <SkeletonAttempt />
-              <SkeletonAttempt />
-              <SkeletonAttempt />
-            </motion.div>
-          ) : attemptErr ? (
-            <motion.div
-              key="error"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-sm text-rose-600"
+              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                <span className="text-xl">🎧</span>
+              </div>
+              <div className="font-semibold">Listening</div>
+              <div className="text-xs text-white/80">Luyện nghe</div>
+            </motion.button>
+
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => router.push("/flashcards")}
+              className="p-4 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/20 flex flex-col items-start gap-2"
             >
-              {attemptErr}
-            </motion.div>
-          ) : attempts.length === 0 ? (
-            <motion.div
-              key="empty"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-sm text-slate-500"
+              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                <span className="text-xl">🃏</span>
+              </div>
+              <div className="font-semibold">Flashcards</div>
+              <div className="text-xs text-white/80">Học từ vựng</div>
+            </motion.button>
+
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => router.push("/bookmarks")}
+              className="p-4 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20 flex flex-col items-start gap-2"
             >
-              Chưa có lịch sử làm bài.
-            </motion.div>
-          ) : (
-            <motion.div
-              key="list"
-              className="space-y-3"
-              initial="hidden"
-              animate="show"
-              variants={staggerContainer}
-            >
-              {visibleAttempts.map((a) => (
-                <motion.div key={a.id} variants={fadeInUp}>
-                  <Card hover>
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <Badge>{a.skill}</Badge>
-                        <div>
-                          <div className="font-medium text-slate-900">
-                            {a.title}
-                          </div>
-                          <div className="text-xs text-slate-500">
-                            {formatDate(a.dateISO)} • {a.durationMin} phút
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        {typeof a.score === "number" && (
-                          <span className="text-sm font-semibold text-blue-700">
-                            {a.score}
-                          </span>
-                        )}
-                        <MotionLink
-                          onClick={() => router.push(buildAttemptDetailUrl(a))}
-                        >
-                          Xem chi tiết
-                        </MotionLink>
-                      </div>
-                    </div>
-                  </Card>
-                </motion.div>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
+              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                <span className="text-xl">🔖</span>
+              </div>
+              <div className="font-semibold">Bookmarks</div>
+              <div className="text-xs text-white/80">Câu hỏi đã lưu</div>
+            </motion.button>
+          </div>
+        </div>
 
         {/* Analytics Summary Section */}
         {analyticsSummary && analyticsSummary.totalAttempts > 0 && (
@@ -613,6 +593,47 @@ export default function Home() {
               </Card>
             )}
 
+            {/* Exam Recommendations based on weaknesses */}
+            {recommendations.length > 0 && (
+              <Card>
+                <h3 className="font-semibold text-slate-900 mb-2">🎯 Bài tập đề xuất để cải thiện</h3>
+                <p className="text-xs text-slate-500 mb-4">Dựa trên các dạng câu hỏi bạn cần cải thiện</p>
+                <div className="space-y-3">
+                  {recommendations.map((rec) => (
+                    <motion.button
+                      key={rec.examId}
+                      whileHover={{ scale: 1.01 }}
+                      onClick={() => router.push(`/practice?examId=${rec.examId}`)}
+                      className="w-full p-3 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl border border-emerald-100 hover:border-emerald-300 text-left transition"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="font-medium text-slate-900">{rec.title}</div>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="px-2 py-0.5 text-xs rounded-full bg-emerald-100 text-emerald-700">
+                              {rec.category}
+                            </span>
+                            <span className="text-xs text-slate-500">{rec.questionCount} câu</span>
+                          </div>
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {rec.reasons.map((reason, idx) => (
+                              <span
+                                key={idx}
+                                className="text-xs px-2 py-0.5 bg-amber-50 text-amber-700 rounded-full border border-amber-100"
+                              >
+                                {reason}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                        <FiChevronRight className="w-5 h-5 text-emerald-600" />
+                      </div>
+                    </motion.button>
+                  ))}
+                </div>
+              </Card>
+            )}
+
             {/* Score Trend Chart */}
             {scoreTrend.length > 0 && (
               <Card>
@@ -680,15 +701,7 @@ export default function Home() {
           </>
         )}
       </main>
-      <HistoryModal
-        open={openHistoryModal}
-        attempts={attempts}
-        onClose={() => setOpenHistoryModal(false)}
-        onSelect={(a) => {
-          setOpenHistoryModal(false);
-          router.push(buildAttemptDetailUrl(a));
-        }}
-      />
+
     </div>
   );
 }
