@@ -1,9 +1,12 @@
 import axios from "axios";
 import api, {
+  apisAnalytics,
   apisAttempt,
   apisAuth,
   apisDictionary,
   apisExam,
+  apisGamification,
+  apisNotification,
   apisSpeaking,
   apisVocabulary,
   apisWriting,
@@ -109,12 +112,15 @@ export async function autoSaveAttempt(
 export async function getPublicExams(
   page: number,
   pageSize: number,
-  opts?: { category?: string; level?: string }
+  opts?: { category?: string; level?: string; questionTypes?: string }
 ) {
   const res = await apisExam.get("/public/exam/getall", {
     params: {
       page,
       pageSize,
+      category: opts?.category,
+      level: opts?.level,
+      questionTypes: opts?.questionTypes,
     },
   });
   return res;
@@ -394,4 +400,150 @@ export async function suggestDictionary(word: string, pos?: string) {
 export async function getDictionaryDetails(id: number) {
   const res = await apisDictionary.get(`/dictionary/details/${id}`);
   return res.data;
+}
+
+export async function getGamificationStats() {
+  const res = await apisGamification.get("/gamification/me");
+  return res;
+}
+
+export async function getAchievements() {
+  const res = await apisGamification.get("/gamification/achievements");
+  return res;
+}
+
+export async function getLeaderboard(limit: number = 50) {
+  const res = await apisGamification.get("/gamification/leaderboard", {
+    params: { limit },
+  });
+  return res;
+}
+
+export async function getXpHistory(limit: number = 20) {
+  const res = await apisGamification.get("/gamification/history", {
+    params: { limit },
+  });
+  return res;
+}
+
+export async function dailyCheckin() {
+  const res = await apisGamification.post("/gamification/daily-checkin");
+  return res;
+}
+
+export async function getAnalyticsSummary() {
+  const res = await apisAnalytics.get("/analytics/summary");
+  return res;
+}
+
+export async function getScoreTrend(days: number = 30) {
+  const res = await apisAnalytics.get("/analytics/score-trend", {
+    params: { days },
+  });
+  return res;
+}
+
+export async function getStrengthsWeaknesses() {
+  const res = await apisAnalytics.get("/analytics/strengths");
+  return res;
+}
+
+export async function getRecentAnalyticsActivity(limit: number = 10) {
+  const res = await apisAnalytics.get("/analytics/recent-activity", {
+    params: { limit },
+  });
+  return res;
+}
+
+export async function getNotifications(page: number = 1, pageSize: number = 20) {
+  const res = await apisNotification.get("/notifications", {
+    params: { page, pageSize },
+  });
+  return res;
+}
+
+export async function getUnreadNotificationCount() {
+  const res = await apisNotification.get("/notifications/unread-count");
+  return res;
+}
+
+export async function markNotificationAsRead(notificationId: string) {
+  const res = await apisNotification.patch(`/notifications/${notificationId}/read`);
+  return res;
+}
+
+export async function markAllNotificationsAsRead() {
+  const res = await apisNotification.patch("/notifications/read-all");
+  return res;
+}
+
+export async function getNotificationSettings() {
+  const res = await apisNotification.get("/notifications/settings");
+  return res;
+}
+
+export async function updateNotificationSettings(settings: {
+  dailyReminderTime?: string | null;
+  enableStreak: boolean;
+  enableGoalProgress: boolean;
+  enableAchievement: boolean;
+  enableInactivity: boolean;
+}) {
+  const res = await apisNotification.put("/notifications/settings", settings);
+  return res;
+}
+
+export async function createStudyGoal(goal: {
+  targetBandScore: number;
+  targetDate: string;
+  focusSkills: string[];
+  studyHoursPerDay: number;
+}) {
+  const res = await apisAnalytics.post("/study-plan/goals", goal);
+  return res;
+}
+
+export async function getActiveStudyGoal() {
+  const res = await apisAnalytics.get("/study-plan/goals/active");
+  return res;
+}
+
+export async function getStudyProgress() {
+  const res = await apisAnalytics.get("/study-plan/progress");
+  return res;
+}
+
+export async function deleteStudyGoal(goalId: string) {
+  const res = await apisAnalytics.delete(`/study-plan/goals/${goalId}`);
+  return res;
+}
+
+export async function getQuestionTypes(skill?: string) {
+  const res = await apisExam.get("/question-bank/types", {
+    params: skill ? { skill } : undefined,
+  });
+  return res;
+}
+
+export async function getQuestionsByType(
+  type: string,
+  skill?: string,
+  page: number = 1,
+  pageSize: number = 20
+) {
+  const res = await apisExam.get("/question-bank/questions", {
+    params: { type, skill, page, pageSize },
+  });
+  return res;
+}
+
+export async function getExamsByQuestionType(
+  type?: string,
+  page: number = 1,
+  pageSize: number = 50
+) {
+  const res = await apisExam.get("/question-bank/exams", {
+    params: { type, page, pageSize },
+  });
+  return res;
 }

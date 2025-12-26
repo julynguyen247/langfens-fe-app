@@ -22,7 +22,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     pathname.startsWith("/do-test") ||
     pathname.startsWith("/flashcards") ||
     pathname.startsWith("/placement") ||
-    pathname.startsWith("/practice");
+    pathname.startsWith("/practice") ||
+    pathname.startsWith("/profile") ||
+    pathname.startsWith("/achievements") ||
+    pathname.startsWith("/leaderboard") ||
+    pathname.startsWith("/analytics") ||
+    pathname.startsWith("/notifications") ||
+    pathname.startsWith("/study-plan");
 
   const content = requireAuth ? (
     <AuthWrapper>{children}</AuthWrapper>

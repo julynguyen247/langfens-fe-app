@@ -8,7 +8,11 @@ type ServiceKey =
   | "speaking"
   | "writing"
   | "chatbot"
-  | "dictionary";
+  | "dictionary"
+  | "gamification"
+  | "analytics"
+  | "notification"
+  | "studyplan"
 
 const GATEWAY_BASE = process.env.NEXT_PUBLIC_GATEWAY_URL || "";
 const buildBase = (suffix: string) =>
@@ -23,6 +27,10 @@ const BASE_URL: Record<ServiceKey, string> = {
   writing: buildBase("/api-writing"),
   chatbot: buildBase("/api-chatbot"),
   dictionary: buildBase("/api-dictionary"),
+  gamification: buildBase("/api-gamification"),
+  analytics: buildBase("/api-analytics"),
+  notification: buildBase("/api-notification"),
+  studyplan: buildBase("/api-study-plan"),
 };
 
 const getToken = () =>
@@ -97,5 +105,10 @@ export const apisSpeaking = apis.speaking;
 export const apisWriting = apis.writing;
 export const apisChatbot = apis.chatbot;
 export const apisDictionary = apis.dictionary;
+export const apisGamification = apis.gamification;
+export const apisAnalytics = apis.analytics;
+export const apisNotification = apis.notification;
+export const apisStudyplan = apis.studyplan;
 const api = apisAuth;
 export default api;
+

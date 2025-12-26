@@ -12,8 +12,14 @@ import {
   getWritingHistory,
   getSpeakingHistory,
   refresh,
+  getAnalyticsSummary,
+  getStrengthsWeaknesses,
+  getScoreTrend,
+  getRecentAnalyticsActivity,
+  getGamificationStats,
 } from "@/utils/api";
-import { FiPlay } from "react-icons/fi";
+import { FiPlay, FiCheck, FiX, FiActivity, FiTarget, FiClock, FiChevronRight } from "react-icons/fi";
+import { HiOutlineFire } from "react-icons/hi";
 import { TbTargetArrow } from "react-icons/tb";
 import { useAttemptStore } from "../store/useAttemptStore";
 import {
@@ -104,6 +110,21 @@ export default function Home() {
     useState<PlacementStatus | null>(null);
   const [loadingPlacement, setLoadingPlacement] = useState(true);
 
+  const [analyticsSummary, setAnalyticsSummary] = useState<{
+    totalAttempts: number;
+    totalStudyTimeMin: number;
+    avgScore: number;
+    currentStreak: number;
+    testsBySkill: Record<string, number>;
+  } | null>(null);
+  const [strengthsData, setStrengthsData] = useState<{
+    strengths: { type: string; accuracy: number; totalQuestions: number; correctAnswers: number }[];
+    weaknesses: { type: string; accuracy: number; totalQuestions: number; correctAnswers: number }[];
+  } | null>(null);
+  const [scoreTrend, setScoreTrend] = useState<{ date: string; avgScore: number; testCount: number }[]>([]);
+  const [recentAnalytics, setRecentAnalytics] = useState<{ type: string; examId: string; examTitle?: string; score?: number; date: string; durationMin: number }[]>([]);
+  const [gamificationStreak, setGamificationStreak] = useState<number | null>(null);
+
   useEffect(() => {
     getMe().catch(() => {});
 
@@ -111,10 +132,15 @@ export default function Home() {
       setLoadingAttempts(true);
       setAttemptErr(null);
       try {
-        const [res, wres, sres] = await Promise.all([
+        const [res, wres, sres, analyticsRes, strengthsRes, trendRes, recentRes, gamificationRes] = await Promise.all([
           getAttempt(1, 10),
           getWritingHistory(),
           getSpeakingHistory(),
+          getAnalyticsSummary().catch(() => null),
+          getStrengthsWeaknesses().catch(() => null),
+          getScoreTrend(30).catch(() => null),
+          getRecentAnalyticsActivity(10).catch(() => null),
+          getGamificationStats().catch(() => null),
         ]);
 
         const raw =
@@ -142,6 +168,25 @@ export default function Home() {
             new Date(b.dateISO).getTime() - new Date(a.dateISO).getTime()
         );
         setAttempts(merged);
+
+        // Set analytics data
+        const summaryData = (analyticsRes as any)?.data?.data ?? (analyticsRes as any)?.data;
+        if (summaryData) setAnalyticsSummary(summaryData);
+        
+        const strengthsRaw = (strengthsRes as any)?.data?.data ?? (strengthsRes as any)?.data;
+        if (strengthsRaw) setStrengthsData(strengthsRaw);
+
+        const trendData = (trendRes as any)?.data?.data?.data ?? (trendRes as any)?.data?.data ?? [];
+        if (Array.isArray(trendData)) setScoreTrend(trendData);
+
+        const recentData = (recentRes as any)?.data?.data?.activities ?? (recentRes as any)?.data?.activities ?? [];
+        if (Array.isArray(recentData)) setRecentAnalytics(recentData);
+
+        // Get gamification streak (this is the source of truth, same as profile page)
+        const gamificationData = (gamificationRes as any)?.data?.data ?? (gamificationRes as any)?.data;
+        if (gamificationData?.currentStreak !== undefined) {
+          setGamificationStreak(gamificationData.currentStreak);
+        }
       } catch (e: any) {
         setAttemptErr(e?.message || "Không thể tải lịch sử làm bài.");
       } finally {
@@ -435,52 +480,205 @@ export default function Home() {
           )}
         </AnimatePresence>
 
-        {/* <SectionTitle> Phân tích dữ liệu </SectionTitle>
-        <motion.div
-          className="grid grid-cols-1 md:grid-cols-3 gap-4"
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, amount: 0.2 }}
-          variants={staggerContainer}
-        >
-          <motion.div variants={fadeInUp}>
-            <StatCard label="Tổng số bài đã làm" value={analytics.total} />
-          </motion.div>
-          <motion.div variants={fadeInUp}>
-            <StatCard label="Điểm trung bình" value={`${analytics.avg}`} />
-          </motion.div>
-          <motion.div variants={fadeInUp}>
-            <StatCard
-              label="Chuỗi ngày học"
-              value={`${analytics.streakDays} ngày`}
-            />
-          </motion.div>
-        </motion.div>
+        {/* Analytics Summary Section */}
+        {analyticsSummary && analyticsSummary.totalAttempts > 0 && (
+          <>
+            <div className="flex items-center justify-between">
+              <SectionTitle>Phân tích học tập</SectionTitle>
+              <button
+                onClick={() => router.push("/analytics")}
+                className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 font-medium"
+              >
+                Xem chi tiết <FiChevronRight className="w-4 h-4" />
+              </button>
+            </div>
 
-        <Card>
-          <div className="text-sm font-medium text-slate-900">
-            Tiến bộ gần đây
-          </div>
-          <motion.div
-            className="mt-4 flex items-end gap-1 h-28"
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, amount: 0.3 }}
-            variants={staggerBar}
-          >
-            {[42, 55, 61, 38, 74, 80, 67, 88, 71, 92, 77, 84].map((h, i) => (
-              <motion.div
-                key={i}
-                className="flex-1 rounded-t bg-blue-500/70"
-                variants={barItem(h)}
-                title={`${h}`}
-              />
-            ))}
-          </motion.div>
-          <div className="mt-2 text-xs text-slate-500">
-            *Cột càng cao biểu thị kết quả tốt hơn (dữ liệu minh họa).
-          </div>
-        </Card> */}
+            <motion.div
+              className="grid grid-cols-2 md:grid-cols-4 gap-4"
+              initial="hidden"
+              whileInView="show"
+              viewport={{ once: true, amount: 0.2 }}
+              variants={staggerContainer}
+            >
+              <motion.div variants={fadeInUp}>
+                <div className="p-4 rounded-2xl border bg-blue-50 text-blue-600 border-blue-100">
+                  <div className="flex items-center gap-2 mb-2">
+                    <FiActivity className="w-5 h-5" />
+                    <span className="text-xs font-medium opacity-80">Bài đã làm</span>
+                  </div>
+                  <div className="text-2xl font-bold">{analyticsSummary.totalAttempts}</div>
+                </div>
+              </motion.div>
+              <motion.div variants={fadeInUp}>
+                <div className="p-4 rounded-2xl border bg-green-50 text-green-600 border-green-100">
+                  <div className="flex items-center gap-2 mb-2">
+                    <FiTarget className="w-5 h-5" />
+                    <span className="text-xs font-medium opacity-80">Điểm TB</span>
+                  </div>
+                  <div className="text-2xl font-bold">{analyticsSummary.avgScore.toFixed(1)}%</div>
+                </div>
+              </motion.div>
+              <motion.div variants={fadeInUp}>
+                <div className="p-4 rounded-2xl border bg-purple-50 text-purple-600 border-purple-100">
+                  <div className="flex items-center gap-2 mb-2">
+                    <FiClock className="w-5 h-5" />
+                    <span className="text-xs font-medium opacity-80">Thời gian học</span>
+                  </div>
+                  <div className="text-2xl font-bold">{formatStudyTime(analyticsSummary.totalStudyTimeMin)}</div>
+                </div>
+              </motion.div>
+              <motion.div variants={fadeInUp}>
+                <div className="p-4 rounded-2xl border bg-orange-50 text-orange-600 border-orange-100">
+                  <div className="flex items-center gap-2 mb-2">
+                    <HiOutlineFire className="w-5 h-5" />
+                    <span className="text-xs font-medium opacity-80">Streak</span>
+                  </div>
+                  <div className="text-2xl font-bold">{gamificationStreak ?? analyticsSummary.currentStreak} ngày</div>
+                </div>
+              </motion.div>
+            </motion.div>
+
+            {strengthsData && (strengthsData.strengths?.length > 0 || strengthsData.weaknesses?.length > 0) && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {strengthsData.strengths?.length > 0 && (
+                  <Card>
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center">
+                        <FiCheck className="w-4 h-4 text-green-600" />
+                      </div>
+                      <span className="font-semibold text-slate-900">Điểm mạnh</span>
+                    </div>
+                    <div className="space-y-3">
+                      {strengthsData.strengths.slice(0, 3).map((item) => (
+                        <div key={item.type} className="space-y-1">
+                          <div className="flex justify-between text-sm">
+                            <span className="font-medium text-slate-700">{item.type}</span>
+                            <span className="text-green-600">{Math.min(100, Math.round(item.accuracy))}%</span>
+                          </div>
+                          <div className="h-2 bg-green-100 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-green-500 rounded-full"
+                              style={{ width: `${Math.min(100, Math.round(item.accuracy))}%` }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                )}
+                {strengthsData.weaknesses?.length > 0 && (
+                  <Card>
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center">
+                        <FiX className="w-4 h-4 text-red-600" />
+                      </div>
+                      <span className="font-semibold text-slate-900">Cần cải thiện</span>
+                    </div>
+                    <div className="space-y-3">
+                      {strengthsData.weaknesses.slice(0, 3).map((item) => (
+                        <div key={item.type} className="space-y-1">
+                          <div className="flex justify-between text-sm">
+                            <span className="font-medium text-slate-700">{item.type}</span>
+                            <span className="text-red-600">{Math.min(100, Math.round(item.accuracy))}%</span>
+                          </div>
+                          <div className="h-2 bg-red-100 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-red-500 rounded-full"
+                              style={{ width: `${Math.min(100, Math.round(item.accuracy))}%` }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                )}
+              </div>
+            )}
+
+            {/* Tests by Skill */}
+            {analyticsSummary?.testsBySkill && Object.keys(analyticsSummary.testsBySkill).length > 0 && (
+              <Card>
+                <h3 className="font-semibold text-slate-900 mb-4">Bài thi theo kỹ năng</h3>
+                <div className="flex flex-wrap gap-3">
+                  {Object.entries(analyticsSummary.testsBySkill).map(([skill, count]) => (
+                    <div
+                      key={skill}
+                      className="px-4 py-2 bg-slate-100 rounded-full text-sm"
+                    >
+                      <span className="font-medium text-slate-700">{skill}</span>
+                      <span className="ml-2 text-slate-500">{count}</span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            )}
+
+            {/* Score Trend Chart */}
+            {scoreTrend.length > 0 && (
+              <Card>
+                <h3 className="font-semibold text-slate-900 mb-4">📈 Xu hướng điểm số (30 ngày)</h3>
+                <div className="h-40 flex items-end gap-1">
+                  {scoreTrend.map((point, index) => {
+                    const maxScore = Math.max(...scoreTrend.map(d => d.avgScore), 100);
+                    const height = (point.avgScore / maxScore) * 100;
+                    return (
+                      <div
+                        key={point.date}
+                        className="flex-1 flex flex-col items-center gap-1"
+                        title={`${point.date}: ${point.avgScore.toFixed(1)}%`}
+                      >
+                        <div
+                          className="w-full bg-gradient-to-t from-blue-500 to-blue-400 rounded-t transition-all hover:from-blue-600 hover:to-blue-500"
+                          style={{ height: `${height}%`, minHeight: "4px" }}
+                        />
+                        {index % Math.ceil(scoreTrend.length / 5) === 0 && (
+                          <span className="text-[9px] text-slate-400 whitespace-nowrap">
+                            {new Date(point.date).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </Card>
+            )}
+
+            {/* Recent Analytics Activity */}
+            {recentAnalytics.length > 0 && (
+              <Card>
+                <h3 className="font-semibold text-slate-900 mb-4">Hoạt động gần đây</h3>
+                <div className="space-y-3">
+                  {recentAnalytics.slice(0, 5).map((activity, index) => (
+                    <div
+                      key={`${activity.examId}-${index}`}
+                      className="flex items-center gap-4 p-3 bg-slate-50 rounded-xl"
+                    >
+                      <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-sm">
+                        {activity.type?.slice(0, 2) || "TE"}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-slate-900 truncate">
+                          {activity.examTitle || "Bài kiểm tra"}
+                        </div>
+                        <div className="text-xs text-slate-500">
+                          {new Date(activity.date).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })} • {activity.durationMin} phút
+                        </div>
+                      </div>
+                      {activity.score !== undefined && activity.score !== null && (
+                        <div className={`text-lg font-bold ${
+                          activity.score >= 70 ? "text-green-600" : 
+                          activity.score >= 50 ? "text-yellow-600" : "text-red-600"
+                        }`}>
+                          {activity.score.toFixed(0)}%
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            )}
+          </>
+        )}
       </main>
       <HistoryModal
         open={openHistoryModal}
@@ -677,4 +875,11 @@ function toSkill(s: string): Attempt["skill"] {
   if (t.includes("writ")) return "Writing";
   if (t.includes("listen")) return "Listening";
   return "Reading";
+}
+
+function formatStudyTime(minutes: number): string {
+  if (minutes < 60) return `${minutes}p`;
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return mins ? `${hours}h ${mins}p` : `${hours}h`;
 }

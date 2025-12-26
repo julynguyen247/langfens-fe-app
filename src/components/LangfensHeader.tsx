@@ -6,12 +6,15 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useUserStore } from "@/app/store/userStore";
 import SleepPenguinMini from "./SleepPenguinMini";
+import { NotificationBell } from "./NotificationBell";
 
 const NAV = [
   { label: "Trang chủ", href: "/home" },
   { label: "Luyện đề", href: "/practice" },
   { label: "Từ điển", href: "/dictionary" },
   { label: "Từ vựng", href: "/flashcards" },
+  { label: "Phân tích", href: "/analytics" },
+  { label: "Hồ sơ", href: "/profile" },
 ];
 
 export default function LangfensHeader() {
@@ -88,75 +91,85 @@ export default function LangfensHeader() {
                 </span>
               </Link>
 
-              <div
-                className="relative"
-                onMouseEnter={() => setUserOpen(true)}
-                onMouseLeave={() => setUserOpen(false)}
-              >
-                <button className="inline-flex items-center justify-center size-8 rounded-full border border-slate-300">
-                  {avatarUrl ? (
-                    <img src={avatarUrl} className="w-8 h-8 rounded-full" />
-                  ) : (
-                    <span className="text-xs bg-slate-200 rounded-full w-8 h-8 flex items-center justify-center text-slate-700 font-bold">
-                      {initialsFromName(displayName)}
-                    </span>
-                  )}
-                </button>
+              <div className="flex items-center gap-2">
+                <NotificationBell />
 
-                {userOpen && (
-                  <div className="absolute right-0 top-full p-2 w-72 rounded-2xl bg-white shadow-lg ring-1 ring-black/5">
-                    <div className="p-2 flex items-center gap-3">
-                      <div className="min-w-0">
-                        <div className="font-semibold text-slate-800 truncate">
-                          {displayName}
+                <div
+                  className="relative"
+                  onMouseEnter={() => setUserOpen(true)}
+                  onMouseLeave={() => setUserOpen(false)}
+                >
+                  <button className="inline-flex items-center justify-center size-8 rounded-full border border-slate-300">
+                    {avatarUrl ? (
+                      <img src={avatarUrl} className="w-8 h-8 rounded-full" />
+                    ) : (
+                      <span className="text-xs bg-slate-200 rounded-full w-8 h-8 flex items-center justify-center text-slate-700 font-bold">
+                        {initialsFromName(displayName)}
+                      </span>
+                    )}
+                  </button>
+
+                  {userOpen && (
+                    <div className="absolute right-0 top-full p-2 w-72 rounded-2xl bg-white shadow-lg ring-1 ring-black/5">
+                      <div className="p-2 flex items-center gap-3">
+                        <div className="min-w-0">
+                          <div className="font-semibold text-slate-800 truncate">
+                            {displayName}
+                          </div>
+                          <div className="text-sm text-slate-500 truncate">
+                            {email}
+                          </div>
                         </div>
-                        <div className="text-sm text-slate-500 truncate">
-                          {email}
-                        </div>
+
+                        <span
+                          className={`ml-auto px-2 py-0.5 rounded-full text-[11px] font-medium flex items-center gap-1 ${
+                            emailConfirmed
+                              ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
+                              : "bg-rose-50 text-rose-700 ring-1 ring-rose-200"
+                          }`}
+                        >
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              emailConfirmed ? "bg-emerald-500" : "bg-rose-500"
+                            }`}
+                          />
+                          {emailConfirmed ? "Verified" : "Unverified"}
+                        </span>
                       </div>
 
-                      <span
-                        className={`ml-auto px-2 py-0.5 rounded-full text-[11px] font-medium flex items-center gap-1 ${
-                          emailConfirmed
-                            ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
-                            : "bg-rose-50 text-rose-700 ring-1 ring-rose-200"
-                        }`}
-                      >
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full ${
-                            emailConfirmed ? "bg-emerald-500" : "bg-rose-500"
-                          }`}
-                        />
-                        {emailConfirmed ? "Verified" : "Unverified"}
-                      </span>
+                      {!emailConfirmed && (
+                        <>
+                          <div className="h-px bg-slate-200" />
+                          <div className="py-1">
+                            <button
+                              onClick={handleVerifyEmail}
+                              className="w-full text-left px-3 py-2 text-xs text-blue-700 hover:bg-blue-50 flex items-center gap-3"
+                            >
+                              Xác thực email
+                            </button>
+                          </div>
+                        </>
+                      )}
+
+                      <div className="h-px bg-slate-200" />
+
+                      <div className="py-1">
+                        <button
+                          onClick={handleProfile}
+                          className="w-full text-left px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-3"
+                        >
+                          Hồ sơ của tôi
+                        </button>
+                        <button
+                          onClick={handleLogout}
+                          className="w-full text-left px-3 py-2 text-xs text-rose-600 hover:bg-rose-50 flex items-center gap-3"
+                        >
+                          Đăng xuất
+                        </button>
+                      </div>
                     </div>
-
-                    {!emailConfirmed && (
-                      <>
-                        <div className="h-px bg-slate-200" />
-                        <div className="py-1">
-                          <button
-                            onClick={handleVerifyEmail}
-                            className="w-full text-left px-3 py-2 text-xs text-blue-700 hover:bg-blue-50 flex items-center gap-3"
-                          >
-                            Xác thực email
-                          </button>
-                        </div>
-                      </>
-                    )}
-
-                    <div className="h-px bg-slate-200" />
-
-                    <div className="py-1">
-                      <button
-                        onClick={handleLogout}
-                        className="w-full text-left px-3 py-2 text-xs text-rose-600 hover:bg-rose-50 flex items-center gap-3"
-                      >
-                        Đăng xuất
-                      </button>
-                    </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
           </div>
