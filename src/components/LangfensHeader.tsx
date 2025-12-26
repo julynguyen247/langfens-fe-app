@@ -15,6 +15,7 @@ const NAV = [
   { label: "Từ vựng", href: "/flashcards" },
   { label: "Phân tích", href: "/analytics" },
   { label: "Hồ sơ", href: "/profile" },
+  { label: "Khóa học", href: "/courses" },
 ];
 
 export default function LangfensHeader() {
