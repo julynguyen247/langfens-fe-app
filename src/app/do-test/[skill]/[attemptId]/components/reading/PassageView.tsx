@@ -3,17 +3,12 @@
 import React, { memo, useMemo } from "react";
 import ReactMarkdown from "react-markdown";
 
-// Memoized markdown components for title
 const titleComponents = {
   p: ({ node, ...props }: any) => (
-    <h2
-      className="text-2xl font-semibold text-gray-800"
-      {...props}
-    />
+    <h2 className="text-2xl font-semibold text-gray-800" {...props} />
   ),
 };
 
-// Memoized markdown components for content with image support
 const contentComponents = {
   p: ({ node, ...props }: any) => (
     <p
@@ -31,16 +26,10 @@ const contentComponents = {
     />
   ),
   h2: ({ node, ...props }: any) => (
-    <h2
-      className="text-xl font-bold text-gray-800 mt-6 mb-3"
-      {...props}
-    />
+    <h2 className="text-xl font-bold text-gray-800 mt-6 mb-3" {...props} />
   ),
   h3: ({ node, ...props }: any) => (
-    <h3
-      className="text-lg font-semibold text-gray-700 mt-4 mb-2"
-      {...props}
-    />
+    <h3 className="text-lg font-semibold text-gray-700 mt-4 mb-2" {...props} />
   ),
   strong: ({ node, ...props }: any) => (
     <strong className="font-semibold text-gray-900" {...props} />
@@ -74,18 +63,51 @@ const PassageView = memo(function PassageView({
     [passage.content]
   );
 
+  const unHighlight = (element: HTMLElement) => {
+    const parent = element.parentNode;
+    if (parent) {
+      const textNode = document.createTextNode(element.textContent || "");
+
+      parent.replaceChild(textNode, element);
+
+      parent.normalize();
+    }
+  };
+
+  const handleMouseUp = (e: React.MouseEvent<HTMLDivElement>) => {
+    const selection = window.getSelection();
+
+    if (selection && !selection.isCollapsed) {
+      const range = selection.getRangeAt(0);
+
+      try {
+        const mark = document.createElement("mark");
+        mark.style.backgroundColor = "#fde68a";
+        mark.style.cursor = "pointer";
+        mark.title = "Click to remove highlight";
+
+        range.surroundContents(mark);
+        selection.removeAllRanges();
+      } catch (error) {
+        console.warn("Cannot highlight across block boundaries");
+      }
+      return;
+    }
+    const target = e.target as HTMLElement;
+    if (target.tagName === "MARK") {
+      unHighlight(target);
+    }
+  };
+
   return (
-    <div className="flex flex-col h-full min-h-0 bg-white overflow-hidden">
+    <div className="flex flex-col h-full bg-white overflow-hidden">
       <div className="px-6 py-3 border-b">
-        <div className="prose prose-xl font-semibold text-gray-800 max-w-none">
-          <ReactMarkdown components={titleComponents}>
-            {title}
-          </ReactMarkdown>
+        <div className="font-semibold text-gray-800">
+          <ReactMarkdown components={titleComponents}>{title}</ReactMarkdown>
         </div>
       </div>
 
-      <div className="flex-1 w-full min-h-0 overflow-auto overscroll-contain p-6 bg-white [scrollbar-gutter:stable] text-black space-y-6">
-        {/* Header image if provided - centered with max size */}
+      <div className="flex-1 w-full overflow-auto overscroll-contain p-6 bg-white [scrollbar-gutter:stable] text-black space-y-2">
         {imageUrl && (
           <div className="flex justify-center mb-6">
             <img
@@ -96,14 +118,15 @@ const PassageView = memo(function PassageView({
             />
           </div>
         )}
-        
-        <ReactMarkdown components={contentComponents}>
-          {content}
-        </ReactMarkdown>
+
+        <div onMouseUp={handleMouseUp}>
+          <ReactMarkdown components={contentComponents}>
+            {content}
+          </ReactMarkdown>
+        </div>
       </div>
     </div>
   );
 });
 
 export default PassageView;
-
