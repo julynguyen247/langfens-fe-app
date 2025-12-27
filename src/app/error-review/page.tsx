@@ -37,6 +37,26 @@ const DATE_RANGES = [
   { label: "Tất cả", days: 365 },
 ];
 
+const QUESTION_TYPE_LABELS: Record<string, string> = {
+  "TRUE_FALSE_NOT_GIVEN": "True/False/Not Given",
+  "YES_NO_NOT_GIVEN": "Yes/No/Not Given",
+  "MCQ_SINGLE": "Multiple Choice",
+  "MCQ_MULTIPLE": "Multiple Selection",
+  "MATCHING_HEADING": "Matching Headings",
+  "MATCHING_INFORMATION": "Matching Information",
+  "MATCHING_FEATURES": "Matching Features",
+  "SUMMARY_COMPLETION": "Summary Completion",
+  "TABLE_COMPLETION": "Table Completion",
+  "SENTENCE_COMPLETION": "Sentence Completion",
+  "DIAGRAM_LABEL": "Diagram Labelling",
+  "SHORT_ANSWER": "Short Answer",
+  "MAP_LABEL": "Map Labelling",
+};
+
+function formatQuestionType(type: string): string {
+  return QUESTION_TYPE_LABELS[type] || type.split("_").map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(" ");
+}
+
 export default function ErrorReviewPage() {
   const [data, setData] = useState<WrongAnswersResult | null>(null);
   const [loading, setLoading] = useState(true);
@@ -161,7 +181,7 @@ export default function ErrorReviewPage() {
             {questionTypes.map((t: any) => {
               const typeName = typeof t === "string" ? t : t.type || t.name || "";
               return (
-                <option key={typeName} value={typeName}>{String(typeName).replace(/_/g, " ")}</option>
+                <option key={typeName} value={typeName}>{formatQuestionType(String(typeName))}</option>
               );
             })}
           </select>
@@ -226,7 +246,7 @@ export default function ErrorReviewPage() {
                         {item.skill}
                       </span>
                       <span className="inline-block rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">
-                        {item.questionType.replace(/_/g, " ")}
+                        {formatQuestionType(item.questionType)}
                       </span>
                     </div>
                     
@@ -305,7 +325,7 @@ export default function ErrorReviewPage() {
                     {selectedAnswer.skill}
                   </span>
                   <span className="inline-block rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">
-                    {selectedAnswer.questionType.replace(/_/g, " ")}
+                    {formatQuestionType(selectedAnswer.questionType)}
                   </span>
                 </div>
                 <Link

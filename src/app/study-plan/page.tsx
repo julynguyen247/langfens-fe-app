@@ -200,53 +200,53 @@ export default function StudyPlanPage() {
                 </span>
               </div>
 
-              {/* Stats Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="p-4 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-                  <div className="text-sm opacity-80">Mục tiêu Band</div>
-                  <div className="text-3xl font-bold">{progress.goal.targetBandScore}</div>
+              {/* Stats Grid - Classic Style */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="p-4 rounded-lg border border-blue-100 bg-blue-50">
+                  <div className="text-xs text-slate-500 mb-1">Mục tiêu Band</div>
+                  <div className="text-2xl font-bold text-blue-600">{progress.goal.targetBandScore}</div>
                 </div>
-                <div className="p-4 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 text-white">
-                  <div className="text-sm opacity-80">Còn lại</div>
-                  <div className="text-3xl font-bold">{getDaysRemaining(progress.goal.targetDate)} ngày</div>
+                <div className="p-4 rounded-lg border border-blue-100 bg-blue-50">
+                  <div className="text-xs text-slate-500 mb-1">Còn lại</div>
+                  <div className="text-2xl font-bold text-purple-600">{getDaysRemaining(progress.goal.targetDate)} <span className="text-base font-medium">ngày</span></div>
                 </div>
-                <div className="p-4 rounded-xl bg-gradient-to-br from-green-500 to-green-600 text-white">
-                  <div className="text-sm opacity-80">Điểm hiện tại</div>
-                  <div className="text-3xl font-bold">{progress.current.avgScore.toFixed(1)}</div>
+                <div className="p-4 rounded-lg border border-blue-100 bg-blue-50">
+                  <div className="text-xs text-slate-500 mb-1">Điểm hiện tại</div>
+                  <div className="text-2xl font-bold text-emerald-600">{progress.current.avgScore.toFixed(1)}</div>
                 </div>
-                <div className="p-4 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 text-white">
-                  <div className="text-sm opacity-80">Đã hoàn thành</div>
-                  <div className="text-3xl font-bold">{progress.current.testsCompleted} bài</div>
+                <div className="p-4 rounded-lg border border-blue-100 bg-blue-50">
+                  <div className="text-xs text-slate-500 mb-1">Đã hoàn thành</div>
+                  <div className="text-2xl font-bold text-amber-600">{progress.current.testsCompleted} <span className="text-base font-medium">bài</span></div>
                 </div>
               </div>
 
-              {/* Progress Bars */}
+              {/* Progress Bars - Classic Style */}
               <div className="space-y-4 pt-4">
                 <div>
-                  <div className="flex justify-between text-sm mb-1">
+                  <div className="flex justify-between text-sm mb-2">
                     <span className="text-slate-600">Tiến độ điểm số</span>
-                    <span className="font-medium">{progress.progress.scoreProgress}%</span>
+                    <span className="font-medium text-slate-900">{progress.progress.scoreProgress}%</span>
                   </div>
-                  <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${Math.min(100, progress.progress.scoreProgress)}%` }}
                       transition={{ duration: 1, ease: "easeOut" }}
-                      className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full"
+                      className="h-full bg-blue-500 rounded-full"
                     />
                   </div>
                 </div>
                 <div>
-                  <div className="flex justify-between text-sm mb-1">
+                  <div className="flex justify-between text-sm mb-2">
                     <span className="text-slate-600">Thời gian học ({progress.current.studyTimeHours}h / {Math.round(getDaysRemaining(progress.goal.targetDate) * progress.goal.studyHoursPerDay)}h)</span>
-                    <span className="font-medium">{progress.progress.timeProgress}%</span>
+                    <span className="font-medium text-slate-900">{progress.progress.timeProgress}%</span>
                   </div>
-                  <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${Math.min(100, progress.progress.timeProgress)}%` }}
                       transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
-                      className="h-full bg-gradient-to-r from-green-500 to-green-600 rounded-full"
+                      className="h-full bg-emerald-500 rounded-full"
                     />
                   </div>
                 </div>

@@ -416,14 +416,23 @@ function SkeletonProfile() {
 
 function formatXpSource(source: string): string {
   const sourceMap: Record<string, string> = {
+    // CamelCase
     DailyLogin: "Điểm danh hàng ngày",
     TestCompleted: "Hoàn thành bài test",
     CardReviewed: "Ôn tập thẻ từ vựng",
     LessonCompleted: "Hoàn thành bài học",
     AchievementUnlocked: "Mở khóa thành tựu",
     StreakBonus: "Bonus streak",
+    // UPPER_CASE
+    DAILY_LOGIN: "Điểm danh hàng ngày",
+    TEST_COMPLETED: "Hoàn thành bài test",
+    CARD_REVIEWED: "Ôn tập thẻ từ vựng",
+    LESSON_COMPLETED: "Hoàn thành bài học",
+    ACHIEVEMENT_UNLOCKED: "Mở khóa thành tựu",
+    STREAK_BONUS: "Bonus streak",
+    DAILY_CHECKIN: "Điểm danh hàng ngày",
   };
-  return sourceMap[source] || source;
+  return sourceMap[source] || source.split("_").map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
 }
 
 function formatDate(iso: string): string {

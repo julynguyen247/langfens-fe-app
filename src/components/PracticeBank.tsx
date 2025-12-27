@@ -258,58 +258,87 @@ export default function PracticeBank({
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.03 }}
-              onClick={() => handleGoToExam(it)}
-              className="group cursor-pointer rounded-xl bg-white overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+              className="group relative cursor-pointer rounded-lg border border-slate-200 bg-white overflow-hidden hover:border-slate-300 hover:shadow-sm transition-all duration-200"
             >
-              {/* Image */}
-              <div className="relative h-40 w-full overflow-hidden">
-                {it.imageUrl ? (
-                  <img
-                    src={it.imageUrl}
-                    alt={it.title}
-                    loading="lazy"
-                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                ) : (
-                  <div className="absolute inset-0 bg-gradient-to-br from-slate-100 to-slate-50" />
-                )}
-                
-                {/* View Count */}
-                <div className="absolute left-2 top-2 flex items-center gap-1 bg-gradient-to-r from-orange-500 to-amber-500 text-white px-2 py-0.5 rounded text-[11px] font-medium shadow">
-                  <HiOutlineFire className="w-3 h-3" />
-                  {getViewCount(it.id)} lượt
+              {/* Default View - Image + Content */}
+              <div className="group-hover:opacity-0 group-hover:invisible transition-opacity duration-150">
+                {/* Image */}
+                <div className="relative h-36 w-full overflow-hidden bg-slate-100">
+                  {it.imageUrl ? (
+                    <img
+                      src={it.imageUrl}
+                      alt={it.title}
+                      loading="lazy"
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 bg-slate-100 flex items-center justify-center">
+                      <span className="text-slate-300 text-4xl">📄</span>
+                    </div>
+                  )}
+                  
+                  {/* View Count - Simple badge */}
+                  <div className="absolute top-2 left-2 bg-slate-900/80 text-white px-2 py-0.5 rounded text-[11px] font-medium flex items-center gap-1">
+                    <HiOutlineFire className="w-3 h-3 text-orange-400" />
+                    {getViewCount(it.id)}
+                  </div>
+
+                  {/* Passage Badge */}
+                  {(() => {
+                    const passageInfo = getPassageInfo(it.title, index);
+                    return (
+                      <div className="absolute bottom-2 left-2 bg-white/90 text-slate-700 px-2 py-0.5 rounded text-[11px] font-medium border border-slate-200">
+                        {passageInfo.label}
+                      </div>
+                    );
+                  })()}
                 </div>
 
-                {/* Passage Badge */}
-                {(() => {
-                  const passageInfo = getPassageInfo(it.title, index);
-                  return (
-                    <div className={`absolute left-2 bottom-2 ${getPassageColor(passageInfo.num)} text-white px-2 py-0.5 rounded text-[11px] font-medium shadow`}>
-                      {passageInfo.label}
-                    </div>
-                  );
-                })()}
+                {/* Content */}
+                <div className="p-3">
+                  <h3 className="font-medium text-slate-900 text-sm leading-snug line-clamp-2 min-h-[2.25rem]">
+                    {it.title}
+                  </h3>
+                  
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {(it.questionTypes || it.tags || ["MATCHING_HEADING", "TRUE_FALSE_NOT_GIVEN"]).slice(0, 2).map((type, idx) => (
+                      <span key={idx} className="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                        {QUESTION_TYPE_LABELS[type] || type}
+                      </span>
+                    ))}
+                  </div>
+                </div>
               </div>
 
-              {/* Content */}
-              <div className="p-3">
-                <h3 className="font-medium text-slate-800 text-sm leading-snug line-clamp-2 min-h-[2.25rem] group-hover:text-blue-600 transition">
+              {/* Hover View - Full card replacement */}
+              <div className="absolute inset-0 bg-white p-4 flex flex-col opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity duration-150">
+                <h4 className="font-semibold text-slate-900 text-sm leading-snug mb-3">
                   {it.title}
-                </h3>
+                </h4>
                 
-                <div className="mt-2 space-y-0.5">
-                  {(it.questionTypes || it.tags || ["MATCHING_HEADING", "TRUE_FALSE_NOT_GIVEN"]).slice(0, 3).map((type, idx) => (
-                    <div key={idx} className="flex items-center gap-1.5 text-[11px] text-slate-500">
-                      <span className="w-1 h-1 bg-blue-400 rounded-full" />
+                <div className="flex-1 space-y-1.5 mb-4">
+                  {(it.questionTypes || it.tags || ["MATCHING_HEADING", "TRUE_FALSE_NOT_GIVEN", "MCQ_SINGLE"]).slice(0, 4).map((type, idx) => (
+                    <div key={idx} className="flex items-center gap-2 text-xs text-slate-600">
+                      <span className="text-slate-300">•</span>
                       {QUESTION_TYPE_LABELS[type] || type}
                     </div>
                   ))}
                 </div>
+
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleGoToExam(it);
+                  }}
+                  className="w-full py-2 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-md transition text-xs"
+                >
+                  Làm bài
+                </button>
               </div>
 
               {loadingId === it.id && (
-                <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
-                  <div className="w-6 h-6 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
+                <div className="absolute inset-0 bg-white/90 flex items-center justify-center z-30">
+                  <div className="w-5 h-5 border-2 border-slate-200 border-t-slate-600 rounded-full animate-spin" />
                 </div>
               )}
             </motion.article>

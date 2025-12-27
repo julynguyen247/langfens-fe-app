@@ -646,5 +646,5 @@ function formatQuestionType(type: string): string {
     DIAGRAM_LABEL: "Diagram Label",
     MAP_LABEL: "Map Label",
   };
-  return typeMap[type] || type.replace(/_/g, " ");
+  return typeMap[type] || type.split("_").map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(" ");
 }

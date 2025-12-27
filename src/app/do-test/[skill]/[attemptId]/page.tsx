@@ -234,6 +234,8 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
                   content: activeSec?.passageMd || "",
                 }}
                 imageUrl={attempt?.paper?.imageUrl}
+                attemptId={attemptId}
+                sectionId={activeSec?.id}
               />
             </div>
           </Panel>

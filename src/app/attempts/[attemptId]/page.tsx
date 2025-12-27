@@ -88,6 +88,26 @@ type SpeakingDetail = {
   gradedAt?: string;
 };
 
+const QUESTION_TYPE_LABELS: Record<string, string> = {
+  "TRUE_FALSE_NOT_GIVEN": "True/False/Not Given",
+  "YES_NO_NOT_GIVEN": "Yes/No/Not Given",
+  "MCQ_SINGLE": "Multiple Choice",
+  "MCQ_MULTIPLE": "Multiple Selection",
+  "MATCHING_HEADING": "Matching Headings",
+  "MATCHING_INFORMATION": "Matching Information",
+  "MATCHING_FEATURES": "Matching Features",
+  "SUMMARY_COMPLETION": "Summary Completion",
+  "TABLE_COMPLETION": "Table Completion",
+  "SENTENCE_COMPLETION": "Sentence Completion",
+  "DIAGRAM_LABEL": "Diagram Labelling",
+  "SHORT_ANSWER": "Short Answer",
+  "MAP_LABEL": "Map Labelling",
+};
+
+function formatQuestionType(type: string): string {
+  return QUESTION_TYPE_LABELS[type] || type.split("_").map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(" ");
+}
+
 export default function AttemptResultPage() {
   const { attemptId } = useParams() as { attemptId: string };
   const searchParams = useSearchParams();
@@ -1027,7 +1047,7 @@ function ReviewItem({
             )}
             {data.questionType && data.questionType !== "UNKNOWN" && (
               <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-orange-50 text-orange-700 border border-orange-100">
-                {data.questionType.replace(/_/g, " ")}
+                {formatQuestionType(data.questionType)}
               </span>
             )}
             {typeof data.timeSpentSec === "number" && (
@@ -1246,7 +1266,6 @@ function mapAnswerContent({
 
   let normalizedIds = (ids ?? []).map((v) => String(v)).filter(Boolean);
   
-  // Parse fallbackText if it looks like JSON array (for MULTIPLE_CHOICE_MULTIPLE)
   if (normalizedIds.length === 0 && fallbackText && fallbackText.startsWith("[")) {
     try {
       const parsed = JSON.parse(fallbackText);
@@ -1254,7 +1273,6 @@ function mapAnswerContent({
         normalizedIds = parsed.map((v: any) => String(v)).filter(Boolean);
       }
     } catch {
-      // ignore
     }
   }
   

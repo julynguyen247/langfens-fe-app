@@ -407,55 +407,55 @@ export default function Home() {
           
           <div className="grid grid-cols-2 gap-3">
             <motion.button
-              whileHover={{ scale: 1.02 }}
+              whileHover={{ y: -2 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => router.push("/practice?skill=reading")}
-              className="p-4 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/20 flex flex-col items-start gap-2"
+              className="p-4 rounded-xl bg-blue-50 border border-blue-100 hover:border-blue-200 text-left transition-all duration-200"
             >
-              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                <span className="text-xl">📖</span>
+              <div className="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center mb-3">
+                <span className="text-white text-lg">📖</span>
               </div>
-              <div className="font-semibold">Reading</div>
-              <div className="text-xs text-white/80">Luyện đọc hiểu</div>
+              <div className="font-semibold text-slate-800">Reading</div>
+              <div className="text-xs text-slate-500 mt-0.5">Luyện đọc hiểu</div>
             </motion.button>
 
             <motion.button
-              whileHover={{ scale: 1.02 }}
+              whileHover={{ y: -2 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => router.push("/practice?skill=listening")}
-              className="p-4 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/20 flex flex-col items-start gap-2"
+              className="p-4 rounded-xl bg-purple-50 border border-purple-100 hover:border-purple-200 text-left transition-all duration-200"
             >
-              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                <span className="text-xl">🎧</span>
+              <div className="w-9 h-9 rounded-lg bg-purple-500 flex items-center justify-center mb-3">
+                <span className="text-white text-lg">🎧</span>
               </div>
-              <div className="font-semibold">Listening</div>
-              <div className="text-xs text-white/80">Luyện nghe</div>
+              <div className="font-semibold text-slate-800">Listening</div>
+              <div className="text-xs text-slate-500 mt-0.5">Luyện nghe</div>
             </motion.button>
 
             <motion.button
-              whileHover={{ scale: 1.02 }}
+              whileHover={{ y: -2 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => router.push("/flashcards")}
-              className="p-4 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/20 flex flex-col items-start gap-2"
+              className="p-4 rounded-xl bg-amber-50 border border-amber-100 hover:border-amber-200 text-left transition-all duration-200"
             >
-              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                <span className="text-xl">🃏</span>
+              <div className="w-9 h-9 rounded-lg bg-amber-500 flex items-center justify-center mb-3">
+                <span className="text-white text-lg">🃏</span>
               </div>
-              <div className="font-semibold">Flashcards</div>
-              <div className="text-xs text-white/80">Học từ vựng</div>
+              <div className="font-semibold text-slate-800">Flashcards</div>
+              <div className="text-xs text-slate-500 mt-0.5">Học từ vựng</div>
             </motion.button>
 
             <motion.button
-              whileHover={{ scale: 1.02 }}
+              whileHover={{ y: -2 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => router.push("/bookmarks")}
-              className="p-4 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20 flex flex-col items-start gap-2"
+              className="p-4 rounded-xl bg-emerald-50 border border-emerald-100 hover:border-emerald-200 text-left transition-all duration-200"
             >
-              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                <span className="text-xl">🔖</span>
+              <div className="w-9 h-9 rounded-lg bg-emerald-500 flex items-center justify-center mb-3">
+                <span className="text-white text-lg">🔖</span>
               </div>
-              <div className="font-semibold">Bookmarks</div>
-              <div className="text-xs text-white/80">Câu hỏi đã lưu</div>
+              <div className="font-semibold text-slate-800">Bookmarks</div>
+              <div className="text-xs text-slate-500 mt-0.5">Câu hỏi đã lưu</div>
             </motion.button>
           </div>
         </div>

@@ -403,6 +403,27 @@ export async function getDictionaryDetails(id: number) {
   return res.data;
 }
 
+export async function lookupDictionary(word: string) {
+  const res = await apisDictionary.get("/dictionary/lookup", {
+    params: { word },
+  });
+  return res.data;
+}
+
+export async function enrichVocabulary(word: string) {
+  const res = await apisVocabulary.get("/vocabulary/enrich", {
+    params: { word },
+  });
+  return res.data;
+}
+
+export async function extractVocabulary(passageText: string, maxWords: number = 10) {
+  const res = await apisVocabulary.post("/vocabulary/extract", {
+    passageText,
+    maxWords,
+  });
+  return res.data;
+}
 export async function getGamificationStats() {
   const res = await apisGamification.get("/gamification/me");
   return res;
@@ -649,5 +670,41 @@ export async function getRecommendations(limit: number = 5) {
   const res = await apisAnalytics.get("/analytics/recommendations", {
     params: { limit },
   });
+  return res;
+}
+
+// Notes API
+export async function createNote(payload: {
+  attemptId?: string;
+  sectionId?: string;
+  selectedText?: string;
+  content: string;
+}) {
+  const res = await apisAttempt.post("/notes", payload);
+  return res;
+}
+
+export async function getNotes(params?: {
+  attemptId?: string;
+  page?: number;
+  pageSize?: number;
+}) {
+  const res = await apisAttempt.get("/notes", {
+    params: {
+      attemptId: params?.attemptId,
+      page: params?.page ?? 1,
+      pageSize: params?.pageSize ?? 20,
+    },
+  });
+  return res;
+}
+
+export async function updateNote(noteId: string, content: string) {
+  const res = await apisAttempt.put(`/notes/${noteId}`, { content });
+  return res;
+}
+
+export async function deleteNote(noteId: string) {
+  const res = await apisAttempt.delete(`/notes/${noteId}`);
   return res;
 }
