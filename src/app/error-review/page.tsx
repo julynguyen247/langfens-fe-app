@@ -66,6 +66,44 @@ const QUESTION_TYPE_LABELS: Record<string, string> = {
   "MAP_LABEL": "Map Labelling",
 };
 
+// Clean and format correct answer based on question type
+function formatCorrectAnswer(raw: string | undefined, questionType: string): string {
+  if (!raw || raw.trim() === "") {
+    return "(No answer key)";
+  }
+  
+  let clean = String(raw)
+    // Remove prefixes like "feature-q1:", "blank-1:", "label-A:" etc.
+    .replace(/^(feature|blank|label|heading|item|q|answer|key)[-_]?\d*:\s*/gi, "")
+    // Remove general "key:" prefix pattern 
+    .replace(/^[\w-]+:\s*/, "")
+    .trim();
+  
+  // Handle "A / A" or "B / B" patterns - take first value
+  if (clean.includes(" / ")) {
+    clean = clean.split(" / ")[0].trim();
+  }
+  
+  // Handle "A/A" without spaces (duplicate)
+  if (/^([A-Za-z0-9]+)\/\1$/i.test(clean)) {
+    clean = clean.split("/")[0].trim();
+  }
+  
+  // Format based on question type
+  const type = questionType.toUpperCase();
+  
+  if (type.includes("MATCHING") && clean.length <= 3) {
+    // For matching types with short keys (A, B, iv, vii), add context
+    if (/^[ivx]+$/i.test(clean)) {
+      return `Heading ${clean}`;
+    } else if (/^[A-H]$/i.test(clean)) {
+      return `Paragraph ${clean}`;
+    }
+  }
+  
+  return clean || "(No answer key)";
+}
+
 function formatQuestionType(type: string): string {
   return QUESTION_TYPE_LABELS[type] || type.split("_").map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(" ");
 }
@@ -344,7 +382,7 @@ export default function ErrorReviewPage() {
                         <div>
                           <div className="text-xs text-slate-400 mb-0.5">Correct:</div>
                           <div className="text-sm font-medium text-emerald-700 bg-emerald-50 px-2 py-1 rounded">
-                            {item.correctAnswer}
+                            {formatCorrectAnswer(item.correctAnswer, item.questionType)}
                           </div>
                         </div>
                       </div>
@@ -474,7 +512,7 @@ export default function ErrorReviewPage() {
                         Correct Answer
                       </div>
                       <div className="text-sm font-medium text-emerald-700">
-                        {selectedAnswer.correctAnswer}
+                        {formatCorrectAnswer(selectedAnswer.correctAnswer, selectedAnswer.questionType)}
                       </div>
                     </div>
                   </div>

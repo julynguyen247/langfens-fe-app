@@ -1,10 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiBell, FiSettings, FiArrowLeft, FiSave, FiCheck, FiCheckCircle } from "react-icons/fi";
-import { HiOutlineFire } from "react-icons/hi";
 import {
   getNotifications,
   getNotificationSettings,
@@ -12,6 +10,11 @@ import {
   markNotificationAsRead,
   markAllNotificationsAsRead,
 } from "@/utils/api";
+
+// Material Icon Component
+function Icon({ name, className = "" }: { name: string; className?: string }) {
+  return <span className={`material-symbols-rounded ${className}`}>{name}</span>;
+}
 
 type NotificationItem = {
   id: string;
@@ -31,6 +34,52 @@ type NotificationSettings = {
   enableInactivity: boolean;
 };
 
+// Settings configuration with Material icons
+const SETTINGS_CONFIG = [
+  {
+    key: "enableAchievement" as const,
+    icon: "emoji_events",
+    iconBg: "bg-amber-50",
+    iconColor: "text-amber-600",
+    label: "Achievement Unlocked",
+    description: "Get notified when you earn a new badge.",
+  },
+  {
+    key: "enableStreak" as const,
+    icon: "local_fire_department",
+    iconBg: "bg-orange-50",
+    iconColor: "text-orange-600",
+    label: "Streak Reminders",
+    description: "Don't lose your learning streak.",
+  },
+  {
+    key: "enableGoalProgress" as const,
+    icon: "insights",
+    iconBg: "bg-purple-50",
+    iconColor: "text-purple-600",
+    label: "Study Progress",
+    description: "Weekly reports on your performance.",
+  },
+  {
+    key: "enableInactivity" as const,
+    icon: "notifications_paused",
+    iconBg: "bg-slate-50",
+    iconColor: "text-slate-600",
+    label: "Inactivity Alerts",
+    description: "Gentle reminders when you've been away.",
+  },
+];
+
+// Notification type icons
+const NOTIFICATION_ICONS: Record<string, { icon: string; bg: string; color: string }> = {
+  ACHIEVEMENT: { icon: "emoji_events", bg: "bg-amber-50", color: "text-amber-600" },
+  STREAK: { icon: "local_fire_department", bg: "bg-orange-50", color: "text-orange-600" },
+  GOAL_PROGRESS: { icon: "insights", bg: "bg-purple-50", color: "text-purple-600" },
+  STUDY_REMINDER: { icon: "schedule", bg: "bg-blue-50", color: "text-blue-600" },
+  INACTIVITY: { icon: "notifications_paused", bg: "bg-slate-100", color: "text-slate-600" },
+  default: { icon: "notifications", bg: "bg-blue-50", color: "text-blue-600" },
+};
+
 export default function NotificationsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -45,8 +94,7 @@ export default function NotificationsPage() {
     enableAchievement: true,
     enableInactivity: true,
   });
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -82,6 +130,25 @@ export default function NotificationsPage() {
     }
   }
 
+  // Auto-save settings with debounce
+  const saveSettings = useCallback(async (newSettings: NotificationSettings) => {
+    try {
+      await updateNotificationSettings(newSettings);
+      setToast("Settings saved");
+      setTimeout(() => setToast(null), 2000);
+    } catch (e) {
+      console.error("Failed to save settings:", e);
+      setToast("Failed to save");
+      setTimeout(() => setToast(null), 2000);
+    }
+  }, []);
+
+  const handleToggle = (key: keyof NotificationSettings) => {
+    const newSettings = { ...settings, [key]: !settings[key] };
+    setSettings(newSettings);
+    saveSettings(newSettings);
+  };
+
   async function handleMarkAsRead(id: string) {
     try {
       await markNotificationAsRead(id);
@@ -102,29 +169,6 @@ export default function NotificationsPage() {
     }
   }
 
-  async function handleSaveSettings() {
-    setSaving(true);
-    setSaved(false);
-    try {
-      await updateNotificationSettings(settings);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    } catch (e) {
-      console.error("Failed to save settings:", e);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  const NOTIFICATION_CONFIG: Record<string, { icon: string; bg: string; iconBg: string }> = {
-    "ACHIEVEMENT": { icon: "🏆", bg: "bg-yellow-50", iconBg: "bg-yellow-100" },
-    "STREAK": { icon: "🔥", bg: "bg-orange-50", iconBg: "bg-orange-100" },
-    "GOAL_PROGRESS": { icon: "📈", bg: "bg-green-50", iconBg: "bg-green-100" },
-    "STUDY_REMINDER": { icon: "⏰", bg: "bg-blue-50", iconBg: "bg-blue-100" },
-    "INACTIVITY": { icon: "⚠️", bg: "bg-red-50", iconBg: "bg-red-100" },
-    "default": { icon: "🔔", bg: "bg-slate-50", iconBg: "bg-slate-100" },
-  };
-
   function formatTime(dateStr: string) {
     const date = new Date(dateStr);
     const now = new Date();
@@ -133,30 +177,28 @@ export default function NotificationsPage() {
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return "Vừa xong";
-    if (diffMins < 60) return `${diffMins} phút trước`;
-    if (diffHours < 24) return `${diffHours} giờ trước`;
-    if (diffDays < 7) return `${diffDays} ngày trước`;
-    return date.toLocaleDateString("vi-VN");
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   }
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-blue-50/50 to-white">
-        <main className="mx-auto max-w-3xl px-4 py-8">
-          <div className="animate-pulse space-y-4">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-slate-200 rounded-2xl" />
-              <div className="space-y-2">
-                <div className="h-6 w-40 bg-slate-200 rounded" />
-                <div className="h-4 w-24 bg-slate-100 rounded" />
-              </div>
+      <div className="min-h-screen bg-[#F8FAFC]">
+        <main className="mx-auto max-w-2xl px-4 py-10">
+          <div className="animate-pulse space-y-6">
+            <div className="h-8 w-48 bg-slate-200 rounded mx-auto" />
+            <div className="h-4 w-64 bg-slate-100 rounded mx-auto" />
+            <div className="h-12 bg-slate-200 rounded-lg w-64 mx-auto" />
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
+              <div className="h-16 bg-slate-100 rounded-lg" />
+              <div className="h-16 bg-slate-100 rounded-lg" />
+              <div className="h-16 bg-slate-100 rounded-lg" />
             </div>
-            <div className="h-12 bg-slate-200 rounded-xl mt-6" />
-            <div className="h-24 bg-slate-200 rounded-2xl" />
-            <div className="h-24 bg-slate-200 rounded-2xl" />
           </div>
         </main>
       </div>
@@ -164,72 +206,71 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50/50 to-white">
-      <main className="mx-auto max-w-3xl px-4 py-8 space-y-6">
+    <div className="min-h-screen bg-[#F8FAFC]">
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2 bg-slate-900 text-white text-sm rounded-lg shadow-lg flex items-center gap-2"
+          >
+            <Icon name="check_circle" className="text-lg text-emerald-400" />
+            {toast}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <main className="mx-auto max-w-2xl px-4 py-10">
         {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
+          initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-4"
+          className="text-center mb-8"
         >
-          <button
-            onClick={() => router.back()}
-            className="p-2.5 hover:bg-white rounded-xl transition shadow-sm border border-slate-100"
-          >
-            <FiArrowLeft className="w-5 h-5 text-slate-600" />
-          </button>
-          <div className="flex items-center gap-4 flex-1">
-            <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-200">
-              <FiBell className="h-7 w-7 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-slate-800">Thông báo</h1>
-              {unreadCount > 0 && (
-                <p className="text-sm text-slate-500">
-                  <span className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 bg-red-500 text-white rounded-full text-xs font-medium mr-1">
-                    {unreadCount}
-                  </span>
-                  chưa đọc
-                </p>
-              )}
-            </div>
-          </div>
+          <h1 className="font-serif text-3xl font-bold text-slate-900 mb-2">
+            Notifications
+          </h1>
+          <p className="text-slate-500">
+            Customize your learning updates.
+          </p>
         </motion.div>
 
-        {/* Tabs */}
+        {/* Clean Tabs */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="flex gap-2 bg-white p-1.5 rounded-2xl shadow-sm border border-slate-100"
+          className="flex justify-center mb-8"
         >
-          <button
-            onClick={() => setTab("all")}
-            className={`flex-1 py-3 px-4 rounded-xl text-sm font-medium transition flex items-center justify-center gap-2 ${
-              tab === "all"
-                ? "bg-blue-500 text-white shadow-md"
-                : "text-slate-600 hover:bg-slate-50"
-            }`}
-          >
-            <FiBell className="w-4 h-4" />
-            Tất cả
-            {unreadCount > 0 && tab !== "all" && (
-              <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">
-                {unreadCount}
-              </span>
-            )}
-          </button>
-          <button
-            onClick={() => setTab("settings")}
-            className={`flex-1 py-3 px-4 rounded-xl text-sm font-medium transition flex items-center justify-center gap-2 ${
-              tab === "settings"
-                ? "bg-blue-500 text-white shadow-md"
-                : "text-slate-600 hover:bg-slate-50"
-            }`}
-          >
-            <FiSettings className="w-4 h-4" />
-            Cài đặt
-          </button>
+          <div className="bg-slate-100 p-1 rounded-lg flex items-center">
+            <button
+              onClick={() => setTab("all")}
+              className={`px-6 py-2 text-sm font-medium rounded-md transition-all ${
+                tab === "all"
+                  ? "bg-white text-slate-900 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              All Notifications
+              {unreadCount > 0 && tab !== "all" && (
+                <span className="ml-2 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                  {unreadCount}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setTab("settings")}
+              className={`px-6 py-2 text-sm font-medium rounded-md transition-all ${
+                tab === "settings"
+                  ? "bg-white text-slate-900 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              Settings
+            </button>
+          </div>
         </motion.div>
 
         {/* Tab Content */}
@@ -247,56 +288,55 @@ export default function NotificationsPage() {
                 <div className="flex justify-end">
                   <button
                     onClick={handleMarkAllAsRead}
-                    className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 rounded-lg hover:bg-blue-100 transition"
+                    className="text-sm text-[#3B82F6] hover:text-blue-700 font-medium flex items-center gap-1.5 px-3 py-1.5 hover:bg-blue-50 rounded-lg transition"
                   >
-                    <FiCheckCircle className="w-4 h-4" />
-                    Đánh dấu tất cả đã đọc
+                    <Icon name="done_all" className="text-lg" />
+                    Mark all as read
                   </button>
                 </div>
               )}
 
               {/* Notification List */}
               {notifications.length === 0 ? (
-                <div className="bg-white rounded-2xl p-16 text-center shadow-sm border border-slate-100">
-                  <div className="w-20 h-20 mx-auto mb-4 bg-slate-100 rounded-full flex items-center justify-center">
-                    <FiBell className="w-10 h-10 text-slate-300" />
+                <div className="bg-white rounded-2xl border border-slate-200 p-16 text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-slate-100 rounded-full flex items-center justify-center">
+                    <Icon name="notifications_off" className="text-3xl text-slate-400" />
                   </div>
-                  <p className="text-slate-500 text-lg">Không có thông báo nào</p>
+                  <p className="text-slate-500">No notifications yet</p>
+                  <p className="text-slate-400 text-sm mt-1">We'll let you know when something happens.</p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm divide-y divide-slate-100">
                   {notifications.map((notification, index) => {
-                    const config = NOTIFICATION_CONFIG[notification.type] || NOTIFICATION_CONFIG.default;
+                    const config = NOTIFICATION_ICONS[notification.type] || NOTIFICATION_ICONS.default;
                     
                     return (
                       <motion.div
                         key={notification.id}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.03 }}
-                        className={`p-4 rounded-2xl cursor-pointer transition-all border ${
+                        transition={{ delay: index * 0.02 }}
+                        className={`p-4 flex gap-4 cursor-pointer transition-colors ${
                           !notification.isRead
-                            ? `${config.bg} border-blue-200 shadow-sm`
-                            : "bg-white border-slate-100 hover:bg-slate-50"
+                            ? "bg-blue-50/50 hover:bg-blue-50"
+                            : "hover:bg-slate-50"
                         }`}
                         onClick={() => !notification.isRead && handleMarkAsRead(notification.id)}
                       >
-                        <div className="flex gap-4">
-                          <div className={`w-12 h-12 rounded-xl ${config.iconBg} flex items-center justify-center text-xl flex-shrink-0`}>
-                            {config.icon}
+                        <div className={`w-10 h-10 rounded-full ${config.bg} flex items-center justify-center shrink-0`}>
+                          <Icon name={config.icon} className={`text-xl ${config.color}`} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className={`text-sm ${!notification.isRead ? "font-semibold text-slate-900" : "text-slate-700"}`}>
+                              {notification.title}
+                            </p>
+                            {!notification.isRead && (
+                              <span className="w-2 h-2 bg-[#3B82F6] rounded-full shrink-0 mt-1.5" />
+                            )}
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-2">
-                              <p className={`text-sm ${!notification.isRead ? "font-semibold text-slate-900" : "text-slate-700"}`}>
-                                {notification.title}
-                              </p>
-                              {!notification.isRead && (
-                                <span className="w-2.5 h-2.5 bg-blue-500 rounded-full flex-shrink-0 mt-1.5 animate-pulse" />
-                              )}
-                            </div>
-                            <p className="text-sm text-slate-500 mt-1 line-clamp-2">{notification.message}</p>
-                            <p className="text-xs text-slate-400 mt-2">{formatTime(notification.createdAt)}</p>
-                          </div>
+                          <p className="text-sm text-slate-500 mt-0.5 line-clamp-2">{notification.message}</p>
+                          <p className="text-xs text-slate-400 mt-1.5">{formatTime(notification.createdAt)}</p>
                         </div>
                       </motion.div>
                     );
@@ -311,113 +351,47 @@ export default function NotificationsPage() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
             >
-              <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 space-y-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center">
-                    <FiSettings className="w-5 h-5 text-slate-600" />
-                  </div>
-                  <h2 className="font-semibold text-slate-900 text-lg">Cài đặt thông báo</h2>
-                </div>
-
-                {/* Toggle Settings */}
-                <div className="space-y-4 divide-y divide-slate-100">
-                  <ToggleSetting
-                    icon="🏆"
-                    label="Thông báo thành tựu"
-                    description="Nhận thông báo khi bạn đạt được thành tựu mới"
-                    checked={settings.enableAchievement}
-                    onChange={(val) => setSettings((s) => ({ ...s, enableAchievement: val }))}
-                  />
-                  <ToggleSetting
-                    icon="🔥"
-                    label="Thông báo streak"
-                    description="Nhận thông báo về chuỗi ngày học liên tục"
-                    checked={settings.enableStreak}
-                    onChange={(val) => setSettings((s) => ({ ...s, enableStreak: val }))}
-                  />
-                  <ToggleSetting
-                    icon="📈"
-                    label="Tiến độ mục tiêu"
-                    description="Nhận thông báo về tiến độ đạt mục tiêu"
-                    checked={settings.enableGoalProgress}
-                    onChange={(val) => setSettings((s) => ({ ...s, enableGoalProgress: val }))}
-                  />
-                  <ToggleSetting
-                    icon="⚠️"
-                    label="Nhắc nhở khi không hoạt động"
-                    description="Nhận thông báo nếu bạn không học trong thời gian dài"
-                    checked={settings.enableInactivity}
-                    onChange={(val) => setSettings((s) => ({ ...s, enableInactivity: val }))}
-                  />
-                </div>
-
-                {/* Save Button */}
-                <div className="pt-4">
-                  <button
-                    onClick={handleSaveSettings}
-                    disabled={saving}
-                    className={`w-full py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 transition shadow-md ${
-                      saved
-                        ? "bg-green-500 text-white shadow-green-200"
-                        : "bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-blue-200"
-                    }`}
+              {/* Settings Card */}
+              <div className="bg-white border border-slate-200 rounded-2xl shadow-sm divide-y divide-slate-100">
+                {SETTINGS_CONFIG.map((setting) => (
+                  <div
+                    key={setting.key}
+                    className="p-5 flex items-center justify-between group hover:bg-slate-50 transition-colors"
                   >
-                    {saving ? (
-                      <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    ) : saved ? (
-                      <>
-                        <FiCheck className="w-5 h-5" /> Đã lưu thành công
-                      </>
-                    ) : (
-                      <>
-                        <FiSave className="w-5 h-5" /> Lưu cài đặt
-                      </>
-                    )}
-                  </button>
-                </div>
+                    <div className="flex items-center gap-4">
+                      <div className={`w-10 h-10 rounded-full ${setting.iconBg} flex items-center justify-center`}>
+                        <Icon name={setting.icon} className={`text-xl ${setting.iconColor}`} />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-slate-800">{setting.label}</h3>
+                        <p className="text-xs text-slate-500 mt-0.5">{setting.description}</p>
+                      </div>
+                    </div>
+                    {/* Toggle Switch */}
+                    <button
+                      onClick={() => handleToggle(setting.key)}
+                      className={`relative w-11 h-6 rounded-full transition-colors ${
+                        settings[setting.key] ? "bg-[#3B82F6]" : "bg-slate-200"
+                      }`}
+                    >
+                      <span
+                        className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${
+                          settings[setting.key] ? "translate-x-5" : ""
+                        }`}
+                      />
+                    </button>
+                  </div>
+                ))}
               </div>
+
+              {/* Footer Note */}
+              <p className="text-center text-xs text-slate-400 mt-6">
+                Changes are saved automatically.
+              </p>
             </motion.div>
           )}
         </AnimatePresence>
       </main>
-    </div>
-  );
-}
-
-function ToggleSetting({
-  icon,
-  label,
-  description,
-  checked,
-  onChange,
-}: {
-  icon: string;
-  label: string;
-  description: string;
-  checked: boolean;
-  onChange: (val: boolean) => void;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-4 pt-4 first:pt-0">
-      <div className="flex items-start gap-3">
-        <span className="text-xl">{icon}</span>
-        <div>
-          <p className="font-medium text-slate-800">{label}</p>
-          <p className="text-sm text-slate-500">{description}</p>
-        </div>
-      </div>
-      <button
-        onClick={() => onChange(!checked)}
-        className={`relative w-14 h-7 rounded-full transition-colors ${
-          checked ? "bg-blue-500" : "bg-slate-200"
-        }`}
-      >
-        <span
-          className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-transform ${
-            checked ? "translate-x-7" : ""
-          }`}
-        />
-      </button>
     </div>
   );
 }

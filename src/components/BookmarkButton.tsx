@@ -6,6 +6,7 @@ import { createBookmark, deleteBookmark } from "@/utils/api";
 
 type BookmarkButtonProps = {
   questionId: string;
+  attemptId?: string;
   isBookmarked?: boolean;
   questionContent?: string;
   skill?: string;
@@ -16,6 +17,7 @@ type BookmarkButtonProps = {
 
 export default function BookmarkButton({
   questionId,
+  attemptId,
   isBookmarked = false,
   questionContent,
   skill,
@@ -37,6 +39,7 @@ export default function BookmarkButton({
         onToggle?.(false);
       } else {
         await createBookmark(questionId, {
+          attemptId,
           questionContent,
           skill,
           questionType,

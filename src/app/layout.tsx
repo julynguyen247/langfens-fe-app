@@ -36,7 +36,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`antialiased ${inter.variable} ${merriweather.variable} font-sans text-gray-900`}
+        className={`antialiased ${inter.variable} ${merriweather.variable} font-sans text-gray-900 bg-[#F8FAFC]`}
         suppressHydrationWarning
       >
         <Suspense

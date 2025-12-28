@@ -4,33 +4,63 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { getAchievements } from "@/utils/api";
-import { FiArrowLeft, FiLock, FiCheck } from "react-icons/fi";
+import { FiArrowLeft } from "react-icons/fi";
 
 type Achievement = {
   id: string;
   slug: string;
   title: string;
   description: string;
-  iconUrl?: string;
+  iconUrl?: string; // Material Symbol name
   category: string;
+  tier: 'COMMON' | 'RARE' | 'EPIC' | 'LEGENDARY'; // From API
   requiredValue: number;
   xpReward: number;
   isUnlocked: boolean;
   unlockedAt?: string;
 };
 
-const CATEGORY_LABELS: Record<string, string> = {
-  Streak: "🔥 Streak",
-  Test: "📝 Bài test",
-  Vocabulary: "📚 Từ vựng",
-  Course: "📖 Khóa học",
+// Material Symbol icons for each category
+const CATEGORY_ICONS: Record<string, string> = {
+  STREAK: "local_fire_department",
+  TEST: "quiz",
+  VOCABULARY: "menu_book",
+  COURSE: "school",
 };
 
-const CATEGORY_COLORS: Record<string, string> = {
-  Streak: "from-orange-400 to-red-500",
-  Test: "from-blue-400 to-blue-600",
-  Vocabulary: "from-green-400 to-emerald-600",
-  Course: "from-purple-400 to-purple-600",
+// Tier color palettes
+const TIER_STYLES = {
+  COMMON: { 
+    bg: 'bg-blue-50', 
+    text: 'text-blue-600', 
+    iconBg: 'bg-gradient-to-br from-blue-400 to-blue-600',
+    border: 'border-blue-200'
+  },
+  RARE: { 
+    bg: 'bg-orange-50', 
+    text: 'text-orange-700', 
+    iconBg: 'bg-gradient-to-br from-orange-400 to-red-500',
+    border: 'border-orange-200'
+  },
+  EPIC: { 
+    bg: 'bg-purple-50', 
+    text: 'text-purple-700', 
+    iconBg: 'bg-gradient-to-br from-purple-500 to-indigo-600',
+    border: 'border-purple-200'
+  },
+  LEGENDARY: { 
+    bg: 'bg-yellow-50', 
+    text: 'text-yellow-800', 
+    iconBg: 'bg-gradient-to-br from-yellow-400 to-amber-600',
+    border: 'border-yellow-200'
+  },
+};
+
+const CATEGORY_LABELS: Record<string, string> = {
+  STREAK: "🔥 Streak",
+  TEST: "📝 Bài test",
+  VOCABULARY: "📚 Từ vựng",
+  COURSE: "📖 Khóa học",
 };
 
 export default function AchievementsPage() {
@@ -67,7 +97,7 @@ export default function AchievementsPage() {
 
   if (loading) {
     return (
-      <div className="w-full min-h-screen bg-gradient-to-b from-blue-50 to-white">
+      <div className="w-full min-h-screen bg-[#F8FAFC]">
         <main className="mx-auto max-w-5xl px-4 py-8">
           <SkeletonAchievements />
         </main>
@@ -76,7 +106,13 @@ export default function AchievementsPage() {
   }
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-b from-blue-50 to-white">
+    <div className="w-full min-h-screen bg-[#F8FAFC]">
+      {/* Google Material Symbols */}
+      <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0"
+        rel="stylesheet"
+      />
+      
       <main className="mx-auto max-w-5xl px-4 sm:px-6 py-8 space-y-6">
         {/* Header */}
         <motion.div
@@ -91,9 +127,9 @@ export default function AchievementsPage() {
             <FiArrowLeft className="w-5 h-5 text-slate-600" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Thành tựu</h1>
+            <h1 className="text-2xl font-serif font-bold text-slate-900">Bộ sưu tập Thành tựu</h1>
             <p className="text-sm text-slate-500">
-              Đã mở khóa {unlockedCount}/{totalCount} thành tựu
+              Đã mở khóa {unlockedCount}/{totalCount} huy hiệu
             </p>
           </div>
         </motion.div>
@@ -102,10 +138,10 @@ export default function AchievementsPage() {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-2xl p-4 shadow-sm"
+          className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200"
         >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-slate-600">Tiến độ</span>
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-medium text-slate-600">Tiến độ sưu tập</span>
             <span className="text-sm font-bold text-blue-600">
               {Math.round((unlockedCount / Math.max(totalCount, 1)) * 100)}%
             </span>
@@ -136,7 +172,7 @@ export default function AchievementsPage() {
               className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition ${
                 filter === cat
                   ? "bg-blue-600 text-white shadow-sm"
-                  : "bg-white text-slate-600 hover:bg-slate-50"
+                  : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200"
               }`}
             >
               {cat === "all" ? "Tất cả" : CATEGORY_LABELS[cat] || cat}
@@ -144,12 +180,12 @@ export default function AchievementsPage() {
           ))}
         </motion.div>
 
-        {/* Achievements Grid */}
+        {/* Achievements Grid - Medal Case */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.15 }}
-          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5"
         >
           {filteredAchievements.map((achievement, index) => (
             <AchievementCard
@@ -178,74 +214,68 @@ function AchievementCard({
   index: number;
 }) {
   const isUnlocked = achievement.isUnlocked;
-  const categoryColor = CATEGORY_COLORS[achievement.category] || "from-slate-400 to-slate-600";
+  const tier = achievement.tier || 'COMMON';
+  const style = TIER_STYLES[tier];
+  // Use iconUrl from API if available, otherwise fallback to category icon
+  const iconName = achievement.iconUrl || CATEGORY_ICONS[achievement.category] || "emoji_events";
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05 }}
-      className={`relative rounded-2xl p-4 border transition ${
-        isUnlocked
-          ? "bg-white border-transparent shadow-md hover:shadow-lg"
-          : "bg-slate-50 border-slate-200 opacity-60"
-      }`}
+      transition={{ delay: index * 0.04 }}
+      className={`relative group rounded-[2rem] p-6 border transition-all duration-300 flex flex-col items-center text-center
+        ${isUnlocked 
+          ? 'bg-white border-slate-200 shadow-sm hover:-translate-y-1 hover:shadow-lg cursor-pointer' 
+          : 'bg-slate-50/80 border-slate-200'}
+      `}
     >
-      {/* Badge Icon */}
-      <div className="flex justify-center mb-3">
-        <div
-          className={`w-16 h-16 rounded-full flex items-center justify-center shadow-lg ${
-            isUnlocked
-              ? `bg-gradient-to-br ${categoryColor} text-white`
-              : "bg-slate-200 text-slate-400"
-          }`}
-        >
-          {isUnlocked ? (
-            <span className="text-2xl">🏆</span>
-          ) : (
-            <FiLock className="w-6 h-6" />
-          )}
+      {/* THE BADGE (Icon Container) */}
+      <div className="relative mb-4">
+        {/* Main Circle */}
+        <div className={`w-20 h-20 rounded-full flex items-center justify-center shadow-lg transition-all duration-300
+          ${isUnlocked ? style.iconBg : 'bg-slate-200'}
+          ${isUnlocked ? 'group-hover:scale-110' : ''}
+        `}>
+          <span className={`material-symbols-rounded text-4xl ${isUnlocked ? 'text-white' : 'text-slate-400'}`}>
+            {iconName}
+          </span>
         </div>
+
+        {/* Locked Overlay Badge */}
+        {!isUnlocked && (
+          <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-slate-100 rounded-full border-2 border-white flex items-center justify-center shadow-sm">
+            <span className="material-symbols-rounded text-slate-400 text-sm">lock</span>
+          </div>
+        )}
+        
+        {/* Unlocked Checkmark Badge */}
+        {isUnlocked && (
+          <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-green-500 rounded-full border-2 border-white flex items-center justify-center shadow-md">
+            <span className="material-symbols-rounded text-white text-sm font-bold">check</span>
+          </div>
+        )}
       </div>
 
-      {/* Content */}
-      <div className="text-center">
-        <h3
-          className={`font-semibold text-sm ${
-            isUnlocked ? "text-slate-900" : "text-slate-500"
-          }`}
-        >
-          {achievement.title}
-        </h3>
-        <p className="text-xs text-slate-400 mt-1 line-clamp-2">
-          {achievement.description}
-        </p>
-      </div>
+      {/* TEXT CONTENT */}
+      <h3 className={`font-serif font-bold text-base mb-1 leading-tight ${isUnlocked ? 'text-slate-900' : 'text-slate-500'}`}>
+        {achievement.title}
+      </h3>
+      <p className="text-xs text-slate-400 leading-relaxed line-clamp-2 mb-4">
+        {achievement.description}
+      </p>
 
-      {/* XP Reward */}
-      <div className="mt-3 flex justify-center">
-        <span
-          className={`text-xs font-medium px-2 py-1 rounded-full ${
-            isUnlocked
-              ? "bg-green-100 text-green-700"
-              : "bg-slate-100 text-slate-500"
-          }`}
-        >
-          +{achievement.xpReward} XP
-        </span>
+      {/* REWARD PILL */}
+      <div className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider
+        ${isUnlocked ? style.bg + ' ' + style.text : 'bg-slate-100 text-slate-400'}
+      `}>
+        +{achievement.xpReward} XP
       </div>
-
-      {/* Unlocked indicator */}
-      {isUnlocked && (
-        <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center">
-          <FiCheck className="w-4 h-4" />
-        </div>
-      )}
 
       {/* Unlock date */}
       {isUnlocked && achievement.unlockedAt && (
-        <div className="mt-2 text-center text-[10px] text-slate-400">
-          Mở khóa: {formatDate(achievement.unlockedAt)}
+        <div className="mt-3 text-[10px] text-slate-400">
+          ✨ {formatDate(achievement.unlockedAt)}
         </div>
       )}
     </motion.div>
@@ -258,19 +288,19 @@ function SkeletonAchievements() {
       <div className="flex items-center gap-4">
         <div className="w-10 h-10 bg-slate-200 rounded-lg" />
         <div className="space-y-2">
-          <div className="h-6 w-32 bg-slate-200 rounded" />
+          <div className="h-6 w-40 bg-slate-200 rounded" />
           <div className="h-4 w-48 bg-slate-200 rounded" />
         </div>
       </div>
-      <div className="h-12 bg-slate-200 rounded-2xl" />
+      <div className="h-16 bg-slate-200 rounded-2xl" />
       <div className="flex gap-2">
         {[1, 2, 3, 4].map((i) => (
           <div key={i} className="h-10 w-24 bg-slate-200 rounded-full" />
         ))}
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
         {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-          <div key={i} className="h-48 bg-slate-200 rounded-2xl" />
+          <div key={i} className="h-56 bg-slate-200 rounded-[2rem]" />
         ))}
       </div>
     </div>

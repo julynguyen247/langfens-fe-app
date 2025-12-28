@@ -296,12 +296,20 @@ export default function Home() {
                 </p>
               </div>
             </div>
-            <button
-              onClick={() => router.push(`/attempts/${placementStatus.attemptId}?source=attempt`)}
-              className="text-sm text-emerald-600 hover:text-emerald-700 font-semibold flex items-center gap-1"
-            >
-              View Report <Icon name="arrow_forward" className="text-base" />
-            </button>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={handleStartPlacement}
+                className="text-sm text-slate-500 hover:text-slate-700 font-semibold flex items-center gap-1"
+              >
+                <Icon name="refresh" className="text-base" /> Retake
+              </button>
+              <button
+                onClick={() => router.push(`/attempts/${placementStatus.attemptId}?source=attempt`)}
+                className="text-sm text-emerald-600 hover:text-emerald-700 font-semibold flex items-center gap-1"
+              >
+                View Report <Icon name="arrow_forward" className="text-base" />
+              </button>
+            </div>
           </section>
         )}
 

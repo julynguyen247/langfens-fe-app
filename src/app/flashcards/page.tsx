@@ -128,31 +128,6 @@ export default function FlashcardsPage() {
         </div>
 
         {/* =============================================
-            LEVEL CHECK BANNER (Compact CTA)
-        ============================================= */}
-        <div className="bg-white border border-blue-100 rounded-xl p-6 mb-8 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-lg bg-[#EFF6FF] flex items-center justify-center">
-              <Icon name="school" className="text-2xl text-[#3B82F6]" />
-            </div>
-            <div>
-              <p className="font-serif font-semibold text-slate-800">
-                Not sure about your level?
-              </p>
-              <p className="text-sm text-slate-500">
-                Take a quick vocabulary assessment test.
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={() => router.push("/placement")}
-            className="px-5 py-2.5 border border-[#3B82F6] text-[#3B82F6] font-medium rounded-lg hover:bg-[#EFF6FF] transition-colors"
-          >
-            Start Test
-          </button>
-        </div>
-
-        {/* =============================================
             TABS (Underline Style)
         ============================================= */}
         <div className="border-b border-slate-200 mb-8">

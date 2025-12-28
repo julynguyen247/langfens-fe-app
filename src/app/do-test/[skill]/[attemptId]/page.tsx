@@ -229,126 +229,131 @@ export function ReadingScreen({
     );
   }
 
+  const testTitle = activeSec?.title || attempt?.paper?.title || "Reading Test";
+  const totalQuestions = panelQuestions.length;
+  
+  // Mobile tab state
+  const [mobileTab, setMobileTab] = useState<"passage" | "questions">("passage");
+
+  // Passage content component (reusable for both layouts)
+  const passageContent = (
+    <div className="h-full overflow-hidden bg-white">
+      <PassageView
+        passage={{
+          title: testTitle,
+          content: activeSec?.passageMd || "",
+        }}
+        imageUrl={attempt?.paper?.imageUrl}
+        attemptId={attemptId}
+        sectionId={activeSec?.id}
+      />
+    </div>
+  );
+
+  // Questions content component (reusable for both layouts)
+  const questionsContent = (
+    <div className="h-full flex flex-col overflow-hidden bg-[#F8FAFC]">
+      {/* Questions Header - Desktop only, mobile has tabs */}
+      <div className="hidden lg:block px-6 py-4 bg-white border-b 
+      border-slate-200 flex-shrink-0">
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold text-slate-900">
+            {isReviewMode ? "Questions - Review Mode" : "Questions"}
+          </h2>
+          <span className="text-sm text-slate-500">
+            {totalQuestions} questions
+          </span>
+        </div>
+      </div>
+
+      {/* Questions List */}
+      <div className="flex-1 overflow-auto p-4 lg:p-6
+        [scrollbar-width:thin] [scrollbar-color:theme(colors.slate.300)_transparent]
+        [&::-webkit-scrollbar]:w-2
+        [&::-webkit-scrollbar-track]:bg-transparent
+        [&::-webkit-scrollbar-thumb]:bg-slate-300
+        [&::-webkit-scrollbar-thumb]:rounded-full
+      ">
+        <QuestionPanel
+          attemptId={attemptId}
+          skill="reading"
+          questions={panelQuestions}
+          questionGroups={activeSec?.questionGroups}
+          initialAnswers={isReviewMode ? initialAnswers : undefined}
+          isReviewMode={isReviewMode}
+          reviewData={reviewData}
+          onAnswersChange={isReviewMode ? undefined : (next) => {
+            lastAnswersRef.current = {
+              ...lastAnswersRef.current,
+              ...(next as QA),
+            };
+            debouncedSave(
+              next as QA,
+              () => activeSec.id,
+              buildTextAnswer
+            );
+          }}
+        />
+      </div>
+    </div>
+  );
+
   return (
-    <>
-      <div className="flex h-full bg-white rounded-xl shadow overflow-hidden">
+    <div className="h-full flex flex-col overflow-hidden">
+      {/* ========== MOBILE TAB BAR (< lg) ========== */}
+      <div className="lg:hidden flex bg-white border-b border-slate-200 flex-shrink-0">
+        <button
+          onClick={() => setMobileTab("passage")}
+          className={`flex-1 py-3 px-4 text-sm font-medium transition-colors relative ${
+            mobileTab === "passage"
+              ? "text-[#3B82F6]"
+              : "text-slate-500 hover:text-slate-700"
+          }`}
+        >
+          <span className="material-symbols-rounded text-lg align-middle mr-1">article</span>
+          Passage
+          {mobileTab === "passage" && (
+            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#3B82F6]" />
+          )}
+        </button>
+        <button
+          onClick={() => setMobileTab("questions")}
+          className={`flex-1 py-3 px-4 text-sm font-medium transition-colors relative ${
+            mobileTab === "questions"
+              ? "text-[#3B82F6]"
+              : "text-slate-500 hover:text-slate-700"
+          }`}
+        >
+          <span className="material-symbols-rounded text-lg align-middle mr-1">quiz</span>
+          Questions ({totalQuestions})
+          {mobileTab === "questions" && (
+            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#3B82F6]" />
+          )}
+        </button>
+      </div>
+
+      {/* ========== MOBILE CONTENT (< lg) ========== */}
+      <div className="lg:hidden flex-1 overflow-hidden">
+        {mobileTab === "passage" ? passageContent : questionsContent}
+      </div>
+
+      {/* ========== DESKTOP SPLIT VIEW (>= lg) ========== */}
+      <div className="hidden lg:flex flex-1 overflow-hidden">
         <Group orientation="horizontal">
-          <Panel defaultSize={65} minSize={40} className="overflow-hidden">
-            <div className="h-full overflow-hidden border-r bg-gray-50 ">
-              <PassageView
-                passage={{
-                  title:
-                    activeSec?.title ||
-                    attempt?.paper?.title ||
-                    "Reading Passage",
-                  content: activeSec?.passageMd || "",
-                }}
-                imageUrl={attempt?.paper?.imageUrl}
-                attemptId={attemptId}
-                sectionId={activeSec?.id}
-              />
+          {/* Left Panel: Passage */}
+          <Panel defaultSize={55} minSize={35} className="overflow-hidden">
+            <div className="h-full border-r border-slate-200">
+              {passageContent}
             </div>
           </Panel>
-          <Panel defaultSize={35} minSize={25} className="overflow-hidden">
-            <div className="h-full flex flex-col overflow-hidden border-l bg-white shadow-xl z-20">
-              <div className="border-b px-5 py-4 bg-white sticky top-0 z-10 flex justify-between items-center shadow-sm">
-                <div className="flex items-center gap-4">
-                  <h2 className="text-lg font-semibold text-black">
-                    {isReviewMode ? "Questions - Review Mode" : "Questions"}
-                  </h2>
-                </div>
-                {!isReviewMode && (
-                  <button
-                    onClick={() => setConfirmOpen(true)}
-                    disabled={isSubmitting}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white disabled:opacity-60 transition-all shadow-md hover:shadow-lg active:scale-95"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <svg
-                          className="animate-spin w-4 h-4"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          />
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          />
-                        </svg>
-                        Đang nộp...
-                      </>
-                    ) : (
-                      "Nộp bài"
-                    )}
-                  </button>
-                )}
-              </div>
 
-              <div className="flex-1 overflow-auto p-4">
-                <QuestionPanel
-                  attemptId={attemptId}
-                  questions={panelQuestions}
-                  questionGroups={activeSec?.questionGroups}
-                  initialAnswers={isReviewMode ? initialAnswers : undefined}
-                  isReviewMode={isReviewMode}
-                  reviewData={reviewData}
-                  onAnswersChange={isReviewMode ? undefined : (next) => {
-                    lastAnswersRef.current = {
-                      ...lastAnswersRef.current,
-                      ...(next as QA),
-                    };
-                    debouncedSave(
-                      next as QA,
-                      () => activeSec.id,
-                      buildTextAnswer
-                    );
-                  }}
-                />
-              </div>
-            </div>
+          {/* Right Panel: Questions */}
+          <Panel defaultSize={45} minSize={30} className="overflow-hidden">
+            {questionsContent}
           </Panel>
         </Group>
       </div>
-
-      <Modal
-        open={confirmOpen}
-        onClose={() => setConfirmOpen(false)}
-        title="Xác nhận nộp bài Reading"
-        footer={
-          <div className="flex justify-end gap-3">
-            <button
-              onClick={() => setConfirmOpen(false)}
-              className="px-4 py-2 rounded-lg border text-slate-600"
-            >
-              Hủy
-            </button>
-            <button
-              onClick={() => {
-                setConfirmOpen(false);
-                doSubmit();
-              }}
-              className="px-4 py-2 rounded-lg bg-[#317EFF] text-white"
-            >
-              Đồng ý
-            </button>
-          </div>
-        }
-      >
-        <p className="text-sm text-slate-700">
-          Bạn chắc chắn muốn nộp bài Reading? Sau khi nộp, bạn không thể thay
-          đổi câu trả lời.
-        </p>
-      </Modal>
-    </>
+    </div>
   );
 }
 
@@ -573,6 +578,7 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
                 ) : (
                   <QuestionPanel
                     attemptId={attemptId}
+                    skill="listening"
                     questions={panelQuestions}
                     questionGroups={listeningSection?.questionGroups}
                     onAnswersChange={(next) => {
@@ -1146,66 +1152,118 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
     );
   }
 
-  const examTitle: string = exam?.title ?? "Writing";
+  const examTitle: string = exam?.title ?? "Writing Task";
   const writingPrompt: string =
     exam?.taskText ??
     "Write an essay of at least 150 words on the following topic:\n\nDo you think technology improves the quality of life? Why or why not?";
 
+  // Format time as MM:SS
+  const formatTimeLeft = (sec: number) => {
+    const mins = Math.floor(sec / 60);
+    const secs = sec % 60;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
+
   return (
     <>
-      <div className="w-full  flex flex-col overflow-hidden border-l bg-white shadow-xl z-20">
-        <div className="border-b px-5 py-4 bg-white sticky top-0 z-10 flex justify-between shadow-sm">
-          <div>
-            <h2 className="text-lg font-semibold text-slate-800">
+      {/* SPLIT-SCREEN EXAM INTERFACE */}
+      <div className="flex h-full w-full overflow-hidden font-sans">
+        
+        {/* --- LEFT PANEL: THE PROMPT (Paper Style) --- */}
+        <div className="w-1/2 bg-slate-100 border-r border-slate-300 overflow-y-auto p-6">
+          <div className="bg-white border border-slate-200 shadow-sm p-8 min-h-[90%]">
+            {/* Task Type Badge */}
+            <span className="inline-block bg-slate-800 text-white text-[10px] font-bold px-3 py-1 mb-6 uppercase tracking-[0.2em]">
               {examTitle}
-            </h2>
-            <p className="text-xs text-slate-500">
-              Write your essay in the box below
-            </p>
+            </span>
+            
+            {/* Prompt Text (Serif - Academic Style) */}
+            <div className="prose prose-lg max-w-none">
+              <p className="font-serif text-lg leading-loose text-slate-800 whitespace-pre-line">
+                {writingPrompt}
+              </p>
+            </div>
+
+            {/* Instructions Footer */}
+            <div className="mt-8 pt-6 border-t border-slate-200">
+              <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold mb-2">
+                Instructions
+              </p>
+              <ul className="text-sm text-slate-600 space-y-1">
+                <li>• Write at least <strong>150 words</strong> for Task 1, or <strong>250 words</strong> for Task 2.</li>
+                <li>• You should spend about <strong>20 minutes</strong> on Task 1, or <strong>40 minutes</strong> on Task 2.</li>
+                <li>• Write your response in the editor on the right.</li>
+              </ul>
+            </div>
           </div>
-          <button
-            onClick={handleOpenConfirmSubmit}
-            disabled={grading}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
-              grading
-                ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                : "bg-[#317EFF] text-white hover:bg-[#74a4f6]"
-            }`}
-          >
-            {grading ? "Đang chấm…" : "Nộp bài"}
-          </button>
         </div>
 
-        <div className="p-6 bg-gray-50 border-b">
-          <h3 className="font-semibold text-slate-800 mb-2">Prompt</h3>
-          <p className="whitespace-pre-line text-slate-700 leading-relaxed">
-            {writingPrompt}
-          </p>
-        </div>
-
-        <div className="flex-1 p-6 overflow-auto bg-gray-50">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-sm text-slate-500">
-              Word count: <span className="font-semibold">{wordCount}</span>
-            </p>
-            <p className="text-sm text-slate-500">
-              Time: <span className="font-mono">{seconds}s</span>
-            </p>
+        {/* --- RIGHT PANEL: THE EDITOR (Word Processor) --- */}
+        <div className="w-1/2 flex flex-col bg-white relative">
+          
+          {/* 1. Toolbar */}
+          <div className="shrink-0 h-10 border-b border-slate-200 bg-[#F1F5F9] flex items-center px-3 gap-1">
+            {['undo', 'redo', 'content_cut', 'content_copy', 'content_paste'].map(icon => (
+              <button key={icon} className="p-1.5 hover:bg-slate-200 rounded text-slate-400 cursor-default" disabled>
+                <span className="material-symbols-rounded text-lg">{icon}</span>
+              </button>
+            ))}
+            <div className="w-px h-4 bg-slate-300 mx-2"></div>
+            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Word Processor</span>
           </div>
 
-          <textarea
+          {/* 2. Typing Area */}
+          <textarea 
             value={answer}
             onChange={handleChange}
-            placeholder="Type your essay here…"
-            className="w-full min-h-[300px] h-full p-4 border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#317EFF] focus:border-transparent text-slate-800"
+            className="flex-1 w-full p-8 resize-none outline-none text-lg text-slate-800 font-sans leading-8 selection:bg-blue-100"
+            placeholder="Start typing your answer here..."
+            spellCheck={false}
+            autoFocus
           />
+
+          {/* 3. Status Bar (Word Count & Timer & Submit) */}
+          <div className="shrink-0 h-16 border-t border-slate-200 bg-white px-6 flex items-center justify-between z-10">
+            
+            {/* Left Stats */}
+            <div className="flex items-center gap-6">
+              <div className="flex flex-col">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Word Count</span>
+                <span className={`text-xl font-bold ${wordCount >= 150 ? 'text-emerald-600' : 'text-slate-800'}`}>
+                  {wordCount}
+                </span>
+              </div>
+              <div className="w-px h-8 bg-slate-200"></div>
+              <div className="flex flex-col">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Time Elapsed</span>
+                <span className="text-xl font-bold text-slate-800 font-mono">{formatTimeLeft(seconds)}</span>
+              </div>
+            </div>
+
+            {/* Submit Button */}
+            <button 
+              onClick={handleOpenConfirmSubmit}
+              disabled={grading}
+              className={`font-bold py-2.5 px-8 rounded-lg shadow-sm transition-all flex items-center gap-2 ${
+                grading 
+                  ? 'bg-slate-300 text-slate-500 cursor-not-allowed' 
+                  : 'bg-[#3B82F6] hover:bg-blue-700 text-white'
+              }`}
+            >
+              <span>{grading ? 'Grading...' : 'Submit Answer'}</span>
+              {!grading && <span className="material-symbols-rounded text-sm">arrow_forward</span>}
+            </button>
+
+          </div>
         </div>
+
       </div>
 
+      {/* Confirmation Modal */}
       <Modal
         open={confirmOpen}
         onClose={() => setConfirmOpen(false)}
-        title="Xác nhận nộp bài Writing"
+        title="Submit Writing Answer"
         footer={
           <div className="flex justify-end gap-3">
             <button
@@ -1213,22 +1271,22 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
               onClick={() => setConfirmOpen(false)}
               className="px-4 py-2 rounded-lg text-sm font-medium border border-slate-200 text-slate-600 hover:bg-slate-50"
             >
-              Hủy
+              Cancel
             </button>
             <button
               type="button"
               onClick={handleConfirmSubmit}
-              className="px-4 py-2 rounded-lg text-sm font-semibold bg-[#317EFF] text-white hover:bg-[#74a4f6]"
+              className="px-4 py-2 rounded-lg text-sm font-semibold bg-[#3B82F6] text-white hover:bg-blue-700"
             >
-              Đồng ý
+              Submit
             </button>
           </div>
         }
       >
         <p className="text-sm text-slate-700">
-          Bạn chắc chắn muốn nộp bài Writing để chấm điểm không?
+          Are you sure you want to submit your writing for grading?
           <br />
-          Sau khi chấm xong, bạn sẽ được chuyển tới trang xem kết quả.
+          <span className="text-slate-500">Word count: <strong>{wordCount}</strong> • Time: <strong>{formatTimeLeft(seconds)}</strong></span>
         </p>
       </Modal>
     </>

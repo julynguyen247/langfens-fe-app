@@ -2,14 +2,17 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
-import { FiTarget, FiCalendar, FiClock, FiTrendingUp, FiPlus, FiTrash2, FiCheck, FiAlertCircle } from "react-icons/fi";
+import { motion } from "framer-motion";
 import {
   createStudyGoal,
-  getActiveStudyGoal,
   getStudyProgress,
   deleteStudyGoal,
 } from "@/utils/api";
+
+// Material Icon Component
+function Icon({ name, className = "" }: { name: string; className?: string }) {
+  return <span className={`material-symbols-rounded ${className}`}>{name}</span>;
+}
 
 type StudyGoal = {
   id: string;
@@ -35,11 +38,19 @@ type Progress = {
   };
 };
 
+// Priority focus areas
+const FOCUS_AREAS = [
+  { id: "w2", skill: "Writing Task 2", gap: -0.5, action: "Review coherence templates & linking words", icon: "edit_note" },
+  { id: "l3", skill: "Listening Part 3", gap: -0.3, action: "Practice multiple speakers tracking", icon: "headphones" },
+  { id: "r3", skill: "Reading Passage 3", gap: -0.2, action: "Timed practice with academic texts", icon: "auto_stories" },
+  { id: "s2", skill: "Speaking Part 2", gap: -0.1, action: "Record & review 2-min monologues", icon: "mic" },
+];
+
 const SKILLS = [
-  { id: "reading", label: "Reading", icon: "📖" },
-  { id: "listening", label: "Listening", icon: "🎧" },
-  { id: "writing", label: "Writing", icon: "✍️" },
-  { id: "speaking", label: "Speaking", icon: "🗣️" },
+  { id: "reading", label: "Reading", icon: "auto_stories" },
+  { id: "listening", label: "Listening", icon: "headphones" },
+  { id: "writing", label: "Writing", icon: "edit_note" },
+  { id: "speaking", label: "Speaking", icon: "mic" },
 ];
 
 export default function StudyPlanPage() {
@@ -99,7 +110,7 @@ export default function StudyPlanPage() {
 
   async function handleDelete() {
     if (!progress?.goal?.id) return;
-    if (!confirm("Bạn có chắc muốn xóa mục tiêu này?")) return;
+    if (!confirm("Are you sure you want to delete this plan?")) return;
     setDeleting(true);
     try {
       await deleteStudyGoal(progress.goal.id);
@@ -125,254 +136,116 @@ export default function StudyPlanPage() {
     return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
   }
 
-  function getStatusColor(status: string) {
-    switch (status) {
-      case "AHEAD": return "text-green-600 bg-green-50";
-      case "ON_TRACK": return "text-blue-600 bg-blue-50";
-      case "BEHIND": return "text-orange-600 bg-orange-50";
-      default: return "text-slate-600 bg-slate-50";
-    }
-  }
-
   function getStatusLabel(status: string) {
     switch (status) {
-      case "AHEAD": return "Vượt tiến độ";
-      case "ON_TRACK": return "Đúng tiến độ";
-      case "BEHIND": return "Chậm tiến độ";
+      case "AHEAD": return "Ahead";
+      case "ON_TRACK": return "On Track";
+      case "BEHIND": return "Behind";
       default: return status;
     }
   }
 
+  function getStatusColor(status: string) {
+    switch (status) {
+      case "AHEAD": return "bg-emerald-50 text-emerald-600 border-emerald-100";
+      case "ON_TRACK": return "bg-blue-50 text-blue-600 border-blue-100";
+      case "BEHIND": return "bg-orange-50 text-orange-600 border-orange-100";
+      default: return "bg-slate-50 text-slate-600 border-slate-100";
+    }
+  }
+
+  // Generate heatmap data
+  function generateHeatmap() {
+    return Array.from({ length: 35 }).map(() => Math.random());
+  }
+
+  const heatmapData = generateHeatmap();
+
   if (loading) {
     return (
-      <div className="w-full min-h-screen bg-gradient-to-b from-blue-50 to-white">
-        <main className="mx-auto max-w-4xl px-4 py-8">
-          <div className="animate-pulse space-y-4">
-            <div className="h-10 w-64 bg-slate-200 rounded" />
-            <div className="h-64 bg-slate-200 rounded-2xl" />
+      <div className="min-h-screen bg-[#F8FAFC]">
+        <main className="max-w-5xl mx-auto px-4 py-12">
+          <div className="animate-pulse space-y-6">
+            <div className="h-12 w-64 bg-slate-200 rounded-xl" />
+            <div className="h-64 bg-slate-200 rounded-[2rem]" />
           </div>
         </main>
       </div>
     );
   }
 
-  return (
-    <div className="w-full min-h-screen bg-gradient-to-b from-blue-50 to-white">
-      <main className="mx-auto max-w-4xl px-4 py-8 space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-              <FiTarget className="w-7 h-7 text-blue-600" />
-              Kế hoạch học tập
-            </h1>
-            <p className="text-slate-500 mt-1">Đặt mục tiêu và theo dõi tiến độ của bạn</p>
-          </div>
-          {progress && !showCreate && (
-            <button
-              onClick={() => setShowCreate(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition flex items-center gap-2"
-            >
-              <FiPlus className="w-4 h-4" />
-              Mục tiêu mới
-            </button>
-          )}
-        </div>
-
-        {/* Current Goal & Progress */}
-        {progress && !showCreate && (
+  // =============================================
+  // CREATE NEW PLAN VIEW
+  // =============================================
+  if (showCreate || !progress) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC]">
+        <main className="max-w-2xl mx-auto px-4 py-12">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="space-y-6"
+            className="bg-white border border-slate-200 rounded-[2rem] shadow-sm overflow-hidden"
           >
-            {/* Goal Overview Card */}
-            <div className="bg-white rounded-2xl shadow-sm p-6 space-y-4">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h2 className="text-lg font-semibold text-slate-900">Mục tiêu hiện tại</h2>
-                  <p className="text-sm text-slate-500">
-                    Tạo ngày {new Date(progress.goal.createdAt).toLocaleDateString("vi-VN")}
-                  </p>
-                </div>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(progress.progress.status)}`}>
-                  {getStatusLabel(progress.progress.status)}
-                </span>
-              </div>
-
-              {/* Stats Grid - Classic Style */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="p-4 rounded-lg border border-blue-100 bg-blue-50">
-                  <div className="text-xs text-slate-500 mb-1">Mục tiêu Band</div>
-                  <div className="text-2xl font-bold text-blue-600">{progress.goal.targetBandScore}</div>
-                </div>
-                <div className="p-4 rounded-lg border border-blue-100 bg-blue-50">
-                  <div className="text-xs text-slate-500 mb-1">Còn lại</div>
-                  <div className="text-2xl font-bold text-purple-600">{getDaysRemaining(progress.goal.targetDate)} <span className="text-base font-medium">ngày</span></div>
-                </div>
-                <div className="p-4 rounded-lg border border-blue-100 bg-blue-50">
-                  <div className="text-xs text-slate-500 mb-1">Điểm hiện tại</div>
-                  <div className="text-2xl font-bold text-emerald-600">{progress.current.avgScore.toFixed(1)}</div>
-                </div>
-                <div className="p-4 rounded-lg border border-blue-100 bg-blue-50">
-                  <div className="text-xs text-slate-500 mb-1">Đã hoàn thành</div>
-                  <div className="text-2xl font-bold text-amber-600">{progress.current.testsCompleted} <span className="text-base font-medium">bài</span></div>
-                </div>
-              </div>
-
-              {/* Progress Bars - Classic Style */}
-              <div className="space-y-4 pt-4">
-                <div>
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="text-slate-600">Tiến độ điểm số</span>
-                    <span className="font-medium text-slate-900">{progress.progress.scoreProgress}%</span>
-                  </div>
-                  <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${Math.min(100, progress.progress.scoreProgress)}%` }}
-                      transition={{ duration: 1, ease: "easeOut" }}
-                      className="h-full bg-blue-500 rounded-full"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="text-slate-600">Thời gian học ({progress.current.studyTimeHours}h / {Math.round(getDaysRemaining(progress.goal.targetDate) * progress.goal.studyHoursPerDay)}h)</span>
-                    <span className="font-medium text-slate-900">{progress.progress.timeProgress}%</span>
-                  </div>
-                  <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${Math.min(100, progress.progress.timeProgress)}%` }}
-                      transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
-                      className="h-full bg-emerald-500 rounded-full"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Focus Skills */}
-              <div className="pt-4 border-t">
-                <h3 className="text-sm font-medium text-slate-700 mb-2">Kỹ năng tập trung</h3>
-                <div className="flex flex-wrap gap-2">
-                  {progress.goal.focusSkills.map((skill) => {
-                    const skillInfo = SKILLS.find(s => s.id === skill.toLowerCase());
-                    return (
-                      <span key={skill} className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm font-medium flex items-center gap-1">
-                        {skillInfo?.icon} {skillInfo?.label || skill}
-                      </span>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Delete Button */}
-              <div className="pt-4 border-t flex justify-end">
-                <button
-                  onClick={handleDelete}
-                  disabled={deleting}
-                  className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition flex items-center gap-2 text-sm"
-                >
-                  <FiTrash2 className="w-4 h-4" />
-                  {deleting ? "Đang xóa..." : "Xóa mục tiêu"}
-                </button>
-              </div>
+            {/* Header */}
+            <div className="p-10 border-b border-slate-100">
+              <h1 className="font-serif text-3xl font-bold text-slate-900">Create Study Plan</h1>
+              <p className="text-slate-500 mt-2">Set your target and let AI guide your journey</p>
             </div>
 
-            {/* Tips Card */}
-            <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl p-6 border border-amber-100">
-              <h3 className="font-semibold text-amber-800 flex items-center gap-2 mb-3">
-                <FiAlertCircle className="w-5 h-5" />
-                Gợi ý hôm nay
-              </h3>
-              <ul className="space-y-2 text-amber-700 text-sm">
-                <li>• Luyện tập ít nhất {progress.goal.studyHoursPerDay} giờ mỗi ngày</li>
-                <li>• Tập trung vào {progress.goal.focusSkills.length > 1 ? "các kỹ năng" : "kỹ năng"}: {progress.goal.focusSkills.join(", ")}</li>
-                <li>• Hoàn thành ít nhất 1 bài test đầy đủ mỗi tuần</li>
-              </ul>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Create Goal Form */}
-        <AnimatePresence>
-          {showCreate && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="bg-white rounded-2xl shadow-sm p-6 space-y-6"
-            >
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-slate-900">Tạo mục tiêu mới</h2>
-                {progress && (
-                  <button
-                    onClick={() => setShowCreate(false)}
-                    className="text-slate-400 hover:text-slate-600"
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
-
-              {/* Target Band Score */}
+            {/* Form */}
+            <div className="p-10 space-y-8">
+              
+              {/* Target Score */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  <FiTarget className="inline w-4 h-4 mr-1" />
-                  Mục tiêu Band Score
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-3">
+                  Target Band Score
                 </label>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-6">
+                  <div className="font-serif text-6xl font-bold text-[#3B82F6]">{targetScore.toFixed(1)}</div>
                   <input
                     type="range"
-                    min="4.5"
+                    min="5"
                     max="9"
                     step="0.5"
                     value={targetScore}
                     onChange={(e) => setTargetScore(parseFloat(e.target.value))}
-                    className="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                    className="flex-1 h-2 bg-slate-100 rounded-full appearance-none cursor-pointer accent-[#3B82F6]"
                   />
-                  <span className="text-2xl font-bold text-blue-600 w-16 text-center">{targetScore}</span>
                 </div>
               </div>
 
               {/* Target Date */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  <FiCalendar className="inline w-4 h-4 mr-1" />
-                  Ngày mục tiêu
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-3">
+                  Target Deadline
                 </label>
                 <input
                   type="date"
                   value={targetDate}
                   onChange={(e) => setTargetDate(e.target.value)}
                   min={new Date().toISOString().split("T")[0]}
-                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full border border-slate-200 px-4 py-3 rounded-xl text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:border-transparent"
                 />
               </div>
 
               {/* Focus Skills */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  <FiTrendingUp className="inline w-4 h-4 mr-1" />
-                  Kỹ năng tập trung
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-3">
+                  Focus Areas
                 </label>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 gap-3">
                   {SKILLS.map((skill) => (
                     <button
                       key={skill.id}
                       onClick={() => toggleSkill(skill.id)}
-                      className={`p-4 rounded-xl border-2 transition flex flex-col items-center gap-2 ${
+                      className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all ${
                         focusSkills.includes(skill.id)
-                          ? "border-blue-500 bg-blue-50 text-blue-700"
-                          : "border-slate-200 hover:border-slate-300 text-slate-600"
+                          ? "bg-[#3B82F6] text-white border-[#3B82F6]"
+                          : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
                       }`}
                     >
-                      <span className="text-2xl">{skill.icon}</span>
-                      <span className="text-sm font-medium">{skill.label}</span>
-                      {focusSkills.includes(skill.id) && (
-                        <FiCheck className="w-4 h-4 text-blue-500" />
-                      )}
+                      <Icon name={skill.icon} className="text-xl" />
+                      <span className="font-medium">{skill.label}</span>
                     </button>
                   ))}
                 </div>
@@ -380,42 +253,237 @@ export default function StudyPlanPage() {
 
               {/* Study Hours */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  <FiClock className="inline w-4 h-4 mr-1" />
-                  Giờ học mỗi ngày
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-3">
+                  Daily Commitment
                 </label>
-                <div className="flex items-center gap-4">
-                  <input
-                    type="range"
-                    min="0.5"
-                    max="8"
-                    step="0.5"
-                    value={studyHours}
-                    onChange={(e) => setStudyHours(parseFloat(e.target.value))}
-                    className="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                  />
-                  <span className="text-xl font-bold text-blue-600 w-20 text-center">{studyHours} giờ</span>
+                <div className="flex gap-3">
+                  {[1, 2, 3, 4].map((hrs) => (
+                    <button
+                      key={hrs}
+                      onClick={() => setStudyHours(hrs)}
+                      className={`flex-1 py-3 rounded-xl border text-center font-bold transition-all ${
+                        studyHours === hrs
+                          ? "bg-[#3B82F6] text-white border-[#3B82F6]"
+                          : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                      }`}
+                    >
+                      {hrs}h
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              {/* Submit Button */}
+              {/* Submit */}
               <button
                 onClick={handleCreate}
-                disabled={saving || !targetDate || focusSkills.length === 0}
-                className="w-full py-4 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                disabled={saving || !targetDate}
+                className="w-full bg-[#3B82F6] hover:bg-blue-600 text-white py-4 rounded-xl font-bold transition-colors disabled:opacity-50"
               >
-                {saving ? (
-                  <span className="animate-spin">⏳</span>
-                ) : (
-                  <>
-                    <FiCheck className="w-5 h-5" />
-                    Tạo mục tiêu
-                  </>
-                )}
+                {saving ? "Creating..." : "Create Plan"}
               </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            </div>
+          </motion.div>
+        </main>
+      </div>
+    );
+  }
+
+  // =============================================
+  // STUDY PLAN DASHBOARD (Classic Paper Style)
+  // =============================================
+  const daysRemaining = getDaysRemaining(progress.goal.targetDate);
+  const adherence = Math.round(progress.progress.timeProgress);
+  const currentEstimate = progress.current.avgScore ?? (progress.goal.targetBandScore - 0.5);
+  const progressPercent = Math.min(100, (currentEstimate / progress.goal.targetBandScore) * 100);
+
+  return (
+    <div className="min-h-screen bg-[#F8FAFC]">
+      <main className="max-w-5xl mx-auto px-4 py-12">
+        
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white border border-slate-200 rounded-[2rem] shadow-sm overflow-hidden"
+        >
+          
+          {/* =============================================
+              1. HEADER: GAP ANALYSIS
+          ============================================= */}
+          <div className="p-10 border-b border-slate-100">
+            <div className="flex flex-col lg:flex-row items-center justify-between gap-10">
+              
+              {/* Left: Current vs Target */}
+              <div className="flex-1 flex items-center gap-8 w-full lg:w-auto">
+                <div className="text-center">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Current</div>
+                  <div className="text-6xl font-serif font-bold text-slate-800">{currentEstimate.toFixed(1)}</div>
+                </div>
+                
+                {/* Progress Connector */}
+                <div className="flex-1 h-2 bg-slate-100 rounded-full relative mx-4 overflow-visible">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${progressPercent}%` }}
+                    transition={{ duration: 0.8, ease: "easeOut" }}
+                    className="h-full bg-[#3B82F6] rounded-full"
+                  />
+                  <div className={`absolute -top-8 left-1/2 -translate-x-1/2 text-[10px] font-bold px-3 py-1 rounded-full border ${getStatusColor(progress.progress.status)}`}>
+                    {getStatusLabel(progress.progress.status)}
+                  </div>
+                </div>
+
+                <div className="text-center">
+                  <div className="text-[10px] font-bold text-[#3B82F6] uppercase tracking-widest mb-2">Target</div>
+                  <div className="text-6xl font-serif font-bold text-[#3B82F6]">{progress.goal.targetBandScore.toFixed(1)}</div>
+                </div>
+              </div>
+
+              {/* Right: Stats Grid */}
+              <div className="flex gap-10 lg:border-l lg:border-slate-100 lg:pl-10">
+                <div className="text-center">
+                  <div className={`text-3xl font-bold ${daysRemaining < 7 ? 'text-red-600' : 'text-slate-800'}`}>
+                    {daysRemaining}<span className="text-sm text-slate-400 font-normal">d</span>
+                  </div>
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">Remaining</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-slate-800">{adherence}%</div>
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">Adherence</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-slate-800">{progress.goal.studyHoursPerDay}h</div>
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">Daily</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-slate-50">
+              <button
+                onClick={() => setShowCreate(true)}
+                className="text-sm font-medium text-slate-500 hover:text-slate-700 px-4 py-2"
+              >
+                Edit Plan
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="text-sm font-medium text-red-500 hover:text-red-700 px-4 py-2 disabled:opacity-50"
+              >
+                {deleting ? "..." : "Delete"}
+              </button>
+            </div>
+          </div>
+
+          {/* =============================================
+              2. BODY CONTENT
+          ============================================= */}
+          <div className="p-10 grid grid-cols-1 lg:grid-cols-3 gap-12">
+            
+            {/* LEFT: HEATMAP */}
+            <div>
+              <h3 className="font-serif font-bold text-xl text-slate-900 mb-6">Study Rhythm</h3>
+              <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
+                <div className="flex flex-wrap gap-1.5">
+                  {heatmapData.map((intensity, i) => (
+                    <div
+                      key={i}
+                      className={`w-3 h-3 rounded-sm ${
+                        intensity > 0.7 ? 'bg-[#3B82F6]' :
+                        intensity > 0.4 ? 'bg-blue-300' :
+                        intensity > 0.2 ? 'bg-blue-100' : 'bg-slate-200'
+                      }`}
+                      title={`Day ${i + 1}`}
+                    />
+                  ))}
+                </div>
+                <div className="flex items-center justify-between mt-4">
+                  <p className="text-xs text-slate-400 font-medium">Last 35 Days</p>
+                  <div className="flex items-center gap-1 text-[10px] text-slate-400">
+                    <span>Less</span>
+                    <div className="flex gap-0.5">
+                      <div className="w-2 h-2 bg-slate-200 rounded-sm" />
+                      <div className="w-2 h-2 bg-blue-100 rounded-sm" />
+                      <div className="w-2 h-2 bg-blue-300 rounded-sm" />
+                      <div className="w-2 h-2 bg-[#3B82F6] rounded-sm" />
+                    </div>
+                    <span>More</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Stats */}
+              <div className="mt-6 space-y-3">
+                <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
+                  <span className="text-sm text-slate-500">Tests Completed</span>
+                  <span className="font-bold text-slate-800">{progress.current.testsCompleted}</span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
+                  <span className="text-sm text-slate-500">Study Hours</span>
+                  <span className="font-bold text-slate-800">{progress.current.studyTimeHours.toFixed(1)}h</span>
+                </div>
+              </div>
+            </div>
+
+            {/* RIGHT: FOCUS AREAS */}
+            <div className="lg:col-span-2">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="font-serif font-bold text-xl text-slate-900">Critical Focus Areas</h3>
+                <button className="text-xs font-bold text-slate-400 hover:text-[#3B82F6] transition-colors">
+                  View Full Plan
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {FOCUS_AREAS.map((area) => (
+                  <div
+                    key={area.id}
+                    className="group flex items-center justify-between p-4 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50/30 transition-all"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        area.gap <= -0.5 ? 'bg-red-50 text-red-600' :
+                        area.gap <= -0.2 ? 'bg-orange-50 text-orange-600' : 'bg-slate-100 text-slate-500'
+                      }`}>
+                        <Icon name={area.icon} className="text-xl" />
+                      </div>
+                      <div>
+                        <h4 className="font-serif font-bold text-slate-800">{area.skill}</h4>
+                        <p className="text-xs text-slate-500 mt-0.5">{area.action}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-6">
+                      <span className={`text-xs font-bold px-2 py-1 rounded ${
+                        area.gap <= -0.5 ? 'text-red-600 bg-red-50' :
+                        area.gap <= -0.2 ? 'text-orange-600 bg-orange-50' : 'text-slate-500 bg-slate-100'
+                      }`}>
+                        {area.gap.toFixed(1)} Gap
+                      </span>
+                      <button
+                        onClick={() => router.push("/practice")}
+                        className="text-sm font-bold text-[#3B82F6] opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1"
+                      >
+                        Start <Icon name="arrow_forward" className="text-sm" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Focus Skills Tags */}
+              <div className="mt-8 flex items-center gap-2 flex-wrap">
+                <span className="text-xs text-slate-400">Active Skills:</span>
+                {progress.goal.focusSkills.map((skill) => (
+                  <span key={skill} className="px-3 py-1 text-xs font-medium bg-blue-50 text-[#3B82F6] rounded-full capitalize">
+                    {skill}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+          </div>
+        </motion.div>
+
       </main>
     </div>
   );

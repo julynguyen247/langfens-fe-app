@@ -171,6 +171,28 @@ export async function createDeckCard(
   const res = await apisVocabulary.post(`/users/deck/${deckId}/card`, payload);
   return res;
 }
+
+// Bulk create cards - single API call
+export async function createBulkCards(
+  deckId: string,
+  cards: Array<{
+    frontMd: string;
+    backMd: string;
+    hintMd?: string;
+  }>
+) {
+  // Backend expects PascalCase: Cards, FrontMd, BackMd, HintMd
+  const payload = {
+    Cards: cards.map(c => ({
+      FrontMd: c.frontMd,
+      BackMd: c.backMd,
+      HintMd: c.hintMd || null
+    }))
+  };
+  const res = await apisVocabulary.post(`/users/deck/${deckId}/cards`, payload);
+  return res;
+}
+
 export async function updateDeck(
   deckId: string,
   payload: {
@@ -614,6 +636,7 @@ export async function getWrongAnswers(opts?: {
 export async function createBookmark(
   questionId: string,
   opts?: {
+    attemptId?: string;
     questionContent?: string;
     skill?: string;
     questionType?: string;
@@ -622,6 +645,7 @@ export async function createBookmark(
 ) {
   const res = await apisAttempt.post("/bookmarks", {
     questionId,
+    attemptId: opts?.attemptId,
     questionContent: opts?.questionContent,
     skill: opts?.skill,
     questionType: opts?.questionType,
@@ -638,7 +662,11 @@ export async function getBookmarks(opts?: {
   pageSize?: number;
 }) {
   const res = await apisAttempt.get("/bookmarks", {
-    params: opts,
+    params: {
+      ...opts,
+      page: opts?.page ?? 1,
+      pageSize: opts?.pageSize ?? 50,
+    },
   });
   return res;
 }

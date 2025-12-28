@@ -43,6 +43,8 @@ const QUESTION_TYPE_LABELS: Record<string, string> = {
   YES_NO_NOT_GIVEN: "Yes/No/NG",
   MCQ_SINGLE: "Multiple Choice",
   MCQ_MULTIPLE: "Multiple Selection",
+  MULTIPLE_CHOICE_SINGLE: "Multiple Choice",
+  MULTIPLE_CHOICE_MULTIPLE: "Multiple Selection",
   MATCHING_HEADING: "Matching Headings",
   MATCHING_INFORMATION: "Matching Info",
   MATCHING_FEATURES: "Matching Features",
@@ -60,6 +62,8 @@ const TYPE_COLORS: Record<string, string> = {
   YES_NO_NOT_GIVEN: "bg-emerald-50 text-emerald-700",
   MCQ_SINGLE: "bg-blue-50 text-blue-700",
   MCQ_MULTIPLE: "bg-blue-50 text-blue-700",
+  MULTIPLE_CHOICE_SINGLE: "bg-blue-50 text-blue-700",
+  MULTIPLE_CHOICE_MULTIPLE: "bg-blue-50 text-blue-700",
   MATCHING_HEADING: "bg-purple-50 text-purple-700",
   MATCHING_INFORMATION: "bg-amber-50 text-amber-700",
   MATCHING_FEATURES: "bg-rose-50 text-rose-700",
@@ -349,7 +353,7 @@ export default function PracticeBank({
 
                 {/* Tags Row */}
                 <div className="flex flex-wrap gap-1.5 mb-4">
-                  {(it.questionTypes || it.tags || ["MATCHING_HEADING", "TRUE_FALSE_NOT_GIVEN"])
+                  {(it.questionTypes || it.tags || [])
                     .slice(0, 3)
                     .map((type, idx) => (
                       <span

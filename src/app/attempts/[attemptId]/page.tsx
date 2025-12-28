@@ -10,6 +10,7 @@ import {
 import { FiChevronDown, FiChevronUp } from "react-icons/fi";
 import ReactMarkdown from "react-markdown";
 import BookmarkButton from "@/components/BookmarkButton";
+import { ResultHeader } from "@/components/result/ResultHeader";
 
 type PageSource = "attempt" | "writing" | "speaking";
 
@@ -126,6 +127,7 @@ export default function AttemptResultPage() {
   const [activeSkill, setActiveSkill] = useState<
     "READING" | "LISTENING" | "WRITING" | "SPEAKING"
   >("READING");
+  const [showModel, setShowModel] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -391,221 +393,358 @@ export default function AttemptResultPage() {
     ).length;
 
     const blankCount = skillFiltered.length - answeredCount;
+    const accuracy = skillFiltered.length > 0 
+      ? Math.round((attemptData.correctCount / skillFiltered.length) * 100) 
+      : 0;
 
     const isProductiveSkill =
       activeSkill === "WRITING" || activeSkill === "SPEAKING";
 
+    // Get criteria for productive skills
+    const writingCriteria = attemptData.writingGrade ? [
+      { code: "TR", name: "Task Response", score: attemptData.writingGrade.taskResponse?.band },
+      { code: "CC", name: "Coherence", score: attemptData.writingGrade.coherenceAndCohesion?.band },
+      { code: "LR", name: "Lexical", score: attemptData.writingGrade.lexicalResource?.band },
+      { code: "GRA", name: "Grammar", score: attemptData.writingGrade.grammaticalRangeAndAccuracy?.band },
+    ].filter(c => c.score !== undefined) : [];
+
+    const speakingCriteria = attemptData.speakingGrade ? [
+      { code: "FC", name: "Fluency", score: attemptData.speakingGrade.fluencyAndCoherence?.band },
+      { code: "LR", name: "Lexical", score: attemptData.speakingGrade.lexicalResource?.band },
+      { code: "GRA", name: "Grammar", score: attemptData.speakingGrade.grammaticalRangeAndAccuracy?.band },
+      { code: "P", name: "Pronunciation", score: attemptData.speakingGrade.pronunciation?.band },
+    ].filter(c => c.score !== undefined) : [];
+
+    const productiveBand = activeSkill === "WRITING" ? attemptData.writingBand : attemptData.speakingBand;
+    const productiveCriteria = activeSkill === "WRITING" ? writingCriteria : speakingCriteria;
+
+    // Metrics based on skill type
+    const metrics = isProductiveSkill 
+      ? productiveCriteria.map(c => ({ label: c.code, value: c.score?.toFixed(1) ?? "--" }))
+      : [
+          { label: "Correct", value: `${attemptData.correctCount}/${skillFiltered.length}` },
+          { label: "Skipped", value: String(blankCount) },
+          { label: "Time", value: attemptData.totalTime },
+          { label: "Accuracy", value: `${accuracy}%` },
+        ];
+
     return (
-      <div className="max-w-5xl mx-auto bg-white rounded-xl shadow-md overflow-hidden text-black">
-        <div className="bg-gradient-to-r from-blue-500 to-emerald-500 text-white p-8 text-center">
-          <h1 className="text-3xl font-bold mb-2 uppercase tracking-wide">
-            {headerTitle}
-          </h1>
-          <p className="text-sm opacity-90">
-            {new Date(attemptData.finishedAt).toLocaleString("vi-VN")}
-          </p>
-        </div>
+      <div className="min-h-screen bg-[#F8FAFC] py-10 px-4 font-sans">
+        {/* THE MASTER CARD - SPA Style */}
+        <div className="max-w-6xl mx-auto bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden">
 
-        <div className="flex flex-col items-center py-10">
-          <div className="relative w-40 h-40 rounded-full bg-gradient-to-b from-emerald-400 to-blue-400 text-white flex items-center justify-center shadow-lg">
-            <span className="text-6xl font-extrabold">
-              {typeof overallBand === "number" ? overallBand.toFixed(1) : "--"}
-            </span>
+          {/* A. HEADER - Using Shared Component */}
+          <div className="p-10 border-b border-slate-100">
+            <ResultHeader
+              skill={activeSkill}
+              overallScore={isProductiveSkill
+                ? (typeof productiveBand === "number" ? productiveBand : "--")
+                : (typeof overallBand === "number" ? overallBand : "--")
+              }
+              date={new Date(attemptData.finishedAt).toLocaleDateString("en-US", {
+                month: "short", day: "numeric", year: "numeric"
+              })}
+              metrics={metrics}
+            />
           </div>
-          <p className="mt-4 text-lg text-slate-700">Overall Band Score</p>
-        </div>
 
-        <div className="px-8 mb-6 flex gap-2 justify-center">
-          {["READING", "LISTENING", "WRITING", "SPEAKING"].map((sk) => (
-            <button
-              key={sk}
-              onClick={() => setActiveSkill(sk as any)}
-              className={`px-4 py-2 rounded-lg text-sm border ${
-                activeSkill === sk
-                  ? "bg-slate-900 text-white border-slate-900"
-                  : "bg-white text-slate-700 hover:bg-slate-50"
-              }`}
-            >
-              {sk}
-            </button>
-          ))}
-        </div>
+          {/* B. SKILL TABS (Switcher) */}
+          <div className="flex justify-center bg-slate-50/50 border-b border-slate-100">
+            {["READING", "LISTENING", "WRITING", "SPEAKING"].map((sk) => (
+              <button
+                key={sk}
+                onClick={() => setActiveSkill(sk as any)}
+                className={`px-10 py-5 text-xs font-bold uppercase tracking-[0.15em] transition-all ${
+                  activeSkill === sk
+                    ? "text-[#3B82F6] border-b-2 border-[#3B82F6] bg-white shadow-sm"
+                    : "text-slate-400 hover:text-slate-600 border-b-2 border-transparent"
+                }`}
+              >
+                {sk}
+              </button>
+            ))}
+          </div>
 
-        {!isProductiveSkill && (
-          <>
-            <div className="px-8 pb-6 grid sm:grid-cols-2 lg:grid-cols-4 gap-6 text-slate-700">
-              <Stat label="Số câu đã trả lời">{answeredCount}</Stat>
-              <Stat label="Câu bỏ trống">{blankCount}</Stat>
-              <Stat label="Tổng thời gian">{attemptData.totalTime}</Stat>
-              <Stat label="Số câu đúng">{attemptData.correctCount}</Stat>
+          {/* Manual Review Warning */}
+          {!isProductiveSkill && attemptData.needsManualReview > 0 && (
+            <div className="mx-10 mt-8 p-4 rounded-xl border border-amber-200 bg-amber-50 text-amber-800 text-sm flex items-center gap-2">
+              <span className="text-amber-500">⚠️</span>
+              {attemptData.needsManualReview} questions need manual review — band may change.
             </div>
+          )}
 
-            {attemptData.needsManualReview > 0 && (
-              <div className="mx-8 mb-8 p-4 rounded-lg border border-amber-300 bg-amber-50 text-amber-800 text-sm">
-                ⚠️ Có {attemptData.needsManualReview} câu cần chấm tay — band có
-                thể thay đổi.
+          {/* C. CONTENT BODY (Polymorphic View) */}
+          <div className="p-10 bg-white min-h-[500px]">
+            {isProductiveSkill ? (
+              <ProductiveBandSection
+                skill={activeSkill}
+                band={productiveBand}
+                writingGrade={attemptData.writingGrade}
+                speakingGrade={attemptData.speakingGrade}
+              />
+            ) : (
+              <QuestionReview details={skillFiltered} />
+            )}
+
+            {/* Empty State Handler */}
+            {!isProductiveSkill && skillFiltered.length === 0 && (
+              <div className="flex items-center justify-center gap-2 py-20 text-slate-400">
+                <span className="material-symbols-rounded text-2xl">do_not_disturb_on</span>
+                <span>No data for {activeSkill}</span>
               </div>
             )}
-          </>
-        )}
+          </div>
 
-        {isProductiveSkill ? (
-          <ProductiveBandSection
-            skill={activeSkill}
-            band={
-              activeSkill === "WRITING"
-                ? attemptData.writingBand
-                : attemptData.speakingBand
-            }
-            writingGrade={attemptData.writingGrade}
-            speakingGrade={attemptData.speakingGrade}
-          />
-        ) : (
-          <QuestionReview details={skillFiltered} />
-        )}
+        </div>
 
-        <div className="flex justify-center gap-4 pb-10">
-          <button
-            onClick={() => router.push(`/attempts/${attemptData.attemptId}/review`)}
-            className="px-6 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium"
-          >
-            Xem lại bài làm
-          </button>
+        {/* FOOTER ACTIONS */}
+        <div className="text-center mt-8 space-y-4">
+          {/* Primary Action */}
           <button
             onClick={() => router.push("/home")}
-            className="px-6 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium"
+            className="bg-[#3B82F6] text-white font-bold text-sm px-8 py-3 rounded-xl hover:bg-blue-600 transition-colors inline-flex items-center gap-2"
           >
-            Về trang chủ
+            <span className="material-symbols-rounded text-base">refresh</span>
+            Take New Placement Test
           </button>
+          
+          {/* Secondary Links */}
+          <div className="flex justify-center gap-4">
+            <button
+              onClick={() => router.push(`/attempts/${attemptData.attemptId}/review`)}
+              className="text-slate-500 font-bold text-sm hover:text-[#3B82F6] transition-colors"
+            >
+              ← Review All Answers
+            </button>
+            <span className="text-slate-300">|</span>
+            <button
+              onClick={() => router.push("/practice")}
+              className="text-slate-500 font-bold text-sm hover:text-[#3B82F6] transition-colors"
+            >
+              Back to Library →
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
   if (source === "writing" && writingDetail) {
+    // Build strengths/weaknesses for critique
+    const strengths: string[] = [];
+    const weaknesses: string[] = [];
+    
+    if (writingDetail.taskResponse) {
+      if (writingDetail.taskResponse.band >= 6) strengths.push("Task Response");
+      else weaknesses.push("Task Response");
+    }
+    if (writingDetail.coherenceAndCohesion) {
+      if (writingDetail.coherenceAndCohesion.band >= 6) strengths.push("Coherence");
+      else weaknesses.push("Coherence");
+    }
+    if (writingDetail.lexicalResource) {
+      if (writingDetail.lexicalResource.band >= 6) strengths.push("Vocabulary");
+      else weaknesses.push("Vocabulary");
+    }
+    if (writingDetail.grammaticalRangeAndAccuracy) {
+      if (writingDetail.grammaticalRangeAndAccuracy.band >= 6) strengths.push("Grammar");
+      else weaknesses.push("Grammar");
+    }
+
+
+
     return (
-      <div className="max-w-5xl mx-auto bg-white rounded-xl shadow-md overflow-hidden text-black">
-        <div className="bg-gradient-to-r from-blue-500 to-emerald-500 text-white p-8 text-center">
-          <h1 className="text-3xl font-bold mb-2 uppercase tracking-wide">
-            {headerTitle}
-          </h1>
-          <p className="text-sm opacity-90">
-            {writingDetail.gradedAt
-              ? new Date(writingDetail.gradedAt).toLocaleString("vi-VN")
-              : new Date().toLocaleString("vi-VN")}
-          </p>
-        </div>
+      <div className="max-w-5xl mx-auto py-8 px-4 space-y-8">
+        {/* Score Header - Examiner's Report Style */}
+        <div className="bg-white border-b border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+          <div className="p-8 flex flex-col md:flex-row items-center justify-between gap-8">
+            {/* Left: Big Score */}
+            <div className="text-center md:text-left">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="material-symbols-rounded text-xl text-slate-400">edit_note</span>
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                  Writing Assessment
+                </span>
+              </div>
+              <div className="text-8xl font-serif font-bold text-[#3B82F6] leading-none">
+                {writingDetail.overallBand.toFixed(1)}
+              </div>
+              <p className="mt-2 text-[10px] uppercase tracking-[0.25em] text-slate-400">
+                Overall Band Score
+              </p>
+            </div>
 
-        <div className="flex flex-col items-center py-10">
-          <div className="w-32 h-32 rounded-full bg-gradient-to-b from-emerald-400 to-blue-400 text-white flex items-center justify-center shadow-lg">
-            <span className="text-4xl font-extrabold">
-              {writingDetail.overallBand.toFixed(1)}
-            </span>
-          </div>
-          <p className="mt-4 text-lg text-slate-700">Overall Writing Band</p>
-          <p className="mt-1 text-sm text-slate-500">
-            Word count: {writingDetail.wordCount}
-          </p>
-        </div>
-
-        <div className="px-8 pb-8 space-y-6">
-          <section className="bg-slate-50 border rounded-lg p-4">
-            <h2 className="text-sm font-semibold text-slate-800 mb-2">
-              Task prompt
-            </h2>
-            <div className="text-sm text-slate-700 whitespace-pre-wrap">
-              {writingDetail.taskText || (
-                <span className="italic text-slate-400">(Không có đề bài)</span>
+            {/* Right: Criteria Breakdown */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {writingDetail.taskResponse && (
+                <div className="bg-slate-50 border border-slate-100 p-4 rounded-lg text-center min-w-[90px]">
+                  <p className="text-[10px] font-bold uppercase text-slate-500 mb-1">Task</p>
+                  <p className="text-2xl font-bold text-slate-800">{writingDetail.taskResponse.band.toFixed(1)}</p>
+                </div>
+              )}
+              {writingDetail.coherenceAndCohesion && (
+                <div className="bg-slate-50 border border-slate-100 p-4 rounded-lg text-center min-w-[90px]">
+                  <p className="text-[10px] font-bold uppercase text-slate-500 mb-1">Coherence</p>
+                  <p className="text-2xl font-bold text-slate-800">{writingDetail.coherenceAndCohesion.band.toFixed(1)}</p>
+                </div>
+              )}
+              {writingDetail.lexicalResource && (
+                <div className="bg-slate-50 border border-slate-100 p-4 rounded-lg text-center min-w-[90px]">
+                  <p className="text-[10px] font-bold uppercase text-slate-500 mb-1">Lexical</p>
+                  <p className="text-2xl font-bold text-slate-800">{writingDetail.lexicalResource.band.toFixed(1)}</p>
+                </div>
+              )}
+              {writingDetail.grammaticalRangeAndAccuracy && (
+                <div className="bg-slate-50 border border-slate-100 p-4 rounded-lg text-center min-w-[90px]">
+                  <p className="text-[10px] font-bold uppercase text-slate-500 mb-1">Grammar</p>
+                  <p className="text-2xl font-bold text-slate-800">{writingDetail.grammaticalRangeAndAccuracy.band.toFixed(1)}</p>
+                </div>
               )}
             </div>
-          </section>
+          </div>
+        </div>
 
-          <section className="grid md:grid-cols-2 gap-4">
-            <div className="bg-slate-50 border rounded-lg p-4">
-              <h2 className="text-sm font-semibold text-slate-800 mb-2">
-                Bài viết của bạn
-              </h2>
-              <div className="text-sm text-slate-700 whitespace-pre-wrap">
-                {writingDetail.essayRaw || (
-                  <span className="italic text-slate-400">
-                    (Không có nội dung)
-                  </span>
+        {/* Task Prompt - Subtle */}
+        <div className="bg-slate-50 border border-slate-100 rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="material-symbols-rounded text-slate-400">description</span>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Task Prompt</h3>
+          </div>
+          <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+            {writingDetail.taskText || <span className="italic text-slate-400">(No task text)</span>}
+          </p>
+        </div>
+
+        {/* Feedback Body - 3 Column Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* LEFT: The Essay (Paper View) */}
+          <div className="lg:col-span-2">
+            <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-8">
+              <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">
+                Your Submission
+              </h3>
+              <div className="font-serif text-lg leading-loose text-slate-800 whitespace-pre-wrap">
+                {writingDetail.essayRaw || <span className="italic text-slate-400">(No essay content)</span>}
+              </div>
+              <div className="mt-6 pt-6 border-t border-slate-100 flex justify-between text-sm text-slate-500">
+                <span className="flex items-center gap-1">
+                  <span className="material-symbols-rounded text-base">notes</span>
+                  {writingDetail.wordCount} words
+                </span>
+                <span className="text-xs text-slate-400">
+                  {writingDetail.gradedAt && new Date(writingDetail.gradedAt).toLocaleDateString("en-US", {
+                    year: "numeric", month: "short", day: "numeric"
+                  })}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT: Examiner's Notes (Sidebar) */}
+          <div className="space-y-6">
+            {/* Examiner's Critique */}
+            <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-6">
+              <h3 className="flex items-center gap-2 font-bold text-blue-700 mb-4">
+                <span className="material-symbols-rounded text-xl">psychology</span>
+                Examiner's Critique
+              </h3>
+              <div className="space-y-4 text-sm text-slate-700 leading-relaxed">
+                {strengths.length > 0 && (
+                  <div>
+                    <p className="font-semibold text-emerald-700 mb-1 flex items-center gap-1">
+                      <span className="material-symbols-rounded text-base">check_circle</span>
+                      Strengths
+                    </p>
+                    <ul className="list-disc list-inside space-y-1 text-slate-600 text-xs">
+                      {strengths.map((s, i) => <li key={i}>{s}</li>)}
+                    </ul>
+                  </div>
+                )}
+                {weaknesses.length > 0 && (
+                  <div>
+                    <p className="font-semibold text-amber-700 mb-1 flex items-center gap-1">
+                      <span className="material-symbols-rounded text-base">error</span>
+                      Areas to Improve
+                    </p>
+                    <ul className="list-disc list-inside space-y-1 text-slate-600 text-xs">
+                      {weaknesses.map((w, i) => <li key={i}>{w}</li>)}
+                    </ul>
+                  </div>
                 )}
               </div>
             </div>
 
-            <div className="bg-slate-50 border rounded-lg p-4">
-              <h2 className="text-sm font-semibold text-slate-800 mb-2">
-                Phiên bản đã chuẩn hoá
-              </h2>
-              <div className="text-sm text-slate-700 whitespace-pre-wrap">
-                {writingDetail.essayNormalized || (
-                  <span className="italic text-slate-400">
-                    (Không có nội dung)
-                  </span>
-                )}
+            {/* Suggestions */}
+            {writingDetail.suggestions.length > 0 && (
+              <div className="bg-white border border-slate-200 rounded-xl p-6">
+                <h3 className="flex items-center gap-2 font-bold text-slate-800 mb-3">
+                  <span className="material-symbols-rounded text-amber-500">lightbulb</span>
+                  Tips
+                </h3>
+                <ul className="text-xs text-slate-600 space-y-2">
+                  {writingDetail.suggestions.slice(0, 3).map((s, i) => (
+                    <li key={i} className="flex gap-2">
+                      <span className="text-slate-400">{i + 1}.</span>
+                      <span>{s}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
+            )}
+
+            {/* Model Answer Toggle */}
+            {writingDetail.improvedParagraph && (
+              <div className="bg-white border border-slate-200 rounded-xl p-6">
+                <h3 className="font-bold text-slate-800 mb-2">Better Version?</h3>
+                <p className="text-xs text-slate-500 mb-4">See how an improved version would look.</p>
+                <button
+                  onClick={() => setShowModel(!showModel)}
+                  className="w-full bg-slate-800 text-white py-2.5 rounded-lg font-medium text-sm hover:bg-black transition-colors flex items-center justify-center gap-2"
+                >
+                  <span className="material-symbols-rounded text-base">{showModel ? "visibility_off" : "visibility"}</span>
+                  {showModel ? "Hide Model Answer" : "View Model Answer"}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Model Answer (Expandable) */}
+        {showModel && writingDetail.improvedParagraph && (
+          <div className="bg-gradient-to-br from-slate-800 to-slate-900 text-white rounded-xl p-8 shadow-lg">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="material-symbols-rounded text-amber-400">auto_awesome</span>
+              <h3 className="font-bold">Improved Version</h3>
             </div>
-          </section>
+            <p className="font-serif text-lg leading-loose opacity-90 whitespace-pre-wrap">
+              {writingDetail.improvedParagraph}
+            </p>
+          </div>
+        )}
 
-          <section className="grid md:grid-cols-2 gap-4">
-            {writingDetail.taskResponse && (
-              <CriterionCard
-                title="Task Response"
-                criterion={writingDetail.taskResponse}
-              />
-            )}
-            {writingDetail.coherenceAndCohesion && (
-              <CriterionCard
-                title="Coherence & Cohesion"
-                criterion={writingDetail.coherenceAndCohesion}
-              />
-            )}
-            {writingDetail.lexicalResource && (
-              <CriterionCard
-                title="Lexical Resource"
-                criterion={writingDetail.lexicalResource}
-              />
-            )}
-            {writingDetail.grammaticalRangeAndAccuracy && (
-              <CriterionCard
-                title="Grammatical Range & Accuracy"
-                criterion={writingDetail.grammaticalRangeAndAccuracy}
-              />
-            )}
-          </section>
-
-          {writingDetail.suggestions.length > 0 && (
-            <section className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
-              <h2 className="text-sm font-semibold text-emerald-900 mb-2">
-                Gợi ý cải thiện
-              </h2>
-              <ul className="list-disc list-inside text-sm text-emerald-900 space-y-1">
-                {writingDetail.suggestions.map((s, i) => (
-                  <li key={i}>{s}</li>
-                ))}
-              </ul>
-            </section>
+        {/* Detailed Criteria Cards */}
+        <div className="grid md:grid-cols-2 gap-4">
+          {writingDetail.taskResponse && (
+            <CriterionCard title="Task Response" criterion={writingDetail.taskResponse} />
           )}
-
-          {writingDetail.improvedParagraph && (
-            <section className="bg-slate-50 border rounded-lg p-4">
-              <h2 className="text-sm font-semibold text-slate-800 mb-2">
-                Đoạn cải thiện gợi ý
-              </h2>
-              <div className="text-sm text-slate-700 whitespace-pre-wrap">
-                {writingDetail.improvedParagraph}
-              </div>
-            </section>
+          {writingDetail.coherenceAndCohesion && (
+            <CriterionCard title="Coherence & Cohesion" criterion={writingDetail.coherenceAndCohesion} />
+          )}
+          {writingDetail.lexicalResource && (
+            <CriterionCard title="Lexical Resource" criterion={writingDetail.lexicalResource} />
+          )}
+          {writingDetail.grammaticalRangeAndAccuracy && (
+            <CriterionCard title="Grammatical Range & Accuracy" criterion={writingDetail.grammaticalRangeAndAccuracy} />
           )}
         </div>
 
-        <div className="flex justify-center gap-4 pb-10">
+        {/* Footer */}
+        <div className="flex justify-center gap-4 pt-4">
           <button
             onClick={() => router.push("/home")}
-            className="px-6 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium"
+            className="px-6 py-2.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition-colors"
           >
-            Về trang chủ
+            Back to Home
           </button>
         </div>
       </div>
@@ -613,107 +752,171 @@ export default function AttemptResultPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto bg-white rounded-xl shadow-md overflow-hidden text-black">
-      <div className="bg-gradient-to-r from-blue-500 to-emerald-500 text-white p-8 text-center">
-        <h1 className="text-3xl font-bold mb-2 uppercase tracking-wide">
+    <div className="max-w-4xl mx-auto py-8 px-4">
+      
+      {/* 1. REPORT CARD HERO - Classic Academic Style */}
+      <div className="bg-white rounded-2xl border border-blue-100 shadow-sm p-10 text-center mb-8">
+        <h2 className="text-sm font-bold text-slate-400 uppercase tracking-[0.2em] mb-1">
           {headerTitle}
-        </h1>
-        <p className="text-sm opacity-90">
+        </h2>
+        <p className="text-xs text-slate-400 mb-6">
           {speakingDetail?.gradedAt
             ? new Date(speakingDetail.gradedAt).toLocaleString("vi-VN")
             : new Date().toLocaleString("vi-VN")}
         </p>
-      </div>
-
-      <div className="flex flex-col items-center py-10">
-        <div className="w-32 h-32 rounded-full bg-gradient-to-b from-emerald-400 to-blue-400 text-white flex items-center justify-center shadow-lg">
-          <span className="text-4xl font-extrabold">
+        
+        {/* Large Serif Band Score */}
+        <div className="inline-block">
+          <span className="text-7xl font-serif font-bold text-[#3B82F6]">
             {typeof overallBand === "number" ? overallBand.toFixed(1) : "--"}
           </span>
         </div>
-        <p className="mt-4 text-lg text-slate-700">Overall Speaking Band</p>
+        <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mt-3">
+          Overall Speaking Band
+        </p>
         {typeof speakingDetail?.wordCount === "number" && (
-          <p className="mt-1 text-sm text-slate-500">
-            Word count: {speakingDetail.wordCount}
+          <p className="text-sm text-slate-500 mt-2">
+            {speakingDetail.wordCount} words spoken
           </p>
         )}
       </div>
 
-      <div className="px-8 pb-8 space-y-6">
-        {speakingDetail?.taskText && (
-          <section className="bg-slate-50 border rounded-lg p-4">
-            <h2 className="text-sm font-semibold text-slate-800 mb-2">
-              Task prompt
+      {/* 2. INTERVIEW TRANSCRIPT (Court Transcript Style) */}
+      {speakingDetail?.transcript && (
+        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden mb-8">
+          {/* Header */}
+          <div className="bg-slate-50 px-4 py-3 border-b border-slate-100">
+            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+              Interview Transcript
             </h2>
-            <div className="text-sm text-slate-700 whitespace-pre-wrap">
-              {speakingDetail.taskText}
+          </div>
+          {/* Content */}
+          <div className="p-6">
+            {/* Task/Prompt (Examiner) */}
+            {speakingDetail?.taskText && (
+              <div className="mb-6">
+                <p className="text-slate-500 italic text-sm mb-2">
+                  Examiner asks:
+                </p>
+                <p className="text-slate-700 text-sm leading-relaxed">
+                  "{speakingDetail.taskText}"
+                </p>
+              </div>
+            )}
+            
+            {/* Candidate Response */}
+            <div className="pl-4 border-l-2 border-blue-200">
+              <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">
+                Your Response:
+              </p>
+              <p className="text-slate-900 font-medium text-lg leading-relaxed whitespace-pre-wrap">
+                {speakingDetail.transcript}
+              </p>
             </div>
-          </section>
+          </div>
+        </div>
+      )}
+
+      {/* 3. SPEAKING CRITERIA STATS - Clean Cards with Serif Numbers */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        {speakingDetail?.fluencyAndCoherence && (
+          <div className="p-4 border border-slate-100 rounded-lg bg-slate-50 text-center">
+            <span className="text-3xl font-serif font-bold text-[#3B82F6]">
+              {speakingDetail.fluencyAndCoherence.band?.toFixed(1) ?? "--"}
+            </span>
+            <p className="text-xs font-bold text-slate-500 uppercase mt-2">Fluency</p>
+          </div>
         )}
-
-        {speakingDetail?.transcript && (
-          <section className="bg-slate-50 border rounded-lg p-4">
-            <h2 className="text-sm font-semibold text-slate-800 mb-2">
-              Transcript / Nội dung nói
-            </h2>
-            <div className="text-sm text-slate-700 whitespace-pre-wrap">
-              {speakingDetail.transcript}
-            </div>
-          </section>
+        {speakingDetail?.pronunciation && (
+          <div className="p-4 border border-slate-100 rounded-lg bg-slate-50 text-center">
+            <span className="text-3xl font-serif font-bold text-[#3B82F6]">
+              {speakingDetail.pronunciation.band?.toFixed(1) ?? "--"}
+            </span>
+            <p className="text-xs font-bold text-slate-500 uppercase mt-2">Pronunciation</p>
+          </div>
         )}
-
-        <section className="grid md:grid-cols-2 gap-4">
-          {speakingDetail?.fluencyAndCoherence && (
-            <CriterionCard
-              title="Fluency & Coherence"
-              criterion={speakingDetail.fluencyAndCoherence}
-            />
-          )}
-          {speakingDetail?.lexicalResource && (
-            <CriterionCard
-              title="Lexical Resource"
-              criterion={speakingDetail.lexicalResource}
-            />
-          )}
-          {speakingDetail?.grammaticalRangeAndAccuracy && (
-            <CriterionCard
-              title="Grammatical Range & Accuracy"
-              criterion={speakingDetail.grammaticalRangeAndAccuracy}
-            />
-          )}
-          {speakingDetail?.pronunciation && (
-            <CriterionCard
-              title="Pronunciation"
-              criterion={speakingDetail.pronunciation}
-            />
-          )}
-        </section>
-
-        {speakingDetail?.suggestions &&
-          speakingDetail.suggestions.length > 0 && (
-            <section className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
-              <h2 className="text-sm font-semibold text-emerald-900 mb-2">
-                Gợi ý cải thiện
-              </h2>
-              <ul className="list-disc list-inside text-sm text-emerald-900 space-y-1">
-                {speakingDetail.suggestions.map((s, i) => (
-                  <li key={i}>{s}</li>
-                ))}
-              </ul>
-            </section>
-          )}
-
-        {speakingDetail?.improvedAnswer && (
-          <section className="bg-slate-50 border rounded-lg p-4">
-            <h2 className="text-sm font-semibold text-slate-800 mb-2">
-              Câu trả lời gợi ý / cải thiện
-            </h2>
-            <div className="text-sm text-slate-700 whitespace-pre-wrap">
-              {speakingDetail.improvedAnswer}
-            </div>
-          </section>
+        {speakingDetail?.lexicalResource && (
+          <div className="p-4 border border-slate-100 rounded-lg bg-slate-50 text-center">
+            <span className="text-3xl font-serif font-bold text-[#3B82F6]">
+              {speakingDetail.lexicalResource.band?.toFixed(1) ?? "--"}
+            </span>
+            <p className="text-xs font-bold text-slate-500 uppercase mt-2">Vocabulary</p>
+          </div>
+        )}
+        {speakingDetail?.grammaticalRangeAndAccuracy && (
+          <div className="p-4 border border-slate-100 rounded-lg bg-slate-50 text-center">
+            <span className="text-3xl font-serif font-bold text-[#3B82F6]">
+              {speakingDetail.grammaticalRangeAndAccuracy.band?.toFixed(1) ?? "--"}
+            </span>
+            <p className="text-xs font-bold text-slate-500 uppercase mt-2">Grammar</p>
+          </div>
         )}
       </div>
+
+      {/* 4. DETAILED FEEDBACK CARDS */}
+      <div className="grid md:grid-cols-2 gap-4 mb-8">
+        {speakingDetail?.fluencyAndCoherence && (
+          <CriterionCard
+            title="Fluency & Coherence"
+            criterion={speakingDetail.fluencyAndCoherence}
+          />
+        )}
+        {speakingDetail?.lexicalResource && (
+          <CriterionCard
+            title="Lexical Resource"
+            criterion={speakingDetail.lexicalResource}
+          />
+        )}
+        {speakingDetail?.grammaticalRangeAndAccuracy && (
+          <CriterionCard
+            title="Grammatical Range & Accuracy"
+            criterion={speakingDetail.grammaticalRangeAndAccuracy}
+          />
+        )}
+        {speakingDetail?.pronunciation && (
+          <CriterionCard
+            title="Pronunciation"
+            criterion={speakingDetail.pronunciation}
+          />
+        )}
+      </div>
+
+      {/* 5. SUGGESTIONS */}
+      {speakingDetail?.suggestions && speakingDetail.suggestions.length > 0 && (
+        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden mb-8">
+          <div className="bg-slate-50 px-4 py-3 border-b border-slate-100">
+            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+              Improvement Suggestions
+            </h2>
+          </div>
+          <div className="p-4">
+            <ul className="space-y-2">
+              {speakingDetail.suggestions.map((s, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
+                  <span className="text-blue-600 shrink-0">•</span>
+                  {s}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+
+      {/* 6. MODEL ANSWER */}
+      {speakingDetail?.improvedAnswer && (
+        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden mb-8">
+          <div className="bg-slate-50 px-4 py-3 border-b border-slate-100">
+            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+              Model Answer
+            </h2>
+          </div>
+          <div className="p-4">
+            <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-wrap">
+              {speakingDetail.improvedAnswer}
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="flex justify-center gap-4 pb-10">
         <button
@@ -738,35 +941,28 @@ function ProductiveBandSection({
   writingGrade?: WritingDetail;
   speakingGrade?: SpeakingDetail;
 }) {
-  const label = skill === "WRITING" ? "Writing band" : "Speaking band";
+  const [showModel, setShowModel] = useState(false);
 
   return (
-    <div className="px-8 pb-10">
-      <h2 className="text-xl font-semibold mb-4 text-slate-800">{label}</h2>
+    <div className="space-y-6">
 
-      <div className="flex flex-col items-center mb-6">
-        <div className="w-32 h-32 rounded-full bg-gradient-to-b from-emerald-400 to-blue-400 text-white flex items-center justify-center shadow-lg">
-          <span className="text-4xl font-extrabold">
-            {typeof band === "number" ? band.toFixed(1) : "--"}
-          </span>
-        </div>
-        <p className="mt-3 text-sm text-slate-600">
-          {typeof band === "number"
-            ? "Điểm band cho kỹ năng này."
-            : "Chưa có điểm band cho kỹ năng này."}
-        </p>
-      </div>
-
-      {/* Writing Grade Details */}
+      {/* Writing Grade Details - Simple Form */}
       {skill === "WRITING" && writingGrade && (
         <div className="space-y-6">
+          {/* Task Prompt */}
           {writingGrade.taskText && (
-            <section className="bg-slate-50 border rounded-lg p-4">
-              <h3 className="text-sm font-semibold text-slate-800 mb-2">Task prompt</h3>
-              <div className="text-sm text-slate-700 whitespace-pre-wrap">{writingGrade.taskText}</div>
+            <section className="bg-slate-50 border border-slate-100 rounded-xl p-5">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="material-symbols-rounded text-slate-400">description</span>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Task Prompt</h3>
+              </div>
+              <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                {writingGrade.taskText}
+              </p>
             </section>
           )}
 
+          {/* Criteria Cards Grid */}
           <section className="grid md:grid-cols-2 gap-4">
             {writingGrade.taskResponse && (
               <CriterionCard title="Task Response" criterion={writingGrade.taskResponse} />
@@ -782,22 +978,47 @@ function ProductiveBandSection({
             )}
           </section>
 
+          {/* Suggestions */}
           {writingGrade.suggestions && writingGrade.suggestions.length > 0 && (
-            <section className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
-              <h3 className="text-sm font-semibold text-emerald-900 mb-2">Gợi ý cải thiện</h3>
-              <ul className="list-disc list-inside text-sm text-emerald-900 space-y-1">
+            <section className="bg-blue-50/50 border border-blue-100 rounded-xl p-5">
+              <h3 className="flex items-center gap-2 font-bold text-blue-700 mb-3">
+                <span className="material-symbols-rounded">lightbulb</span>
+                Improvement Suggestions
+              </h3>
+              <ul className="text-sm text-slate-700 space-y-2">
                 {writingGrade.suggestions.map((s, i) => (
-                  <li key={i}>{s}</li>
+                  <li key={i} className="flex gap-2">
+                    <span className="text-blue-400 font-bold">{i + 1}.</span>
+                    <span>{s}</span>
+                  </li>
                 ))}
               </ul>
             </section>
           )}
 
+          {/* Improved Paragraph Toggle */}
           {writingGrade.improvedParagraph && (
-            <section className="bg-slate-50 border rounded-lg p-4">
-              <h3 className="text-sm font-semibold text-slate-800 mb-2">Đoạn cải thiện gợi ý</h3>
-              <div className="text-sm text-slate-700 whitespace-pre-wrap">{writingGrade.improvedParagraph}</div>
-            </section>
+            <>
+              <button
+                onClick={() => setShowModel(!showModel)}
+                className="w-full bg-slate-800 text-white py-3 rounded-xl font-medium text-sm hover:bg-black transition-colors flex items-center justify-center gap-2"
+              >
+                <span className="material-symbols-rounded text-base">{showModel ? "visibility_off" : "auto_awesome"}</span>
+                {showModel ? "Hide Model Answer" : "View Model Answer"}
+              </button>
+
+              {showModel && (
+                <div className="bg-gradient-to-br from-slate-800 to-slate-900 text-white rounded-xl p-6 shadow-lg">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="material-symbols-rounded text-amber-400">auto_awesome</span>
+                    <h3 className="font-bold">Improved Version</h3>
+                  </div>
+                  <p className="font-serif text-base leading-relaxed opacity-90 whitespace-pre-wrap">
+                    {writingGrade.improvedParagraph}
+                  </p>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
@@ -910,39 +1131,37 @@ function QuestionReview({ details }: { details: AttemptQuestionResult[] }) {
   };
 
   return (
-    <div className="px-8 pb-8">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold text-slate-800">
-          Review chi tiết
-        </h2>
-        <div className="flex gap-2">
+    <div>
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
+        <h3 className="font-bold text-slate-800 text-lg">Detailed Review</h3>
+        <div className="flex gap-2 flex-wrap">
           <FilterBtn active={filter === "all"} onClick={() => setFilter("all")}>
-            Tất cả ({normalized.length})
+            All ({normalized.length})
           </FilterBtn>
           <FilterBtn
             active={filter === "correct"}
             onClick={() => setFilter("correct")}
           >
-            Đúng ({normalized.filter((d) => d.isCorrect === true).length})
+            Correct ({normalized.filter((d) => d.isCorrect === true).length})
           </FilterBtn>
           <FilterBtn
             active={filter === "wrong"}
             onClick={() => setFilter("wrong")}
           >
-            Sai ({normalized.filter((d) => d.isCorrect === false).length})
+            Wrong ({normalized.filter((d) => d.isCorrect === false).length})
           </FilterBtn>
           <FilterBtn
             active={filter === "none"}
             onClick={() => setFilter("none")}
           >
-            Chưa trả lời ({normalized.filter((d) => d.state === "none").length})
+            Skipped ({normalized.filter((d) => d.state === "none").length})
           </FilterBtn>
         </div>
       </div>
 
       {filtered.length === 0 ? (
         <div className="p-6 text-center text-slate-500 border rounded-lg bg-slate-50">
-          Không có dữ liệu chi tiết câu hỏi.
+          No question details available for this filter.
         </div>
       ) : (
         <div className="space-y-3" style={{ maxHeight: '600px', overflowY: 'auto' }}>
@@ -1017,103 +1236,131 @@ function ReviewItem({
   isExpanded?: boolean;
   onToggleExpand?: () => void;
 }) {
-  // Fall back to internal state if props not provided
   const [internalOpen, setInternalOpen] = useState(false);
   const open = isExpanded !== undefined ? isExpanded : internalOpen;
   const toggleOpen = onToggleExpand || (() => setInternalOpen((v) => !v));
 
-  const badge =
-    data.state === "none" ? (
-      <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border">
-        Chưa trả lời
-      </span>
-    ) : data.isCorrect ? (
-      <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200">
-        Đúng
-      </span>
-    ) : (
-      <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-700 border border-rose-200">
-        Sai
-      </span>
-    );
+  const isCorrect = data.isCorrect === true;
+  const isSkipped = data.state === "none";
+  
+  // Clean border - always slate for classic academic look
+  const borderColor = "border-slate-200";
+
+  // Status icon instead of loud badges
+  const statusIcon = isSkipped ? (
+    <span className="text-slate-400 text-lg">—</span>
+  ) : isCorrect ? (
+    <span className="text-green-600 text-lg">✓</span>
+  ) : (
+    <span className="text-red-500 text-lg">✗</span>
+  );
+  
+  // Question number badge - simple slate style
+  const numberBadge = (
+    <span className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-sm font-bold text-slate-600">
+      {data.index ?? "?"}
+    </span>
+  );
 
   return (
-    <li className="border rounded-lg p-4">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1">
-          <div className="flex items-center gap-3 mb-1 flex-wrap">
-            <span className="text-sm font-mono text-slate-500">
-              Q{data.index ?? "?"}
-            </span>
-            {badge}
-            {data.skill && data.skill !== "UNKNOWN" && (
-              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
-                {data.skill}
-              </span>
-            )}
-            {data.questionType && data.questionType !== "UNKNOWN" && (
-              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-orange-50 text-orange-700 border border-orange-100">
-                {formatQuestionType(data.questionType)}
-              </span>
-            )}
-            {typeof data.timeSpentSec === "number" && (
-              <span className="px-2 py-0.5 rounded-full text-xs bg-slate-50 border text-slate-600">
-                {fmtMinSec(data.timeSpentSec)}
-              </span>
-            )}
-            <BookmarkButton 
-              questionId={data.questionId} 
-              questionContent={data.prompt}
-              skill={data.skill}
-              questionType={data.questionType}
-            />
+    <div className={`bg-white border rounded-xl p-5 mb-4 shadow-sm hover:shadow-md transition-shadow ${borderColor}`}>
+      {/* Header */}
+      <div className="bg-slate-50/80 px-4 py-3 border-b border-slate-100 flex items-start gap-3">
+        {numberBadge}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              {data.skill && data.skill !== "UNKNOWN" && (
+                <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700">
+                  {data.skill}
+                </span>
+              )}
+              {data.questionType && data.questionType !== "UNKNOWN" && (
+                <span className="px-2 py-0.5 rounded text-xs font-medium bg-orange-50 text-orange-700">
+                  {formatQuestionType(data.questionType)}
+                </span>
+              )}
+              {typeof data.timeSpentSec === "number" && (
+                <span className="px-2 py-0.5 rounded text-xs bg-slate-100 text-slate-600">
+                  ⏱ {fmtMinSec(data.timeSpentSec)}
+                </span>
+              )}
+            </div>
+            {statusIcon}
           </div>
-          <div className="prose prose-slate max-w-none text-sm">
+          <div className="prose prose-slate prose-sm max-w-none text-slate-800">
             <ReactMarkdown>{data.prompt}</ReactMarkdown>
           </div>
-
-          <div className="mt-3 grid sm:grid-cols-2 gap-3">
-            <div className="bg-slate-50 rounded p-3">
-              <p className="text-xs text-slate-500 mb-1">Bạn chọn</p>
-              <div className="text-sm">
-                {data.selectedText ? (
-                  <span>{data.selectedText}</span>
-                ) : (
-                  <span className="text-slate-400 italic">—</span>
-                )}
-              </div>
-            </div>
-
-            <div className="bg-slate-50 rounded p-3">
-              <p className="text-xs text-slate-500 mb-1">Đáp án đúng</p>
-              <div className="text-sm">
-                {data.correctText ? (
-                  <span>{data.correctText}</span>
-                ) : (
-                  <span className="text-slate-400 italic">—</span>
-                )}
-              </div>
-            </div>
-          </div>
         </div>
-
-        <button
-          onClick={toggleOpen}
-          className="shrink-0 inline-flex items-center gap-1 text-sm px-3 py-2 rounded-md border hover:bg-slate-50"
-        >
-          {open ? <FiChevronUp /> : <FiChevronDown />}
-          Giải thích
-        </button>
+        <BookmarkButton 
+          questionId={data.questionId} 
+          questionContent={data.prompt}
+          skill={data.skill}
+          questionType={data.questionType}
+        />
       </div>
 
-      {open && data.explanation && (
-        <div className="mt-3 p-3 rounded bg-emerald-50 border border-emerald-100 text-sm text-emerald-900">
-          <div className="prose prose-sm prose-emerald max-w-none prose-p:my-1 prose-strong:text-emerald-900">
-            <ReactMarkdown>{data.explanation}</ReactMarkdown>
+      {/* Comparison Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100">
+        {/* Your Answer */}
+        <div className="p-4 bg-white">
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">
+            Your Answer
+          </p>
+          <div className={`text-base font-medium flex items-center gap-2 ${
+            isSkipped 
+              ? "text-slate-400 italic" 
+              : isCorrect 
+                ? "text-green-600" 
+                : "text-red-500"
+          }`}>
+            {!isCorrect && !isSkipped && (
+              <span className="text-red-400">✗</span>
+            )}
+            <span className={!isCorrect && !isSkipped ? "line-through decoration-2 decoration-red-200" : ""}>
+              {data.selectedText || "— No Answer —"}
+            </span>
           </div>
         </div>
+
+        {/* Correct Answer - Classic Blue Style */}
+        <div className="p-4 bg-blue-50/30 min-h-[72px]">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-2">
+            Correct Key
+          </p>
+          <div className={`text-base font-bold ${data.correctText ? "text-[#3B82F6]" : "text-slate-400 italic font-normal text-sm"}`}>
+            {data.correctText || "(Answer key not available)"}
+          </div>
+        </div>
+      </div>
+
+      {/* Explanation Toggle */}
+      {data.explanation && (
+        <>
+          <button
+            onClick={toggleOpen}
+            className="w-full px-4 py-2 text-sm text-slate-600 bg-slate-50 border-t border-slate-100 hover:bg-slate-100 transition flex items-center justify-center gap-2"
+          >
+            {open ? <FiChevronUp /> : <FiChevronDown />}
+            {open ? "Hide Explanation" : "Show Explanation"}
+          </button>
+
+          {open && (
+            <div className="px-4 py-3 bg-blue-50/50 border-t border-blue-100">
+              <div className="flex items-start gap-2">
+                <span className="text-amber-500 mt-0.5">💡</span>
+                <div>
+                  <p className="text-xs font-bold text-slate-700 uppercase mb-1">Why is this correct?</p>
+                  <div className="prose prose-sm prose-slate max-w-none text-slate-700">
+                    <ReactMarkdown>{data.explanation}</ReactMarkdown>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       )}
-    </li>
+    </div>
   );
 }
 
@@ -1192,19 +1439,42 @@ function cleanQuestion(s: string) {
 }
 
 function cleanAnswer(s: string) {
-  return s
+  if (!s) return "";
+  
+  let clean = String(s)
+    // Normalize newlines
     .replace(/\\n/g, "\n")
+    // Remove blank-X: prefixes
     .replace(/blank[-_]\w+:\s*/gi, "")
     .replace(/\[blank[-_]\w+\]/gi, "")
+    // Remove label-X: prefixes
     .replace(/label[-_ ]*\w*:\s*/gi, "")
-    .replace(
-      /^\s*(?:paragraph|info|step|flow|node|part|section)?[-_ ]*\w*:\s*/i,
-      ""
-    )
+    // Remove paragraph/info/step/flow/node/part/section prefixes
+    .replace(/^\s*(?:paragraph|info|step|flow|node|part|section)?[-_ ]*\w*:\s*/i, "")
     .replace(/\b(?:paragraph|info)[-_ ]*\w*:\s*/gi, "")
-    .replace(/^\s*[\w-]+:\s*/, "")
+    // Remove "feature-qX:" prefix (e.g., feature-q1:, feature_q2:)
+    .replace(/^feature[-_]?q?\d*:\s*/i, "")
+    // Remove "q1:", "q2:" etc
+    .replace(/^q\d+:\s*/i, "")
+    // Remove "heading-X:", "item-X:" etc
+    .replace(/^(heading|item|answer|key|option)[-_]?\d*:\s*/gi, "")
+    // Remove general "key:" prefix if still present
+    .replace(/^[\w-]+:\s*/, "")
+    // Normalize whitespace
     .replace(/\s+/g, " ")
     .trim();
+  
+  // Handle "D / D" or "Value / Value" patterns - take first value
+  if (clean.includes(" / ")) {
+    clean = clean.split(" / ")[0].trim();
+  }
+  
+  // Also handle "D/D" without spaces
+  if (/^([A-Za-z0-9]+)\/\1$/i.test(clean)) {
+    clean = clean.split("/")[0].trim();
+  }
+  
+  return clean;
 }
 
 function fmtMinSec(totalSec: number) {

@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { label: "Home", href: "/home", icon: "home" },
   { label: "Practice", href: "/practice", icon: "edit_note" },
   { label: "Vocabulary", href: "/flashcards", icon: "style" },
+  { label: "Dictionary", href: "/dictionary", icon: "book_2" },
   { label: "Analytics", href: "/analytics", icon: "bar_chart" },
   { label: "Bookmarks", href: "/bookmarks", icon: "bookmark" },
   { label: "Study Plan", href: "/study-plan", icon: "calendar_month" },
@@ -191,6 +192,14 @@ export default function LangfensHeader() {
                       >
                         <Icon name="leaderboard" className="text-lg text-[#3B82F6]" />
                         Leaderboard
+                      </Link>
+                      <Link
+                        href="/notes"
+                        onClick={() => setUserOpen(false)}
+                        className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
+                      >
+                        <Icon name="sticky_note_2" className="text-lg text-[#3B82F6]" />
+                        My Notes
                       </Link>
                     </div>
 

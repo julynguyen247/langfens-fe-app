@@ -131,17 +131,6 @@ export default function PracticeSidebar({
           );
         })}
       </div>
-
-      {/* Full Test Button */}
-      <div className="p-4 border-t border-slate-100">
-        <button
-          onClick={() => router.push("/practice/reading?item=reading_full")}
-          className="w-full py-3 bg-[#3B82F6] hover:bg-[#2563EB] text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2 shadow-sm"
-        >
-          <Icon name="play_circle" className="text-xl" />
-          Start Full Test
-        </button>
-      </div>
     </aside>
   );
 }
