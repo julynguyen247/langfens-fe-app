@@ -1,12 +1,18 @@
-import { Nunito } from "next/font/google";
+import { Inter, Merriweather } from "next/font/google";
 import "./globals.css";
 import AppShell from "./AppShell";
 import { Suspense } from "react";
 import LoadingLayer from "@/components/LoadingLayer";
 
-const nunito = Nunito({
-  variable: "--font-nunito",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
+});
+
+const merriweather = Merriweather({
+  variable: "--font-merriweather",
+  subsets: ["latin"],
+  weight: ["400", "700", "900"],
 });
 
 export const metadata = {
@@ -23,8 +29,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0"
+        />
+      </head>
       <body
-        className={`antialiased ${nunito.variable} font-nunito text-gray-900`}
+        className={`antialiased ${inter.variable} ${merriweather.variable} font-sans text-gray-900`}
         suppressHydrationWarning
       >
         <Suspense

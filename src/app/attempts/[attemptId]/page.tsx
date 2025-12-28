@@ -466,6 +466,12 @@ export default function AttemptResultPage() {
 
         <div className="flex justify-center gap-4 pb-10">
           <button
+            onClick={() => router.push(`/attempts/${attemptData.attemptId}/review`)}
+            className="px-6 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium"
+          >
+            Xem lại bài làm
+          </button>
+          <button
             onClick={() => router.push("/home")}
             className="px-6 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium"
           >

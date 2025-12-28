@@ -6,6 +6,11 @@ import { getPublicExams, getWritingExams, getSpeakingExams, getExamsByQuestionTy
 import { useUserStore } from "@/app/store/userStore";
 import PracticeBank, { PracticeItem } from "@/components/PracticeBank";
 
+// Material Icon Component
+function Icon({ name, className = "" }: { name: string; className?: string }) {
+  return <span className={`material-symbols-rounded ${className}`}>{name}</span>;
+}
+
 function detectSkillFromSlug(
   slug: string
 ): "reading" | "listening" | "writing" | "speaking" | "unknown" {
@@ -18,10 +23,33 @@ function detectSkillFromSlug(
 }
 
 function detectPartFromQuery(itemParam: string): "1" | "2" | "3" | null {
-  // Check for both "part1" and "task1" patterns
   const m = itemParam.toLowerCase().match(/(?:part|task)[\s_]?([123])/);
   return m ? (m[1] as "1" | "2" | "3") : null;
 }
+
+// Skill metadata
+const SKILL_META: Record<string, { title: string; description: string; icon: string }> = {
+  reading: {
+    title: "Reading Practice",
+    description: "Improve your comprehension and scanning techniques",
+    icon: "menu_book",
+  },
+  listening: {
+    title: "Listening Practice",
+    description: "Enhance your audio comprehension skills",
+    icon: "headphones",
+  },
+  writing: {
+    title: "Writing Practice",
+    description: "Master essay structure and task responses",
+    icon: "edit_note",
+  },
+  speaking: {
+    title: "Speaking Practice",
+    description: "Build confidence with interview simulations",
+    icon: "mic",
+  },
+};
 
 export default function GroupPage() {
   const { group } = useParams<{ group: string }>();
@@ -29,71 +57,75 @@ export default function GroupPage() {
   const itemParam = sp.get("item") ?? "";
   const { user } = useUserStore();
   const [items, setItems] = useState<PracticeItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [questionTypesFilter, setQuestionTypesFilter] = useState<string[]>([]);
 
   const groupId = String(group || "").toLowerCase();
   const partFilter = detectPartFromQuery(itemParam);
+  const skillMeta = SKILL_META[groupId] || SKILL_META.reading;
 
   const fetchExams = useCallback(async (types: string[]) => {
-    console.log("[DEBUG] fetchExams called with types:", types);
-    if (groupId === "writing") {
-      const res = await getWritingExams();
+    setLoading(true);
+    try {
+      if (groupId === "writing") {
+        const res = await getWritingExams();
+        setItems(
+          (res as any).data.data.map((item: any) => ({
+            id: item.id,
+            title: item.title,
+            summary: item.taskText ?? "",
+            imageUrl: item.imageUrl,
+            thumb: undefined,
+            attemps: 0,
+            done: false,
+            skill: "writing",
+            slug: item.slug ?? "",
+            tags: (item.tag ?? "").split(",").map((t: string) => t.trim()),
+            examType: item.examType,
+          }))
+        );
+        return;
+      }
+
+      if (groupId === "speaking") {
+        const res = await getSpeakingExams();
+        setItems(
+          (res as any).data.data.map((item: any) => ({
+            id: item.id,
+            title: item.title,
+            summary: item.taskText ?? "",
+            thumb: undefined,
+            imageUrl: item.imageUrl,
+            attemps: 0,
+            done: false,
+            skill: "speaking",
+            slug: item.slug ?? "",
+          }))
+        );
+        return;
+      }
+
+      // For reading/listening
+      let examsData;
+      if (types.length > 0) {
+        const res = await getExamsByQuestionType(types.join(","), 1, 500);
+        examsData = (res as any).data?.data ?? [];
+      } else {
+        const res = await getPublicExams(1, 500, { category: "IELTS" });
+        examsData = (res as any).data?.data ?? [];
+      }
+
       setItems(
-        (res as any).data.data.map((item: any) => ({
-          id: item.id,
-          title: item.title,
-          summary: item.taskText ?? "",
-          imageUrl: item.imageUrl,
-          thumb: undefined,
-          attemps: 0,
-          done: false,
-          skill: "writing",
-          slug: item.slug ?? "",
-          tags: (item.tag ?? "").split(",").map((t: string) => t.trim()),
-          examType: item.examType,
+        examsData.map((item: any) => ({
+          ...item,
+          skill: detectSkillFromSlug(item.slug),
         }))
       );
-      return;
+    } catch (e) {
+      console.error("Error loading exams:", e);
+    } finally {
+      setLoading(false);
     }
-
-    if (groupId === "speaking") {
-      const res = await getSpeakingExams();
-      setItems(
-        (res as any).data.data.map((item: any) => ({
-          id: item.id,
-          title: item.title,
-          summary: item.taskText ?? "",
-          thumb: undefined,
-          imageUrl: item.imageUrl,
-          attemps: 0,
-          done: false,
-          skill: "speaking",
-          slug: item.slug ?? "",
-        }))
-      );
-      return;
-    }
-
-    // For reading/listening
-    let examsData;
-    if (types.length > 0) {
-      // Use question bank API when filtering by question types
-      console.log("[DEBUG] Calling getExamsByQuestionType with:", types.join(","));
-      const res = await getExamsByQuestionType(types.join(","), 1, 500);
-      examsData = (res as any).data?.data ?? [];
-      console.log("[DEBUG] getExamsByQuestionType response:", examsData.length, "items");
-    } else {
-      // Use regular API when no filter
-      const res = await getPublicExams(1, 500, { category: "IELTS" });
-      examsData = (res as any).data?.data ?? [];
-    }
-    
-    setItems(
-      examsData.map((item: any) => ({
-        ...item,
-        skill: detectSkillFromSlug(item.slug),
-      }))
-    );
   }, [groupId]);
 
   useEffect(() => {
@@ -128,19 +160,39 @@ export default function GroupPage() {
 
   if (!user?.id) {
     return (
-      <div className="p-6 text-center text-slate-600">Bạn cần đăng nhập…</div>
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="text-center">
+          <Icon name="lock" className="text-5xl text-slate-300 mb-3" />
+          <p className="text-slate-600">Please log in to access the practice library</p>
+        </div>
+      </div>
     );
   }
 
   return (
-    <main className="mx-auto max-w-screen-2xl px-4 py-6">
+    <div className="w-full">
+      {/* Page Header */}
+      <div className="mb-8">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-10 h-10 rounded-lg bg-[#EFF6FF] flex items-center justify-center">
+            <Icon name={skillMeta.icon} className="text-2xl text-[#3B82F6]" />
+          </div>
+          <div>
+            <h1 className="font-serif text-2xl font-bold text-slate-800">{skillMeta.title}</h1>
+            <p className="text-sm text-slate-500">{skillMeta.description}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Practice Bank */}
       <PracticeBank
         items={filtered}
         pageSize={12}
         userId={user.id}
         skill={groupId}
         onQuestionTypesChange={handleQuestionTypesChange}
+        loading={loading}
       />
-    </main>
+    </div>
   );
 }

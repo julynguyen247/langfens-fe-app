@@ -115,14 +115,24 @@ export default function DoTestAttemptPage() {
   return <div className="p-6">Unknown skill: {String(skill)}</div>;
 }
 
-function ReadingScreen({ attemptId }: { attemptId: string }) {
+export function ReadingScreen({ 
+  attemptId,
+  isReviewMode = false,
+  reviewData = [],
+  initialAnswers = {},
+}: { 
+  attemptId: string;
+  isReviewMode?: boolean;
+  reviewData?: Array<{ questionId: string; isCorrect: boolean | null; correctAnswer?: string; explanation?: string }>;
+  initialAnswers?: Record<string, string>;
+}) {
   const router = useRouter();
   const sp = useSearchParams();
   const { user } = useUserStore();
   const { setLoading } = useLoadingStore();
   const attempt = useAttemptStore((s) => s.byId[attemptId]);
 
-  const lastAnswersRef = useRef<QA>({});
+  const lastAnswersRef = useRef<QA>(initialAnswers);
 
   const sections = useMemo(() => {
     const secs = attempt?.paper?.sections ?? [];
@@ -244,41 +254,43 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
               <div className="border-b px-5 py-4 bg-white sticky top-0 z-10 flex justify-between items-center shadow-sm">
                 <div className="flex items-center gap-4">
                   <h2 className="text-lg font-semibold text-black">
-                    Questions
+                    {isReviewMode ? "Questions - Review Mode" : "Questions"}
                   </h2>
                 </div>
-                <button
-                  onClick={() => setConfirmOpen(true)}
-                  disabled={isSubmitting}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white disabled:opacity-60 transition-all shadow-md hover:shadow-lg active:scale-95"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <svg
-                        className="animate-spin w-4 h-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        />
-                      </svg>
-                      Đang nộp...
-                    </>
-                  ) : (
-                    "Nộp bài"
-                  )}
-                </button>
+                {!isReviewMode && (
+                  <button
+                    onClick={() => setConfirmOpen(true)}
+                    disabled={isSubmitting}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white disabled:opacity-60 transition-all shadow-md hover:shadow-lg active:scale-95"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <svg
+                          className="animate-spin w-4 h-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          />
+                        </svg>
+                        Đang nộp...
+                      </>
+                    ) : (
+                      "Nộp bài"
+                    )}
+                  </button>
+                )}
               </div>
 
               <div className="flex-1 overflow-auto p-4">
@@ -286,7 +298,10 @@ function ReadingScreen({ attemptId }: { attemptId: string }) {
                   attemptId={attemptId}
                   questions={panelQuestions}
                   questionGroups={activeSec?.questionGroups}
-                  onAnswersChange={(next) => {
+                  initialAnswers={isReviewMode ? initialAnswers : undefined}
+                  isReviewMode={isReviewMode}
+                  reviewData={reviewData}
+                  onAnswersChange={isReviewMode ? undefined : (next) => {
                     lastAnswersRef.current = {
                       ...lastAnswersRef.current,
                       ...(next as QA),

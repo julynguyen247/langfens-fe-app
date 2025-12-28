@@ -118,6 +118,13 @@ function packBlanks(values: string[]): string {
   return cleaned.join("\n");
 }
 
+export type ReviewResult = {
+  questionId: string;
+  isCorrect: boolean | null;
+  correctAnswer?: string;
+  explanation?: string;
+};
+
 const QuestionPanel = memo(function QuestionPanel({
   questions,
   attemptId,
@@ -125,6 +132,8 @@ const QuestionPanel = memo(function QuestionPanel({
   onAnswer,
   onAnswersChange,
   questionGroups,
+  isReviewMode = false,
+  reviewData = [],
 }: {
   questions: Question[];
   attemptId: string;
@@ -136,7 +145,18 @@ const QuestionPanel = memo(function QuestionPanel({
   }) => void;
   onAnswersChange?: (answers: QA) => void;
   questionGroups?: AttemptQuestionGroup[];
+  isReviewMode?: boolean;
+  reviewData?: ReviewResult[];
 }) {
+  // Build review lookup map
+  const reviewMap = useMemo(() => {
+    const map: Record<string, ReviewResult> = {};
+    for (const r of reviewData) {
+      map[r.questionId] = r;
+    }
+    return map;
+  }, [reviewData]);
+
   const qList = useMemo(
     () =>
       questions.map((q) => ({
@@ -321,6 +341,18 @@ const QuestionPanel = memo(function QuestionPanel({
               questionContent = null;
           }
 
+          const review = reviewMap[q.id];
+          const isCorrect = review?.isCorrect;
+
+          // Review mode wrapper styling
+          const reviewBorderClass = isReviewMode && review
+            ? isCorrect === true
+              ? "border-l-4 border-l-green-500 bg-green-50/50"
+              : isCorrect === false
+              ? "border-l-4 border-l-red-500 bg-red-50/50"
+              : ""
+            : "";
+
           return (
             <div key={q.id}>
               {/* Show group instruction before the first question of each group */}
@@ -334,17 +366,41 @@ const QuestionPanel = memo(function QuestionPanel({
                   </ReactMarkdown>
                 </div>
               )}
-              <div className="flex items-baseline gap-2">
+              <div className={`flex items-baseline gap-2 p-2 rounded-lg transition-colors ${reviewBorderClass}`}>
                 <span className="inline-flex items-center justify-center min-w-[1.5rem] h-5 px-1.5 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold">
                   {displayIdx + 1}
                 </span>
-                <BookmarkButton 
-                  questionId={q.id} 
-                  questionContent={q.stem}
-                  className="opacity-50 hover:opacity-100" 
-                />
-                <div className="flex-1">{questionContent}</div>
+                {/* Review mode: show correct/incorrect icon */}
+                {isReviewMode && review && (
+                  <span className={`text-lg ${isCorrect === true ? "text-green-600" : isCorrect === false ? "text-red-600" : "text-slate-400"}`}>
+                    {isCorrect === true ? "✓" : isCorrect === false ? "✗" : "—"}
+                  </span>
+                )}
+                {!isReviewMode && (
+                  <BookmarkButton 
+                    questionId={q.id} 
+                    questionContent={q.stem}
+                    className="opacity-50 hover:opacity-100" 
+                  />
+                )}
+                <div className={`flex-1 ${isReviewMode ? "pointer-events-none opacity-90" : ""}`}>
+                  {questionContent}
+                </div>
               </div>
+              {/* Show correct answer if wrong in review mode */}
+              {isReviewMode && review && isCorrect === false && review.correctAnswer && (
+                <div className="ml-8 mt-1 p-2 bg-green-50 border border-green-200 rounded text-sm text-green-800">
+                  <span className="font-semibold">Đáp án đúng:</span> {review.correctAnswer}
+                </div>
+              )}
+              {/* Show explanation if available */}
+              {isReviewMode && review?.explanation && (
+                <div className="ml-8 mt-1 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800">
+                  <ReactMarkdown components={instructionComponents}>
+                    {review.explanation}
+                  </ReactMarkdown>
+                </div>
+              )}
             </div>
           );
         })}
