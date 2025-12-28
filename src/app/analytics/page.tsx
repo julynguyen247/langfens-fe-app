@@ -474,9 +474,10 @@ function AreaChart({ data }: { data: ScoreTrendPoint[] }) {
   const padding = 2;
   
   const points = data.map((point, index) => {
-    const x = padding + ((width - padding * 2) / (data.length - 1)) * index;
+    const xStep = data.length > 1 ? (width - padding * 2) / (data.length - 1) : 0;
+    const x = padding + xStep * index;
     const y = height - padding - ((point.avgScore - minScore) / range) * (height - padding * 2);
-    return { x, y, ...point };
+    return { x: isNaN(x) ? padding : x, y: isNaN(y) ? height / 2 : y, ...point };
   });
   
   const linePath = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
