@@ -1,24 +1,27 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { FiX } from "react-icons/fi";
 import React from "react";
-import TimerDisplay from "./TimerDisplay";
+
+// Material Icon Component
+function Icon({ name, className = "" }: { name: string; className?: string }) {
+  return <span className={`material-symbols-rounded ${className}`}>{name}</span>;
+}
 
 interface TopBarProps {
-  title?: string; // ví dụ: "Làm bài Reading"
-  subtitle?: string; // ví dụ: "IELTS Online Test · CAM 20 · Test 1"
-  showTimer?: boolean; // có hiển thị Timer không
-  onClose?: () => void; // callback khi bấm nút đóng
-  rightSlot?: React.ReactNode; // thay thế Timer (nếu cần custom)
+  title?: string;           // Test title (e.g., "The Invention of Television")
+  subtitle?: string;        // Subtitle (e.g., "Reading Passage 1")
+  onClose?: () => void;     // Exit test callback
+  rightSlot?: React.ReactNode;  // Timer component
+  submitButton?: React.ReactNode;  // Submit button
 }
 
 export default function TopBar({
-  title = "Làm bài",
-  subtitle = "IELTS Online Test · CAM 20 · Test 1",
-  showTimer = true,
+  title = "Reading Test",
+  subtitle = "IELTS Online Test",
   onClose,
   rightSlot,
+  submitButton,
 }: TopBarProps) {
   const router = useRouter();
 
@@ -28,27 +31,36 @@ export default function TopBar({
   };
 
   return (
-    <header className="flex items-center justify-between h-14 border-b bg-white px-6 sticky top-0 z-30 shadow-sm">
-      <div className="flex items-center gap-4">
+    <header className="fixed top-0 left-0 w-full h-14 md:h-16 bg-white border-b border-slate-200 flex items-center justify-between px-3 md:px-6 z-50">
+      {/* LEFT: Exit & Title */}
+      <div className="flex items-center gap-2 md:gap-4 min-w-0 flex-1">
+        {/* Exit Button */}
         <button
           onClick={handleClose}
-          className="flex items-center justify-center w-8 h-8 border rounded-full hover:bg-gray-100 transition"
-          title="Quay lại"
+          className="p-1.5 md:p-2 rounded-full hover:bg-slate-100 text-slate-500 transition-colors flex-shrink-0"
+          title="Exit Test"
         >
-          <FiX className="text-lg text-gray-700" />
+          <Icon name="close" className="text-xl md:text-2xl" />
         </button>
-
-        <div className="flex flex-col leading-tight">
-          <div className="flex items-center gap-2">
-            <span className="font-extrabold text-blue-600">LANGFENS</span>
-            <span className="text-blue-600 font-semibold">{title}</span>
-          </div>
-          <span className="text-xs text-gray-500">{subtitle}</span>
+        
+        {/* Title & Subtitle */}
+        <div className="min-w-0">
+          <h1 className="font-serif font-bold text-sm md:text-lg text-slate-900 leading-tight truncate max-w-[150px] sm:max-w-xs md:max-w-md">
+            {title}
+          </h1>
+          <p className="hidden sm:block text-xs text-slate-500 font-sans truncate">
+            {subtitle}
+          </p>
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
-        {rightSlot ? rightSlot : showTimer && <TimerDisplay />}
+      {/* RIGHT: Timer & Submit */}
+      <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
+        {/* Timer Slot */}
+        {rightSlot}
+        
+        {/* Submit Button Slot */}
+        {submitButton}
       </div>
     </header>
   );

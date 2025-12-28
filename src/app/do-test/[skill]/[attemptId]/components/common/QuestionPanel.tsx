@@ -12,6 +12,7 @@ import MultiCheckboxCard from "../reading/MultiCheckboxCard";
 import SummaryCompletionCard from "../reading/SummaryCompletionCard";
 import MatchingInformation from "../reading/WordListCompletionCard";
 import { AttemptQuestionGroup } from "@/app/store/useAttemptStore";
+import BookmarkButton from "@/components/BookmarkButton";
 
 type Choice = { value: string; label: string };
 type QA = Record<string, string>;
@@ -117,16 +118,45 @@ function packBlanks(values: string[]): string {
   return cleaned.join("\n");
 }
 
+// Clean raw answer strings like "feature-q1: D / D" -> "D"
+function cleanAnswer(s: string | undefined): string {
+  if (!s) return "";
+  let clean = String(s)
+    .replace(/blank[-_]\w+:\s*/gi, "")
+    .replace(/label[-_ ]*\w*:\s*/gi, "")
+    .replace(/^feature[-_]?q?\d*:\s*/i, "")
+    .replace(/^q\d+:\s*/i, "")
+    .replace(/^(heading|item|answer|key)[-_]?\d*:\s*/gi, "")
+    .replace(/^[\w-]+:\s*/, "")
+    .trim();
+  // Handle "D / D" patterns - take first value
+  if (clean.includes(" / ")) {
+    clean = clean.split(" / ")[0].trim();
+  }
+  return clean;
+}
+
+export type ReviewResult = {
+  questionId: string;
+  isCorrect: boolean | null;
+  correctAnswer?: string;
+  explanation?: string;
+};
+
 const QuestionPanel = memo(function QuestionPanel({
   questions,
   attemptId,
+  skill,
   initialAnswers,
   onAnswer,
   onAnswersChange,
   questionGroups,
+  isReviewMode = false,
+  reviewData = [],
 }: {
   questions: Question[];
   attemptId: string;
+  skill?: string;
   initialAnswers?: QA;
   onAnswer?: (payload: {
     attemptId: string;
@@ -135,7 +165,18 @@ const QuestionPanel = memo(function QuestionPanel({
   }) => void;
   onAnswersChange?: (answers: QA) => void;
   questionGroups?: AttemptQuestionGroup[];
+  isReviewMode?: boolean;
+  reviewData?: ReviewResult[];
 }) {
+  // Build review lookup map
+  const reviewMap = useMemo(() => {
+    const map: Record<string, ReviewResult> = {};
+    for (const r of reviewData) {
+      map[r.questionId] = r;
+    }
+    return map;
+  }, [reviewData]);
+
   const qList = useMemo(
     () =>
       questions.map((q) => ({
@@ -320,6 +361,18 @@ const QuestionPanel = memo(function QuestionPanel({
               questionContent = null;
           }
 
+          const review = reviewMap[q.id];
+          const isCorrect = review?.isCorrect;
+          const isSkipped = !answers[q.id] || answers[q.id] === "";
+
+          // Classic Paper style - clean white card, no thick borders
+          const reviewCardClass = isReviewMode
+            ? "bg-white border border-slate-200 rounded-lg mb-4 overflow-hidden transition-all hover:border-blue-300"
+            : "";
+          
+          // For non-review mode, keep original simple styling
+          const normalClass = !isReviewMode ? "flex items-baseline gap-2 p-2 rounded-lg transition-colors" : "";
+
           return (
             <div key={q.id}>
               {/* Show group instruction before the first question of each group */}
@@ -333,12 +386,104 @@ const QuestionPanel = memo(function QuestionPanel({
                   </ReactMarkdown>
                 </div>
               )}
-              <div className="flex items-baseline gap-2">
-                <span className="inline-flex items-center justify-center min-w-[1.5rem] h-5 px-1.5 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold">
-                  {displayIdx + 1}
-                </span>
-                <div className="flex-1">{questionContent}</div>
-              </div>
+              
+              {isReviewMode ? (
+                /* === REVIEW MODE: Classic Paper Card === */
+                <div className={reviewCardClass}>
+                  {/* Header: Question Number + Content + Status */}
+                  <div className="p-4 flex gap-3">
+                    {/* Number Badge */}
+                    <span className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                      isCorrect === true 
+                        ? "bg-slate-100 text-slate-600"
+                        : isCorrect === false 
+                          ? "bg-red-50 text-red-500"
+                          : "bg-slate-100 text-slate-500"
+                    }`}>
+                      {displayIdx + 1}
+                    </span>
+                    
+                    <div className="flex-1 min-w-0">
+                      {/* Question Content (Read-only) */}
+                      <div className="pointer-events-none">
+                        {questionContent}
+                      </div>
+                    </div>
+
+                    {/* Status Icon */}
+                    <span className={`text-xl shrink-0 ${
+                      isCorrect === true 
+                        ? "text-green-600" 
+                        : isCorrect === false 
+                          ? "text-red-500" 
+                          : "text-slate-400"
+                    }`}>
+                      {isCorrect === true ? "✓" : isCorrect === false ? "✕" : "—"}
+                    </span>
+                  </div>
+
+                  {/* Footer: Answer Comparison (Classic Style) */}
+                  <div className="bg-slate-50 border-t border-slate-100 px-4 py-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* User Answer */}
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                        Your Answer
+                      </span>
+                      <div className={`text-sm font-medium ${
+                        isCorrect === true 
+                          ? "text-slate-700" 
+                          : isSkipped 
+                            ? "text-slate-400 italic"
+                            : "text-red-600 line-through decoration-red-200"
+                      }`}>
+                        {isSkipped ? "Empty" : answers[q.id] || "—"}
+                      </div>
+                    </div>
+
+                    {/* Correct Key */}
+                    {review?.correctAnswer && (
+                      <div>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                          Correct Key
+                        </span>
+                        <div className="text-sm font-bold text-[#3B82F6]">
+                          {cleanAnswer(review.correctAnswer)}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Explanation (if available) */}
+                  {review?.explanation && (
+                    <div className="px-4 py-3 bg-slate-50/50 border-t border-slate-100">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Explanation</p>
+                      <div className="prose prose-sm prose-slate max-w-none text-slate-700">
+                        <ReactMarkdown components={instructionComponents}>
+                          {review.explanation}
+                        </ReactMarkdown>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* === NORMAL (TEST) MODE === */
+                <div className={normalClass}>
+                  <span className="inline-flex items-center justify-center min-w-[1.5rem] h-5 px-1.5 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold">
+                    {displayIdx + 1}
+                  </span>
+                  <BookmarkButton 
+                    questionId={q.id}
+                    attemptId={attemptId}
+                    skill={skill}
+                    questionContent={q.stem}
+                    questionType={q.backendType}
+                    className="opacity-50 hover:opacity-100" 
+                  />
+                  <div className="flex-1">
+                    {questionContent}
+                  </div>
+                </div>
+              )}
             </div>
           );
         })}

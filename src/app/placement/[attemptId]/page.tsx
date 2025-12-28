@@ -12,8 +12,12 @@ import { mapApiQuestionToUi } from "@/lib/mapApiQuestionToUi";
 import { BackendQuestionType } from "@/types/question.type";
 import ListeningAudioBar from "../../do-test/[skill]/[attemptId]/components/listening/ListeningAudioBar";
 import QuestionPanel from "../../do-test/[skill]/[attemptId]/components/common/QuestionPanel";
+import PassageView from "../../do-test/[skill]/[attemptId]/components/reading/PassageView";
+import YouTubePlayer from "../../do-test/[skill]/[attemptId]/components/listening/YouTubePlayer";
 import { useReactMediaRecorder } from "react-media-recorder";
 import { useLoadingStore } from "@/app/store/loading";
+import BookmarkButton from "@/components/BookmarkButton";
+import { Group, Panel } from "react-resizable-panels";
 
 type QA = Record<string, string>;
 type Tab = "reading" | "listening" | "writing" | "speaking";
@@ -77,12 +81,14 @@ export default function MultiSkillAttemptPage() {
   const questionMeta = useMemo(() => {
     const m = new Map<string, QuestionMeta>();
     for (const s of sections) {
-      for (const q of s.questions) {
-        m.set(q.id, {
-          sectionId: s.id,
-          type: q.type as BackendQuestionType,
-          skill: q.skill.toLowerCase(),
-        });
+      for (const g of s.questionGroups ?? []) {
+        for (const q of g.questions ?? []) {
+          m.set(q.id, {
+            sectionId: s.id,
+            type: q.type as BackendQuestionType,
+            skill: q.skill.toLowerCase(),
+          });
+        }
       }
     }
     return m;
@@ -91,9 +97,20 @@ export default function MultiSkillAttemptPage() {
   const readingQuestionsApi = useMemo(
     () =>
       sections
-        .map((s) => s.questions)
-        .flat()
-        .filter((a) => a.skill.toLowerCase() === "reading"),
+        .flatMap((s) => (s.questionGroups ?? []).flatMap((g) => g.questions ?? []))
+        .filter((a) => a?.skill?.toLowerCase() === "reading"),
+    [sections]
+  );
+
+  const readingSection = useMemo(
+    () =>
+      sections.find((s: any) =>
+        (s.questionGroups ?? []).some((g: any) =>
+          (g.questions ?? []).some(
+            (q: any) => String(q.skill).toLowerCase() === "reading"
+          )
+        )
+      ),
     [sections]
   );
 
@@ -101,8 +118,10 @@ export default function MultiSkillAttemptPage() {
     () =>
       sections.find((s: any) => !!s.audioUrl) ??
       sections.find((s: any) =>
-        (s.questions ?? []).some(
-          (q: any) => String(q.skill).toLowerCase() === "listening"
+        (s.questionGroups ?? []).some((g: any) =>
+          (g.questions ?? []).some(
+            (q: any) => String(q.skill).toLowerCase() === "listening"
+          )
         )
       ),
     [sections]
@@ -111,7 +130,7 @@ export default function MultiSkillAttemptPage() {
   const listeningQuestionsApi = useMemo(
     () =>
       sections
-        .flatMap((s: any) => s.questions ?? [])
+        .flatMap((s: any) => (s.questionGroups ?? []).flatMap((g: any) => g.questions ?? []))
         .filter((q: any) => String(q.skill).toLowerCase() === "listening"),
     [sections]
   );
@@ -119,8 +138,10 @@ export default function MultiSkillAttemptPage() {
   const writingSection = useMemo(
     () =>
       sections.find((s: any) =>
-        (s.questions ?? []).some(
-          (q: any) => String(q.skill).toLowerCase() === "writing"
+        (s.questionGroups ?? []).some((g: any) =>
+          (g.questions ?? []).some(
+            (q: any) => String(q.skill).toLowerCase() === "writing"
+          )
         )
       ),
     [sections]
@@ -128,8 +149,9 @@ export default function MultiSkillAttemptPage() {
 
   const writingQuestion = useMemo(() => {
     if (!writingSection) return null;
+    const allQuestions = (writingSection.questionGroups ?? []).flatMap((g: any) => g.questions ?? []);
     return (
-      (writingSection.questions ?? []).find(
+      allQuestions.find(
         (q: any) => String(q.skill).toLowerCase() === "writing"
       ) ?? null
     );
@@ -138,8 +160,10 @@ export default function MultiSkillAttemptPage() {
   const speakingSection = useMemo(
     () =>
       sections.find((s: any) =>
-        (s.questions ?? []).some(
-          (q: any) => String(q.skill).toLowerCase() === "speaking"
+        (s.questionGroups ?? []).some((g: any) =>
+          (g.questions ?? []).some(
+            (q: any) => String(q.skill).toLowerCase() === "speaking"
+          )
         )
       ),
     [sections]
@@ -147,8 +171,9 @@ export default function MultiSkillAttemptPage() {
 
   const speakingQuestion = useMemo(() => {
     if (!speakingSection) return null;
+    const allQuestions = (speakingSection.questionGroups ?? []).flatMap((g: any) => g.questions ?? []);
     return (
-      (speakingSection.questions ?? []).find(
+      allQuestions.find(
         (q: any) => String(q.skill).toLowerCase() === "speaking"
       ) ?? null
     );
@@ -253,28 +278,35 @@ export default function MultiSkillAttemptPage() {
   });
 
   async function handleSubmit(auto = false) {
-    setLoading(true);
-    if (submitting) return;
-    if (!auto) {
-      const ok = window.confirm("Bạn chắc chắn muốn nộp toàn bộ bài test?");
-      if (!ok) return;
+    console.log("[handleSubmit] called, auto:", auto, "submitting:", submitting);
+    if (submitting) {
+      console.log("[handleSubmit] Already submitting, returning early");
+      return;
     }
 
+    console.log("[handleSubmit] Starting submission...");
+    setLoading(true);
     try {
       setSubmitting(true);
       cancelAutoSave();
 
       const payload = buildPayload(lastAnswersRef.current);
+      console.log("[handleSubmit] payload:", payload);
+      
+      console.log("[handleSubmit] Calling autoSaveAttempt...");
       await autoSaveAttempt(attemptId, payload);
+      console.log("[handleSubmit] autoSaveAttempt done, calling submitAttempt...");
       await submitAttempt(attemptId);
+      console.log("[handleSubmit] submitAttempt done, redirecting...");
 
-      router.replace(`/attempts/${attemptId}`);
-    } catch (e) {
-      console.error(e);
-      setSubmitting(false);
-      if (!auto) alert("Nộp bài thất bại. Vui lòng thử lại.");
-    } finally {
+      // Reset loading before navigation
       setLoading(false);
+      router.push(`/attempts/${attemptId}`);
+    } catch (e) {
+      console.error("[handleSubmit] Error:", e);
+      setSubmitting(false);
+      setLoading(false);
+      if (!auto) alert("Nộp bài thất bại. Vui lòng thử lại.");
     }
   }
 
@@ -362,43 +394,24 @@ export default function MultiSkillAttemptPage() {
   const examTitle = "English Placement Test";
 
   return (
-    <div className="flex flex-col h-full min-h-0 bg-white rounded-xl shadow overflow-hidden">
-      <div className="border-b p-4 bg-white sticky top-0 z-20 flex items-center justify-between gap-4">
-        <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-slate-400">
-            Placement Test
-          </p>
-          <h1 className="text-lg font-semibold text-slate-800">{examTitle}</h1>
+    <div className="flex flex-col h-screen bg-[#F8FAFC] overflow-hidden">
+      
+      {/* EXAM HEADER - Sticky Top */}
+      <header className="shrink-0 h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shadow-sm z-50">
+        
+        {/* Left: Title */}
+        <div className="font-bold text-slate-800 flex items-center gap-2">
+          <span className="material-symbols-rounded text-[#3B82F6]">school</span>
+          <span>English Placement</span>
         </div>
 
-        <div className="flex items-center gap-6">
-          <div className="flex flex-col items-end">
-            <span className="text-xs text-slate-500">Thời gian còn lại</span>
-            <span className="font-mono font-semibold text-lg text-slate-800">
-              {formatTime(secondsLeft)}
-            </span>
-          </div>
-          <button
-            onClick={() => handleSubmit(false)}
-            disabled={submitting}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
-              submitting
-                ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                : "bg-[#317EFF] text-white hover:bg-[#74a4f6]"
-            }`}
-          >
-            {submitting ? "Đang nộp…" : "Nộp bài"}
-          </button>
-        </div>
-      </div>
-
-      <div className="border-b bg-slate-50 px-4">
-        <div className="flex gap-3 max-w-3xl">
+        {/* Center: Section Pills */}
+        <nav className="flex bg-slate-100 p-1 rounded-lg">
           {[
-            { id: "reading", label: "Reading" },
-            { id: "listening", label: "Listening" },
-            { id: "writing", label: "Writing" },
-            { id: "speaking", label: "Speaking" },
+            { id: "reading", label: "Reading", icon: "menu_book" },
+            { id: "listening", label: "Listening", icon: "headphones" },
+            { id: "writing", label: "Writing", icon: "edit_note" },
+            { id: "speaking", label: "Speaking", icon: "mic" },
           ].map((t) => {
             const id = t.id as Tab;
             const active = activeTab === id;
@@ -406,313 +419,413 @@ export default function MultiSkillAttemptPage() {
               <button
                 key={id}
                 onClick={() => setActiveTab(id)}
-                className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition ${
+                className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all flex items-center gap-1.5 ${
                   active
-                    ? "border-[#317EFF] text-[#317EFF] bg-white"
-                    : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-white"
+                    ? "bg-white text-[#3B82F6] shadow-sm"
+                    : "text-slate-500 hover:text-slate-700"
                 }`}
               >
+                <span className="material-symbols-rounded text-sm">{t.icon}</span>
                 {t.label}
               </button>
             );
           })}
+        </nav>
+
+        {/* Right: Timer & Submit */}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 font-mono font-bold text-slate-700 bg-slate-50 px-3 py-1.5 rounded border border-slate-200">
+            <span className="material-symbols-rounded text-base text-slate-400">timer</span>
+            {formatTime(secondsLeft)}
+          </div>
+          <button
+            onClick={() => handleSubmit(false)}
+            disabled={submitting}
+            className={`px-6 py-2 rounded-lg text-sm font-bold transition ${
+              submitting
+                ? "bg-slate-300 text-slate-500 cursor-not-allowed"
+                : "bg-slate-900 hover:bg-black text-white"
+            }`}
+          >
+            {submitting ? "Submitting..." : "Finish Test"}
+          </button>
         </div>
-      </div>
+      </header>
 
-      <div className="flex-1  min-h-0 overflow-hidden">
+      {/* MAIN CONTENT VIEWPORT */}
+      <main className="flex-1 min-h-0 overflow-hidden relative">
+        
+        {/* READING SECTION - Matching ReadingScreen layout */}
         {activeTab === "reading" && (
-          <div className="flex flex-col h-full min-h-0 bg-white justify-center items-center">
-            <div className=" flex flex-col h-full min-h-0  overflow-hidden w-2/3 shadow-xl rounded-2xl">
-              <div className="border-b p-4 bg-white sticky top-0 z-10 ">
-                <h2 className="text-sm font-semibold text-slate-800">
-                  Reading questions
-                </h2>
-                <p className="text-xs text-slate-500">
-                  Trả lời 15 câu hỏi nhiều lựa chọn.
-                </p>
-
-                <div className="flex-1 min-h-0 overflow-auto">
-                  <QuestionPanel
-                    attemptId={attemptId}
-                    questions={readingUiQuestions}
-                    initialAnswers={lastAnswersRef.current}
-                    onAnswersChange={(next) => {
-                      lastAnswersRef.current = next;
-                      debouncedSave(next, buildSectionId, buildTextAnswer);
-                    }}
-                  />
+          <div className="h-full flex overflow-hidden">
+            <Group orientation="horizontal">
+              {/* Left Panel: Passage */}
+              <Panel defaultSize={55} minSize={35} className="overflow-hidden">
+                <div className="h-full border-r border-slate-200">
+                  <div className="h-full overflow-hidden bg-white">
+                    <PassageView
+                      passage={{
+                        title: readingSection?.title || "Reading Passage",
+                        content: readingSection?.passageMd || "",
+                      }}
+                      imageUrl={attempt?.paper?.imageUrl}
+                      attemptId={attemptId}
+                      sectionId={readingSection?.id}
+                    />
+                  </div>
                 </div>
-              </div>
-            </div>
+              </Panel>
+
+              {/* Right Panel: Questions */}
+              <Panel defaultSize={45} minSize={30} className="overflow-hidden">
+                <div className="h-full flex flex-col overflow-hidden bg-[#F8FAFC]">
+                  {/* Questions Header */}
+                  <div className="px-6 py-4 bg-white border-b border-slate-200 flex-shrink-0">
+                    <div className="flex items-center justify-between">
+                      <h2 className="font-semibold text-slate-900">Questions</h2>
+                      <span className="text-sm text-slate-500">
+                        {readingUiQuestions.length} questions
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Questions List */}
+                  <div className="flex-1 overflow-auto p-4 lg:p-6
+                    [scrollbar-width:thin] [scrollbar-color:theme(colors.slate.300)_transparent]
+                    [&::-webkit-scrollbar]:w-2
+                    [&::-webkit-scrollbar-track]:bg-transparent
+                    [&::-webkit-scrollbar-thumb]:bg-slate-300
+                    [&::-webkit-scrollbar-thumb]:rounded-full
+                  ">
+                    <QuestionPanel
+                      attemptId={attemptId}
+                      questions={readingUiQuestions}
+                      questionGroups={readingSection?.questionGroups}
+                      initialAnswers={lastAnswersRef.current}
+                      onAnswersChange={(next) => {
+                        lastAnswersRef.current = {
+                          ...lastAnswersRef.current,
+                          ...(next as QA),
+                        };
+                        debouncedSave(next as QA, buildSectionId, buildTextAnswer);
+                      }}
+                    />
+                  </div>
+                </div>
+              </Panel>
+            </Group>
           </div>
         )}
 
+        {/* LISTENING SECTION - 2-Column Split Layout (like ListeningScreen) */}
         {activeTab === "listening" && (
-          <div className="flex flex-col h-full min-h-0 bg-white items-center">
-            <div className="border-b p-4 bg-white sticky top-0 z-10 flex flex-col gap-3 w-full ">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-sm font-semibold text-slate-800">
-                    Listening – Online course
-                  </h2>
-                  <p className="text-xs text-slate-500">
-                    Nghe đoạn hội thoại và chọn đáp án đúng A, B, C hoặc D.
-                  </p>
+          <div className="flex h-full w-full max-h-full bg-white overflow-hidden">
+            <Group orientation="horizontal">
+              {/* LEFT: Video + Passage */}
+              <Panel>
+                <div className="h-full flex flex-col overflow-hidden bg-white">
+                  {/* Video Player */}
+                  <div className="shrink-0 h-[280px] overflow-hidden border-b bg-black relative">
+                    {listeningAudioUrl.includes("youtube.com") || listeningAudioUrl.includes("youtu.be") ? (
+                      <YouTubePlayer src={listeningAudioUrl} />
+                    ) : listeningAudioUrl ? (
+                      <div className="h-full flex items-center justify-center bg-slate-900">
+                        <audio controls className="w-4/5">
+                          <source src={listeningAudioUrl} />
+                        </audio>
+                      </div>
+                    ) : (
+                      <div className="h-full flex items-center justify-center text-slate-400">
+                        <span className="material-symbols-rounded text-4xl">headphones</span>
+                      </div>
+                    )}
+                  </div>
+                  {/* Passage/Instructions */}
+                  <div className="flex-1 min-h-0 overflow-y-auto p-5">
+                    {listeningSection?.passageMd && (
+                      <div className="p-5 bg-white border border-slate-200 rounded-lg shadow-sm">
+                        <div className="prose prose-sm max-w-none 
+                          [&_h1]:text-gray-900 [&_h1]:font-bold [&_h1]:text-xl [&_h1]:mb-4
+                          [&_h2]:text-gray-900 [&_h2]:font-bold [&_h2]:text-lg [&_h2]:mt-5 [&_h2]:mb-3
+                          [&_h3]:text-gray-900 [&_h3]:font-semibold [&_h3]:text-base
+                          [&_p]:text-gray-900 [&_p]:leading-relaxed
+                          [&_strong]:text-gray-900 [&_strong]:font-semibold
+                          [&_li]:text-gray-900 [&_li]:my-1
+                          [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5">
+                          <ReactMarkdown>{listeningSection.passageMd}</ReactMarkdown>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-              <ListeningAudioBar src={listeningAudioUrl} />
-            </div>
-
-            <div className="flex-1 min-h-0 overflow-auto p-6 bg-gray-50 w-2/3">
-              <QuestionPanel
-                attemptId={attemptId}
-                questions={listeningUiQuestions}
-                initialAnswers={lastAnswersRef.current}
-                onAnswersChange={(next) => {
-                  lastAnswersRef.current = next;
-                  debouncedSave(next, buildSectionId, buildTextAnswer);
-                }}
-              />
-            </div>
+              </Panel>
+              
+              {/* RIGHT: Questions */}
+              <Panel>
+                <div className="h-full flex flex-col overflow-hidden border-l bg-white shadow-xl z-20">
+                  {/* Header */}
+                  <div className="border-b px-5 py-4 bg-white sticky top-0 z-10 flex justify-between items-center shadow-sm">
+                    <div>
+                      <h2 className="text-lg font-bold text-slate-800">Listening</h2>
+                      <p className="text-xs text-slate-500">
+                        {listeningUiQuestions.length} questions
+                      </p>
+                    </div>
+                  </div>
+                  {/* Questions */}
+                  <div className="flex-1 overflow-auto p-5 scroll-smooth bg-[#F8FAFC]">
+                    <QuestionPanel
+                      attemptId={attemptId}
+                      questions={listeningUiQuestions}
+                      questionGroups={listeningSection?.questionGroups}
+                      initialAnswers={lastAnswersRef.current}
+                      onAnswersChange={(next) => {
+                        lastAnswersRef.current = { ...lastAnswersRef.current, ...(next as QA) };
+                        debouncedSave(next as QA, buildSectionId, buildTextAnswer);
+                      }}
+                    />
+                  </div>
+                </div>
+              </Panel>
+            </Group>
           </div>
         )}
 
+        {/* WRITING SECTION - Split View (Optional) */}
         {activeTab === "writing" && (
-          <div className="flex flex-col h-full min-h-0 bg-gray-50">
-            <div className="border-b p-4 bg-white sticky top-0 z-10 flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-semibold text-slate-800">
-                  Writing – Short essay (optional)
-                </h2>
-                <p className="text-xs text-slate-500">
-                  Recommended time: 15–20 minutes. Bạn có thể bỏ qua nếu chỉ cần
-                  đánh giá Reading/Listening.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex-1 p-6 overflow-auto">
-              {writingSection && (
-                <div className="mb-4 bg-white border rounded-lg p-4 shadow-sm">
-                  <h3 className="font-semibold text-slate-800 mb-2">
-                    Instructions
-                  </h3>
-                  <div className="prose prose-sm max-w-none text-slate-700">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {writingSection.instructionsMd}
-                    </ReactMarkdown>
-                  </div>
-                </div>
-              )}
-
-              {writingQuestion && (
-                <div className="bg-white border rounded-lg p-4 shadow-sm">
-                  <h3 className="font-semibold text-slate-800 mb-2">
-                    Writing task
-                  </h3>
-                  <div className="text-sm text-slate-700 whitespace-pre-line mb-4 leading-relaxed">
-                    <ReactMarkdown>{writingQuestion.promptMd}</ReactMarkdown>
-                  </div>
-
-                  <textarea
-                    value={writingValue}
-                    onChange={(e) => handleWritingChange(e.target.value)}
-                    placeholder="Type your essay here…"
-                    className="w-full min-h-[260px] p-4 border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#317EFF] focus:border-transparent text-slate-800 text-sm"
-                  />
-
-                  <div className="mt-2 flex justify-between text-xs text-slate-500">
-                    <span>
-                      Word count:{" "}
-                      <b>
-                        {
-                          writingValue.trim().split(/\s+/).filter(Boolean)
-                            .length
-                        }
-                      </b>
-                    </span>
-                    <span>Writing là optional trong placement test.</span>
-                  </div>
-                </div>
-              )}
-
-              {!writingQuestion && (
-                <p className="text-sm text-slate-500">
-                  Không tìm thấy câu hỏi Writing trong paper.
-                </p>
-              )}
-            </div>
-          </div>
-        )}
-
-        {activeTab === "speaking" && (
-          <div className="flex flex-col h-full min-h-0 bg-gray-50">
-            <div className="border-b p-4 bg-white sticky top-0 z-10 flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-semibold text-slate-800">
-                  Speaking – Task (optional)
-                </h2>
-                <p className="text-xs text-slate-500">
-                  Nói to theo gợi ý bên dưới. Bạn có thể dùng nút ghi âm để
-                  luyện nói, tải audio lên và lưu câu trả lời.
-                </p>
-              </div>
-
-              <div className="flex items-center gap-4 text-sm">
-                <div className="flex flex-col items-end">
-                  <span className="text-xs text-slate-500">Speaking timer</span>
-                  <span className="font-mono font-semibold text-lg text-slate-800">
-                    {formatTime(seconds)}
+          <div className="flex h-full overflow-hidden">
+            {/* Left: Prompt (Paper Style) */}
+            <div className="w-1/2 h-full overflow-y-auto bg-slate-100 border-r border-slate-300 p-6">
+              <div className="bg-white border border-slate-200 shadow-sm p-8 min-h-full">
+                <div className="flex items-center justify-between mb-6">
+                  <span className="inline-block bg-slate-800 text-white text-[10px] font-bold px-3 py-1 uppercase tracking-[0.2em]">
+                    Writing Task
+                  </span>
+                  <span className="text-xs text-amber-600 font-medium bg-amber-50 px-2 py-1 rounded">
+                    Optional
                   </span>
                 </div>
-                <span
-                  className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium ${
-                    status === "recording"
-                      ? "bg-red-100 text-red-700"
-                      : status === "stopped"
-                      ? "bg-emerald-100 text-emerald-700"
-                      : "bg-slate-100 text-slate-600"
-                  }`}
-                >
-                  <span
-                    className={`mr-2 h-2.5 w-2.5 rounded-full ${
-                      status === "recording"
-                        ? "bg-red-500 animate-pulse"
-                        : status === "stopped"
-                        ? "bg-emerald-500"
-                        : "bg-slate-400"
-                    }`}
-                  />
-                  {status === "idle" && "Ready"}
-                  {status === "recording" && "Recording"}
-                  {status === "stopped" && "Recorded"}
-                </span>
+                
+                {writingSection?.instructionsMd && (
+                  <div className="mb-6 pb-6 border-b border-slate-100">
+                    <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold mb-2">
+                      Instructions
+                    </p>
+                    <div className="prose prose-sm max-w-none text-slate-700">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {writingSection.instructionsMd}
+                      </ReactMarkdown>
+                    </div>
+                  </div>
+                )}
+                
+                {writingQuestion && (
+                  <div className="prose prose-lg max-w-none font-serif text-slate-800 leading-loose">
+                    <ReactMarkdown>{writingQuestion.promptMd}</ReactMarkdown>
+                  </div>
+                )}
+
+                {!writingQuestion && (
+                  <p className="text-sm text-slate-500">No writing task found.</p>
+                )}
               </div>
             </div>
 
-            <div className="flex-1 p-6 overflow-auto">
-              {speakingSection && (
-                <div className="mb-4 bg-white border rounded-lg p-4 shadow-sm">
-                  <h3 className="font-semibold text-slate-800 mb-2">
-                    Instructions
-                  </h3>
-                  <div className="text-sm text-slate-700 whitespace-pre-line leading-relaxed">
+            {/* Right: Editor */}
+            <div className="w-1/2 flex flex-col bg-white relative">
+              {/* Toolbar */}
+              <div className="shrink-0 h-10 border-b border-slate-200 bg-[#F1F5F9] flex items-center px-3 gap-1">
+                {['undo', 'redo', 'content_cut', 'content_copy'].map(icon => (
+                  <button key={icon} className="p-1.5 hover:bg-slate-200 rounded text-slate-400 cursor-default" disabled>
+                    <span className="material-symbols-rounded text-lg">{icon}</span>
+                  </button>
+                ))}
+                <div className="w-px h-4 bg-slate-300 mx-2"></div>
+                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Word Processor</span>
+              </div>
+
+              {/* Textarea */}
+              <textarea
+                value={writingValue}
+                onChange={(e) => handleWritingChange(e.target.value)}
+                placeholder="Start typing your essay here..."
+                className="flex-1 w-full p-8 resize-none outline-none text-lg text-slate-800 font-sans leading-8 selection:bg-blue-100"
+                spellCheck={false}
+              />
+
+              {/* Status Bar */}
+              <div className="shrink-0 h-14 border-t border-slate-200 bg-white px-6 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Word Count</span>
+                    <span className={`text-lg font-bold ${writingValue.trim().split(/\s+/).filter(Boolean).length >= 150 ? 'text-emerald-600' : 'text-slate-800'}`}>
+                      {writingValue.trim().split(/\s+/).filter(Boolean).length}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setActiveTab("speaking")}
+                  className="text-slate-500 hover:text-slate-700 text-sm font-medium flex items-center gap-1"
+                >
+                  Skip this section
+                  <span className="material-symbols-rounded text-base">arrow_forward</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* SPEAKING SECTION - Modern Recorder (Optional) */}
+        {activeTab === "speaking" && (
+          <div className="h-full overflow-y-auto bg-[#F8FAFC] p-8">
+            <div className="max-w-3xl mx-auto space-y-8">
+              
+              {/* Topic Card */}
+              <div className="bg-white border border-slate-200 p-8 rounded-xl text-center shadow-sm">
+                <div className="flex items-center justify-center gap-2 mb-6">
+                  <span className="inline-block bg-slate-800 text-white text-[10px] font-bold px-3 py-1 uppercase tracking-[0.2em]">
+                    Speaking Task
+                  </span>
+                  <span className="text-xs text-amber-600 font-medium bg-amber-50 px-2 py-1 rounded">
+                    Optional
+                  </span>
+                </div>
+
+                {speakingSection?.instructionsMd && (
+                  <div className="text-sm text-slate-600 mb-6">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
                       {speakingSection.instructionsMd}
                     </ReactMarkdown>
                   </div>
-                </div>
-              )}
+                )}
 
-              {speakingQuestion && (
-                <div className="bg-white border rounded-lg p-5 shadow-sm flex  gap-6 item">
-                  <div className="flex-1/2">
-                    <h3 className="font-semibold text-slate-800 mb-2">
-                      Speaking task
-                    </h3>
-                    <div className="text-sm text-slate-700 whitespace-pre-line leading-relaxed">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {speakingQuestion.promptMd}
-                      </ReactMarkdown>
-                    </div>
+                {speakingQuestion && (
+                  <div className="font-serif text-xl text-slate-800 leading-relaxed">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {speakingQuestion.promptMd}
+                    </ReactMarkdown>
                   </div>
+                )}
 
-                  <div className="flex flex-col lg:flex-row gap-6 items-center flex-1/2 justify-center">
-                    <input
-                      type="file"
-                      accept="audio/mp3,audio/wav"
-                      id="speaking-upload"
-                      className="hidden"
-                      disabled={speakingSource === "record" || uploading}
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleUploadAudio(file);
-                      }}
-                    />
-                    <section className="w-full lg:w-1/2 flex flex-col gap-4">
-                      <div className="flex w-full gap-3 text-xs text-slate-500">
-                        <label
-                          htmlFor="speaking-upload"
-                          className={`flex-1 px-4 py-2.5 rounded-lg font-semibold text-sm text-center cursor-pointer transition ${
-                            speakingSource === "record" || uploading
-                              ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                              : "bg-white text-[#317EFF] hover:bg-indigo-100 border border-indigo-200"
-                          }`}
-                        >
-                          Upload mp3 / wav
-                        </label>
-                        <button
-                          type="button"
-                          onClick={handleStartRecording}
-                          disabled={
-                            isRecording ||
-                            uploading ||
-                            speakingSource === "upload"
-                          }
-                          className={`flex-1 px-4 py-2.5 rounded-lg font-semibold text-sm transition cursor-pointer ${
-                            isRecording ||
-                            uploading ||
-                            speakingSource === "upload"
-                              ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                              : "bg-[#317EFF] text-white hover:bg-[#74a4f6]"
-                          }`}
-                        >
-                          Start
-                        </button>
+                {!speakingQuestion && (
+                  <p className="text-sm text-slate-500">No speaking task found.</p>
+                )}
+              </div>
 
-                        <button
-                          type="button"
-                          onClick={handleStopRecording}
-                          disabled={!isRecording || uploading}
-                          className={`flex-1 px-4 py-2.5 rounded-lg font-semibold text-sm transition ${
-                            !isRecording || uploading
-                              ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                              : "bg-red-500 text-white hover:bg-red-600"
-                          }`}
-                        >
-                          Stop
-                        </button>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={handleGrade}
-                        disabled={!mediaBlobUrl || uploading}
-                        className={`w-full px-4 py-2.5 rounded-lg font-semibold text-sm transition ${
-                          mediaBlobUrl && !uploading
-                            ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200"
-                            : "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
-                        }`}
-                      >
-                        {uploading
-                          ? "Đang tải lên..."
-                          : mediaBlobUrl
-                          ? "Tải lên & lưu câu trả lời"
-                          : "Ghi âm xong để tải lên"}
-                      </button>
-                      {(mediaBlobUrl || speakingSource === "upload") && (
-                        <button
-                          type="button"
-                          onClick={resetSpeaking}
-                          className="w-full text-xs text-slate-500 hover:text-red-600 underline mt-2"
-                        >
-                          Xóa audio & làm lại
-                        </button>
-                      )}
-                    </section>
+              {/* Recorder Panel */}
+              <div className="bg-white border border-slate-200 p-8 rounded-xl shadow-sm">
+                {/* Timer & Status */}
+                <div className="flex items-center justify-center gap-6 mb-8">
+                  <div className="text-center">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Duration</span>
+                    <span className="font-mono font-bold text-2xl text-slate-800">{formatTime(seconds)}</span>
+                  </div>
+                  <div className="w-px h-10 bg-slate-200"></div>
+                  <div className="text-center">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Status</span>
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
+                      status === "recording"
+                        ? "bg-red-100 text-red-700"
+                        : status === "stopped"
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "bg-slate-100 text-slate-600"
+                    }`}>
+                      <span className={`mr-2 h-2 w-2 rounded-full ${
+                        status === "recording"
+                          ? "bg-red-500 animate-pulse"
+                          : status === "stopped"
+                          ? "bg-emerald-500"
+                          : "bg-slate-400"
+                      }`} />
+                      {status === "idle" && "Ready"}
+                      {status === "recording" && "Recording..."}
+                      {status === "stopped" && "Recorded"}
+                    </span>
                   </div>
                 </div>
-              )}
 
-              {!speakingQuestion && (
-                <p className="text-sm text-slate-500">
-                  Không tìm thấy câu hỏi Speaking trong paper.
-                </p>
-              )}
+                {/* Large Microphone Button */}
+                <div className="flex justify-center mb-8">
+                  <button
+                    onClick={isRecording ? handleStopRecording : handleStartRecording}
+                    disabled={uploading || speakingSource === "upload"}
+                    className={`w-32 h-32 rounded-full flex items-center justify-center transition-all shadow-lg ${
+                      isRecording
+                        ? "bg-red-500 hover:bg-red-600 animate-pulse"
+                        : uploading || speakingSource === "upload"
+                        ? "bg-slate-200 cursor-not-allowed"
+                        : "bg-[#3B82F6] hover:bg-blue-600"
+                    }`}
+                  >
+                    <span className="material-symbols-rounded text-5xl text-white">
+                      {isRecording ? "stop" : "mic"}
+                    </span>
+                  </button>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-col gap-3 max-w-sm mx-auto">
+                  <input
+                    type="file"
+                    accept="audio/mp3,audio/wav"
+                    id="speaking-upload"
+                    className="hidden"
+                    disabled={speakingSource === "record" || uploading}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleUploadAudio(file);
+                    }}
+                  />
+
+                  {/* Upload Button */}
+                  <label
+                    htmlFor="speaking-upload"
+                    className={`w-full px-4 py-3 rounded-lg font-semibold text-sm text-center transition flex items-center justify-center gap-2 ${
+                      speakingSource === "record" || uploading
+                        ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                        : "bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 cursor-pointer"
+                    }`}
+                  >
+                    <span className="material-symbols-rounded text-base">upload_file</span>
+                    Upload mp3 / wav
+                  </label>
+
+                  {/* Save Button */}
+                  <button
+                    type="button"
+                    onClick={handleGrade}
+                    disabled={!mediaBlobUrl || uploading}
+                    className={`w-full px-4 py-3 rounded-lg font-bold text-sm transition flex items-center justify-center gap-2 ${
+                      mediaBlobUrl && !uploading
+                        ? "bg-emerald-500 text-white hover:bg-emerald-600"
+                        : "bg-slate-100 text-slate-400 cursor-not-allowed"
+                    }`}
+                  >
+                    <span className="material-symbols-rounded text-base">cloud_upload</span>
+                    {uploading
+                      ? "Uploading..."
+                      : mediaBlobUrl
+                      ? "Save & Continue"
+                      : "Record first to save"}
+                  </button>
+
+                  {/* Reset Button */}
+                  {(mediaBlobUrl || speakingSource === "upload") && (
+                    <button
+                      type="button"
+                      onClick={resetSpeaking}
+                      className="text-xs text-slate-500 hover:text-red-600 underline"
+                    >
+                      Clear audio & start over
+                    </button>
+                  )}
+                </div>
+              </div>
+
             </div>
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 }

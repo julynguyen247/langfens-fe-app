@@ -1,6 +1,9 @@
 // components/writing/WritingGradeResult.tsx
 "use client";
 
+import { useState } from "react";
+import { ScoreHeader } from "../common/ScoreHeader";
+
 type BandDetail = {
   band: number;
   comment: string;
@@ -22,160 +25,188 @@ export type WritingGradeRes = {
   model: string;
   modelProvider: string;
   gradedAt: string;
+  timeSpentSeconds?: number;
 };
 
+function Icon({ name, className = "" }: { name: string; className?: string }) {
+  return <span className={`material-symbols-rounded ${className}`}>{name}</span>;
+}
+
 export function WritingGradeResult({ data }: { data: WritingGradeRes }) {
-  const gradedAt = new Date(data.gradedAt);
+  const [showModel, setShowModel] = useState(false);
+
+  const criteria = [
+    { name: "Task Response", score: data.taskResponse.band },
+    { name: "Coherence", score: data.coherenceAndCohesion.band },
+    { name: "Lexical", score: data.lexicalResource.band },
+    { name: "Grammar", score: data.grammaticalRangeAndAccuracy.band },
+  ];
+
+  const timeMinutes = data.timeSpentSeconds
+    ? Math.floor(data.timeSpentSeconds / 60)
+    : null;
+
+  // Build critique content
+  const strengths: string[] = [];
+  const weaknesses: string[] = [];
+
+  if (data.taskResponse.band >= 6)
+    strengths.push(`Task Response: ${data.taskResponse.comment}`);
+  else weaknesses.push(`Task Response: ${data.taskResponse.comment}`);
+
+  if (data.coherenceAndCohesion.band >= 6)
+    strengths.push(`Coherence: ${data.coherenceAndCohesion.comment}`);
+  else weaknesses.push(`Coherence: ${data.coherenceAndCohesion.comment}`);
+
+  if (data.lexicalResource.band >= 6)
+    strengths.push(`Vocabulary: ${data.lexicalResource.comment}`);
+  else weaknesses.push(`Vocabulary: ${data.lexicalResource.comment}`);
+
+  if (data.grammaticalRangeAndAccuracy.band >= 6)
+    strengths.push(`Grammar: ${data.grammaticalRangeAndAccuracy.comment}`);
+  else weaknesses.push(`Grammar: ${data.grammaticalRangeAndAccuracy.comment}`);
 
   return (
-    <div className="mt-8 max-w-5xl mx-auto space-y-6">
-      {/* Header tổng quan */}
-      <section className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <p className="text-xs uppercase tracking-[0.25em] text-slate-400">
-              Writing result
-            </p>
-            <h2 className="mt-1 text-xl font-semibold text-slate-900">
-              Overall band score
-            </h2>
-            <p className="mt-1 text-sm text-slate-500">
-              Submission ID:{" "}
-              <span className="font-mono text-xs bg-slate-100 px-2 py-0.5 rounded">
-                {data.submissionId}
+    <div className="max-w-5xl mx-auto py-8 px-4 space-y-8">
+      {/* Score Header */}
+      <div className="rounded-2xl overflow-hidden shadow-sm border border-slate-200">
+        <ScoreHeader band={data.overallBand} criteria={criteria} skill="writing" />
+      </div>
+
+      {/* Task Prompt (Subtle) */}
+      <div className="bg-slate-50 border border-slate-100 rounded-xl p-5">
+        <div className="flex items-center gap-2 mb-2">
+          <Icon name="description" className="text-slate-400" />
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            Task Prompt
+          </h3>
+        </div>
+        <p className="text-sm text-slate-700 leading-relaxed">{data.taskText}</p>
+      </div>
+
+      {/* Feedback Body */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* LEFT: The Essay (Paper View) */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-8">
+            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">
+              Your Submission
+            </h3>
+            <div className="prose prose-slate font-serif text-lg leading-loose text-slate-800 whitespace-pre-line">
+              {data.essayRaw}
+            </div>
+            <div className="mt-6 pt-6 border-t border-slate-100 flex justify-between text-sm text-slate-500">
+              <span className="flex items-center gap-1">
+                <Icon name="notes" className="text-base" />
+                {data.wordCount} words
               </span>
-            </p>
-            <p className="mt-1 text-xs text-slate-500">
-              Graded at:{" "}
-              {gradedAt.toLocaleString("vi-VN", {
-                hour12: false,
-              })}
-            </p>
-          </div>
-
-          <div className="flex items-center gap-6">
-            <div className="text-center">
-              <div className="text-xs text-slate-500 mb-1">Overall Band</div>
-              <div className="w-20 h-20 rounded-full bg-slate-900 text-white flex items-center justify-center text-3xl font-bold shadow-lg">
-                {data.overallBand.toFixed(1)}
-              </div>
-            </div>
-
-            <div className="text-xs text-right text-slate-500 space-y-1">
-              <p>
-                Model:{" "}
-                <span className="font-medium text-slate-700">{data.model}</span>
-              </p>
-              <p>
-                Provider:{" "}
-                <span className="font-medium text-slate-700">
-                  {data.modelProvider}
+              {timeMinutes && (
+                <span className="flex items-center gap-1">
+                  <Icon name="schedule" className="text-base" />
+                  {timeMinutes}m
                 </span>
-              </p>
-              <p>
-                Word count:{" "}
-                <span className="font-semibold text-slate-800">
-                  {data.wordCount}
-                </span>
-              </p>
+              )}
             </div>
           </div>
         </div>
-      </section>
 
-      {/* Task text + bài làm gốc */}
-      <section className="grid md:grid-cols-2 gap-4">
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-          <h3 className="text-sm font-semibold text-slate-800 mb-2">
-            Task prompt
-          </h3>
-          <p className="text-sm text-slate-700 whitespace-pre-line leading-relaxed">
-            {data.taskText}
-          </p>
+        {/* RIGHT: Examiner's Notes (Sidebar) */}
+        <div className="space-y-6">
+          {/* Examiner's Critique */}
+          <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-6">
+            <h3 className="flex items-center gap-2 font-bold text-blue-700 mb-4">
+              <Icon name="psychology" className="text-xl" />
+              Examiner's Critique
+            </h3>
+            <div className="space-y-4 text-sm text-slate-700 leading-relaxed">
+              {strengths.length > 0 && (
+                <div>
+                  <p className="font-semibold text-emerald-700 mb-1 flex items-center gap-1">
+                    <Icon name="check_circle" className="text-base" />
+                    Strengths
+                  </p>
+                  <ul className="list-disc list-inside space-y-1 text-slate-600">
+                    {strengths.slice(0, 2).map((s, i) => (
+                      <li key={i} className="text-xs">{s.split(":")[0]}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {weaknesses.length > 0 && (
+                <div>
+                  <p className="font-semibold text-amber-700 mb-1 flex items-center gap-1">
+                    <Icon name="error" className="text-base" />
+                    Areas to Improve
+                  </p>
+                  <ul className="list-disc list-inside space-y-1 text-slate-600">
+                    {weaknesses.slice(0, 2).map((w, i) => (
+                      <li key={i} className="text-xs">{w.split(":")[0]}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Suggestions */}
+          {data.suggestions?.length > 0 && (
+            <div className="bg-white border border-slate-200 rounded-xl p-6">
+              <h3 className="flex items-center gap-2 font-bold text-slate-800 mb-3">
+                <Icon name="lightbulb" className="text-amber-500" />
+                Tips
+              </h3>
+              <ul className="text-xs text-slate-600 space-y-2">
+                {data.suggestions.slice(0, 3).map((s, i) => (
+                  <li key={i} className="flex gap-2">
+                    <span className="text-slate-400">{i + 1}.</span>
+                    <span>{s}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Model Answer Toggle */}
+          <div className="bg-white border border-slate-200 rounded-xl p-6">
+            <h3 className="font-bold text-slate-800 mb-2">Better Version?</h3>
+            <p className="text-xs text-slate-500 mb-4">
+              See how an improved version would look.
+            </p>
+            <button
+              onClick={() => setShowModel(!showModel)}
+              className="w-full bg-slate-800 text-white py-2.5 rounded-lg font-medium text-sm hover:bg-black transition-colors flex items-center justify-center gap-2"
+            >
+              <Icon name={showModel ? "visibility_off" : "visibility"} className="text-base" />
+              {showModel ? "Hide Model Answer" : "View Model Answer"}
+            </button>
+          </div>
         </div>
+      </div>
 
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-          <h3 className="text-sm font-semibold text-slate-800 mb-2">
-            Your original essay
-          </h3>
-          <p className="text-sm text-slate-700 whitespace-pre-line leading-relaxed">
-            {data.essayRaw}
-          </p>
-        </div>
-      </section>
-
-      {/* Band từng tiêu chí */}
-      <section className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-        <h3 className="text-sm font-semibold text-slate-900 mb-4">
-          Band scores by criteria
-        </h3>
-        <div className="grid md:grid-cols-2 gap-4">
-          <CriterionCard title="Task Response" detail={data.taskResponse} />
-          <CriterionCard
-            title="Coherence & Cohesion"
-            detail={data.coherenceAndCohesion}
-          />
-          <CriterionCard
-            title="Lexical Resource"
-            detail={data.lexicalResource}
-          />
-          <CriterionCard
-            title="Grammatical Range & Accuracy"
-            detail={data.grammaticalRangeAndAccuracy}
-          />
-        </div>
-      </section>
-
-      {/* Đoạn cải thiện + gợi ý */}
-      <section className="grid md:grid-cols-[3fr,2fr] gap-4">
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-          <h3 className="text-sm font-semibold text-slate-900 mb-2">
-            Example improved paragraph
-          </h3>
-          <p className="text-sm text-slate-700 whitespace-pre-line leading-relaxed">
+      {/* Model Answer (Expandable) */}
+      {showModel && data.improvedParagraph && (
+        <div className="bg-gradient-to-br from-slate-800 to-slate-900 text-white rounded-xl p-8 shadow-lg">
+          <div className="flex items-center gap-2 mb-4">
+            <Icon name="auto_awesome" className="text-amber-400" />
+            <h3 className="font-bold">Improved Version</h3>
+          </div>
+          <p className="font-serif text-lg leading-loose opacity-90 whitespace-pre-line">
             {data.improvedParagraph}
           </p>
         </div>
+      )}
 
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-          <h3 className="text-sm font-semibold text-slate-900 mb-2">
-            Suggestions for improvement
-          </h3>
-          {data.suggestions?.length ? (
-            <ul className="list-disc list-inside text-sm text-slate-700 space-y-1.5">
-              {data.suggestions.map((s, idx) => (
-                <li key={idx}>{s}</li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-xs text-slate-500">
-              No suggestions returned from the model.
-            </p>
-          )}
-        </div>
-      </section>
-    </div>
-  );
-}
-
-function CriterionCard({
-  title,
-  detail,
-}: {
-  title: string;
-  detail: BandDetail;
-}) {
-  return (
-    <div className="border border-slate-200 rounded-xl p-4 bg-slate-50/60">
-      <div className="flex items-center justify-between mb-2">
-        <h4 className="text-xs font-semibold text-slate-800 uppercase tracking-wide">
-          {title}
-        </h4>
-        <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-slate-900 text-white text-xs font-semibold">
-          Band {detail.band.toFixed(1)}
-        </span>
+      {/* Footer Meta */}
+      <div className="text-center text-xs text-slate-400 pt-4 border-t border-slate-100">
+        <p>
+          Graded on {new Date(data.gradedAt).toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          })}{" "}
+          • Model: {data.model} ({data.modelProvider})
+        </p>
       </div>
-      <p className="text-sm text-slate-700 leading-relaxed">{detail.comment}</p>
     </div>
   );
 }
