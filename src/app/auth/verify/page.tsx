@@ -105,7 +105,7 @@ export default function VerifyEmailPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center px-4">
       <div className="w-full max-w-xs">
         <h1 className="text-2xl font-semibold text-slate-800">
           Nhập mã xác minh

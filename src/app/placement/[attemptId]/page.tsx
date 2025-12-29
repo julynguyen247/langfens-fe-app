@@ -278,35 +278,23 @@ export default function MultiSkillAttemptPage() {
   });
 
   async function handleSubmit(auto = false) {
-    console.log("[handleSubmit] called, auto:", auto, "submitting:", submitting);
-    if (submitting) {
-      console.log("[handleSubmit] Already submitting, returning early");
-      return;
-    }
+    if (submitting) return;
 
-    console.log("[handleSubmit] Starting submission...");
     setLoading(true);
     try {
       setSubmitting(true);
       cancelAutoSave();
 
       const payload = buildPayload(lastAnswersRef.current);
-      console.log("[handleSubmit] payload:", payload);
-      
-      console.log("[handleSubmit] Calling autoSaveAttempt...");
       await autoSaveAttempt(attemptId, payload);
-      console.log("[handleSubmit] autoSaveAttempt done, calling submitAttempt...");
       await submitAttempt(attemptId);
-      console.log("[handleSubmit] submitAttempt done, redirecting...");
 
-      // Reset loading before navigation
       setLoading(false);
       router.push(`/attempts/${attemptId}`);
     } catch (e) {
-      console.error("[handleSubmit] Error:", e);
       setSubmitting(false);
       setLoading(false);
-      if (!auto) alert("Nộp bài thất bại. Vui lòng thử lại.");
+      if (!auto) alert("Submission failed. Please try again.");
     }
   }
 
@@ -349,8 +337,7 @@ export default function MultiSkillAttemptPage() {
       handleSpeakingChange(serializedAnswer);
       alert("Đã tải và lưu câu trả lời speaking.");
     } catch (e) {
-      console.error(e);
-      alert("Tải audio thất bại.");
+      alert("Audio upload failed.");
     } finally {
       setUploading(false);
     }
@@ -374,8 +361,7 @@ export default function MultiSkillAttemptPage() {
       handleSpeakingChange(serializedAnswer);
       alert("Đã upload và lưu câu trả lời speaking.");
     } catch (e) {
-      console.error(e);
-      alert("Upload audio thất bại.");
+      alert("Audio upload failed.");
       setSpeakingSource("none");
     } finally {
       setUploading(false);

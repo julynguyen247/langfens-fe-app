@@ -58,9 +58,9 @@ const TIER_STYLES = {
 
 const CATEGORY_LABELS: Record<string, string> = {
   STREAK: "🔥 Streak",
-  TEST: "📝 Bài test",
-  VOCABULARY: "📚 Từ vựng",
-  COURSE: "📖 Khóa học",
+  TEST: "📝 Tests",
+  VOCABULARY: "📚 Vocabulary",
+  COURSE: "📖 Courses",
 };
 
 export default function AchievementsPage() {
@@ -79,8 +79,8 @@ export default function AchievementsPage() {
       const res = await getAchievements();
       const data = (res as any)?.data?.data ?? (res as any)?.data ?? [];
       setAchievements(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error("Failed to load achievements:", error);
+    } catch {
+      // Failed to load achievements
     } finally {
       setLoading(false);
     }
@@ -127,9 +127,9 @@ export default function AchievementsPage() {
             <FiArrowLeft className="w-5 h-5 text-slate-600" />
           </button>
           <div>
-            <h1 className="text-2xl font-serif font-bold text-slate-900">Bộ sưu tập Thành tựu</h1>
+            <h1 className="text-2xl font-serif font-bold text-slate-900">Achievement Collection</h1>
             <p className="text-sm text-slate-500">
-              Đã mở khóa {unlockedCount}/{totalCount} huy hiệu
+              Unlocked {unlockedCount}/{totalCount} badges
             </p>
           </div>
         </motion.div>
@@ -141,7 +141,7 @@ export default function AchievementsPage() {
           className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200"
         >
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-medium text-slate-600">Tiến độ sưu tập</span>
+            <span className="text-sm font-medium text-slate-600">Collection Progress</span>
             <span className="text-sm font-bold text-blue-600">
               {Math.round((unlockedCount / Math.max(totalCount, 1)) * 100)}%
             </span>
@@ -175,7 +175,7 @@ export default function AchievementsPage() {
                   : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200"
               }`}
             >
-              {cat === "all" ? "Tất cả" : CATEGORY_LABELS[cat] || cat}
+              {cat === "all" ? "All" : CATEGORY_LABELS[cat] || cat}
             </button>
           ))}
         </motion.div>
@@ -198,7 +198,7 @@ export default function AchievementsPage() {
 
         {filteredAchievements.length === 0 && (
           <div className="text-center py-12 text-slate-500">
-            Không có thành tựu nào trong danh mục này.
+            No achievements in this category.
           </div>
         )}
       </main>
