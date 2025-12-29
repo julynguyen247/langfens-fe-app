@@ -1,6 +1,11 @@
 FROM node:18-alpine AS build
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
+
+# Build-time args for Next.js public env vars
+ARG NEXT_PUBLIC_GOOGLE_CLIENT_ID
+ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=${NEXT_PUBLIC_GOOGLE_CLIENT_ID}
+
 COPY package*.json ./
 RUN npm ci
 COPY . .

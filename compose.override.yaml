@@ -1,6 +1,11 @@
 services:
   frontend-service:
     image: ${DOCKERHUB_USER}/langfens-frontend:${TAG}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_GOOGLE_CLIENT_ID=${NEXT_PUBLIC_GOOGLE_CLIENT_ID}
     env_file:
       - path: frontend.env
         required: false

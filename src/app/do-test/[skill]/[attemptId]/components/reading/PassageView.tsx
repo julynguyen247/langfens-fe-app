@@ -181,11 +181,11 @@ const PassageView = memo(function PassageView({
   };
 
   const handleAddToFlashcard = (word: string, definition: string) => {
-    console.log("Add to flashcard:", word, definition);
+    // TODO: Implement flashcard addition
   };
 
   const handleAddExtractedWords = (words: any[]) => {
-    console.log("Add extracted words:", words);
+    // TODO: Implement extracted words addition
   };
 
   const handleZoomIn = () => {
