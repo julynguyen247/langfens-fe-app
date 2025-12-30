@@ -1318,7 +1318,12 @@ function ReviewItem({
               <span className="text-red-400">✗</span>
             )}
             <span className={!isCorrect && !isSkipped ? "line-through decoration-2 decoration-red-200" : ""}>
-              {data.selectedText || "— No Answer —"}
+              {(() => {
+                // Helper to check if text looks like UUID
+                const isUuid = (s: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
+                const text = data.selectedText?.trim() || "";
+                return text && !isUuid(text) ? text : "— No Answer —";
+              })()}
             </span>
           </div>
         </div>
