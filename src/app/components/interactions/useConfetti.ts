@@ -6,7 +6,7 @@ import type { DeviceTier } from "../effects/useDeviceCapability";
 type ConfettiFunction = (options?: Record<string, unknown>) => Promise<null> | null;
 type CreateConfetti = (canvas: HTMLCanvasElement, options?: { resize: boolean }) => ConfettiFunction;
 
-const COLORS = ["#00E5FF", "#FFD700"];
+const COLORS = ["#2563EB", "#93C5FD"];
 
 interface ConfettiAPI {
   celebration: () => void;

@@ -159,7 +159,7 @@ const ParticleCanvas = forwardRef<ParticleCanvasHandle>(
               if (x === 0) ctx.moveTo(x, y);
               else ctx.lineTo(x, y);
             }
-            ctx.strokeStyle = `rgba(0, 229, 255, ${wave.alpha})`;
+            ctx.strokeStyle = `rgba(37, 99, 235, ${wave.alpha})`;
             ctx.lineWidth = 1.5;
             ctx.stroke();
           }
@@ -243,9 +243,9 @@ const ParticleCanvas = forwardRef<ParticleCanvasHandle>(
               p.x, p.y, 0,
               p.x, p.y, p.radius * 4
             );
-            gradient.addColorStop(0, `rgba(0, 229, 255, ${alpha})`);
-            gradient.addColorStop(0.4, `rgba(0, 229, 255, ${alpha * 0.3})`);
-            gradient.addColorStop(1, "rgba(0, 229, 255, 0)");
+            gradient.addColorStop(0, `rgba(37, 99, 235, ${alpha})`);
+            gradient.addColorStop(0.4, `rgba(37, 99, 235, ${alpha * 0.3})`);
+            gradient.addColorStop(1, "rgba(37, 99, 235, 0)");
 
             ctx.beginPath();
             ctx.arc(p.x, p.y, p.radius * 4, 0, Math.PI * 2);
@@ -254,7 +254,7 @@ const ParticleCanvas = forwardRef<ParticleCanvasHandle>(
 
             ctx.beginPath();
             ctx.arc(p.x, p.y, p.radius * 0.5, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(200, 240, 255, ${alpha * 0.8})`;
+            ctx.fillStyle = `rgba(191, 219, 254, ${alpha * 0.8})`;
             ctx.fill();
           }
         }
@@ -274,7 +274,7 @@ const ParticleCanvas = forwardRef<ParticleCanvasHandle>(
               ctx.beginPath();
               ctx.moveTo(a.x, a.y);
               ctx.lineTo(b.x, b.y);
-              ctx.strokeStyle = `rgba(0, 229, 255, ${lineAlpha})`;
+              ctx.strokeStyle = `rgba(37, 99, 235, ${lineAlpha})`;
               ctx.lineWidth = 0.5;
               ctx.stroke();
             }
@@ -297,7 +297,7 @@ const ParticleCanvas = forwardRef<ParticleCanvasHandle>(
       <canvas
         ref={canvasRef}
         className="fixed inset-0 z-0 pointer-events-none"
-        style={{ mixBlendMode: "screen" }}
+        style={{ mixBlendMode: "normal" }}
       />
     );
   }
