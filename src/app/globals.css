@@ -215,7 +215,7 @@ body {
 
 /* ═══════════════════════════════════════════════════════
    CINEMATIC LANDING PAGE — Scoped under .cinematic class
-   Deep ocean blue / Hollywood sci-fi aesthetic
+   Light theme aligned with app design system (blue-600 primary)
    ═══════════════════════════════════════════════════════ */
 
 /* Film grain noise animation */
@@ -239,14 +239,14 @@ body {
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
 }
 
-/* Vignette — darkened edges for cinematic depth */
+/* Vignette — subtle darkened edges */
 .vignette::before {
   content: '';
   position: fixed;
   inset: 0;
   z-index: 40;
   pointer-events: none;
-  background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.55) 100%);
+  background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.08) 100%);
 }
 
 /* Slow sweeping light leak */
@@ -268,69 +268,55 @@ body {
   background: linear-gradient(
     100deg,
     transparent 20%,
-    rgba(0, 229, 255, 0.08) 40%,
-    rgba(255, 215, 0, 0.04) 55%,
+    rgba(37, 99, 235, 0.04) 40%,
+    rgba(147, 197, 253, 0.03) 55%,
     transparent 75%
   );
   animation: lightLeak 14s ease-in-out infinite;
 }
 
-/* Heading text glow — teal cinematic */
+/* Heading text glow — disabled for light theme */
 .text-glow {
-  text-shadow:
-    0 0 20px rgba(0, 229, 255, 0.3),
-    0 0 60px rgba(0, 229, 255, 0.1);
+  text-shadow: none;
 }
 
-/* Glassmorphism card */
+/* Card — solid white, matching app design system */
 .glass-card {
-  background: rgba(255, 255, 255, 0.04);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(0, 229, 255, 0.12);
-  box-shadow:
-    0 0 30px rgba(0, 229, 255, 0.04),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   transition: all 0.4s ease;
 }
 
 .glass-card:hover {
-  border-color: rgba(0, 229, 255, 0.25);
-  box-shadow:
-    0 0 40px rgba(0, 229, 255, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  border-color: #bfdbfe;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
 }
 
-/* Button cinematic glow */
+/* Button — standard app style, no glow */
 .btn-cinematic {
   position: relative;
-  border: 1px solid rgba(0, 229, 255, 0.4) !important;
-  box-shadow: 0 0 15px rgba(0, 229, 255, 0.15);
-  transition: all 0.4s ease !important;
+  transition: all 0.3s ease !important;
 }
 
 .btn-cinematic:hover {
-  box-shadow:
-    0 0 30px rgba(0, 229, 255, 0.3),
-    0 0 80px rgba(255, 215, 0, 0.12);
-  transform: scale(1.05);
-  border-color: rgba(0, 229, 255, 0.6) !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
-/* Cinematic scrollbar */
+/* Scrollbar — matches app */
 .cinematic ::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 229, 255, 0.25);
-  border-color: #0A1625;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-color: var(--background);
 }
 
 .cinematic ::-webkit-scrollbar-track {
-  background: #0A1625;
+  background: var(--background);
 }
 
 /* Slow ambient glow pulse for hero penguin area */
 @keyframes ambientGlow {
-  0%, 100% { box-shadow: 0 0 60px rgba(0, 229, 255, 0.1); }
-  50% { box-shadow: 0 0 100px rgba(0, 229, 255, 0.2); }
+  0%, 100% { box-shadow: 0 0 60px rgba(37, 99, 235, 0.08); }
+  50% { box-shadow: 0 0 100px rgba(37, 99, 235, 0.15); }
 }
 
 .ambient-glow {
@@ -354,7 +340,7 @@ body {
   height: 4px;
   z-index: 42;
   pointer-events: none;
-  background: linear-gradient(90deg, transparent, rgba(0, 229, 255, 0.4), rgba(255, 215, 0, 0.2), transparent);
+  background: linear-gradient(90deg, transparent, rgba(37, 99, 235, 0.15), rgba(147, 197, 253, 0.1), transparent);
   filter: blur(6px);
   animation: lensFlare 20s ease-in-out infinite;
 }
@@ -363,7 +349,7 @@ body {
   background: radial-gradient(
     ellipse at center,
     transparent 40%,
-    rgba(0, 0, 0, var(--vignette-intensity, 0.55)) 100%
+    rgba(0, 0, 0, var(--vignette-intensity, 0.08)) 100%
   );
 }
 
@@ -385,7 +371,7 @@ body {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  border: 2px solid rgba(0, 229, 255, 0.5);
+  border: 2px solid rgba(37, 99, 235, 0.3);
   pointer-events: none;
   animation: oceanRipple 0.8s ease-out forwards;
 }
@@ -400,9 +386,8 @@ body {
 
 .glass-card.tilt-active:hover {
   box-shadow:
-    0 0 40px rgba(0, 229, 255, 0.08),
-    inset 0 0 20px rgba(0, 229, 255, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -2px rgba(0, 0, 0, 0.1);
 }
 
 .cinematic nav.nav-glow {
@@ -416,8 +401,8 @@ body {
   left: var(--nav-underline-x, -100px);
   width: 40px;
   height: 2px;
-  background: #00E5FF;
-  box-shadow: 0 0 8px rgba(0, 229, 255, 0.6), 0 0 20px rgba(0, 229, 255, 0.2);
+  background: #2563EB;
+  box-shadow: 0 0 6px rgba(37, 99, 235, 0.4), 0 0 16px rgba(37, 99, 235, 0.15);
   border-radius: 1px;
   transition: left 0.2s ease-out, opacity 0.3s;
   opacity: var(--nav-underline-opacity, 0);
@@ -442,7 +427,7 @@ body {
   left: 0;
   width: 40%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(0, 229, 255, 0.06), transparent);
+  background: linear-gradient(90deg, transparent, rgba(37, 99, 235, 0.04), transparent);
   pointer-events: none;
   animation: lightRaySweep 1.2s ease-out forwards;
 }
