@@ -23,9 +23,9 @@ export default function PenguinScene({
         zIndex: 1,
         pointerEvents: "none",
       }}
-      dpr={[1, 1.5]}
+      dpr={[1, 1.2]}
       gl={{
-        antialias: true,
+        antialias: false,
         alpha: true,
         powerPreference: "high-performance",
       }}

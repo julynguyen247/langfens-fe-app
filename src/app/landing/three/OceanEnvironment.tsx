@@ -11,13 +11,13 @@ export default function OceanEnvironment() {
       <fog attach="fog" args={["#040B14", 8, 30]} />
 
       {/* Cool blue ambient light */}
-      <ambientLight intensity={0.3} color="#0EA5E9" />
+      <ambientLight intensity={0.3} color="#2563EB" />
 
       {/* Key light from above (simulating surface light) */}
       <directionalLight
         position={[2, 8, 4]}
         intensity={0.6}
-        color="#38BDF8"
+        color="#3B82F6"
       />
 
       {/* Subtle fill from below (underwater caustic bounce) */}

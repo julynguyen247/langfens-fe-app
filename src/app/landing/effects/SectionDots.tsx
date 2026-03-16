@@ -54,7 +54,7 @@ export default function SectionDots() {
               opacity: i === activeIndex ? 1 : 0.3,
               boxShadow:
                 i === activeIndex
-                  ? "0 0 8px rgba(14, 165, 233, 0.4)"
+                  ? "0 0 8px rgba(37, 99, 235, 0.4)"
                   : "none",
             }}
           />

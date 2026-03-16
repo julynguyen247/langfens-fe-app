@@ -1,78 +1,193 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 /**
- * Custom cursor: small ocean-blue ring that follows mouse.
- * Expands on hover over interactive elements.
- * Hidden on touch devices.
+ * Bioluminescent ocean cursor.
+ * - Inner dot: bright, follows mouse directly
+ * - Outer ring: glowing halo, follows with elastic lag
+ * - Trail: 8 fading particles that trace the cursor's path
+ * - On hover: ring expands + brightens, dot pulses
+ * - Hidden on touch devices + reduced motion
  */
+
+const TRAIL_LENGTH = 8;
+const LERP_DOT = 0.35;
+const LERP_RING = 0.12;
+const LERP_TRAIL = 0.08;
+
 export default function CustomCursor() {
-  const cursorRef = useRef<HTMLDivElement>(null);
+  const dotRef = useRef<HTMLDivElement>(null);
+  const ringRef = useRef<HTMLDivElement>(null);
+  const trailRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [isHovering, setIsHovering] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
-  const posRef = useRef({ x: -100, y: -100 });
-  const targetRef = useRef({ x: -100, y: -100 });
-  const rafRef = useRef<number>(0);
+  const [isClicking, setIsClicking] = useState(false);
+
+  const mouse = useRef({ x: -100, y: -100 });
+  const dot = useRef({ x: -100, y: -100 });
+  const ring = useRef({ x: -100, y: -100 });
+  const trail = useRef<{ x: number; y: number }[]>(
+    Array.from({ length: TRAIL_LENGTH }, () => ({ x: -100, y: -100 }))
+  );
+  const raf = useRef(0);
+
+  const setTrailRef = useCallback(
+    (el: HTMLDivElement | null, i: number) => {
+      trailRefs.current[i] = el;
+    },
+    []
+  );
 
   useEffect(() => {
-    // Disable on touch devices
-    if ("ontouchstart" in window) return;
+    // Disable on touch or reduced motion
+    if (
+      "ontouchstart" in window ||
+      window.matchMedia("(pointer: coarse)").matches ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      return;
+    }
 
     setIsVisible(true);
 
     const onMouseMove = (e: MouseEvent) => {
-      targetRef.current = { x: e.clientX, y: e.clientY };
+      mouse.current = { x: e.clientX, y: e.clientY };
     };
 
     const onMouseOver = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      const isInteractive =
+      const interactive =
         target.tagName === "BUTTON" ||
         target.tagName === "A" ||
         target.closest("button") ||
         target.closest("a") ||
         target.classList.contains("cursor-pointer");
-      setIsHovering(!!isInteractive);
+      setIsHovering(!!interactive);
+    };
+
+    const onMouseDown = () => setIsClicking(true);
+    const onMouseUp = () => setIsClicking(false);
+    const onMouseLeave = () => {
+      mouse.current = { x: -100, y: -100 };
     };
 
     const animate = () => {
-      const lerp = 0.15;
-      posRef.current.x += (targetRef.current.x - posRef.current.x) * lerp;
-      posRef.current.y += (targetRef.current.y - posRef.current.y) * lerp;
+      // Dot follows mouse with fast lerp
+      dot.current.x += (mouse.current.x - dot.current.x) * LERP_DOT;
+      dot.current.y += (mouse.current.y - dot.current.y) * LERP_DOT;
 
-      if (cursorRef.current) {
-        cursorRef.current.style.transform = `translate(${posRef.current.x}px, ${posRef.current.y}px) translate(-50%, -50%)`;
+      // Ring follows with slower, elastic lerp
+      ring.current.x += (mouse.current.x - ring.current.x) * LERP_RING;
+      ring.current.y += (mouse.current.y - ring.current.y) * LERP_RING;
+
+      // Trail: each particle follows the one ahead of it
+      for (let i = 0; i < TRAIL_LENGTH; i++) {
+        const target = i === 0 ? dot.current : trail.current[i - 1];
+        const speed = LERP_TRAIL + i * 0.01;
+        trail.current[i].x += (target.x - trail.current[i].x) * speed;
+        trail.current[i].y += (target.y - trail.current[i].y) * speed;
       }
 
-      rafRef.current = requestAnimationFrame(animate);
+      // Apply transforms
+      if (dotRef.current) {
+        dotRef.current.style.transform = `translate(${dot.current.x}px, ${dot.current.y}px) translate(-50%, -50%)`;
+      }
+      if (ringRef.current) {
+        ringRef.current.style.transform = `translate(${ring.current.x}px, ${ring.current.y}px) translate(-50%, -50%)`;
+      }
+      for (let i = 0; i < TRAIL_LENGTH; i++) {
+        const el = trailRefs.current[i];
+        if (el) {
+          el.style.transform = `translate(${trail.current[i].x}px, ${trail.current[i].y}px) translate(-50%, -50%)`;
+        }
+      }
+
+      raf.current = requestAnimationFrame(animate);
     };
 
     window.addEventListener("mousemove", onMouseMove);
     document.addEventListener("mouseover", onMouseOver);
-    rafRef.current = requestAnimationFrame(animate);
+    window.addEventListener("mousedown", onMouseDown);
+    window.addEventListener("mouseup", onMouseUp);
+    document.documentElement.addEventListener("mouseleave", onMouseLeave);
+    raf.current = requestAnimationFrame(animate);
 
     return () => {
       window.removeEventListener("mousemove", onMouseMove);
       document.removeEventListener("mouseover", onMouseOver);
-      cancelAnimationFrame(rafRef.current);
+      window.removeEventListener("mousedown", onMouseDown);
+      window.removeEventListener("mouseup", onMouseUp);
+      document.documentElement.removeEventListener("mouseleave", onMouseLeave);
+      cancelAnimationFrame(raf.current);
     };
   }, []);
 
   if (!isVisible) return null;
 
   return (
-    <div
-      ref={cursorRef}
-      className="fixed top-0 left-0 pointer-events-none z-[9999] mix-blend-normal transition-[width,height,border-color,background-color] duration-150 ease-out rounded-full"
-      style={{
-        width: isHovering ? 40 : 16,
-        height: isHovering ? 40 : 16,
-        border: `2px solid var(--ocean-primary)`,
-        backgroundColor: isHovering
-          ? "rgba(14, 165, 233, 0.1)"
-          : "transparent",
-      }}
-    />
+    <>
+      {/* Hide system cursor on the landing page */}
+      <style>{`
+        .landing-ocean, .landing-ocean * {
+          cursor: none !important;
+        }
+      `}</style>
+
+      {/* Trail particles — fading bioluminescent wake */}
+      {Array.from({ length: TRAIL_LENGTH }, (_, i) => (
+        <div
+          key={`trail-${i}`}
+          ref={(el) => setTrailRef(el, i)}
+          className="fixed top-0 left-0 pointer-events-none rounded-full"
+          style={{
+            width: Math.max(2, 6 - i * 0.5),
+            height: Math.max(2, 6 - i * 0.5),
+            backgroundColor: i % 2 === 0 ? "var(--ocean-primary)" : "var(--ocean-accent)",
+            opacity: 0.4 - i * 0.045,
+            zIndex: 9997,
+            filter: `blur(${i * 0.3}px)`,
+            transition: "opacity 0.3s ease",
+          }}
+        />
+      ))}
+
+      {/* Outer ring — glowing halo with elastic follow */}
+      <div
+        ref={ringRef}
+        className="fixed top-0 left-0 pointer-events-none rounded-full"
+        style={{
+          width: isHovering ? 52 : isClicking ? 24 : 32,
+          height: isHovering ? 52 : isClicking ? 24 : 32,
+          border: `1.5px solid ${isHovering ? "var(--ocean-accent)" : "var(--ocean-primary)"}`,
+          backgroundColor: isHovering
+            ? "rgba(6, 214, 160, 0.06)"
+            : "transparent",
+          boxShadow: isHovering
+            ? "0 0 20px rgba(6, 214, 160, 0.25), inset 0 0 12px rgba(6, 214, 160, 0.08)"
+            : "0 0 12px rgba(37, 99, 235, 0.15)",
+          zIndex: 9998,
+          transition:
+            "width 0.4s cubic-bezier(0.16, 1, 0.3, 1), height 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease",
+        }}
+      />
+
+      {/* Inner dot — bright bioluminescent core */}
+      <div
+        ref={dotRef}
+        className="fixed top-0 left-0 pointer-events-none rounded-full"
+        style={{
+          width: isClicking ? 10 : 6,
+          height: isClicking ? 10 : 6,
+          backgroundColor: isHovering ? "var(--ocean-accent)" : "var(--ocean-primary)",
+          boxShadow: isHovering
+            ? "0 0 8px var(--ocean-accent), 0 0 20px rgba(6, 214, 160, 0.4)"
+            : "0 0 6px var(--ocean-primary), 0 0 14px rgba(37, 99, 235, 0.3)",
+          zIndex: 9999,
+          transition:
+            "width 0.15s ease, height 0.15s ease, background-color 0.2s ease, box-shadow 0.2s ease",
+        }}
+      />
+    </>
   );
 }

@@ -6,10 +6,9 @@ import { useRouter } from "next/navigation";
 
 import { landingFontVars } from "./fonts";
 import "./landing-ocean.css";
+import { GSAPProvider } from "./lib/gsap-provider";
 
 import { useDeviceCapability } from "@/app/components/effects/useDeviceCapability";
-import { useScrollVelocity } from "@/app/components/effects/useScrollVelocity";
-import { useIdleDetection } from "@/app/components/effects/useIdleDetection";
 import { useMouseParallax } from "@/app/components/useMouseParallax";
 import { useScrollProgress } from "./hooks/useScrollProgress";
 import { useOceanConfetti } from "./hooks/useOceanConfetti";
@@ -23,10 +22,9 @@ import CTASection from "./sections/CTASection";
 import FooterSection from "./sections/FooterSection";
 import OceanHeader from "./sections/OceanHeader";
 
-import OceanParticleCanvas from "./effects/OceanParticleCanvas";
-import CustomCursor from "./effects/CustomCursor";
+import LoadingScreen from "./effects/LoadingScreen";
 import ScrollProgressBar from "./effects/ScrollProgressBar";
-import SectionDots from "./effects/SectionDots";
+import CustomCursor from "./effects/CustomCursor";
 
 // Dynamically import R3F scene — SSR disabled, code-split
 const PenguinScene = dynamic(() => import("./three/PenguinScene"), {
@@ -43,11 +41,13 @@ export default function LandingPage() {
   const { progress, currentSection } = useScrollProgress();
   const confetti = useOceanConfetti();
   useMouseParallax(pageRef);
-  useScrollVelocity();
-  useIdleDetection();
 
   return (
+    <GSAPProvider>
     <div ref={pageRef} className={`landing-ocean ${landingFontVars}`}>
+      {/* Loading screen (z-200, renders above everything) */}
+      <LoadingScreen />
+
       {/* 3D penguin scene (fixed behind content) — skip on minimal tier */}
       {deviceTier !== "minimal" && (
         <PenguinScene
@@ -56,22 +56,16 @@ export default function LandingPage() {
         />
       )}
 
-      {/* Particle canvas (bubbles, plankton, light rays) */}
-      <OceanParticleCanvas />
-
-      {/* Cinematic overlays */}
-      <div className="film-grain" />
+      {/* Static overlays only — Selenis-style (no animations) */}
+      <div className="noise-static" />
       <div className="ocean-vignette" />
-      <div className="ocean-light-leak" />
 
       {/* Scroll progress bar */}
       <ScrollProgressBar progress={progress} />
 
-      {/* Custom cursor (desktop only) */}
+      {/* Custom bioluminescent cursor — desktop + full tier only */}
       {deviceTier === "full" && <CustomCursor />}
 
-      {/* Section navigation dots (desktop only) */}
-      <SectionDots />
 
       {/* Sticky navigation */}
       <OceanHeader onCTA={goSignUp} />
@@ -85,5 +79,6 @@ export default function LandingPage() {
       <CTASection onCTA={goSignUp} onConfetti={confetti.celebration} />
       <FooterSection />
     </div>
+    </GSAPProvider>
   );
 }

@@ -30,7 +30,7 @@ export default function PenguinModel({
   const textureRef = useRef<THREE.CanvasTexture | null>(null);
   const [ready, setReady] = useState(false);
 
-  const accentColor = useRef(new THREE.Color("#0EA5E9")).current;
+  const accentColor = useRef(new THREE.Color("#2563EB")).current;
 
   useEffect(() => {
     let destroyed = false;

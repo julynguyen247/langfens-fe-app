@@ -1,71 +1,85 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useRef } from "react";
+import { useGSAP } from "@gsap/react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { motion } from "framer-motion";
 import { FEATURES } from "../data";
+import { FeatureVisual } from "../ui/FeatureVisual";
 import { useDeviceCapability } from "@/app/components/effects/useDeviceCapability";
+import { useReducedMotion } from "../hooks/useReducedMotion";
+import { EASE, DURATION } from "../lib/animation-config";
 
-const sectionReveal = {
-  hidden: { opacity: 0, y: 30 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut" } },
-} as const;
+const VISUAL_TYPES = ["skills", "grading", "questions", "analytics", "flashcards", "gamification"] as const;
 
 export default function FeaturesSection() {
   const { tier } = useDeviceCapability();
+  const reducedMotion = useReducedMotion();
   const sectionRef = useRef<HTMLElement>(null);
   const pinRef = useRef<HTMLDivElement>(null);
-  const [activeIndex, setActiveIndex] = useState(0);
 
-  // GSAP ScrollTrigger pin — added in Phase 4
-  // For now, on desktop we still render the pinned layout structure
-  // On mobile/minimal, render as a grid
-  useEffect(() => {
-    if (tier === "minimal" || typeof window === "undefined") return;
+  useGSAP(() => {
+    if (tier === "minimal" || reducedMotion) return;
 
-    let cleanup: (() => void) | undefined;
+    const texts = gsap.utils.toArray<HTMLElement>(".feature-text");
+    const visuals = gsap.utils.toArray<HTMLElement>(".feature-visual");
+    const dots = gsap.utils.toArray<HTMLElement>(".feature-dot");
+    const total = texts.length;
+    if (total === 0) return;
 
-    (async () => {
-      const { gsap } = await import("gsap");
-      const { ScrollTrigger } = await import("gsap/ScrollTrigger");
-      gsap.registerPlugin(ScrollTrigger);
+    // Show first items
+    gsap.set(texts[0], { opacity: 1, y: 0 });
+    gsap.set(visuals[0], { opacity: 1, scale: 1 });
+    if (dots[0]) gsap.set(dots[0], { className: "feature-dot active" });
 
-      const trigger = ScrollTrigger.create({
-        trigger: sectionRef.current!,
+    // Build timeline for transitions between features
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: sectionRef.current,
         start: "top top",
         end: "bottom bottom",
-        pin: pinRef.current!,
+        pin: pinRef.current,
         scrub: 0.5,
-        onUpdate: (self) => {
-          const idx = Math.min(5, Math.floor(self.progress * 6));
-          setActiveIndex(idx);
-        },
-      });
+      },
+    });
 
-      cleanup = () => trigger.kill();
-    })();
+    for (let i = 0; i < total - 1; i++) {
+      const position = i; // timeline position
 
-    return () => cleanup?.();
-  }, [tier]);
+      // Fade out current
+      tl.to(texts[i], { opacity: 0, y: -30, duration: 0.4, ease: EASE.smooth }, position);
+      tl.to(visuals[i], { opacity: 0, scale: 0.95, duration: 0.4, ease: EASE.smooth }, position);
+
+      // Deactivate current dot
+      if (dots[i]) {
+        tl.set(dots[i], { className: "feature-dot" }, position + 0.3);
+      }
+
+      // Fade in next
+      tl.fromTo(texts[i + 1], { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.4, ease: EASE.smooth }, position + 0.3);
+      tl.fromTo(visuals[i + 1], { opacity: 0, scale: 1.05 }, { opacity: 1, scale: 1, duration: 0.4, ease: EASE.smooth }, position + 0.3);
+
+      // Activate next dot
+      if (dots[i + 1]) {
+        tl.set(dots[i + 1], { className: "feature-dot active" }, position + 0.3);
+      }
+    }
+  }, { scope: sectionRef, dependencies: [tier, reducedMotion] });
 
   // Mobile / minimal fallback: simple grid
   if (tier === "minimal") {
     return (
       <section id="features" className="relative z-10 py-16 lg:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <motion.div
-            variants={sectionReveal}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, amount: 0.2 }}
-            className="text-center mb-12"
-          >
+          <div className="text-center mb-12">
             <span className="font-code text-xs tracking-[0.2em] uppercase text-[var(--ocean-primary)]">
               FEATURES
             </span>
             <h2 className="font-heading text-3xl sm:text-4xl font-bold mt-3">
               Everything You Need to Succeed
             </h2>
-          </motion.div>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {FEATURES.map((f, i) => (
               <motion.div
@@ -93,7 +107,7 @@ export default function FeaturesSection() {
     );
   }
 
-  // Desktop: scroll-locked pinned section
+  // Desktop: GSAP timeline-driven pinned section
   return (
     <section
       ref={sectionRef}
@@ -106,17 +120,13 @@ export default function FeaturesSection() {
         className="h-screen flex items-center"
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 w-full grid lg:grid-cols-[45%_55%] gap-12 items-center">
-          {/* Left: Text panel */}
+          {/* Left: Text panel — stacked absolutely, GSAP controls visibility */}
           <div className="relative min-h-[400px]">
             {FEATURES.map((feature, i) => (
               <div
                 key={i}
-                className="absolute inset-0 flex flex-col justify-center transition-all duration-500"
-                style={{
-                  opacity: activeIndex === i ? 1 : 0,
-                  transform: `translateY(${activeIndex === i ? 0 : 20}px)`,
-                  pointerEvents: activeIndex === i ? "auto" : "none",
-                }}
+                className="feature-text absolute inset-0 flex flex-col justify-center"
+                style={{ opacity: i === 0 ? 1 : 0 }}
               >
                 <span className="font-code text-xs tracking-[0.2em] text-[var(--ocean-primary)] mb-4">
                   {feature.number} — {feature.label}
@@ -134,25 +144,16 @@ export default function FeaturesSection() {
             ))}
           </div>
 
-          {/* Right: Visual area (penguin environment / abstract shapes) */}
+          {/* Right: Visual panel — FeatureVisual SVGs, GSAP controls visibility */}
           <div className="hidden lg:flex items-center justify-center">
-            <div className="relative w-full max-w-lg aspect-square">
-              {/* Abstract visual placeholder per feature */}
+            <div className="relative w-full max-w-lg aspect-[16/10]">
               {FEATURES.map((_, i) => (
                 <div
                   key={i}
-                  className="absolute inset-0 flex items-center justify-center transition-all duration-700"
-                  style={{
-                    opacity: activeIndex === i ? 1 : 0,
-                    transform: `scale(${activeIndex === i ? 1 : 0.9})`,
-                  }}
+                  className="feature-visual absolute inset-0 flex items-center justify-center rounded-2xl border border-[var(--ocean-border)]/50 bg-[var(--ocean-bg-light)]/30 overflow-hidden"
+                  style={{ opacity: i === 0 ? 1 : 0 }}
                 >
-                  <div
-                    className="w-64 h-64 rounded-3xl border border-[var(--ocean-border)] ocean-ambient-glow"
-                    style={{
-                      background: `radial-gradient(circle at 30% 30%, rgba(14, 165, 233, ${0.05 + i * 0.02}), rgba(6, 214, 160, ${0.03 + i * 0.01}), transparent)`,
-                    }}
-                  />
+                  <FeatureVisual type={VISUAL_TYPES[i]} />
                 </div>
               ))}
             </div>
@@ -164,7 +165,7 @@ export default function FeaturesSection() {
           {FEATURES.map((_, i) => (
             <div
               key={i}
-              className={`feature-dot ${activeIndex === i ? "active" : ""}`}
+              className={`feature-dot ${i === 0 ? "active" : ""}`}
             />
           ))}
         </div>

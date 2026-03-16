@@ -11,12 +11,12 @@
   --ocean-surface: #0F1D32;
   --ocean-surface-light: #162544;
 
-  /* ─── Primary: Sky blue ─── */
-  --ocean-primary: #0EA5E9;
-  --ocean-primary-hover: #0284C7;
-  --ocean-primary-light: #38BDF8;
-  --ocean-primary-dark: #0369A1;
-  --ocean-primary-glow: rgba(14, 165, 233, 0.3);
+  /* ─── Primary: Blue-600 (synced with app palette) ─── */
+  --ocean-primary: #2563EB;
+  --ocean-primary-hover: #1D4ED8;
+  --ocean-primary-light: #3B82F6;
+  --ocean-primary-dark: #1E40AF;
+  --ocean-primary-glow: rgba(37, 99, 235, 0.3);
 
   /* ─── Accent: Seafoam / Teal ─── */
   --ocean-accent: #06D6A0;
@@ -31,13 +31,17 @@
   --ocean-text-secondary: #94A3B8;
   --ocean-text-muted: #64748B;
 
-  /* ─── Borders ─── */
-  --ocean-border: rgba(255, 255, 255, 0.06);
-  --ocean-border-glow: rgba(14, 165, 233, 0.2);
+  /* ─── Borders (chunky Duolingo-inspired) ─── */
+  --ocean-border: rgba(255, 255, 255, 0.10);
+  --ocean-border-glow: rgba(37, 99, 235, 0.35);
+  --ocean-border-chunky: 3px;
+  --ocean-shadow-hard: 0 4px 0 rgba(0, 0, 0, 0.5);
+  --ocean-shadow-hard-sm: 0 3px 0 rgba(0, 0, 0, 0.4);
+  --ocean-shadow-hard-primary: 0 4px 0 var(--ocean-primary-dark);
 
-  /* ─── Fonts (set by Next.js font variables on this element) ─── */
-  --font-heading: var(--font-sora), "Sora", sans-serif;
-  --font-body: var(--font-inter), "Inter", sans-serif;
+  /* ─── Fonts: Nunito everywhere (synced with app), mono for labels ─── */
+  --font-heading: var(--font-nunito), "Nunito", sans-serif;
+  --font-body: var(--font-nunito), "Nunito", sans-serif;
   --font-code: var(--font-jetbrains-mono), "JetBrains Mono", monospace;
 
   /* ─── Shadows ─── */
@@ -55,12 +59,17 @@
   position: relative;
 }
 
-/* Hide default cursor when custom cursor is active (desktop only) */
-@media (hover: hover) and (pointer: fine) {
-  .landing-ocean,
-  .landing-ocean * {
-    cursor: none !important;
-  }
+/* ─── Static noise texture (Selenis-style tiled SVG — no JS, no rAF) ─── */
+.landing-ocean .noise-static {
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  opacity: 0.03;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px 256px;
 }
 
 /* ─── Typography utilities ─── */
@@ -78,14 +87,14 @@
 
 /* ─── Gradient text fill ─── */
 .landing-ocean .text-gradient-ocean {
-  background: linear-gradient(135deg, #0EA5E9, #06D6A0);
+  background: linear-gradient(135deg, #2563EB, #06D6A0);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .landing-ocean .text-gradient-aurora {
-  background: linear-gradient(135deg, #0EA5E9, #8B5CF6);
+  background: linear-gradient(135deg, #2563EB, #8B5CF6);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -98,53 +107,67 @@
   background-clip: text;
 }
 
-/* ─── Glass card (dark glassmorphism) ─── */
+/* ─── Chunky card (Duolingo-inspired) ─── */
 .landing-ocean .ocean-card {
-  background: rgba(10, 22, 40, 0.6);
-  border: 1px solid var(--ocean-border);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  transition: all 0.4s ease;
+  background: var(--ocean-bg-light);
+  border: var(--ocean-border-chunky) solid rgba(255, 255, 255, 0.08);
+  border-radius: 1.5rem;
+  box-shadow: var(--ocean-shadow-hard);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.3s ease;
 }
 
 .landing-ocean .ocean-card:hover {
   border-color: var(--ocean-border-glow);
-  box-shadow: var(--ocean-shadow-glow);
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.5);
+  transform: translateY(-2px);
 }
 
-/* ─── CTA button glow ─── */
+/* ─── CTA button (chunky 3D press — Duolingo style) ─── */
 .landing-ocean .btn-ocean {
   background: var(--ocean-primary);
   color: #ffffff;
-  font-weight: 600;
+  font-weight: 700;
   position: relative;
-  transition: all 0.3s ease;
-  box-shadow: 0 0 20px rgba(14, 165, 233, 0.2);
+  border: 2px solid var(--ocean-primary-dark);
+  border-bottom-width: 4px;
+  transition: all 0.1s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .landing-ocean .btn-ocean:hover {
-  background: var(--ocean-primary-hover);
-  box-shadow: 0 0 40px rgba(14, 165, 233, 0.4);
+  background: var(--ocean-primary-light);
+  border-color: var(--ocean-primary);
   transform: translateY(-1px);
+  border-bottom-width: 5px;
 }
 
 .landing-ocean .btn-ocean:active {
-  transform: translateY(0);
+  transform: translateY(2px);
+  border-bottom-width: 2px;
 }
 
-/* ─── Ghost button ─── */
+/* ─── Ghost button (chunky outlined) ─── */
 .landing-ocean .btn-ghost {
   background: transparent;
   color: var(--ocean-text-secondary);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  font-weight: 500;
-  transition: all 0.3s ease;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-bottom-width: 4px;
+  font-weight: 600;
+  transition: all 0.1s ease;
 }
 
 .landing-ocean .btn-ghost:hover {
   border-color: var(--ocean-primary);
   color: var(--ocean-text);
-  background: rgba(14, 165, 233, 0.05);
+  background: rgba(37, 99, 235, 0.08);
+  transform: translateY(-1px);
+  border-bottom-width: 5px;
+}
+
+.landing-ocean .btn-ghost:active {
+  transform: translateY(2px);
+  border-bottom-width: 2px;
 }
 
 /* ─── Scrollbar for dark theme ─── */
@@ -193,7 +216,7 @@
   background: linear-gradient(
     100deg,
     transparent 20%,
-    rgba(14, 165, 233, 0.04) 40%,
+    rgba(37, 99, 235, 0.04) 40%,
     rgba(6, 214, 160, 0.03) 55%,
     transparent 75%
   );
@@ -204,10 +227,10 @@
 @keyframes oceanAmbientGlow {
   0%,
   100% {
-    box-shadow: 0 0 60px rgba(14, 165, 233, 0.1);
+    box-shadow: 0 0 60px rgba(37, 99, 235, 0.1);
   }
   50% {
-    box-shadow: 0 0 100px rgba(14, 165, 233, 0.2);
+    box-shadow: 0 0 100px rgba(37, 99, 235, 0.2);
   }
 }
 
@@ -217,7 +240,7 @@
 
 /* ─── Text glow for headings ─── */
 .landing-ocean .text-glow {
-  text-shadow: 0 0 40px rgba(14, 165, 233, 0.3);
+  text-shadow: 0 0 40px rgba(37, 99, 235, 0.3);
 }
 
 /* ─── Section divider glow line ─── */
@@ -231,31 +254,160 @@
   );
 }
 
-/* ─── Feature progress dot ─── */
+/* ─── Feature progress dot (chunky) ─── */
 .landing-ocean .feature-dot {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  background: var(--ocean-text-muted);
-  opacity: 0.3;
-  transition: all 0.4s ease;
+  background: var(--ocean-surface-light);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  opacity: 0.5;
+  transition: all 0.3s ease;
 }
 
 .landing-ocean .feature-dot.active {
   background: var(--ocean-primary);
+  border-color: var(--ocean-primary-light);
   opacity: 1;
-  box-shadow: 0 0 12px var(--ocean-primary-glow);
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
+  box-shadow: 0 0 8px var(--ocean-primary-glow);
 }
 
-/* ─── Score badge ─── */
+/* ─── Score badge (chunky pill) ─── */
 .landing-ocean .score-badge {
-  background: rgba(14, 165, 233, 0.1);
-  color: var(--ocean-primary);
+  background: rgba(37, 99, 235, 0.15);
+  color: var(--ocean-primary-light);
   font-family: var(--font-code);
   border-radius: 9999px;
-  padding: 2px 12px;
-  font-size: 0.875rem;
-  font-weight: 500;
+  padding: 4px 14px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border: 2px solid rgba(37, 99, 235, 0.3);
+  letter-spacing: 0.03em;
+}
+
+/* ═══════════════════════════════════════════════════════
+   SELENIS ANIMATION UPGRADE — Chunk 1
+   ═══════════════════════════════════════════════════════ */
+
+/* ─── Pulse glow keyframe (CTA hover) ─── */
+@keyframes pulseGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(37, 99, 235, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 50px rgba(37, 99, 235, 0.6);
+  }
+}
+
+/* ─── Underwater caustic keyframe ─── */
+@keyframes causticShift {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(-5%, 3%) scale(1.02);
+  }
+  66% {
+    transform: translate(3%, -2%) scale(0.98);
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+.landing-ocean .caustic-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  opacity: 0.04;
+  mix-blend-mode: overlay;
+  animation: causticShift 12s ease-in-out infinite;
+}
+
+/* ─── Noise overlay ─── */
+.landing-ocean .noise-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  opacity: 0.03;
+  mix-blend-mode: overlay;
+}
+
+/* ─── Per-section vignettes ─── */
+.landing-ocean .vignette-hero {
+  position: relative;
+}
+
+.landing-ocean .vignette-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 40%,
+    rgba(4, 11, 20, 0.6) 100%
+  );
+}
+
+.landing-ocean .vignette-cta {
+  position: relative;
+}
+
+.landing-ocean .vignette-cta::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 20%,
+    rgba(4, 11, 20, 0.8) 100%
+  );
+}
+
+/* ─── Shimmer keyframe (loading screen) ─── */
+@keyframes shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.landing-ocean .loading-progress-bar {
+  background: linear-gradient(
+    90deg,
+    var(--ocean-primary),
+    var(--ocean-accent),
+    var(--ocean-primary)
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+}
+
+/* ─── Section background — occludes the fixed R3F canvas behind content ─── */
+.landing-ocean .section-bg {
+  background: var(--ocean-bg);
+}
+
+/* ─── Scroll indicator bounce ─── */
+@keyframes scroll-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(8px);
+    opacity: 0.5;
+  }
 }

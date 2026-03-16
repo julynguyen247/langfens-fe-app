@@ -5,7 +5,7 @@ import { useDeviceCapability } from "@/app/components/effects/useDeviceCapabilit
 
 type ConfettiFunction = (options?: Record<string, unknown>) => Promise<null> | null;
 
-const OCEAN_COLORS = ["#0EA5E9", "#06D6A0", "#38BDF8", "#34D399"];
+const OCEAN_COLORS = ["#2563EB", "#06D6A0", "#3B82F6", "#34D399"];
 
 /**
  * Ocean-themed confetti using canvas-confetti.
