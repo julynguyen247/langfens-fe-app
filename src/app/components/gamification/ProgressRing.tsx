@@ -22,7 +22,7 @@ export function ProgressRing({ size = 36, progress = 73 }: ProgressRingProps) {
 
     const obj = { val: 0 };
 
-    gsap.to(obj, {
+    const tween = gsap.to(obj, {
       val: progress,
       duration: 2,
       ease: "power2.out",
@@ -34,6 +34,8 @@ export function ProgressRing({ size = 36, progress = 73 }: ProgressRingProps) {
         text.textContent = `${Math.round(obj.val)}%`;
       },
     });
+
+    return () => { tween.kill(); };
   }, [progress, size]);
 
   const r = (size - 6) / 2;

@@ -17,7 +17,7 @@ export function GamificationHUD({ deviceTier }: GamificationHUDProps) {
     if (deviceTier === "minimal" || !xpRef.current) return;
 
     const obj = { val: 0 };
-    gsap.to(obj, {
+    const tween = gsap.to(obj, {
       val: 2450,
       duration: 2,
       ease: "power2.out",
@@ -28,6 +28,8 @@ export function GamificationHUD({ deviceTier }: GamificationHUDProps) {
         }
       },
     });
+
+    return () => { tween.kill(); };
   }, [deviceTier]);
 
   if (deviceTier === "minimal") return null;

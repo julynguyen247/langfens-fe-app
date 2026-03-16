@@ -17,6 +17,7 @@ interface ConfettiAPI {
 export function useConfetti(deviceTier: DeviceTier): ConfettiAPI {
   const confettiRef = useRef<ConfettiFunction | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const initPromiseRef = useRef<Promise<ConfettiFunction | null> | null>(null);
 
   useEffect(() => {
     return () => {
@@ -24,6 +25,7 @@ export function useConfetti(deviceTier: DeviceTier): ConfettiAPI {
         canvasRef.current.remove();
         canvasRef.current = null;
         confettiRef.current = null;
+        initPromiseRef.current = null;
       }
     };
   }, []);
@@ -31,22 +33,26 @@ export function useConfetti(deviceTier: DeviceTier): ConfettiAPI {
   const getConfetti = useCallback(async (): Promise<ConfettiFunction | null> => {
     if (deviceTier === "minimal") return null;
     if (confettiRef.current) return confettiRef.current;
+    if (initPromiseRef.current) return initPromiseRef.current;
 
-    try {
-      const mod = await import("canvas-confetti");
-      const create = mod.default?.create ?? (mod as unknown as { create: CreateConfetti }).create;
+    initPromiseRef.current = (async () => {
+      try {
+        const mod = await import("canvas-confetti");
+        const create = mod.default?.create ?? (mod as unknown as { create: CreateConfetti }).create;
 
-      const canvas = document.createElement("canvas");
-      canvas.style.cssText =
-        "position:fixed;inset:0;width:100%;height:100%;z-index:9997;pointer-events:none;";
-      document.body.appendChild(canvas);
-      canvasRef.current = canvas;
+        const canvas = document.createElement("canvas");
+        canvas.style.cssText =
+          "position:fixed;inset:0;width:100%;height:100%;z-index:9997;pointer-events:none;";
+        document.body.appendChild(canvas);
+        canvasRef.current = canvas;
 
-      confettiRef.current = create(canvas, { resize: true });
-      return confettiRef.current;
-    } catch {
-      return null;
-    }
+        confettiRef.current = create(canvas, { resize: true });
+        return confettiRef.current;
+      } catch {
+        return null;
+      }
+    })();
+    return initPromiseRef.current;
   }, [deviceTier]);
 
   const scale = deviceTier === "reduced" ? 0.5 : 1;
