@@ -68,7 +68,7 @@ export function useMascotReactions({
       tl.to(el, { rotation: 360, duration: 0.6, ease: "power2.inOut" });
       tl.to(el, { scale: 1.15, duration: 0.15, ease: "back.out(3)" }, 0);
       tl.to(el, { scale: 1, rotation: 0, duration: 0.3, ease: "power2.out" });
-      tl.call(() => floatTweenRef.current?.restart());
+      tl.call(() => { floatTweenRef.current?.restart(); });
       onClick?.();
     };
 

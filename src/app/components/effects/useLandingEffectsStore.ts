@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { subscribeWithSelector } from "zustand/middleware";
 import type { DeviceTier } from "./useDeviceCapability";
 
 interface LandingEffectsState {
@@ -15,7 +16,7 @@ interface LandingEffectsState {
   setHeroInView: (val: boolean) => void;
 }
 
-export const useLandingEffectsStore = create<LandingEffectsState>((set) => ({
+export const useLandingEffectsStore = create<LandingEffectsState>()(subscribeWithSelector((set) => ({
   mousePosition: { x: -1000, y: -1000 },
   scrollY: 0,
   scrollVelocity: 0,
@@ -27,4 +28,4 @@ export const useLandingEffectsStore = create<LandingEffectsState>((set) => ({
   setIdle: (val) => set({ isIdle: val }),
   setDeviceTier: (tier) => set({ deviceTier: tier }),
   setHeroInView: (val) => set({ heroInView: val }),
-}));
+})));

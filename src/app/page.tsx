@@ -1,58 +1,220 @@
 "use client";
 
-import { Button } from "@/components/Button";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { useRef } from "react";
 
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import ParticleCanvas from "@/app/components/ParticleCanvas";
+import { useMouseParallax } from "@/app/components/useMouseParallax";
+import { useDeviceCapability } from "@/app/components/effects/useDeviceCapability";
+import { useScrollVelocity } from "@/app/components/effects/useScrollVelocity";
+import { useIdleDetection } from "@/app/components/effects/useIdleDetection";
+import { useConfetti } from "@/app/components/interactions/useConfetti";
+import { MascotWrapper } from "@/app/components/mascot/MascotWrapper";
+import { GamificationHUD } from "@/app/components/gamification/GamificationHUD";
+import { InteractiveEffects } from "@/app/components/interactions/InteractiveEffects";
+import type { ParticleCanvasHandle } from "@/app/components/ParticleCanvas";
+
+/* ─── Cinematic Framer Motion variants ─── */
 const staggerParent = {
   hidden: { opacity: 0, y: 16 },
   show: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.6, ease: "easeOut", staggerChildren: 0.08 },
+    transition: { duration: 0.8, ease: "easeOut", staggerChildren: 0.12 },
   },
 } as const;
 
 const fadeInUp = {
-  hidden: { opacity: 0, y: 18 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.55, ease: "easeOut" } },
-} as const;
-
-const sectionReveal = {
-  hidden: { opacity: 0, y: 24 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
-} as const;
-
-const floatY = {
-  animate: {
-    y: [0, -8, 0],
-    transition: { repeat: Infinity, duration: 3, ease: "easeInOut" },
+  hidden: { opacity: 0, y: 22, scale: 0.98 },
+  show: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: 0.7, ease: "easeOut" },
   },
 } as const;
 
+const sectionReveal = {
+  hidden: { opacity: 0, y: 30 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.8, ease: "easeOut" },
+  },
+} as const;
+
+const cinematicCard = {
+  hidden: { opacity: 0, y: 24, scale: 0.96 },
+  show: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: 0.6, ease: "easeOut" },
+  },
+} as const;
+
+/* ─── Data ─── */
+const features = [
+  {
+    title: "Luyện 4 kỹ năng IELTS",
+    description:
+      "Reading, Listening, Writing, Speaking — đầy đủ bài thi theo format chính thức mới nhất.",
+  },
+  {
+    title: "AI chấm bài tự động",
+    description:
+      "Writing và Speaking được chấm bởi AI, phản hồi chi tiết giúp bạn cải thiện nhanh chóng.",
+  },
+  {
+    title: "20+ dạng câu hỏi",
+    description:
+      "True/False/Not Given, Matching, Completion, Flow Chart và nhiều dạng khác — bám sát đề thi thật.",
+  },
+  {
+    title: "Phân tích & dự đoán band",
+    description:
+      "Dashboard analytics chi tiết: điểm mạnh, điểm yếu, xu hướng tiến bộ và predicted band score.",
+  },
+  {
+    title: "Flashcards & từ vựng",
+    description:
+      "Tạo bộ flashcard riêng hoặc dùng từ cộng đồng. Hệ thống spaced repetition giúp nhớ lâu.",
+  },
+  {
+    title: "Gamification thú vị",
+    description:
+      "XP, streak, achievements và leaderboard — biến việc luyện thi thành trải nghiệm vui và gây nghiện.",
+  },
+];
+
+const steps = [
+  {
+    number: "01",
+    title: "Đăng ký tài khoản",
+    description: "Tạo tài khoản miễn phí trong 1 phút để bắt đầu hành trình.",
+  },
+  {
+    number: "02",
+    title: "Chọn đề thi phù hợp",
+    description:
+      "Kho đề đa dạng, luôn cập nhật theo format mới nhất của IELTS.",
+  },
+  {
+    number: "03",
+    title: "Làm bài & nhận kết quả",
+    description:
+      "Chấm điểm tự động, phân tích chi tiết điểm mạnh và điểm yếu.",
+  },
+];
+
+const stats = [
+  { value: "3,200+", label: "Bài test đã được luyện chỉ trong 6 tháng" },
+  { value: "75%", label: "Tỉ lệ vượt đề thi thật ở lần thử đầu tiên" },
+  { value: "80%", label: "Học viên cải thiện tối thiểu 2 band sau 10 tuần" },
+];
+
+const testimonials = [
+  {
+    quote:
+      "Langfens giúp mình từ 5.5 lên 7.0 trong 2 tháng. Phần AI chấm Writing cực kỳ chi tiết!",
+    name: "Minh Anh",
+    detail: "Sinh viên ĐH Bách Khoa, IELTS 7.0",
+  },
+  {
+    quote:
+      "Mình thích hệ thống gamification — streak và XP khiến mình không bỏ luyện ngày nào.",
+    name: "Thu Hà",
+    detail: "Học sinh lớp 12, IELTS 6.5",
+  },
+  {
+    quote:
+      "Flashcard và dictionary tích hợp ngay trong lúc làm bài giúp mình học từ vựng nhanh hơn rất nhiều.",
+    name: "Đức Anh",
+    detail: "Sinh viên ĐH Ngoại Thương, IELTS 7.5",
+  },
+];
+
+/* ═══════════════════════════════════════════
+   CINEMATIC LANDING PAGE
+   Deep ocean blue / Hollywood sci-fi aesthetic
+   ═══════════════════════════════════════════ */
 export default function LandingPage() {
   const router = useRouter();
   const goLogin = () => router.push("/auth/login");
+  const pageRef = useRef<HTMLDivElement>(null);
+  useMouseParallax(pageRef);
+  const { tier: deviceTier } = useDeviceCapability();
+  useScrollVelocity();
+  useIdleDetection();
+  const confetti = useConfetti(deviceTier);
+  const particleCanvasRef = useRef<ParticleCanvasHandle>(null);
+  const heroSectionRef = useRef<HTMLElement>(null);
 
   return (
-    <div className="min-h-screen bg-[var(--background,#fff)] text-[var(--foreground,#171717)] font-nunito">
-      <header className="sticky top-0 z-30 backdrop-blur bg-white/90 border-b border-black/5">
+    <div
+      ref={pageRef}
+      className="cinematic min-h-screen bg-[#0A1625] text-[#F0F4F8] relative overflow-x-hidden"
+    >
+      {/* ─── Cinematic overlays ─── */}
+      <ParticleCanvas ref={particleCanvasRef} />
+      <div className="film-grain" />
+      <div className="vignette dynamic" />
+      <div className="light-leak" />
+      <div className="lens-flare" />
+      <InteractiveEffects
+        deviceTier={deviceTier}
+        particleCanvasRef={particleCanvasRef}
+        heroSectionRef={heroSectionRef}
+        onHeroCtaClick={() => confetti.celebration()}
+      />
+      <GamificationHUD deviceTier={deviceTier} />
+
+      {/* ━━━ Header ━━━ */}
+      <header className="sticky top-0 z-[100] bg-[#0A1625]/80 backdrop-blur-xl border-b border-[#00E5FF]/10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <motion.div
             initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0, transition: { duration: 0.5 } }}
-            className="flex gap-8 items-center"
+            animate={{ opacity: 1, y: 0, transition: { duration: 0.6 } }}
+            className="flex items-center gap-3"
           >
-            <div className="flex items-center gap-3 mt-4">
-              <Image width={156} height={120} src="/logo.png" alt="logo" />
-            </div>
+            <Image
+              width={130}
+              height={100}
+              src="/logo.png"
+              alt="Langfens"
+              className="mt-3 brightness-0 invert opacity-90"
+            />
           </motion.div>
+
+          <nav className="hidden md:flex items-center gap-6">
+            {[
+              { label: "Tính năng", target: "features" },
+              { label: "Cách hoạt động", target: "how-it-works" },
+              { label: "Đánh giá", target: "testimonials" },
+            ].map((item) => (
+              <button
+                key={item.target}
+                onClick={() =>
+                  document
+                    .getElementById(item.target)
+                    ?.scrollIntoView({ behavior: "smooth" })
+                }
+                className="text-sm font-medium text-white/50 hover:text-[#00E5FF] transition-colors duration-300"
+              >
+                {item.label}
+              </button>
+            ))}
+          </nav>
 
           <motion.div whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }}>
             <Button
-              className="rounded-xl px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700"
-              onClickFunc={goLogin}
+              size="lg"
+              className="rounded-xl bg-[#001F3F] text-[#00E5FF] font-semibold px-5 btn-cinematic cursor-pointer"
+              onClick={goLogin}
             >
               Bắt đầu
             </Button>
@@ -60,252 +222,128 @@ export default function LandingPage() {
         </div>
       </header>
 
-      <section className="relative bg-white">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 lg:py-20 grid lg:grid-cols-2 gap-10 items-center">
+      {/* ━━━ Section 1: Hero + Social Proof ━━━ */}
+      <section ref={heroSectionRef} data-section="hero" className="relative z-10">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 lg:py-24 grid lg:grid-cols-2 gap-12 items-center">
           <motion.div
             variants={staggerParent}
             initial="hidden"
             animate="show"
-            className="space-y-4"
+            className="space-y-5"
           >
+            <motion.div variants={fadeInUp}>
+              <Badge
+                variant="secondary"
+                className="rounded-full px-4 py-1.5 text-sm font-medium text-[#00E5FF] bg-white/5 border border-[#00E5FF]/20 backdrop-blur"
+              >
+                4.8/5 tu 2,000+ hoc vien
+              </Badge>
+            </motion.div>
+
             <motion.h1
               variants={fadeInUp}
-              className="text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-tight text-blue-700"
+              className="text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-tight text-white text-glow"
+              data-parallax-depth="0.5"
             >
-              Bộ đề thi thử theo format mới nhất
+              Luyện IELTS thông minh
+              <br />
+              <span className="text-[#00E5FF]">với AI & Gamification</span>
             </motion.h1>
+
             <motion.p
               variants={fadeInUp}
-              className="mt-2 text-base sm:text-lg text-gray-600 max-w-prose"
+              className="text-base sm:text-lg text-white/60 max-w-prose leading-relaxed"
             >
-              Tăng tốc kỹ năng và điểm số của bạn nhờ hệ thống luyện tập thông
-              minh. Đề thi bám sát cấu trúc chính thức và chấm điểm tự động.
+              Hệ thống luyện thi IELTS toàn diện với AI chấm bài, phân tích chi
+              tiết và gamification. Chinh phục band điểm mơ ước cùng chú
+              penguin.
             </motion.p>
-            <motion.div
-              variants={fadeInUp}
-              className="mt-6 flex flex-wrap gap-3"
-            >
-              <motion.div whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }}>
+
+            <motion.div variants={fadeInUp} className="flex flex-wrap gap-3">
+              <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}>
                 <Button
-                  className="rounded-xl px-5 py-3 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700"
-                  onClickFunc={goLogin}
+                  size="lg"
+                  className="rounded-xl bg-[#00E5FF]/10 text-[#00E5FF] font-semibold px-6 py-3 h-auto text-base btn-cinematic cursor-pointer"
+                  onClick={goLogin}
                 >
                   Bắt đầu ngay
                 </Button>
               </motion.div>
-              <motion.div whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }}>
+              <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}>
                 <Button
-                  className="!bg-white !text-[#317EFF] rounded-xl px-5 py-3 text-sm font-semibold border border-[#317EFF] hover:bg-gray-50"
-                  onClickFunc={goLogin}
+                  variant="outline"
+                  size="lg"
+                  className="rounded-xl font-semibold px-6 py-3 h-auto text-base border-white/20 text-white/70 hover:bg-white/5 hover:text-white cursor-pointer"
+                  onClick={goLogin}
                 >
-                  Tham gia cộng đồng
+                  Xem demo
                 </Button>
               </motion.div>
             </motion.div>
+
+            <motion.p variants={fadeInUp} className="text-sm text-white/30">
+              Miễn phí, không cần thẻ tín dụng
+            </motion.p>
           </motion.div>
 
-          <div className="relative">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.96 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true, amount: 0.3 }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-              whileHover={{ scale: 1.02 }}
-              className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden border border-blue-100 shadow-sm"
-            >
-              <Image
-                src="/landing/section1.png"
-                alt="Luyện thi IELTS Online"
-                fill
-                className="object-cover"
-                priority
-              />
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      <section className="py-14 bg-[#F5F5F5]">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <motion.h2
-            variants={sectionReveal}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, amount: 0.2 }}
-            className="text-center text-2xl sm:text-3xl font-extrabold text-[#1D4ED8]"
-          >
-            Luyện thi hiệu quả, kết quả rõ ràng
-          </motion.h2>
-          <motion.p
-            variants={sectionReveal}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, amount: 0.2 }}
-            className="mt-2 text-center text-gray-600"
-          >
-            Mỗi bước học đều có số liệu theo dõi tiến bộ của bạn.
-          </motion.p>
-
-          <div className="mt-10 grid gap-8 md:grid-cols-3">
-            {[
-              {
-                title: "Đăng ký tài khoản",
-                desc: "Tạo tài khoản miễn phí trong 1 phút để bắt đầu hành trình.",
-              },
-              {
-                title: "Chọn đề thi phù hợp",
-                desc: "Kho đề đa dạng, luôn cập nhật theo format mới nhất.",
-              },
-              {
-                title: "Làm bài & nhận kết quả",
-                desc: "Chấm điểm tự động, phân tích chi tiết điểm mạnh – yếu.",
-              },
-            ].map((s, i) => (
-              <div key={i} className="relative">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.25 }}
-                  transition={{
-                    duration: 0.5,
-                    ease: "easeOut",
-                    delay: i * 0.05,
-                  }}
-                  className="h-28 rounded-2xl bg-white shadow-sm ring-1 ring-gray-100 flex items-center gap-4 p-5"
-                >
-                  <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    className="h-12 w-12 rounded-full bg-blue-600 text-white grid place-items-center font-bold"
-                  >
-                    {i + 1}
-                  </motion.div>
-                  <div>
-                    <div className="font-semibold text-[#317EFF]">
-                      {s.title}
-                    </div>
-                    <p className="text-sm text-gray-600 mt-1">{s.desc}</p>
-                  </div>
-                </motion.div>
-
-                {i < 2 && (
-                  <div className="hidden md:block absolute top-1/2 -right-6 w-12 h-[2px] bg-gradient-to-r from-gray-200 to-transparent" />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="py-16 bg-white">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-10 items-center">
-          <div className="order-last lg:order-first">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.96 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true, amount: 0.3 }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-              whileHover={{ scale: 1.02 }}
-              className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden border border-orange-100 shadow-sm"
-            >
-              <Image
-                src="/landing/section2.jpg"
-                alt="Thi thử IELTS Online"
-                fill
-                className="object-cover"
-              />
-            </motion.div>
-          </div>
-
+          {/* Right: Penguin Mascot with cinematic glow */}
           <motion.div
-            variants={staggerParent}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, amount: 0.25 }}
+            initial={{ opacity: 0, scale: 0.85 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.9, ease: "easeOut", delay: 0.3 }}
+            className="flex items-center justify-center"
+            data-parallax-depth="1.5"
           >
-            <motion.h3
-              variants={fadeInUp}
-              className="text-3xl font-extrabold text-blue-700"
-            >
-              Thi thử online mọi lúc, mọi nơi
-            </motion.h3>
-            <motion.p
-              variants={fadeInUp}
-              className="mt-3 text-gray-600 max-w-prose"
-            >
-              Làm bài thi trên nền tảng trực tuyến, kết quả chấm tự động kèm
-              phân tích kỹ năng trọng yếu cho từng phần.
-            </motion.p>
-            <motion.div variants={fadeInUp} className="mt-6 flex gap-3">
-              <motion.div whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }}>
-                <Button
-                  className="rounded-xl px-5 py-3 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700"
-                  onClickFunc={goLogin}
-                >
-                  Bắt đầu ngay
-                </Button>
-              </motion.div>
-              <motion.div whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }}>
-                <Button
-                  className="!bg-white !text-[#317EFF] rounded-xl px-5 py-3 text-sm font-semibold border border-[#317EFF] hover:bg-gray-50"
-                  onClickFunc={goLogin}
-                >
-                  Tham gia cộng đồng
-                </Button>
-              </motion.div>
-            </motion.div>
+            <div className="relative">
+              {/* Ambient glow circle behind penguin */}
+              <div className="absolute inset-0 bg-[#00E5FF]/5 rounded-full scale-125 ambient-glow" />
+              <div className="relative z-10">
+                <MascotWrapper
+                  deviceTier={deviceTier}
+                  heroSectionRef={heroSectionRef}
+                />
+              </div>
+            </div>
           </motion.div>
         </div>
       </section>
 
-      <section className="py-14 bg-[#F5F5F5]">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <motion.h2
+      {/* ━━━ Section 2: Features Showcase ━━━ */}
+      <section id="features" className="relative z-10 bg-[#001F3F]/60">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 lg:py-20">
+          <motion.div
             variants={sectionReveal}
             initial="hidden"
             whileInView="show"
             viewport={{ once: true, amount: 0.2 }}
-            className="text-center text-2xl sm:text-3xl font-extrabold text-blue-700"
+            className="text-center mb-12"
           >
-            Luyện thi hiệu quả, kết quả rõ ràng
-          </motion.h2>
-          <motion.p
-            variants={sectionReveal}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, amount: 0.2 }}
-            className="mt-2 text-center text-gray-600"
-          >
-            Mỗi bước học đều có số liệu theo dõi tiến bộ của bạn.
-          </motion.p>
+            <h2 className="text-2xl sm:text-3xl font-bold text-white text-glow">
+              Tất cả công cụ bạn cần để đạt band mơ ước
+            </h2>
+            <p className="mt-3 text-white/50 max-w-2xl mx-auto">
+              Từ luyện đề đến phân tích kết quả, Langfens hỗ trợ bạn ở mọi
+              bước trên hành trình chinh phục IELTS.
+            </p>
+          </motion.div>
 
-          <div className="mt-10 grid gap-6 sm:grid-cols-2 md:grid-cols-3">
-            {[
-              {
-                value: "3200+",
-                label: "Bài test đã được luyện chỉ trong 6 tháng.",
-              },
-              {
-                value: "75%",
-                label: "Tỉ lệ kiểm tra đầu vào vượt đề thi thật ở lần thử đầu.",
-              },
-              {
-                value: "80%",
-                label: "Học viên cải thiện tối thiểu 2 band sau 10 tuần.",
-              },
-            ].map((it, i) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {features.map((feature, i) => (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, y: 22 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.25 }}
-                transition={{ duration: 0.5, ease: "easeOut", delay: i * 0.05 }}
-                className="rounded-2xl bg-white/80 backdrop-blur shadow-sm ring-1 ring-gray-100 p-6"
+                variants={cinematicCard}
+                initial="hidden"
+                whileInView="show"
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ delay: i * 0.08 }}
+                whileHover={{ y: -4, scale: 1.02 }}
+                className="glass-card rounded-2xl p-6"
               >
-                <div className="text-4xl font-extrabold text-[#317EFF]">
-                  {it.value}
-                </div>
-                <p className="mt-2 text-gray-600 text-sm leading-relaxed">
-                  {it.label}
+                <h3 className="text-lg font-semibold text-white mb-2">
+                  {feature.title}
+                </h3>
+                <p className="text-sm text-white/55 leading-relaxed">
+                  {feature.description}
                 </p>
               </motion.div>
             ))}
@@ -313,58 +351,183 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="py-20 bg-white">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+      {/* ━━━ Section 3: How It Works ━━━ */}
+      <section id="how-it-works" className="relative z-10">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 lg:py-20">
           <motion.div
-            initial={{ opacity: 0, scale: 0.98 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={{ duration: 0.55, ease: "easeOut" }}
-            className="rounded-3xl p-10 sm:p-12 text-center bg-gradient-to-b from-blue-400 to-blue-700 text-white shadow-lg"
+            variants={sectionReveal}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, amount: 0.2 }}
+            className="text-center mb-12"
           >
-            <motion.h3
-              initial={{ opacity: 0, y: 14 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.4 }}
-              transition={{ duration: 0.5 }}
-              className="text-3xl sm:text-4xl font-extrabold"
-            >
-              Sẵn sàng bứt phá điểm số?
-            </motion.h3>
-            <motion.p
-              initial={{ opacity: 0, y: 14 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.4 }}
-              transition={{ duration: 0.5, delay: 0.05 }}
-              className="mt-3 max-w-2xl mx-auto text-blue-50"
-            >
-              Hãy bắt đầu luyện thi ngay hôm nay và theo dõi sát thực tế qua kết
-              quả phân tích chi tiết.
-            </motion.p>
+            <h2 className="text-2xl sm:text-3xl font-bold text-white text-glow">
+              3 bước đơn giản để bắt đầu
+            </h2>
+            <p className="mt-3 text-white/50">
+              Không cần setup phức tạp. Đăng ký và luyện thi ngay.
+            </p>
+          </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.4 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="mt-8 flex flex-wrap justify-center gap-3"
-            >
-              <motion.div whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }}>
-                <Button
-                  className="rounded-xl px-6 py-3 text-sm font-semibold hover:bg-white/15"
-                  onClickFunc={goLogin}
-                >
-                  Dùng thử miễn phí
-                </Button>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {steps.map((step, i) => (
+              <motion.div
+                key={i}
+                variants={cinematicCard}
+                initial="hidden"
+                whileInView="show"
+                viewport={{ once: true, amount: 0.25 }}
+                transition={{ delay: i * 0.1 }}
+                className="relative"
+              >
+                <div className="glass-card rounded-2xl p-6 text-center h-full">
+                  <div className="text-4xl font-bold text-[#00E5FF] text-glow mb-3">
+                    {step.number}
+                  </div>
+                  <h3 className="text-lg font-semibold text-white mb-2">
+                    {step.title}
+                  </h3>
+                  <p className="text-sm text-white/55">{step.description}</p>
+                </div>
+
+                {/* Connector line */}
+                {i < 2 && (
+                  <div className="hidden md:block absolute top-1/2 -right-3 w-6 h-px bg-[#00E5FF]/25" />
+                )}
               </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ━━━ Section 4: Stats + Testimonials ━━━ */}
+      <section id="testimonials" className="relative z-10 bg-[#001F3F]/60">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 lg:py-20">
+          {/* Stats */}
+          <motion.div
+            variants={sectionReveal}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, amount: 0.2 }}
+            className="text-center mb-10"
+          >
+            <h2 className="text-2xl sm:text-3xl font-bold text-white text-glow">
+              Con số ấn tượng
+            </h2>
+          </motion.div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-16">
+            {stats.map((stat, i) => (
+              <motion.div
+                key={i}
+                variants={cinematicCard}
+                initial="hidden"
+                whileInView="show"
+                viewport={{ once: true, amount: 0.25 }}
+                transition={{ delay: i * 0.08 }}
+              >
+                <div className="glass-card rounded-2xl p-6 border-l-4 border-l-[#00E5FF]">
+                  <div className="text-3xl font-extrabold text-[#00E5FF] text-glow">
+                    {stat.value}
+                  </div>
+                  <p className="mt-2 text-sm text-white/55 leading-relaxed">
+                    {stat.label}
+                  </p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Testimonials */}
+          <motion.div
+            variants={sectionReveal}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, amount: 0.2 }}
+            className="text-center mb-10"
+          >
+            <h2 className="text-2xl sm:text-3xl font-bold text-white text-glow">
+              Học viên nói gì về Langfens
+            </h2>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {testimonials.map((t, i) => (
+              <motion.div
+                key={i}
+                variants={cinematicCard}
+                initial="hidden"
+                whileInView="show"
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ delay: i * 0.08 }}
+              >
+                <div className="glass-card rounded-2xl p-6 h-full">
+                  <p className="text-white/75 leading-relaxed italic">
+                    &ldquo;{t.quote}&rdquo;
+                  </p>
+                  <div className="mt-4 pt-4 border-t border-white/10">
+                    <p className="font-semibold text-white">{t.name}</p>
+                    <p className="text-sm text-white/40">{t.detail}</p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ━━━ Section 5: Final CTA ━━━ */}
+      <section className="relative z-10">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-16 lg:py-20 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="glass-card rounded-3xl p-10 sm:p-14 space-y-5"
+            style={{
+              boxShadow: "0 0 80px rgba(0,229,255,0.08), inset 0 0 40px rgba(0,229,255,0.03)",
+            }}
+          >
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-white text-glow">
+              Sẵn sàng bứt phá điểm số?
+            </h2>
+            <p className="text-white/55 max-w-2xl mx-auto text-lg">
+              Bắt đầu luyện thi ngay hôm nay. Theo dõi tiến bộ của bạn qua kết
+              quả phân tích chi tiết từ AI.
+            </p>
+            <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}>
+              <Button
+                size="lg"
+                className="rounded-xl bg-[#00E5FF] text-[#0A1625] hover:bg-[#00E5FF]/90 font-bold px-8 py-3 h-auto text-base cursor-pointer hover:shadow-[0_0_30px_rgba(0,229,255,0.4)]"
+                onClick={goLogin}
+              >
+                Dùng thử miễn phí
+              </Button>
             </motion.div>
           </motion.div>
         </div>
       </section>
 
-      <footer className="border-t bg-[#F5F5F5]">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-6 text-center text-sm text-gray-600">
-          <p>© 2025 Langfens. All rights reserved.</p>
+      {/* ━━━ Footer ━━━ */}
+      <footer className="relative z-10 border-t border-white/5">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p className="text-sm text-white/30">
+              &copy; 2025 Langfens. All rights reserved.
+            </p>
+            <div className="flex gap-6">
+              {["Về chúng tôi", "Liên hệ", "Điều khoản"].map((text) => (
+                <button
+                  key={text}
+                  onClick={goLogin}
+                  className="text-sm text-white/30 hover:text-[#00E5FF]/70 transition-colors duration-300"
+                >
+                  {text}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </footer>
     </div>
