@@ -15,9 +15,12 @@ declare global {
   }
 }
 
-function getSnapshot(): DeviceCapability {
+// Cached snapshot — only recomputed when subscribe fires (prefers-reduced-motion changes)
+let cachedSnapshot: DeviceCapability | null = null;
+
+function computeSnapshot(): DeviceCapability {
   if (typeof window === "undefined") {
-    return { tier: "full", isMobile: false };
+    return SERVER_SNAPSHOT;
   }
 
   const isMobile =
@@ -46,14 +49,27 @@ function getSnapshot(): DeviceCapability {
   return { tier: "full", isMobile: false };
 }
 
+function getSnapshot(): DeviceCapability {
+  if (!cachedSnapshot) {
+    cachedSnapshot = computeSnapshot();
+  }
+  return cachedSnapshot;
+}
+
+const SERVER_SNAPSHOT: DeviceCapability = { tier: "full", isMobile: false };
+
 function getServerSnapshot(): DeviceCapability {
-  return { tier: "full", isMobile: false };
+  return SERVER_SNAPSHOT;
 }
 
 function subscribe(callback: () => void): () => void {
   const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-  mq.addEventListener("change", callback);
-  return () => mq.removeEventListener("change", callback);
+  const onChange = () => {
+    cachedSnapshot = null; // invalidate cache so getSnapshot recomputes
+    callback();
+  };
+  mq.addEventListener("change", onChange);
+  return () => mq.removeEventListener("change", onChange);
 }
 
 export function useDeviceCapability(): DeviceCapability {
