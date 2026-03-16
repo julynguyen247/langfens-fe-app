@@ -14,7 +14,6 @@ import { useScrollVelocity } from "@/app/components/effects/useScrollVelocity";
 import { useIdleDetection } from "@/app/components/effects/useIdleDetection";
 import { useConfetti } from "@/app/components/interactions/useConfetti";
 import { MascotWrapper } from "@/app/components/mascot/MascotWrapper";
-import { GamificationHUD } from "@/app/components/gamification/GamificationHUD";
 import { InteractiveEffects } from "@/app/components/interactions/InteractiveEffects";
 import type { ParticleCanvasHandle } from "@/app/components/ParticleCanvas";
 
@@ -157,7 +156,7 @@ export default function LandingPage() {
   return (
     <div
       ref={pageRef}
-      className="cinematic min-h-screen bg-[#0A1625] text-[#F0F4F8] relative overflow-x-hidden"
+      className="cinematic min-h-screen bg-[#F8F9FA] text-slate-800 relative overflow-x-hidden"
     >
       {/* ─── Cinematic overlays ─── */}
       <ParticleCanvas ref={particleCanvasRef} />
@@ -171,10 +170,9 @@ export default function LandingPage() {
         heroSectionRef={heroSectionRef}
         onHeroCtaClick={() => confetti.celebration()}
       />
-      <GamificationHUD deviceTier={deviceTier} />
 
       {/* ━━━ Header ━━━ */}
-      <header className="sticky top-0 z-[100] bg-[#0A1625]/80 backdrop-blur-xl border-b border-[#00E5FF]/10">
+      <header className="sticky top-0 z-[100] bg-white/80 backdrop-blur-xl border-b border-slate-200">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <motion.div
             initial={{ opacity: 0, y: -10 }}
@@ -186,7 +184,7 @@ export default function LandingPage() {
               height={100}
               src="/logo.png"
               alt="Langfens"
-              className="mt-3 brightness-0 invert opacity-90"
+              className="mt-3 opacity-90"
             />
           </motion.div>
 
@@ -203,7 +201,7 @@ export default function LandingPage() {
                     .getElementById(item.target)
                     ?.scrollIntoView({ behavior: "smooth" })
                 }
-                className="text-sm font-medium text-white/50 hover:text-[#00E5FF] transition-colors duration-300"
+                className="text-sm font-medium text-slate-500 hover:text-[#2563EB] transition-colors duration-300"
               >
                 {item.label}
               </button>
@@ -213,7 +211,7 @@ export default function LandingPage() {
           <motion.div whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }}>
             <Button
               size="lg"
-              className="rounded-xl bg-[#001F3F] text-[#00E5FF] font-semibold px-5 btn-cinematic cursor-pointer"
+              className="rounded-xl bg-[#2563EB] text-white font-semibold px-5 btn-cinematic cursor-pointer"
               onClick={goLogin}
             >
               Bắt đầu
@@ -234,7 +232,7 @@ export default function LandingPage() {
             <motion.div variants={fadeInUp}>
               <Badge
                 variant="secondary"
-                className="rounded-full px-4 py-1.5 text-sm font-medium text-[#00E5FF] bg-white/5 border border-[#00E5FF]/20 backdrop-blur"
+                className="rounded-full px-4 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200"
               >
                 4.8/5 tu 2,000+ hoc vien
               </Badge>
@@ -242,17 +240,17 @@ export default function LandingPage() {
 
             <motion.h1
               variants={fadeInUp}
-              className="text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-tight text-white text-glow"
+              className="text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-tight text-slate-800"
               data-parallax-depth="0.5"
             >
               Luyện IELTS thông minh
               <br />
-              <span className="text-[#00E5FF]">với AI & Gamification</span>
+              <span className="text-[#2563EB]">với AI & Gamification</span>
             </motion.h1>
 
             <motion.p
               variants={fadeInUp}
-              className="text-base sm:text-lg text-white/60 max-w-prose leading-relaxed"
+              className="text-base sm:text-lg text-slate-500 max-w-prose leading-relaxed"
             >
               Hệ thống luyện thi IELTS toàn diện với AI chấm bài, phân tích chi
               tiết và gamification. Chinh phục band điểm mơ ước cùng chú
@@ -263,7 +261,7 @@ export default function LandingPage() {
               <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}>
                 <Button
                   size="lg"
-                  className="rounded-xl bg-[#00E5FF]/10 text-[#00E5FF] font-semibold px-6 py-3 h-auto text-base btn-cinematic cursor-pointer"
+                  className="rounded-xl bg-[#2563EB] text-white font-semibold px-6 py-3 h-auto text-base btn-cinematic cursor-pointer"
                   onClick={goLogin}
                 >
                   Bắt đầu ngay
@@ -273,7 +271,7 @@ export default function LandingPage() {
                 <Button
                   variant="outline"
                   size="lg"
-                  className="rounded-xl font-semibold px-6 py-3 h-auto text-base border-white/20 text-white/70 hover:bg-white/5 hover:text-white cursor-pointer"
+                  className="rounded-xl font-semibold px-6 py-3 h-auto text-base border-slate-300 text-slate-600 hover:bg-slate-50 hover:text-slate-800 cursor-pointer"
                   onClick={goLogin}
                 >
                   Xem demo
@@ -281,7 +279,7 @@ export default function LandingPage() {
               </motion.div>
             </motion.div>
 
-            <motion.p variants={fadeInUp} className="text-sm text-white/30">
+            <motion.p variants={fadeInUp} className="text-sm text-slate-400">
               Miễn phí, không cần thẻ tín dụng
             </motion.p>
           </motion.div>
@@ -296,7 +294,7 @@ export default function LandingPage() {
           >
             <div className="relative">
               {/* Ambient glow circle behind penguin */}
-              <div className="absolute inset-0 bg-[#00E5FF]/5 rounded-full scale-125 ambient-glow" />
+              <div className="absolute inset-0 bg-blue-500/5 rounded-full scale-125 ambient-glow" />
               <div className="relative z-10">
                 <MascotWrapper
                   deviceTier={deviceTier}
@@ -309,7 +307,7 @@ export default function LandingPage() {
       </section>
 
       {/* ━━━ Section 2: Features Showcase ━━━ */}
-      <section id="features" className="relative z-10 bg-[#001F3F]/60">
+      <section id="features" className="relative z-10 bg-blue-50/60">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 lg:py-20">
           <motion.div
             variants={sectionReveal}
@@ -318,10 +316,10 @@ export default function LandingPage() {
             viewport={{ once: true, amount: 0.2 }}
             className="text-center mb-12"
           >
-            <h2 className="text-2xl sm:text-3xl font-bold text-white text-glow">
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-800">
               Tất cả công cụ bạn cần để đạt band mơ ước
             </h2>
-            <p className="mt-3 text-white/50 max-w-2xl mx-auto">
+            <p className="mt-3 text-slate-500 max-w-2xl mx-auto">
               Từ luyện đề đến phân tích kết quả, Langfens hỗ trợ bạn ở mọi
               bước trên hành trình chinh phục IELTS.
             </p>
@@ -339,10 +337,10 @@ export default function LandingPage() {
                 whileHover={{ y: -4, scale: 1.02 }}
                 className="glass-card rounded-2xl p-6"
               >
-                <h3 className="text-lg font-semibold text-white mb-2">
+                <h3 className="text-lg font-semibold text-slate-800 mb-2">
                   {feature.title}
                 </h3>
-                <p className="text-sm text-white/55 leading-relaxed">
+                <p className="text-sm text-slate-500 leading-relaxed">
                   {feature.description}
                 </p>
               </motion.div>
@@ -361,10 +359,10 @@ export default function LandingPage() {
             viewport={{ once: true, amount: 0.2 }}
             className="text-center mb-12"
           >
-            <h2 className="text-2xl sm:text-3xl font-bold text-white text-glow">
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-800">
               3 bước đơn giản để bắt đầu
             </h2>
-            <p className="mt-3 text-white/50">
+            <p className="mt-3 text-slate-500">
               Không cần setup phức tạp. Đăng ký và luyện thi ngay.
             </p>
           </motion.div>
@@ -381,18 +379,18 @@ export default function LandingPage() {
                 className="relative"
               >
                 <div className="glass-card rounded-2xl p-6 text-center h-full">
-                  <div className="text-4xl font-bold text-[#00E5FF] text-glow mb-3">
+                  <div className="text-4xl font-bold text-[#2563EB] mb-3">
                     {step.number}
                   </div>
-                  <h3 className="text-lg font-semibold text-white mb-2">
+                  <h3 className="text-lg font-semibold text-slate-800 mb-2">
                     {step.title}
                   </h3>
-                  <p className="text-sm text-white/55">{step.description}</p>
+                  <p className="text-sm text-slate-500">{step.description}</p>
                 </div>
 
                 {/* Connector line */}
                 {i < 2 && (
-                  <div className="hidden md:block absolute top-1/2 -right-3 w-6 h-px bg-[#00E5FF]/25" />
+                  <div className="hidden md:block absolute top-1/2 -right-3 w-6 h-px bg-blue-300" />
                 )}
               </motion.div>
             ))}
@@ -401,7 +399,7 @@ export default function LandingPage() {
       </section>
 
       {/* ━━━ Section 4: Stats + Testimonials ━━━ */}
-      <section id="testimonials" className="relative z-10 bg-[#001F3F]/60">
+      <section id="testimonials" className="relative z-10 bg-blue-50/60">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 lg:py-20">
           {/* Stats */}
           <motion.div
@@ -411,7 +409,7 @@ export default function LandingPage() {
             viewport={{ once: true, amount: 0.2 }}
             className="text-center mb-10"
           >
-            <h2 className="text-2xl sm:text-3xl font-bold text-white text-glow">
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-800">
               Con số ấn tượng
             </h2>
           </motion.div>
@@ -426,11 +424,11 @@ export default function LandingPage() {
                 viewport={{ once: true, amount: 0.25 }}
                 transition={{ delay: i * 0.08 }}
               >
-                <div className="glass-card rounded-2xl p-6 border-l-4 border-l-[#00E5FF]">
-                  <div className="text-3xl font-extrabold text-[#00E5FF] text-glow">
+                <div className="glass-card rounded-2xl p-6 border-l-4 border-l-blue-600">
+                  <div className="text-3xl font-extrabold text-[#2563EB]">
                     {stat.value}
                   </div>
-                  <p className="mt-2 text-sm text-white/55 leading-relaxed">
+                  <p className="mt-2 text-sm text-slate-500 leading-relaxed">
                     {stat.label}
                   </p>
                 </div>
@@ -446,7 +444,7 @@ export default function LandingPage() {
             viewport={{ once: true, amount: 0.2 }}
             className="text-center mb-10"
           >
-            <h2 className="text-2xl sm:text-3xl font-bold text-white text-glow">
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-800">
               Học viên nói gì về Langfens
             </h2>
           </motion.div>
@@ -462,12 +460,12 @@ export default function LandingPage() {
                 transition={{ delay: i * 0.08 }}
               >
                 <div className="glass-card rounded-2xl p-6 h-full">
-                  <p className="text-white/75 leading-relaxed italic">
+                  <p className="text-slate-600 leading-relaxed italic">
                     &ldquo;{t.quote}&rdquo;
                   </p>
-                  <div className="mt-4 pt-4 border-t border-white/10">
-                    <p className="font-semibold text-white">{t.name}</p>
-                    <p className="text-sm text-white/40">{t.detail}</p>
+                  <div className="mt-4 pt-4 border-t border-slate-200">
+                    <p className="font-semibold text-slate-800">{t.name}</p>
+                    <p className="text-sm text-slate-400">{t.detail}</p>
                   </div>
                 </div>
               </motion.div>
@@ -486,20 +484,20 @@ export default function LandingPage() {
             transition={{ duration: 0.8, ease: "easeOut" }}
             className="glass-card rounded-3xl p-10 sm:p-14 space-y-5"
             style={{
-              boxShadow: "0 0 80px rgba(0,229,255,0.08), inset 0 0 40px rgba(0,229,255,0.03)",
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.08)",
             }}
           >
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-white text-glow">
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-800">
               Sẵn sàng bứt phá điểm số?
             </h2>
-            <p className="text-white/55 max-w-2xl mx-auto text-lg">
+            <p className="text-slate-500 max-w-2xl mx-auto text-lg">
               Bắt đầu luyện thi ngay hôm nay. Theo dõi tiến bộ của bạn qua kết
               quả phân tích chi tiết từ AI.
             </p>
             <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}>
               <Button
                 size="lg"
-                className="rounded-xl bg-[#00E5FF] text-[#0A1625] hover:bg-[#00E5FF]/90 font-bold px-8 py-3 h-auto text-base cursor-pointer hover:shadow-[0_0_30px_rgba(0,229,255,0.4)]"
+                className="rounded-xl bg-[#2563EB] text-white hover:bg-[#1D4ED8] font-bold px-8 py-3 h-auto text-base cursor-pointer hover:shadow-lg"
                 onClick={goLogin}
               >
                 Dùng thử miễn phí
@@ -510,10 +508,10 @@ export default function LandingPage() {
       </section>
 
       {/* ━━━ Footer ━━━ */}
-      <footer className="relative z-10 border-t border-white/5">
+      <footer className="relative z-10 border-t border-slate-200">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-white/30">
+            <p className="text-sm text-slate-400">
               &copy; 2025 Langfens. All rights reserved.
             </p>
             <div className="flex gap-6">
@@ -521,7 +519,7 @@ export default function LandingPage() {
                 <button
                   key={text}
                   onClick={goLogin}
-                  className="text-sm text-white/30 hover:text-[#00E5FF]/70 transition-colors duration-300"
+                  className="text-sm text-slate-400 hover:text-[#2563EB] transition-colors duration-300"
                 >
                   {text}
                 </button>
