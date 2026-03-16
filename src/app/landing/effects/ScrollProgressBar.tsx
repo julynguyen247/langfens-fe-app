@@ -16,7 +16,7 @@ export default function ScrollProgressBar({ progress }: ScrollProgressBarProps) 
         style={{
           width: `${progress * 100}%`,
           background: "var(--ocean-primary)",
-          boxShadow: "0 0 8px rgba(14, 165, 233, 0.4)",
+          boxShadow: "0 0 8px rgba(37, 99, 235, 0.4)",
         }}
       />
     </div>

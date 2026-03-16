@@ -16,7 +16,7 @@ interface Particle {
   wobbleSpeed: number;
 }
 
-const BUBBLE_COLOR = "rgba(56, 189, 248,"; // sky-400
+const BUBBLE_COLOR = "rgba(59, 130, 246,"; // blue-500
 const PLANKTON_COLOR = "rgba(6, 214, 160,"; // accent
 const DUST_COLOR = "rgba(240, 244, 248,"; // text
 
@@ -249,9 +249,9 @@ function drawLightRays(
     ctx.rotate(angleRad);
 
     const gradient = ctx.createLinearGradient(0, 0, 0, h * 0.8);
-    gradient.addColorStop(0, "rgba(14, 165, 233, 0.03)");
-    gradient.addColorStop(0.5, "rgba(14, 165, 233, 0.015)");
-    gradient.addColorStop(1, "rgba(14, 165, 233, 0)");
+    gradient.addColorStop(0, "rgba(37, 99, 235, 0.03)");
+    gradient.addColorStop(0.5, "rgba(37, 99, 235, 0.015)");
+    gradient.addColorStop(1, "rgba(37, 99, 235, 0)");
 
     ctx.fillStyle = gradient;
     ctx.fillRect(-ray.width / 2, 0, ray.width, h * 0.8);

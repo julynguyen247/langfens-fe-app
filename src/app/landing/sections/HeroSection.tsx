@@ -1,146 +1,150 @@
 "use client";
 
-import { forwardRef } from "react";
-import { motion } from "framer-motion";
+import { forwardRef, useRef, useCallback } from "react";
+import { useGSAP } from "@gsap/react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { HERO } from "../data";
+import { Button } from "../ui/Button";
+import { ScrollIndicator } from "../ui/ScrollIndicator";
+import { useReducedMotion } from "../hooks/useReducedMotion";
+import { EASE, STAGGER } from "../lib/animation-config";
 
-const stagger = {
-  hidden: { opacity: 0, y: 16 },
-  show: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.8, ease: "easeOut", staggerChildren: 0.12 },
-  },
-} as const;
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 22, scale: 0.98 },
-  show: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: { duration: 0.7, ease: "easeOut" },
-  },
-} as const;
+gsap.registerPlugin(ScrollTrigger);
 
 interface HeroSectionProps {
   onCTA: () => void;
 }
 
 const HeroSection = forwardRef<HTMLElement, HeroSectionProps>(
-  ({ onCTA }, ref) => {
+  ({ onCTA }, forwardedRef) => {
+    const sectionRef = useRef<HTMLElement>(null);
+
+    // Merge forwarded ref with internal ref
+    const mergedRef = useCallback(
+      (node: HTMLElement | null) => {
+        (sectionRef as React.MutableRefObject<HTMLElement | null>).current = node;
+        if (typeof forwardedRef === "function") {
+          forwardedRef(node);
+        } else if (forwardedRef) {
+          (forwardedRef as React.MutableRefObject<HTMLElement | null>).current = node;
+        }
+      },
+      [forwardedRef],
+    );
+
+    const reducedMotion = useReducedMotion();
+
+    // GSAP entrance stagger + scroll parallax
+    useGSAP(() => {
+      if (reducedMotion) {
+        // Show everything immediately
+        gsap.set(".hero-el", { opacity: 1, y: 0 });
+        return;
+      }
+
+      // Entrance stagger for hero elements
+      gsap.fromTo(
+        ".hero-el",
+        { opacity: 0, y: 30 },
+        { opacity: 1, y: 0, duration: 0.8, ease: EASE.smooth, stagger: STAGGER.relaxed, delay: 2.2 }
+      );
+
+      // Scroll parallax — fade out + drift up as user scrolls past
+      gsap.to(".hero-content", {
+        opacity: 0,
+        y: -100,
+        ease: "none",
+        scrollTrigger: {
+          trigger: sectionRef.current,
+          start: "top top",
+          end: "bottom top",
+          scrub: true,
+        },
+      });
+    }, { scope: sectionRef, dependencies: [reducedMotion] });
+
     return (
       <section
-        ref={ref}
+        ref={mergedRef}
         data-section="hero"
-        className="relative z-10 min-h-screen flex items-center pt-16"
+        className="relative z-10 min-h-screen flex items-center pt-16 vignette-hero"
       >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 lg:py-24 grid lg:grid-cols-2 gap-12 items-center w-full">
+        <div className="hero-content mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 lg:py-24 grid lg:grid-cols-2 gap-12 items-center w-full">
           {/* Left: Text content */}
-          <motion.div
-            variants={stagger}
-            initial="hidden"
-            animate="show"
-            className="space-y-6"
-          >
+          <div className="space-y-6">
             {/* Pre-headline */}
-            <motion.span
-              variants={fadeUp}
-              className="font-code text-xs tracking-[0.2em] uppercase text-[var(--ocean-primary)]"
+            <span
+              className="hero-el font-code text-xs tracking-[0.2em] uppercase text-[var(--ocean-primary)] block"
+              style={{ opacity: 0 }}
             >
               {HERO.preHeadline}
-            </motion.span>
+            </span>
 
             {/* Main headline */}
-            <motion.h1
-              variants={fadeUp}
-              className="font-heading text-4xl sm:text-5xl lg:text-7xl font-bold leading-[1.1] tracking-tight"
+            <h1
+              className="hero-el font-heading text-4xl sm:text-5xl lg:text-7xl font-bold leading-[1.1] tracking-tight"
               data-parallax-depth="0.5"
+              style={{ opacity: 0 }}
             >
               {HERO.headline}
               <br />
               <span className="text-gradient-ocean text-glow">
                 {HERO.headlineAccent}
               </span>
-            </motion.h1>
+            </h1>
 
             {/* Subtitle */}
-            <motion.p
-              variants={fadeUp}
-              className="font-body text-lg sm:text-xl text-[var(--ocean-text-secondary)] max-w-xl leading-relaxed"
+            <p
+              className="hero-el font-body text-lg sm:text-xl text-[var(--ocean-text-secondary)] max-w-xl leading-relaxed"
+              style={{ opacity: 0 }}
             >
               {HERO.subtitle}
-            </motion.p>
+            </p>
 
             {/* Social proof badge */}
-            <motion.div variants={fadeUp}>
-              <span className="font-code text-sm text-[var(--ocean-primary)] bg-[rgba(14,165,233,0.08)] px-4 py-1.5 rounded-full border border-[rgba(14,165,233,0.15)]">
+            <div className="hero-el" style={{ opacity: 0 }}>
+              <span className="font-code text-sm font-bold text-[var(--ocean-primary-light)] bg-[rgba(37,99,235,0.12)] px-5 py-2 rounded-full border-2 border-[rgba(37,99,235,0.25)]">
                 {HERO.socialProof}
               </span>
-            </motion.div>
+            </div>
 
             {/* CTA buttons */}
-            <motion.div variants={fadeUp} className="flex flex-wrap gap-4 pt-2">
-              <motion.button
-                whileHover={{ y: -2 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={onCTA}
-                className="btn-ocean rounded-xl px-8 py-3.5 text-base font-semibold cursor-pointer"
-              >
+            <div className="hero-el flex flex-wrap gap-4 pt-2" style={{ opacity: 0 }}>
+              <Button onClick={onCTA}>
                 {HERO.ctaPrimary}
-              </motion.button>
-              <motion.button
-                whileHover={{ y: -2 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={onCTA}
-                className="btn-ghost rounded-xl px-8 py-3.5 text-base cursor-pointer"
-              >
+              </Button>
+              <Button variant="ghost" onClick={onCTA}>
                 {HERO.ctaSecondary}
-              </motion.button>
-            </motion.div>
+              </Button>
+            </div>
 
             {/* Free note */}
-            <motion.p
-              variants={fadeUp}
-              className="font-code text-sm text-[var(--ocean-text-muted)]"
+            <p
+              className="hero-el font-code text-sm text-[var(--ocean-text-muted)]"
+              style={{ opacity: 0 }}
             >
               {HERO.ctaNote}
-            </motion.p>
-          </motion.div>
+            </p>
+          </div>
 
           {/* Right: 3D penguin viewport (transparent area for R3F canvas to show through) */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.85 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.9, ease: "easeOut", delay: 0.3 }}
-            className="hidden lg:flex items-center justify-center min-h-[500px]"
+          <div
+            className="hero-el hidden lg:flex items-center justify-center min-h-[500px]"
             data-parallax-depth="1.5"
+            style={{ opacity: 0 }}
           >
             {/* Ambient glow circle — penguin renders behind via R3F fixed canvas */}
             <div className="relative w-80 h-80">
               <div className="absolute inset-0 rounded-full bg-[var(--ocean-primary)]/5 scale-150 ocean-ambient-glow" />
             </div>
-          </motion.div>
+          </div>
         </div>
 
         {/* Scroll indicator */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.5, duration: 0.8 }}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2"
-        >
-          <motion.div
-            animate={{ y: [0, 8, 0] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-            className="flex flex-col items-center gap-2"
-          >
-            <span className="font-code text-xs text-[var(--ocean-text-muted)] uppercase tracking-widest">
-              Scroll to dive deeper
-            </span>
-            <div className="w-px h-8 bg-gradient-to-b from-[var(--ocean-primary)] to-transparent" />
-          </motion.div>
-        </motion.div>
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 hero-el" style={{ opacity: 0 }}>
+          <ScrollIndicator />
+        </div>
       </section>
     );
   }

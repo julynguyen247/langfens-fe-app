@@ -1,45 +1,69 @@
 "use client";
 
+import { useRef } from "react";
+import { useGSAP } from "@gsap/react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { motion } from "framer-motion";
 import { STEPS } from "../data";
-
-const sectionReveal = {
-  hidden: { opacity: 0, y: 30 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut" } },
-} as const;
-
-const cardReveal = {
-  hidden: { opacity: 0, y: 24, scale: 0.96 },
-  show: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: { duration: 0.6, ease: "easeOut" },
-  },
-} as const;
+import { SectionHeading } from "../ui/SectionHeading";
+import StepCard from "../ui/StepCard";
+import { useReducedMotion } from "../hooks/useReducedMotion";
+import { EASE, STAGGER } from "../lib/animation-config";
 
 export default function HowItWorksSection() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const reducedMotion = useReducedMotion();
+
+  useGSAP(
+    () => {
+      if (reducedMotion) {
+        gsap.set(".hiw-heading, .hiw-card", { opacity: 1, y: 0 });
+        return;
+      }
+
+      gsap.fromTo(
+        ".hiw-heading",
+        { y: 40, opacity: 0 },
+        {
+          y: 0,
+          opacity: 1,
+          duration: 0.8,
+          ease: EASE.smooth,
+          scrollTrigger: { trigger: sectionRef.current, start: "top 80%" },
+        }
+      );
+      gsap.fromTo(
+        ".hiw-card",
+        { y: 60, opacity: 0 },
+        {
+          y: 0,
+          opacity: 1,
+          duration: 0.8,
+          stagger: STAGGER.wide,
+          ease: EASE.smooth,
+          scrollTrigger: { trigger: sectionRef.current, start: "top 85%" },
+        }
+      );
+    },
+    { scope: sectionRef, dependencies: [reducedMotion] }
+  );
+
   return (
-    <section id="how-it-works" className="relative z-10 py-24 lg:py-32">
+    <section
+      ref={sectionRef}
+      id="how-it-works"
+      className="relative z-10 py-24 lg:py-32 section-bg"
+    >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <motion.div
-          variants={sectionReveal}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, amount: 0.2 }}
-          className="text-center mb-16"
-        >
-          <span className="font-code text-xs tracking-[0.2em] uppercase text-[var(--ocean-primary)] block mb-4">
-            HOW IT WORKS
-          </span>
-          <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-bold">
-            3 Simple Steps to Start
-          </h2>
-          <p className="mt-4 font-body text-lg text-[var(--ocean-text-secondary)] max-w-2xl mx-auto">
-            No complicated setup. Sign up and start practicing immediately.
-          </p>
-        </motion.div>
+        <div className="hiw-heading" style={{ opacity: 0 }}>
+          <SectionHeading
+            label="HOW IT WORKS"
+            title="3 Simple Steps to Start"
+            subtitle="No complicated setup. Sign up and start practicing immediately."
+          />
+        </div>
 
         {/* Steps with connecting line */}
         <div className="relative grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
@@ -65,31 +89,9 @@ export default function HowItWorksSection() {
           </svg>
 
           {STEPS.map((step, i) => (
-            <motion.div
-              key={i}
-              variants={cardReveal}
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: true, amount: 0.25 }}
-              transition={{ delay: i * 0.15 }}
-            >
-              <div className="ocean-card rounded-2xl p-8 text-center h-full relative overflow-hidden">
-                {/* Large watermark number */}
-                <span className="absolute -top-4 -right-2 font-heading text-[120px] font-bold text-[var(--ocean-primary)] opacity-[0.04] leading-none select-none">
-                  {step.number}
-                </span>
-
-                <span className="font-code text-xs tracking-[0.2em] uppercase text-[var(--ocean-primary)] block mb-4 relative z-10">
-                  Step {step.number}
-                </span>
-                <h3 className="font-heading text-xl font-semibold mb-3 relative z-10">
-                  {step.title}
-                </h3>
-                <p className="font-body text-sm text-[var(--ocean-text-secondary)] leading-relaxed relative z-10">
-                  {step.description}
-                </p>
-              </div>
-            </motion.div>
+            <div key={i} className="hiw-card" style={{ opacity: 0 }}>
+              <StepCard step={step} />
+            </div>
           ))}
         </div>
       </div>
