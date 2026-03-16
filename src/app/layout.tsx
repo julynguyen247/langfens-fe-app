@@ -1,8 +1,11 @@
-import { Inter, Merriweather } from "next/font/google";
+import { Inter, Merriweather, Geist } from "next/font/google";
 import "./globals.css";
 import AppShell from "./AppShell";
 import { Suspense } from "react";
 import LoadingLayer from "@/components/LoadingLayer";
+import { cn } from "@/lib/utils";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 const inter = Inter({
   variable: "--font-inter",
@@ -28,7 +31,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={cn("font-sans", geist.variable)}>
       <head>
         <link
           rel="stylesheet"
