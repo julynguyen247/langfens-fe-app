@@ -4,12 +4,15 @@ import { usePathname } from "next/navigation";
 import LangfensHeader from "@/components/LangfensHeader";
 import ChatbotWidget from "@/components/ChatbotWidget";
 import AuthWrapper from "@/components/AuthWrapper";
+import { cn } from "@/lib/utils";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
+  const isLanding = pathname === "/";
+
   const hideHeader =
-    pathname === "/" ||
+    isLanding ||
     pathname.startsWith("/do-test") ||
     pathname.startsWith("/auth") ||
     pathname.startsWith("/placement");
@@ -39,7 +42,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <>
       {!hideHeader && <LangfensHeader />}
-      <main className="min-h-screen bg-gray-50">
+      <main className={cn("min-h-screen", !isLanding && "bg-gray-50")}>
         {content}
         {requireAuth && <ChatbotWidget />}
       </main>

@@ -17,6 +17,8 @@ const nextConfig: NextConfig = {
       "react-icons",
       "lucide-react",
       "framer-motion",
+      "three",
+      "@react-three/drei",
     ],
   },
   

@@ -1,21 +1,13 @@
-import { Inter, Merriweather, Geist } from "next/font/google";
+import { Nunito } from "next/font/google";
 import "./globals.css";
 import AppShell from "./AppShell";
 import { Suspense } from "react";
 import LoadingLayer from "@/components/LoadingLayer";
-import { cn } from "@/lib/utils";
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
-
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-});
-
-const merriweather = Merriweather({
-  variable: "--font-merriweather",
-  subsets: ["latin"],
-  weight: ["400", "700", "900"],
+const nunito = Nunito({
+  variable: "--font-nunito",
+  subsets: ["latin", "vietnamese"],
+  weight: ["400", "500", "600", "700", "800", "900"],
 });
 
 export const metadata = {
@@ -31,7 +23,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning className={cn("font-sans", geist.variable)}>
+    <html lang="en" suppressHydrationWarning className={nunito.variable}>
       <head>
         <link
           rel="stylesheet"
@@ -39,7 +31,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`antialiased ${inter.variable} ${merriweather.variable} font-sans text-gray-900 bg-[#F8FAFC]`}
+        className="antialiased font-sans text-gray-900 bg-[#F8FAFC]"
         suppressHydrationWarning
       >
         <Suspense
