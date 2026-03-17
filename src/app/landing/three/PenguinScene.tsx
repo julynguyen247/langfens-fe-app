@@ -7,6 +7,7 @@ import OceanEnvironment, { cameraYRef } from "./OceanEnvironment";
 import OceanTerrain from "./OceanTerrain";
 import WaterSurface from "./WaterSurface";
 import PenguinController from "./PenguinController";
+import { CausticOverlay3D } from "./shaders/caustic";
 import type { DeviceTier } from "@/app/components/effects/useDeviceCapability";
 
 interface PenguinSceneProps {
@@ -56,6 +57,7 @@ export default function PenguinScene({
         <OceanEnvironment scrollProgress={scrollProgress} />
         <OceanTerrain />
         {tier === "full" && <WaterSurface />}
+        {tier === "full" && <CausticOverlay3D />}
         <CameraTrackingGroup>
           <PenguinController
             scrollProgress={scrollProgress}
