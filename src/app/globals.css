@@ -38,9 +38,10 @@
   --border: #E5E7EB;
   --border-light: #F3F4F6;
 
-  /* Fonts - Nunito (Duolingo-style rounded sans-serif) */
-  --font-sans: var(--font-nunito), ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-serif: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
+  /* Fonts - Fredoka (Duolingo-style rounded sans-serif) */
+  --font-sans: var(--font-fredoka), "Fredoka", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-fredoka), "Fredoka", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), "JetBrains Mono", ui-monospace, monospace;
 
   /* shadcn tokens */
   --card: #FFFFFF;
@@ -75,8 +76,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
-  --font-serif: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-fredoka), "Fredoka", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-fredoka), "Fredoka", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), "JetBrains Mono", ui-monospace, monospace;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -115,13 +117,13 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* Font utilities - all use Nunito */
+/* Font utilities - all use Fredoka */
 .font-serif {
-  font-family: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-fredoka), "Fredoka", ui-sans-serif, system-ui, sans-serif;
 }
 
 .font-sans {
-  font-family: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-fredoka), "Fredoka", ui-sans-serif, system-ui, sans-serif;
 }
 
 body {
@@ -214,285 +216,55 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════
-   CINEMATIC LANDING PAGE — Scoped under .cinematic class
-   Light theme aligned with app design system (blue-600 primary)
+   LANDING PAGE — Minimal CSS (keyframes + pseudo-elements only)
+   Everything else is inline Tailwind in components
    ═══════════════════════════════════════════════════════ */
 
-/* Film grain noise animation */
-@keyframes grain {
-  0%, 100% { transform: translate(0, 0) }
-  10% { transform: translate(-5%, -10%) }
-  30% { transform: translate(3%, -15%) }
-  50% { transform: translate(12%, 9%) }
-  70% { transform: translate(9%, 4%) }
-  90% { transform: translate(-1%, 7%) }
+/* CSS variables (scoped — cannot be inlined) */
+.landing-ocean {
+  --ocean-bg: #040B14;
+  --ocean-bg-light: #0A1628;
+  --ocean-surface: #0F1D32;
+  --ocean-surface-light: #162544;
+  --ocean-primary: #2563EB;
+  --ocean-primary-hover: #1D4ED8;
+  --ocean-primary-light: #3B82F6;
+  --ocean-primary-dark: #1E40AF;
+  --ocean-primary-glow: rgba(37, 99, 235, 0.3);
+  --ocean-accent: #06D6A0;
+  --ocean-accent-glow: rgba(6, 214, 160, 0.3);
+  --ocean-gold: #F59E0B;
+  --ocean-gold-light: #FBBF24;
+  --ocean-text: #F0F4F8;
+  --ocean-text-secondary: #94A3B8;
+  --ocean-text-muted: #64748B;
+  --ocean-border: rgba(255, 255, 255, 0.10);
+  --ocean-border-glow: rgba(37, 99, 235, 0.35);
+  --ocean-shadow-glow: 0 0 30px var(--ocean-primary-glow);
+  --font-heading: var(--font-sans);
+  --font-body: var(--font-sans);
+  --font-code: var(--font-mono);
 }
 
-.film-grain::after {
-  content: '';
-  position: fixed;
-  inset: -200%;
-  z-index: 9998;
-  pointer-events: none;
-  opacity: 0.035;
-  animation: grain 8s steps(10) infinite;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+/* Pseudo-elements (require ::before/::after — cannot be inlined) */
+.landing-ocean .vignette-hero::after {
+  content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(4, 11, 20, 0.6) 100%);
+}
+.landing-ocean .vignette-cta::after {
+  content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 20%, rgba(4, 11, 20, 0.8) 100%);
 }
 
-/* Vignette — subtle darkened edges */
-.vignette::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: 40;
-  pointer-events: none;
-  background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.08) 100%);
-}
-
-/* Slow sweeping light leak */
-@keyframes lightLeak {
-  0% { opacity: 0; transform: translateX(-120%) rotate(-12deg); }
-  40% { opacity: 0.07; }
-  100% { opacity: 0; transform: translateX(120%) rotate(-12deg); }
-}
-
-.light-leak::after {
-  content: '';
-  position: fixed;
-  top: -20%;
-  left: -60%;
-  width: 220%;
-  height: 140%;
-  z-index: 41;
-  pointer-events: none;
-  background: linear-gradient(
-    100deg,
-    transparent 20%,
-    rgba(37, 99, 235, 0.04) 40%,
-    rgba(147, 197, 253, 0.03) 55%,
-    transparent 75%
-  );
-  animation: lightLeak 14s ease-in-out infinite;
-}
-
-/* Heading text glow — disabled for light theme */
-.text-glow {
-  text-shadow: none;
-}
-
-/* Card — solid white, matching app design system */
-.glass-card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  transition: all 0.4s ease;
-}
-
-.glass-card:hover {
-  border-color: #bfdbfe;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-}
-
-/* Button — standard app style, no glow */
-.btn-cinematic {
-  position: relative;
-  transition: all 0.3s ease !important;
-}
-
-.btn-cinematic:hover {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
-/* Scrollbar — matches app */
-.cinematic ::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.2);
-  border-color: var(--background);
-}
-
-.cinematic ::-webkit-scrollbar-track {
-  background: var(--background);
-}
-
-/* Slow ambient glow pulse for hero penguin area */
-@keyframes ambientGlow {
-  0%, 100% { box-shadow: 0 0 60px rgba(37, 99, 235, 0.08); }
-  50% { box-shadow: 0 0 100px rgba(37, 99, 235, 0.15); }
-}
-
-.ambient-glow {
-  animation: ambientGlow 4s ease-in-out infinite;
-}
-
-/* ─── Enhanced Cinematic Effects ─── */
-
-@keyframes lensFlare {
-  0% { opacity: 0; transform: translateX(-150%) scaleY(0.3); }
-  30% { opacity: 0.06; }
-  100% { opacity: 0; transform: translateX(150%) scaleY(0.3); }
-}
-
-.cinematic .lens-flare::after {
-  content: '';
-  position: fixed;
-  top: 30%;
-  left: -50%;
-  width: 200%;
-  height: 4px;
-  z-index: 42;
-  pointer-events: none;
-  background: linear-gradient(90deg, transparent, rgba(37, 99, 235, 0.15), rgba(147, 197, 253, 0.1), transparent);
-  filter: blur(6px);
-  animation: lensFlare 20s ease-in-out infinite;
-}
-
-.vignette.dynamic::before {
-  background: radial-gradient(
-    ellipse at center,
-    transparent 40%,
-    rgba(0, 0, 0, var(--vignette-intensity, 0.08)) 100%
-  );
-}
-
-@keyframes oceanRipple {
-  0% {
-    transform: translate(-50%, -50%) scale(0);
-    opacity: 0.6;
-    border-width: 3px;
-  }
-  100% {
-    transform: translate(-50%, -50%) scale(8);
-    opacity: 0;
-    border-width: 0.5px;
-  }
-}
-
-.ripple-effect {
-  position: absolute;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 2px solid rgba(37, 99, 235, 0.3);
-  pointer-events: none;
-  animation: oceanRipple 0.8s ease-out forwards;
-}
-
-.glass-card.tilt-active {
-  transform:
-    perspective(800px)
-    rotateX(var(--tilt-x, 0deg))
-    rotateY(var(--tilt-y, 0deg));
-  transition: transform 0.15s ease-out;
-}
-
-.glass-card.tilt-active:hover {
-  box-shadow:
-    0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 2px 4px -2px rgba(0, 0, 0, 0.1);
-}
-
-.cinematic nav.nav-glow {
-  position: relative;
-}
-
-.cinematic nav.nav-glow::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  left: var(--nav-underline-x, -100px);
-  width: 40px;
-  height: 2px;
-  background: #2563EB;
-  box-shadow: 0 0 6px rgba(37, 99, 235, 0.4), 0 0 16px rgba(37, 99, 235, 0.15);
-  border-radius: 1px;
-  transition: left 0.2s ease-out, opacity 0.3s;
-  opacity: var(--nav-underline-opacity, 0);
-  pointer-events: none;
-}
-
-@keyframes lightRaySweep {
-  0% { transform: translateX(-100%); opacity: 0; }
-  20% { opacity: 0.08; }
-  100% { transform: translateX(200%); opacity: 0; }
-}
-
-.light-ray-sweep {
-  position: relative;
-  overflow: hidden;
-}
-
-.light-ray-sweep::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 40%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(37, 99, 235, 0.04), transparent);
-  pointer-events: none;
-  animation: lightRaySweep 1.2s ease-out forwards;
-}
-
-.flame-icon {
-  display: inline-block;
-  width: 10px;
-  height: 14px;
-  background: #FF6B35;
-  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-  position: relative;
-  animation: flicker 0.3s ease-in-out infinite alternate;
-}
-
-.flame-icon::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 2px;
-  width: 6px;
-  height: 8px;
-  background: #FFD700;
-  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-}
-
-@keyframes flicker {
-  0% { transform: scaleY(1) scaleX(1); opacity: 1; }
-  100% { transform: scaleY(1.15) scaleX(0.9); opacity: 0.85; }
-}
-
-.css-heart {
-  display: inline-block;
-  width: 10px;
-  height: 9px;
-  position: relative;
-  animation: heartPulse 1s ease-in-out infinite;
-}
-
-.css-heart::before,
-.css-heart::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  width: 5px;
-  height: 8px;
-  background: #FF3250;
-  border-radius: 5px 5px 0 0;
-}
-
-.css-heart::before {
-  left: 0;
-  transform: rotate(-45deg);
-  transform-origin: bottom right;
-}
-
-.css-heart::after {
-  left: 4px;
-  transform: rotate(45deg);
-  transform-origin: bottom left;
-}
-
-@keyframes heartPulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.15); }
-}
+/* Keyframes (cannot be inlined in Tailwind) */
+@keyframes lightLeak { 0% { opacity: 0; transform: translateX(-120%) rotate(-12deg); } 40% { opacity: 0.07; } 100% { opacity: 0; transform: translateX(120%) rotate(-12deg); } }
+@keyframes oceanAmbientGlow { 0%,100% { box-shadow: 0 0 60px rgba(37,99,235,0.1); } 50% { box-shadow: 0 0 100px rgba(37,99,235,0.2); } }
+@keyframes shimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
+@keyframes pop-in { 0% { transform: scale(0.8); opacity: 0; } 70% { transform: scale(1.05); } 100% { transform: scale(1); opacity: 1; } }
+@keyframes wiggle { 0%,100% { transform: rotate(0deg); } 25% { transform: rotate(-3deg); } 75% { transform: rotate(3deg); } }
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes scroll-bounce { 0%,100% { transform: translateY(0); opacity: 1; } 50% { transform: translateY(8px); opacity: 0.5; } }
+@keyframes duo-bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 
 @layer base {
   * {

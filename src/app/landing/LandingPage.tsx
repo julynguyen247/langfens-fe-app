@@ -63,8 +63,6 @@ export default function LandingPage() {
           backgroundSize: '256px 256px',
         }}
       />
-      {/* Vignette overlay */}
-      <div className="ocean-vignette" />
 
       {/* Scroll progress bar */}
       <ScrollProgressBar progress={progress} />
