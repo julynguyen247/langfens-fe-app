@@ -8,6 +8,7 @@ import OceanTerrain from "./OceanTerrain";
 import WaterSurface from "./WaterSurface";
 import PenguinController from "./PenguinController";
 import CoralField from "./CoralField";
+import MarineParticles from "./MarineParticles";
 import { CausticOverlay3D } from "./shaders/caustic";
 import { GodRaysOverlay } from "./shaders/godRays";
 import type { DeviceTier } from "@/app/components/effects/useDeviceCapability";
@@ -68,7 +69,7 @@ export default function PenguinScene({
           />
         </CameraTrackingGroup>
         <CoralField tier={tier} />
-        {/* Ocean components added in Tasks 3-8 */}
+        <MarineParticles tier={tier} />
       </Suspense>
     </Canvas>
   );
