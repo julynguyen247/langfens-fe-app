@@ -14,24 +14,28 @@ const DEPTH_CURVE = [
   { scroll: 0.00, y:  10, fogNear: 15, fogFar: 40 },
   { scroll: 0.12, y:   4, fogNear: 12, fogFar: 35 },
   { scroll: 0.55, y:  -2, fogNear:  8, fogFar: 25 },
-  { scroll: 0.88, y: -10, fogNear:  5, fogFar: 18 },
-  { scroll: 0.96, y:  -5, fogNear:  8, fogFar: 25 },
+  { scroll: 0.78, y:  -8, fogNear:  5, fogFar: 18 },
+  { scroll: 0.88, y:  -4, fogNear:  8, fogFar: 25 },
+  { scroll: 0.94, y:   4, fogNear: 12, fogFar: 35 },
   { scroll: 1.00, y:  10, fogNear: 15, fogFar: 40 },
 ];
 
 const FOG_COLORS = [
-  { scroll: 0.0, color: new THREE.Color("#0c4a6e") },
-  { scroll: 0.5, color: new THREE.Color("#041e35") },
-  { scroll: 0.8, color: new THREE.Color("#0a0a1a") },
-  { scroll: 1.0, color: new THREE.Color("#0c4a6e") },
+  { scroll: 0.0,  color: new THREE.Color("#0c4a6e") },
+  { scroll: 0.5,  color: new THREE.Color("#041e35") },
+  { scroll: 0.75, color: new THREE.Color("#0a0a1a") },
+  { scroll: 0.88, color: new THREE.Color("#041e35") },
+  { scroll: 0.94, color: new THREE.Color("#0c4a6e") },
+  { scroll: 1.0,  color: new THREE.Color("#0c4a6e") },
 ];
 
 const LIGHTING_CURVE = [
   { scroll: 0.0,  dir: 0.8,  ambient: 0.4  },
   { scroll: 0.12, dir: 0.6,  ambient: 0.3  },
   { scroll: 0.55, dir: 0.4,  ambient: 0.25 },
-  { scroll: 0.88, dir: 0.05, ambient: 0.1  },
-  { scroll: 0.96, dir: 0.4,  ambient: 0.25 },
+  { scroll: 0.78, dir: 0.05, ambient: 0.1  },
+  { scroll: 0.88, dir: 0.3,  ambient: 0.2  },
+  { scroll: 0.94, dir: 0.6,  ambient: 0.35 },
   { scroll: 1.0,  dir: 0.8,  ambient: 0.4  },
 ];
 
@@ -68,13 +72,16 @@ export default function OceanEnvironment({ scrollProgress }: OceanEnvironmentPro
   useFrame((_, delta) => {
     const depth = interpolateKeyframes(DEPTH_CURVE, scrollProgress);
     const targetY = THREE.MathUtils.lerp(depth.from.y, depth.to.y, depth.t);
-    cameraYRef.current = THREE.MathUtils.lerp(cameraYRef.current, targetY, delta * 2);
+    cameraYRef.current = THREE.MathUtils.lerp(cameraYRef.current, targetY, delta * 4);
     camera.position.y = cameraYRef.current;
     camera.lookAt(0, cameraYRef.current, 0);
 
     if (fogRef.current) {
-      fogRef.current.near = THREE.MathUtils.lerp(depth.from.fogNear, depth.to.fogNear, depth.t);
-      fogRef.current.far = THREE.MathUtils.lerp(depth.from.fogFar, depth.to.fogFar, depth.t);
+      // Fog near/far respond to target (not smoothed camera) for instant atmosphere change
+      const targetNear = THREE.MathUtils.lerp(depth.from.fogNear, depth.to.fogNear, depth.t);
+      const targetFar = THREE.MathUtils.lerp(depth.from.fogFar, depth.to.fogFar, depth.t);
+      fogRef.current.near = THREE.MathUtils.lerp(fogRef.current.near, targetNear, delta * 5);
+      fogRef.current.far = THREE.MathUtils.lerp(fogRef.current.far, targetFar, delta * 5);
       const fogC = interpolateKeyframes(FOG_COLORS, scrollProgress);
       tempColor.copy(fogC.from.color).lerp(fogC.to.color, fogC.t);
       fogRef.current.color.copy(tempColor);
