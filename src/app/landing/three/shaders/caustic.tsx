@@ -31,7 +31,7 @@ ${causticGLSL}
 void main() {
   float causticValue = caustic(vUv, uTime);
   vec3 color = vec3(0.22, 0.51, 0.97);
-  float alpha = causticValue * uDepthFactor * 0.06;
+  float alpha = causticValue * uDepthFactor * 0.12;
   gl_FragColor = vec4(color * alpha, alpha);
 }
 `;

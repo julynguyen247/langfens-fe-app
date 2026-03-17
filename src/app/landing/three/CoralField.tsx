@@ -97,6 +97,8 @@ export default function CoralField({ tier }: CoralFieldProps) {
           new THREE.MeshStandardMaterial({
             color: type.color,
             roughness: 0.8,
+            emissive: type.color,
+            emissiveIntensity: type.sways ? 0.3 : 0.05,
           })
       ),
     [coralTypes]

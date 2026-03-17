@@ -46,8 +46,8 @@ function PlanktonLayer() {
 
     // Opacity increases with depth
     if (materialRef.current) {
-      const rawOpacity = 0.3 + Math.max(0, -cameraYRef.current) * 0.05;
-      materialRef.current.opacity = Math.min(rawOpacity, 0.8);
+      const rawOpacity = 0.6 + Math.max(0, -cameraYRef.current) * 0.04;
+      materialRef.current.opacity = Math.min(rawOpacity, 0.9);
     }
   });
 
@@ -62,12 +62,12 @@ function PlanktonLayer() {
       </bufferGeometry>
       <pointsMaterial
         ref={materialRef}
-        size={0.05}
+        size={0.12}
         color="#06d6a0"
         transparent
         blending={THREE.AdditiveBlending}
         depthWrite={false}
-        opacity={0.3}
+        opacity={0.6}
       />
     </points>
   );
@@ -124,10 +124,10 @@ function FishSchoolLayer() {
         />
       </bufferGeometry>
       <pointsMaterial
-        size={0.12}
+        size={0.2}
         color="#94a3b8"
         transparent
-        opacity={0.7}
+        opacity={0.8}
         blending={THREE.AdditiveBlending}
         depthWrite={false}
       />
@@ -194,7 +194,7 @@ function JellyfishLayer() {
       const mesh = meshRefs.current[i];
       if (mesh) {
         const mat = mesh.material as THREE.MeshBasicMaterial;
-        mat.opacity = 0.4 + Math.sin(time * 1.2 + i * 1.5) * 0.2;
+        mat.opacity = 0.7 + Math.sin(time * 1.2 + i * 1.5) * 0.2;
       }
 
       // Opacity pulse on tentacles
@@ -204,7 +204,7 @@ function JellyfishLayer() {
           if (!t) continue;
           const mat = t.material as THREE.MeshBasicMaterial;
           mat.opacity =
-            (0.4 + Math.sin(time * 1.2 + i * 1.5) * 0.2) * 0.6;
+            (0.7 + Math.sin(time * 1.2 + i * 1.5) * 0.2) * 0.5;
         }
       }
     }
@@ -226,11 +226,11 @@ function JellyfishLayer() {
               meshRefs.current[i] = el;
             }}
           >
-            <sphereGeometry args={[0.3, 8, 4, 0, Math.PI * 2, 0, Math.PI * 0.5]} />
+            <sphereGeometry args={[0.5, 8, 4, 0, Math.PI * 2, 0, Math.PI * 0.5]} />
             <meshBasicMaterial
               color={jf.color}
               transparent
-              opacity={0.4}
+              opacity={0.7}
               side={THREE.DoubleSide}
             />
           </mesh>
@@ -254,7 +254,7 @@ function JellyfishLayer() {
                 <meshBasicMaterial
                   color={jf.color}
                   transparent
-                  opacity={0.25}
+                  opacity={0.4}
                 />
               </mesh>
             );

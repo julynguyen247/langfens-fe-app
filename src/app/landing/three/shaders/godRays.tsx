@@ -30,7 +30,7 @@ void main() {
   float shaftIntensity = max(0.0, noise * 0.5 + 0.5) * falloff;
 
   vec3 color = vec3(0.22, 0.51, 0.97);
-  float alpha = shaftIntensity * uDepthFactor * 0.25;
+  float alpha = shaftIntensity * uDepthFactor * 0.7;
 
   gl_FragColor = vec4(color * alpha, alpha);
 }
@@ -62,7 +62,7 @@ export function GodRaysOverlay() {
 
     materialRef.current.uniforms.uDepthFactor.value = Math.max(
       0,
-      Math.min(0.3, cameraYRef.current * 0.05 + 0.1)
+      Math.min(1.0, cameraYRef.current * 0.08 + 0.2)
     );
   });
 

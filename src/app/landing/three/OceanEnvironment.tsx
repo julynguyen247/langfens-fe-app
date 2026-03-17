@@ -34,13 +34,13 @@ const FOG_COLORS = [
 
 // Lighting — reduced to match dark theme; just enough to illuminate 3D elements
 const LIGHTING_CURVE = [
-  { scroll: 0.0,  dir: 0.5,  ambient: 0.25 },
-  { scroll: 0.12, dir: 0.4,  ambient: 0.2  },
-  { scroll: 0.55, dir: 0.25, ambient: 0.15 },
-  { scroll: 0.78, dir: 0.05, ambient: 0.08 },
-  { scroll: 0.88, dir: 0.2,  ambient: 0.12 },
-  { scroll: 0.94, dir: 0.4,  ambient: 0.2  },
-  { scroll: 1.0,  dir: 0.5,  ambient: 0.25 },
+  { scroll: 0.0,  dir: 0.5,  ambient: 0.3  },
+  { scroll: 0.12, dir: 0.4,  ambient: 0.25 },
+  { scroll: 0.55, dir: 0.3,  ambient: 0.18 },
+  { scroll: 0.78, dir: 0.08, ambient: 0.1  },
+  { scroll: 0.88, dir: 0.25, ambient: 0.15 },
+  { scroll: 0.94, dir: 0.4,  ambient: 0.25 },
+  { scroll: 1.0,  dir: 0.5,  ambient: 0.3  },
 ];
 
 function interpolateKeyframes<T extends { scroll: number }>(
