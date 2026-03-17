@@ -17,7 +17,7 @@ ${simplexNoise3D}
 
 void main() {
   vec3 pos = position;
-  pos.y += snoise(vec3(pos.xz * 0.05 + uTime * 0.02, 0.0)) * 3.0;
+  pos.y += snoise(vec3(pos.xz * 0.05 + uTime * 0.02, 0.0)) * 5.0;
   vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
   vViewPosition = -mvPosition.xyz;
   vWorldPos = (modelMatrix * vec4(pos, 1.0)).xyz;
@@ -34,7 +34,8 @@ varying vec3 vWorldPos;
 varying vec3 vViewPosition;
 
 void main() {
-  gl_FragColor = vec4(0.04, 0.086, 0.157, 1.0);
+  gl_FragColor = vec4(0.06, 0.125, 0.21, 1.0);
+  gl_FragColor.rgb += vec3(0.02, 0.04, 0.08);
   float c = caustic(vWorldPos.xz * 0.1, uTime * 0.5);
   gl_FragColor.rgb += vec3(0.22, 0.51, 0.97) * c * uCausticIntensity;
   ${underwaterFogFragment}

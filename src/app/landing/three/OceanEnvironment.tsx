@@ -24,23 +24,23 @@ const DEPTH_CURVE = [
 // Fog + scene background colors — DARK palette matching --ocean-bg (#040B14)
 // Surface is slightly brighter blue-navy, deep is near-black
 const FOG_COLORS = [
-  { scroll: 0.0,  color: new THREE.Color("#061525") },  // surface: dark navy with blue hint
-  { scroll: 0.5,  color: new THREE.Color("#040B14") },  // mid: original ocean-bg
-  { scroll: 0.75, color: new THREE.Color("#020609") },  // deep: near-black
-  { scroll: 0.88, color: new THREE.Color("#040B14") },  // rise: back to mid
-  { scroll: 0.94, color: new THREE.Color("#061525") },  // surface again
-  { scroll: 1.0,  color: new THREE.Color("#061525") },
+  { scroll: 0.0,  color: new THREE.Color("#0a2540") },  // surface: visible dark blue
+  { scroll: 0.5,  color: new THREE.Color("#061525") },  // mid: dark navy
+  { scroll: 0.75, color: new THREE.Color("#030a12") },  // deep: near-black
+  { scroll: 0.88, color: new THREE.Color("#061525") },  // rise: back to mid
+  { scroll: 0.94, color: new THREE.Color("#0a2540") },  // surface again
+  { scroll: 1.0,  color: new THREE.Color("#0a2540") },
 ];
 
 // Lighting — reduced to match dark theme; just enough to illuminate 3D elements
 const LIGHTING_CURVE = [
-  { scroll: 0.0,  dir: 0.5,  ambient: 0.3  },
-  { scroll: 0.12, dir: 0.4,  ambient: 0.25 },
-  { scroll: 0.55, dir: 0.3,  ambient: 0.18 },
+  { scroll: 0.0,  dir: 0.7,  ambient: 0.45 },
+  { scroll: 0.12, dir: 0.55, ambient: 0.35 },
+  { scroll: 0.55, dir: 0.4,  ambient: 0.25 },
   { scroll: 0.78, dir: 0.08, ambient: 0.1  },
-  { scroll: 0.88, dir: 0.25, ambient: 0.15 },
-  { scroll: 0.94, dir: 0.4,  ambient: 0.25 },
-  { scroll: 1.0,  dir: 0.5,  ambient: 0.3  },
+  { scroll: 0.88, dir: 0.35, ambient: 0.2  },
+  { scroll: 0.94, dir: 0.55, ambient: 0.35 },
+  { scroll: 1.0,  dir: 0.7,  ambient: 0.45 },
 ];
 
 function interpolateKeyframes<T extends { scroll: number }>(
@@ -112,9 +112,9 @@ export default function OceanEnvironment({ scrollProgress }: OceanEnvironmentPro
 
   return (
     <>
-      <fog ref={fogRef} attach="fog" args={["#061525", 20, 50]} />
-      <ambientLight ref={ambientRef} intensity={0.25} color="#1e3a5f" />
-      <directionalLight ref={dirKeyRef} position={[2, 18, 4]} intensity={0.5} color="#1e40af" />
+      <fog ref={fogRef} attach="fog" args={["#0a2540", 20, 50]} />
+      <ambientLight ref={ambientRef} intensity={0.45} color="#2563EB" />
+      <directionalLight ref={dirKeyRef} position={[2, 18, 4]} intensity={0.7} color="#3B82F6" />
       <directionalLight ref={dirFillRef} position={[-3, 8, 2]} intensity={0.1} color="#065f46" />
     </>
   );

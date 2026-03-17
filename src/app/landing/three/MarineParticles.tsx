@@ -17,7 +17,7 @@ function PlanktonLayer() {
   const materialRef = useRef<THREE.PointsMaterial>(null);
 
   const positions = useMemo(() => {
-    const count = 200;
+    const count = 300;
     const arr = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
       arr[i * 3] = (Math.random() - 0.5) * 40; // X: [-20, 20]
@@ -37,7 +37,7 @@ function PlanktonLayer() {
     const posAttr = geom.attributes.position as THREE.BufferAttribute;
     const arr = posAttr.array as Float32Array;
 
-    for (let i = 0; i < 200; i++) {
+    for (let i = 0; i < 300; i++) {
       arr[i * 3 + 1] =
         basePositions[i * 3 + 1] +
         Math.sin(time * 0.3 + i * 0.1) * 0.002 * (i + 1);
@@ -57,12 +57,12 @@ function PlanktonLayer() {
         <bufferAttribute
           attach="attributes-position"
           args={[positions, 3]}
-          count={200}
+          count={300}
         />
       </bufferGeometry>
       <pointsMaterial
         ref={materialRef}
-        size={0.12}
+        size={0.18}
         color="#06d6a0"
         transparent
         blending={THREE.AdditiveBlending}
@@ -79,7 +79,7 @@ function FishSchoolLayer() {
   const pointsRef = useRef<THREE.Points>(null);
 
   const positions = useMemo(() => {
-    const count = 30;
+    const count = 50;
     const arr = new Float32Array(count * 3);
     // Initial positions don't matter much since useFrame overrides them
     for (let i = 0; i < count; i++) {
@@ -98,7 +98,7 @@ function FishSchoolLayer() {
     const posAttr = geom.attributes.position as THREE.BufferAttribute;
     const arr = posAttr.array as Float32Array;
 
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 50; i++) {
       arr[i * 3] =
         Math.sin(time * 0.3) * 10 + Math.sin(i * 2.0) * 3;
       arr[i * 3 + 1] =
@@ -120,11 +120,11 @@ function FishSchoolLayer() {
         <bufferAttribute
           attach="attributes-position"
           args={[positions, 3]}
-          count={30}
+          count={50}
         />
       </bufferGeometry>
       <pointsMaterial
-        size={0.2}
+        size={0.3}
         color="#94a3b8"
         transparent
         opacity={0.8}
@@ -226,7 +226,7 @@ function JellyfishLayer() {
               meshRefs.current[i] = el;
             }}
           >
-            <sphereGeometry args={[0.5, 8, 4, 0, Math.PI * 2, 0, Math.PI * 0.5]} />
+            <sphereGeometry args={[0.8, 8, 4, 0, Math.PI * 2, 0, Math.PI * 0.5]} />
             <meshBasicMaterial
               color={jf.color}
               transparent

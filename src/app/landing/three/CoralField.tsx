@@ -34,16 +34,16 @@ export default function CoralField({ tier }: CoralFieldProps) {
   const rocksRef = useRef<THREE.InstancedMesh>(null);
 
   const coralTypes = useMemo<CoralType[]>(() => {
-    const branching = new THREE.ConeGeometry(0.3, 1.5, 5);
-    const fan = new THREE.CircleGeometry(0.8, 6);
-    const tube = new THREE.CylinderGeometry(0.1, 0.15, 1.2, 6);
-    const rock = new THREE.DodecahedronGeometry(0.5, 0);
+    const branching = new THREE.ConeGeometry(0.6, 3.0, 5);
+    const fan = new THREE.CircleGeometry(1.6, 6);
+    const tube = new THREE.CylinderGeometry(0.2, 0.3, 2.4, 6);
+    const rock = new THREE.DodecahedronGeometry(1.0, 0);
 
     return [
-      { geometry: branching, color: "#ec4899", fullCount: 12, reducedCount: 6, sways: true },
-      { geometry: fan, color: "#8b5cf6", fullCount: 8, reducedCount: 4, sways: true },
-      { geometry: tube, color: "#06d6a0", fullCount: 10, reducedCount: 5, sways: true },
-      { geometry: rock, color: "#1e293b", fullCount: 15, reducedCount: 8, sways: false },
+      { geometry: branching, color: "#ec4899", fullCount: 20, reducedCount: 10, sways: true },
+      { geometry: fan, color: "#8b5cf6", fullCount: 13, reducedCount: 7, sways: true },
+      { geometry: tube, color: "#06d6a0", fullCount: 16, reducedCount: 8, sways: true },
+      { geometry: rock, color: "#1e293b", fullCount: 24, reducedCount: 13, sways: false },
     ];
   }, []);
 
@@ -63,7 +63,7 @@ export default function CoralField({ tier }: CoralFieldProps) {
       for (let i = 0; i < count; i++) {
         const x = (rand() - 0.5) * 60; // [-30, 30]
         const z = (rand() - 0.5) * 60; // [-30, 30]
-        const y = -14.5;
+        const y = -12;
         const rotY = rand() * Math.PI * 2;
         const s = 0.7 + rand() * 0.6; // [0.7, 1.3]
 
@@ -98,7 +98,7 @@ export default function CoralField({ tier }: CoralFieldProps) {
             color: type.color,
             roughness: 0.8,
             emissive: type.color,
-            emissiveIntensity: type.sways ? 0.3 : 0.05,
+            emissiveIntensity: type.sways ? 0.5 : 0.15,
           })
       ),
     [coralTypes]

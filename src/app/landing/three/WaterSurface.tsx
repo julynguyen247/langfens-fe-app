@@ -14,12 +14,12 @@ const vertexShader = /* glsl */ `
 
   void main() {
     vec3 pos = position;
-    pos.y += sin(pos.x * 0.3 + uTime) * 0.4 + sin(pos.z * 0.5 + uTime * 0.7) * 0.25;
+    pos.y += sin(pos.x * 0.3 + uTime) * 0.6 + sin(pos.z * 0.5 + uTime * 0.7) * 0.375;
 
     // Partial derivatives of wave displacement for normal computation
-    // wave = sin(x*0.3 + t)*0.4 + sin(z*0.5 + t*0.7)*0.25
-    float dx = cos(pos.x * 0.3 + uTime) * 0.3 * 0.4;
-    float dz = cos(pos.z * 0.5 + uTime * 0.7) * 0.5 * 0.25;
+    // wave = sin(x*0.3 + t)*0.6 + sin(z*0.5 + t*0.7)*0.375
+    float dx = cos(pos.x * 0.3 + uTime) * 0.3 * 0.6;
+    float dz = cos(pos.z * 0.5 + uTime * 0.7) * 0.5 * 0.375;
     // For heightfield y=f(x,z), normal = normalize(-df/dx, 1, -df/dz)
     vec3 localNormal = normalize(vec3(-dx, 1.0, -dz));
 
@@ -50,7 +50,7 @@ const fragmentShader = /* glsl */ `
     vec3 colorB = vec3(0.220, 0.741, 0.973); // #38bdf8
     vec3 color = mix(colorA, colorB, fresnel);
 
-    float alpha = fresnel * 0.6 * uOpacity;
+    float alpha = (fresnel * 0.6 + 0.15) * uOpacity;
 
     gl_FragColor = vec4(color, alpha);
   }
