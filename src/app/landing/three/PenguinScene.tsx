@@ -5,6 +5,7 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import OceanEnvironment, { cameraYRef } from "./OceanEnvironment";
 import OceanTerrain from "./OceanTerrain";
+import WaterSurface from "./WaterSurface";
 import PenguinController from "./PenguinController";
 import type { DeviceTier } from "@/app/components/effects/useDeviceCapability";
 
@@ -54,6 +55,7 @@ export default function PenguinScene({
       <Suspense fallback={null}>
         <OceanEnvironment scrollProgress={scrollProgress} />
         <OceanTerrain />
+        {tier === "full" && <WaterSurface />}
         <CameraTrackingGroup>
           <PenguinController
             scrollProgress={scrollProgress}
