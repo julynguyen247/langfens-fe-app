@@ -9,6 +9,9 @@ import WaterSurface from "./WaterSurface";
 import PenguinController from "./PenguinController";
 import CoralField from "./CoralField";
 import MarineParticles from "./MarineParticles";
+import Bubbles from "./Bubbles";
+import KelpForest from "./KelpForest";
+import SeaCreatures from "./SeaCreatures";
 import { CausticOverlay3D } from "./shaders/caustic";
 import { GodRaysOverlay } from "./shaders/godRays";
 import type { DeviceTier } from "@/app/components/effects/useDeviceCapability";
@@ -69,7 +72,10 @@ export default function PenguinScene({
           />
         </CameraTrackingGroup>
         <CoralField tier={tier} />
+        <KelpForest tier={tier} />
         <MarineParticles tier={tier} />
+        <Bubbles />
+        <SeaCreatures tier={tier} />
       </Suspense>
     </Canvas>
   );
