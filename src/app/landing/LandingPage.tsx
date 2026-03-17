@@ -4,8 +4,6 @@ import { useRef } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 
-import { landingFontVars } from "./fonts";
-import "./landing-ocean.css";
 import { GSAPProvider } from "./lib/gsap-provider";
 
 import { useDeviceCapability } from "@/app/components/effects/useDeviceCapability";
@@ -44,7 +42,7 @@ export default function LandingPage() {
 
   return (
     <GSAPProvider>
-    <div ref={pageRef} className={`landing-ocean ${landingFontVars}`}>
+    <div ref={pageRef} className="landing-ocean bg-[var(--ocean-bg)] text-[var(--ocean-text)] min-h-screen overflow-x-hidden relative">
       {/* Loading screen (z-200, renders above everything) */}
       <LoadingScreen />
 
@@ -53,11 +51,19 @@ export default function LandingPage() {
         <PenguinScene
           scrollProgress={progress}
           currentSection={currentSection}
+          tier={deviceTier}
         />
       )}
 
-      {/* Static overlays only — Selenis-style (no animations) */}
-      <div className="noise-static" />
+      {/* Static noise overlay */}
+      <div
+        className="fixed inset-0 z-[4] pointer-events-none opacity-[0.03] mix-blend-overlay bg-repeat"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+          backgroundSize: '256px 256px',
+        }}
+      />
+      {/* Vignette overlay */}
       <div className="ocean-vignette" />
 
       {/* Scroll progress bar */}

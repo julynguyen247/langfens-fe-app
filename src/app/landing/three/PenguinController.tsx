@@ -16,7 +16,7 @@ interface PenguinControllerProps {
 }
 
 // Keyframe positions for the penguin at different scroll points
-// Camera is at [0, 0, 5], looking at origin. Keep penguin z >= 0 to avoid fog.
+// Positions are screen-relative offsets from camera group. Parenting handles Y tracking.
 const KEYFRAMES: { progress: number; position: [number, number, number]; scale: number }[] = [
   { progress: 0.0, position: [1.8, 0, 1], scale: 1 },       // Hero: center-right, close
   { progress: 0.12, position: [2.0, 0.3, 0.5], scale: 0.9 }, // Features start

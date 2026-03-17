@@ -1,22 +1,42 @@
 "use client";
 
-import { Suspense } from "react";
-import { Canvas } from "@react-three/fiber";
-import OceanEnvironment from "./OceanEnvironment";
+import { Suspense, useRef } from "react";
+import { Canvas, useFrame } from "@react-three/fiber";
+import * as THREE from "three";
+import OceanEnvironment, { cameraYRef } from "./OceanEnvironment";
 import PenguinController from "./PenguinController";
+import type { DeviceTier } from "@/app/components/effects/useDeviceCapability";
 
 interface PenguinSceneProps {
   scrollProgress: number;
   currentSection: string;
+  tier: DeviceTier;
+}
+
+/**
+ * Keeps the penguin group parented to the camera's Y position
+ * so penguin keyframes remain screen-relative offsets.
+ */
+function CameraTrackingGroup({ children }: { children: React.ReactNode }) {
+  const groupRef = useRef<THREE.Group>(null);
+
+  useFrame(() => {
+    if (groupRef.current) {
+      groupRef.current.position.y = cameraYRef.current;
+    }
+  });
+
+  return <group ref={groupRef}>{children}</group>;
 }
 
 export default function PenguinScene({
   scrollProgress,
   currentSection,
+  tier,
 }: PenguinSceneProps) {
   return (
     <Canvas
-      camera={{ position: [0, 0, 5], fov: 45 }}
+      camera={{ position: [0, 10, 5], fov: 45 }}
       style={{
         position: "fixed",
         inset: 0,
@@ -26,16 +46,19 @@ export default function PenguinScene({
       dpr={[1, 1.2]}
       gl={{
         antialias: false,
-        alpha: true,
+        alpha: false,
         powerPreference: "high-performance",
       }}
     >
       <Suspense fallback={null}>
-        <OceanEnvironment />
-        <PenguinController
-          scrollProgress={scrollProgress}
-          currentSection={currentSection}
-        />
+        <OceanEnvironment scrollProgress={scrollProgress} />
+        <CameraTrackingGroup>
+          <PenguinController
+            scrollProgress={scrollProgress}
+            currentSection={currentSection}
+          />
+        </CameraTrackingGroup>
+        {/* Ocean components added in Tasks 3-8 */}
       </Suspense>
     </Canvas>
   );
