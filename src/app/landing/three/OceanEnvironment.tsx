@@ -10,33 +10,37 @@ interface OceanEnvironmentProps {
   scrollProgress: number;
 }
 
+// Fog near/far — higher values = less fog = more 3D elements visible
 const DEPTH_CURVE = [
-  { scroll: 0.00, y:  10, fogNear: 15, fogFar: 40 },
-  { scroll: 0.12, y:   4, fogNear: 12, fogFar: 35 },
-  { scroll: 0.55, y:  -2, fogNear:  8, fogFar: 25 },
-  { scroll: 0.78, y:  -8, fogNear:  5, fogFar: 18 },
-  { scroll: 0.88, y:  -4, fogNear:  8, fogFar: 25 },
-  { scroll: 0.94, y:   4, fogNear: 12, fogFar: 35 },
-  { scroll: 1.00, y:  10, fogNear: 15, fogFar: 40 },
+  { scroll: 0.00, y:  10, fogNear: 20, fogFar: 50 },
+  { scroll: 0.12, y:   4, fogNear: 16, fogFar: 45 },
+  { scroll: 0.55, y:  -2, fogNear: 10, fogFar: 30 },
+  { scroll: 0.78, y:  -8, fogNear:  6, fogFar: 20 },
+  { scroll: 0.88, y:  -4, fogNear: 10, fogFar: 30 },
+  { scroll: 0.94, y:   4, fogNear: 16, fogFar: 45 },
+  { scroll: 1.00, y:  10, fogNear: 20, fogFar: 50 },
 ];
 
+// Fog + scene background colors — DARK palette matching --ocean-bg (#040B14)
+// Surface is slightly brighter blue-navy, deep is near-black
 const FOG_COLORS = [
-  { scroll: 0.0,  color: new THREE.Color("#0c4a6e") },
-  { scroll: 0.5,  color: new THREE.Color("#041e35") },
-  { scroll: 0.75, color: new THREE.Color("#0a0a1a") },
-  { scroll: 0.88, color: new THREE.Color("#041e35") },
-  { scroll: 0.94, color: new THREE.Color("#0c4a6e") },
-  { scroll: 1.0,  color: new THREE.Color("#0c4a6e") },
+  { scroll: 0.0,  color: new THREE.Color("#061525") },  // surface: dark navy with blue hint
+  { scroll: 0.5,  color: new THREE.Color("#040B14") },  // mid: original ocean-bg
+  { scroll: 0.75, color: new THREE.Color("#020609") },  // deep: near-black
+  { scroll: 0.88, color: new THREE.Color("#040B14") },  // rise: back to mid
+  { scroll: 0.94, color: new THREE.Color("#061525") },  // surface again
+  { scroll: 1.0,  color: new THREE.Color("#061525") },
 ];
 
+// Lighting — reduced to match dark theme; just enough to illuminate 3D elements
 const LIGHTING_CURVE = [
-  { scroll: 0.0,  dir: 0.8,  ambient: 0.4  },
-  { scroll: 0.12, dir: 0.6,  ambient: 0.3  },
-  { scroll: 0.55, dir: 0.4,  ambient: 0.25 },
-  { scroll: 0.78, dir: 0.05, ambient: 0.1  },
-  { scroll: 0.88, dir: 0.3,  ambient: 0.2  },
-  { scroll: 0.94, dir: 0.6,  ambient: 0.35 },
-  { scroll: 1.0,  dir: 0.8,  ambient: 0.4  },
+  { scroll: 0.0,  dir: 0.5,  ambient: 0.25 },
+  { scroll: 0.12, dir: 0.4,  ambient: 0.2  },
+  { scroll: 0.55, dir: 0.25, ambient: 0.15 },
+  { scroll: 0.78, dir: 0.05, ambient: 0.08 },
+  { scroll: 0.88, dir: 0.2,  ambient: 0.12 },
+  { scroll: 0.94, dir: 0.4,  ambient: 0.2  },
+  { scroll: 1.0,  dir: 0.5,  ambient: 0.25 },
 ];
 
 function interpolateKeyframes<T extends { scroll: number }>(
@@ -108,10 +112,10 @@ export default function OceanEnvironment({ scrollProgress }: OceanEnvironmentPro
 
   return (
     <>
-      <fog ref={fogRef} attach="fog" args={["#0c4a6e", 15, 40]} />
-      <ambientLight ref={ambientRef} intensity={0.4} color="#2563EB" />
-      <directionalLight ref={dirKeyRef} position={[2, 18, 4]} intensity={0.8} color="#3B82F6" />
-      <directionalLight ref={dirFillRef} position={[-3, 8, 2]} intensity={0.15} color="#06D6A0" />
+      <fog ref={fogRef} attach="fog" args={["#061525", 20, 50]} />
+      <ambientLight ref={ambientRef} intensity={0.25} color="#1e3a5f" />
+      <directionalLight ref={dirKeyRef} position={[2, 18, 4]} intensity={0.5} color="#1e40af" />
+      <directionalLight ref={dirFillRef} position={[-3, 8, 2]} intensity={0.1} color="#065f46" />
     </>
   );
 }
