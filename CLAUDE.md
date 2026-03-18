@@ -1,33 +1,47 @@
 # Langfens - IELTS Practice Platform
 
 ## Tech Stack
-- Next.js 15 (App Router) + React 19 + TypeScript 5
-- Tailwind CSS 4 + shadcn/ui
-- Framer Motion (animations)
+- Next.js 15 (App Router) + React 19 + TypeScript 5 (strict mode)
+- Tailwind CSS 4 + shadcn/ui (via `class-variance-authority`)
+- Framer Motion (component animations)
 - Zustand (state management)
-- Axios (HTTP client)
-- Three.js + React Three Fiber + Drei (3D scene — landing page only)
+- Axios (HTTP client, auto-refresh interceptor)
+- Three.js + React Three Fiber + Drei (3D penguin scene — landing page only)
 - GSAP + ScrollTrigger (scroll-driven animations — landing page only)
-- lottie-web / lottie-react (penguin mascot animations)
+- lottie-web / lottie-react (penguin mascot)
 - canvas-confetti (celebration effects)
+- Build: `--turbopack` for dev/build
 
 ---
 
-## App Design System (all pages EXCEPT landing page)
+## Code Style Rules (STRICT)
 
-### Visual Rules (STRICT)
-- **No icons** on new/redesigned pages. No Material Symbols, no lucide-react, no react-icons, no emoji icons. Use text labels, numbers, or CSS shapes.
-- **No gradients**. Solid colors only. No `bg-gradient-to-*`, no `linear-gradient()`, no `radial-gradient()`.
-- **No emojis** in UI content.
-- **No heavy UI components**. Keep formal, standard. Prefer shadcn primitives.
+### CSS Approach
+- **Use Tailwind inline classes** for all styling. Avoid creating custom CSS classes.
+- **No separate CSS files** for components. All styles live in JSX via `className` and `style` props.
+- `globals.css` is reserved for: CSS variables (scoped), `@keyframes`, pseudo-element rules (::before/::after), and `@layer base`.
+- Font families applied via `style={{ fontFamily: 'var(--font-heading)' }}` — NOT via CSS utility classes like `.font-heading`.
 
-### Components
-- Use **shadcn/ui** (`src/components/ui/`) for all new code
-- Legacy: `src/components/Button.tsx`, `src/components/Input.tsx` — do not use in new code
+### Component Patterns
+- Use **shadcn/ui** (`src/components/ui/`) for all new app pages
 - Use Next.js `<Image>` for all images
-- Use Framer Motion for animations
+- Use Framer Motion for app page animations
+- Use GSAP for landing page scroll animations
+- Legacy: `src/components/Button.tsx`, `src/components/Input.tsx` — do NOT use in new code
 
-### Colors (Solid Only)
+---
+
+## Global Design System (Duolingo-Soft)
+
+### Visual Rules for NEW Code (STRICT)
+- **No icons** on new/redesigned pages. No Material Symbols, no lucide-react, no react-icons, no emoji icons. Use text labels, numbers, or CSS shapes.
+- **No gradients** on new pages. Solid colors only.
+- **No emojis** in UI content.
+- Prefer shadcn primitives. Keep formal, standard.
+
+> **Reality:** Legacy pages (home, analytics, achievements, leaderboard) still use Material Symbols, react-icons (Feather/Heroicons), and gradients on achievement tiers. Do NOT break them — apply the strict rules only to **new** code.
+
+### Colors
 | Token | Value | Usage |
 |-------|-------|-------|
 | `--primary` | `#2563EB` (blue-600) | CTA buttons, primary actions |
@@ -35,197 +49,199 @@
 | `--primary-dark` | `#1E40AF` (blue-800) | Brand headings |
 | `--primary-light` | `#DBEAFE` (blue-100) | Highlight backgrounds |
 | `--background` | `#F8F9FA` | Page background |
-| `--surface` | `#FFFFFF` | Cards, containers |
-| Body text | `text-slate-600` | Paragraphs |
-| Muted text | `text-slate-400` | Secondary info |
-| Borders | `border-slate-200` | Card/section borders |
+| `--surface` / `--card` | `#FFFFFF` | Cards, containers |
+| `--foreground` | `#111827` | Primary text |
+| `--text-body` | `#374151` | Body text |
+| `--text-muted` | `#6B7280` | Secondary info |
+| `--border` | `#E5E7EB` | Card/section borders |
+| `--destructive` | `#EF4444` | Error states |
+
+**Skill badge colors:**
+- Reading: `bg-blue-50 text-blue-700`
+- Listening: `bg-purple-50 text-purple-700`
+- Writing: `bg-amber-50 text-amber-700`
+- Speaking: `bg-emerald-50 text-emerald-700`
 
 ### Typography
-- **Font**: Nunito — used for EVERYTHING (headings + body). Do NOT use Inter, Merriweather, Geist, or any other font.
-- `font-serif` and `font-sans` both resolve to Nunito
+- **Font**: Fredoka — used for EVERYTHING (headings + body). Do NOT use Nunito, Inter, Merriweather, Geist, or any other font. Loaded globally in `layout.tsx`.
+- **Monospace**: JetBrains Mono — for stats, scores, data displays. Also loaded globally.
+- `font-sans` and `font-serif` both resolve to Fredoka
 - H1: `text-3xl sm:text-4xl lg:text-5xl font-extrabold`
 - H2: `text-2xl sm:text-3xl font-bold`
 - H3: `text-xl font-semibold`
 - Body: `text-base text-slate-600`
 - Small: `text-sm text-slate-500`
+- **No uppercase** — use sentence case everywhere. No `uppercase` CSS class.
 
 ### Layout & Spacing
 - Container: `max-w-7xl mx-auto px-4 sm:px-6 lg:px-8`
-- Section padding: `py-16 lg:py-20`
+- Section padding: `py-8` to `py-16 lg:py-20`
 - Card padding: `p-6` or `p-8`
 - Grid gaps: `gap-4` (tight), `gap-6` (normal), `gap-8` (relaxed)
 
-### Border Radius
-- Cards: `rounded-2xl`
-- Buttons: `rounded-xl`
-- Small elements: `rounded-lg`
-- Badges/pills: `rounded-full`
-
-### Shadows
-- Default cards: `shadow-sm`
-- Hover state: `shadow-md`
+### Border Radius & Shadows (Duolingo-soft 3D)
+- Cards: `rounded-[2rem]`, `border-[3px]`, hard drop shadow `shadow-[0_4px_0_rgba(0,0,0,0.08)]`, hover lifts
+- Buttons: `rounded-full` (pill shape), `border-b-[4px]` for 3D depth, active presses down
+- Badges: `rounded-full`, `border-b-[2px]` subtle depth
 - Elevated (modals): `shadow-lg`
 
 ### Animations (Framer Motion)
-- `whileInView` with `viewport={{ once: true }}`
-- Reveal: `initial={{ opacity: 0, y: 20 }}` → `animate={{ opacity: 1, y: 0 }}`
+- Reveal: `initial={{ opacity: 0, y: 10-20 }}` → `animate={{ opacity: 1, y: 0 }}`
 - Hover: `whileHover={{ y: -2 }}`, `whileTap={{ scale: 0.98 }}`
-- Duration: 0.5–0.6s, ease: `easeOut`
-- Stagger: `staggerChildren: 0.08`
+- Duration: 0.4–0.6s, ease: `easeOut`
 
 ---
 
-## Landing Page Design System (`/`)
+## Landing Page (`/`) — Dark Cinematic Extension
 
-The landing page is a **dark ocean cinematic theme** — completely separate from the app. All code lives in `src/app/landing/`. The app visual rules (no gradients, no icons, Nunito-only, solid colors) do **NOT** apply here.
+The landing page extends the global Duolingo-soft design system with a **dark ocean cinematic theme**. All code lives in `src/app/landing/`. Same fonts and component styles as app pages, plus cinematic effects.
 
-### Theme: Dark Ocean
-Everything scoped under `.landing-ocean` CSS class (defined in `landing-ocean.css`). Does not leak to the rest of the app.
+### What's different from app pages:
+- **Dark background** (#040B14) instead of light (#F8F9FA)
+- **Cinematic effects**: particles, 3D penguin, vignettes, caustic overlays, custom cursor
+- **GSAP scroll animations** instead of Framer Motion
+- **Per-section accent colors** on features, steps, stats
+
+### Theme
+Scoped under `.landing-ocean` class on root div. CSS variables defined in `globals.css` (minimal — only vars + keyframes + pseudo-elements).
 
 ### Colors
 | Token | Value | Usage |
 |-------|-------|-------|
-| `--ocean-bg` | `#040B14` | Page background (near-black blue) |
+| `--ocean-bg` | `#040B14` | Page background |
 | `--ocean-bg-light` | `#0A1628` | Card backgrounds |
-| `--ocean-surface` | `#0F1D32` | Elevated surfaces |
-| `--ocean-primary` | `#0EA5E9` (sky-500) | CTA buttons, glows, accents |
-| `--ocean-primary-hover` | `#0284C7` | Button hover |
-| `--ocean-primary-light` | `#38BDF8` | Highlights |
-| `--ocean-primary-glow` | `rgba(14,165,233,0.3)` | Glow shadows |
-| `--ocean-accent` | `#06D6A0` | Seafoam/teal — gamification, success |
-| `--ocean-gold` | `#F59E0B` | Amber — streaks, stars |
+| `--ocean-primary` | `#2563EB` (blue-600) | CTAs, accents |
+| `--ocean-primary-light` | `#3B82F6` | Highlights |
+| `--ocean-primary-dark` | `#1E40AF` | 3D button bottom borders |
+| `--ocean-primary-glow` | `rgba(37,99,235,0.3)` | Glow shadows |
+| `--ocean-accent` | `#06D6A0` | Teal — secondary accent |
+| `--ocean-gold` | `#F59E0B` | Stars, achievements |
 | `--ocean-text` | `#F0F4F8` | Primary text |
 | `--ocean-text-secondary` | `#94A3B8` | Secondary text |
 | `--ocean-text-muted` | `#64748B` | Muted text |
-| `--ocean-border` | `rgba(255,255,255,0.06)` | Card/section borders |
-| `--ocean-border-glow` | `rgba(14,165,233,0.2)` | Hover border glow |
+| `--ocean-border-glow` | `rgba(37,99,235,0.35)` | Hover border glow |
 
-### Gradients (ALLOWED on landing page)
-- Ocean: `linear-gradient(135deg, #0EA5E9, #06D6A0)` — hero headline, CTA
-- Aurora: `linear-gradient(135deg, #0EA5E9, #8B5CF6)` — AI features
-- Gold: `linear-gradient(135deg, #F59E0B, #FBBF24)` — achievements
-- Text gradient: `.text-gradient-ocean` (CSS class in `landing-ocean.css`)
+**Per-section accent colors:** `#2563EB` (blue), `#06D6A0` (teal), `#FF9600` (orange), `#8B5CF6` (purple), `#F59E0B` (gold), `#EC4899` (pink)
 
 ### Typography
-| Role | Font | Class |
-|------|------|-------|
-| Headings | **Sora** (bold, modern) | `.font-heading` |
-| Body | **Inter** (clean, readable) | `.font-body` |
-| Labels/stats/scores | **JetBrains Mono** (monospace) | `.font-code` |
+| Role | Font | Applied via |
+|------|------|-------------|
+| Headings + Body | **Fredoka** (400-700) | `style={{ fontFamily: 'var(--font-heading)' }}` |
+| Stats/scores | **JetBrains Mono** (400-700) | `style={{ fontFamily: 'var(--font-code)' }}` |
 
-Fonts loaded via `next/font/google` in `src/app/landing/fonts.ts`, applied only to `.landing-ocean` wrapper.
+Fonts loaded globally in `src/app/layout.tsx`. `--font-heading` and `--font-body` resolve to `--font-sans` (Fredoka) via globals.css `.landing-ocean` scope.
 
 **Type scale:**
 - Hero H1: `text-4xl sm:text-5xl lg:text-7xl font-bold`
-- Section H2: `text-3xl sm:text-4xl lg:text-5xl font-bold`
-- Card H3: `text-xl font-semibold`
-- Pre-headline labels: `font-code text-xs tracking-[0.2em] uppercase text-[var(--ocean-primary)]`
-- Body: `font-body text-lg text-[var(--ocean-text-secondary)]`
-- Stat numbers: `font-heading text-5xl sm:text-6xl font-bold text-gradient-ocean`
+- Section H2: `clamp(2.5rem, 5vw, 4.5rem) font-bold` (via SectionHeading)
+- Card H3: `text-2xl font-bold`
+- Labels: `text-sm font-bold tracking-wide` (sentence case, NO uppercase)
+- Body: `text-lg`, secondary text color
 
-### Card Style
-- Class: `.ocean-card` (glassmorphism: `rgba(10,22,40,0.6)` + `backdrop-blur-12px` + border `--ocean-border`)
-- Hover: border shifts to `--ocean-border-glow`, adds `--ocean-shadow-glow`
-- Radius: `rounded-2xl`
+### Card Style (Chunky Duolingo 3D)
+All cards use inline Tailwind (no `.ocean-card` class):
+```
+bg-[var(--ocean-bg-light)] border-[3px] border-[rgba(255,255,255,0.07)]
+rounded-[2rem] shadow-[0_5px_0_rgba(0,0,0,0.35),0_0_0_1px_rgba(255,255,255,0.04)]
+transition-all duration-150
+hover:-translate-y-[3px] hover:scale-[1.01]
+hover:border-[var(--ocean-border-glow)]
+hover:shadow-[0_7px_0_rgba(0,0,0,0.35),0_0_25px_var(--ocean-primary-glow)]
+```
 
-### Button Styles
-- Primary: `.btn-ocean` — solid `--ocean-primary`, white text, glow shadow, hover lifts + intensifies glow
-- Ghost: `.btn-ghost` — transparent, border `rgba(255,255,255,0.12)`, hover border turns primary
-- Radius: `rounded-xl`
-- Padding: `px-8 py-3.5` (standard), `px-10 py-4` (large/CTA)
+### Button Styles (Pill-shaped 3D press)
+All buttons use inline Tailwind in `Button.tsx` (no `.btn-ocean` class):
+- **Primary**: `bg-[var(--ocean-primary)]` pill, `border-b-[5px]` for 3D depth, sentence case, bouncy hover
+- **Ghost**: transparent pill, `border-b-[4px]`, hover turns primary
+- **Active**: `translate-y-[3px]` + `border-b-[2px]` (press down)
+- **Radius**: `rounded-full` (pill shape)
 
 ### Sections (7 + header)
-| Section | Component | Behavior |
-|---------|-----------|----------|
-| Header | `OceanHeader` | Fixed, transparent → blur on scroll |
-| Hero | `HeroSection` | `min-h-screen`, gradient headline, CTAs, 3D penguin viewport |
-| Features | `FeaturesSection` | GSAP ScrollTrigger pinned (600vh), 6 features crossfade, progress dots |
-| How It Works | `HowItWorksSection` | 3 step cards, SVG connecting line animation |
-| Stats | `StatsSection` | 3-column grid, count-up animation on scroll (`useCountUp`) |
-| Testimonials | `TestimonialsSection` | 3 glassmorphism cards, star ratings, score badges |
-| CTA | `CTASection` | `min-h-screen`, gradient headline, confetti on click |
-| Footer | `FooterSection` | Dark footer, back-to-top button |
-
-### Z-Index Layer Order
-1. `z-0` — CSS dark background
-2. `z-1` — R3F Canvas (fixed, transparent, `pointer-events: none`)
-3. `z-2` — OceanParticleCanvas (2D canvas)
-4. `z-5` — Cinematic CSS overlays (film grain, vignette, light leak)
-5. `z-10` — HTML sections (relative positioned)
-6. `z-20` — Feature progress dots (fixed left)
-7. `z-50` — Custom cursor, section dots
-8. `z-[100]` — Sticky header
-9. `z-[101]` — Scroll progress bar
+| Section | Component | Accent Color |
+|---------|-----------|-------------|
+| Header | `OceanHeader` | blue (+ streak badge) |
+| Hero | `HeroSection` | blue (gradient accent) |
+| Features | `FeaturesSection` | per-feature colors |
+| How It Works | `HowItWorksSection` | blue/teal/purple per step |
+| Stats | `StatsSection` | blue/purple/teal per card |
+| Testimonials | `TestimonialsSection` | avatar colors per card |
+| CTA | `CTASection` | blue (confetti on click) |
+| Footer | `FooterSection` | — |
 
 ### Cinematic Effects
-- **Particles**: `OceanParticleCanvas` — bubbles (rise), plankton (drift), dust, volumetric light rays
-- **Film grain**: `.film-grain` CSS overlay (opacity 0.025)
-- **Vignette**: `.ocean-vignette` — dark radial gradient, intensity driven by scroll velocity
-- **Light leak**: `.ocean-light-leak` — sweeping blue gradient animation
-- **Custom cursor**: `CustomCursor` — 16px ring, expands to 40px on hover, `cursor: none` on desktop
-- **Scroll progress**: `ScrollProgressBar` — 3px top bar, `--ocean-primary` with glow
-- **Section dots**: `SectionDots` — fixed right, 7 dots, click to scroll, tooltip on hover
-- **Confetti**: `useOceanConfetti` — ocean colors `#0EA5E9, #06D6A0, #38BDF8, #34D399`
+- **Particles**: `OceanParticleCanvas` — bubbles, plankton, dust, volumetric light rays
+- **Noise**: inline SVG turbulence overlay (in LandingPage.tsx)
+- **Vignette**: `ocean-vignette` pseudo-element (globals.css — cannot be inlined)
+- **Caustic**: `CausticOverlay` — inline styles + keyframe from globals.css
+- **Custom cursor**: `CustomCursor` — bioluminescent dot+ring+trail
+- **Loading screen**: `LoadingScreen` — 2s intro, "Almost there..."
+- **Confetti**: `useOceanConfetti` — 6 colors: `#2563EB, #06D6A0, #FF9600, #F59E0B, #EC4899, #8B5CF6`
 
 ### 3D Penguin Scene
-- R3F Canvas: `position: fixed; inset: 0; z-index: 1; pointer-events: none`
-- Loaded via `next/dynamic({ ssr: false })` for code-splitting
-- **PenguinModel**: Lottie billboard (`lottie-web` → hidden DOM container → canvas → `THREE.CanvasTexture` → `<Billboard>`)
-- **PenguinController**: Scroll-driven keyframe positions with smoothstep interpolation
-- **OceanEnvironment**: Fog (`#040B14`, 8–30), blue ambient + directional lights
-- Skipped on `minimal` device tier → falls back to existing `MascotWrapper` (Lottie)
+- R3F Canvas: fixed, z-1, pointer-events none, dynamic import (no SSR)
+- PenguinModel: Lottie → canvas → THREE.CanvasTexture → Billboard
+- PenguinController: 8 scroll-driven keyframe positions
+- Skipped on `minimal` device tier
+
+### GSAP Animation Config
+In `src/app/landing/lib/animation-config.ts`:
+- Entrance easing: `back.out(1.4)` (bouncy pop-in — Duolingo style)
+- Durations: 0.3s (fast), 0.6s (normal), 1.0s (slow)
+- Stagger: 0.05-0.2s
 
 ### Device Tier Degradation
 Via `useDeviceCapability` hook:
 | Tier | Criteria | Effects |
 |------|----------|---------|
-| `full` | Desktop, motion enabled | All effects: R3F, particles, custom cursor, interactions |
-| `reduced` | Mobile or prefers-reduced-motion | Fewer particles, no cursor, no interactions |
-| `minimal` | Low CPU (≤2 cores) or low RAM (≤2GB) | No R3F, no particles, Lottie fallback only |
+| `full` | Desktop, motion enabled | All effects |
+| `reduced` | Mobile or prefers-reduced-motion | Fewer particles, no cursor |
+| `minimal` | Low CPU/RAM | No R3F, no particles |
 
-### Content
-- **English only** on landing page
-- All text in `src/app/landing/data.ts` (centralized constants)
-- Social proof: "4.8/5 from 2,000+ students"
-- Stats: 3,200+ tests, 75% pass rate, 80% band improvement
-
-### Penguin Mascot Assets
-| File | Format | Details |
-|------|--------|---------|
-| `/public/animation/penguin.json` | Lottie JSON | "Penguin with binoculars", 766x864px, 30fps, 161 frames |
-| `/public/animation/sleepPenguin.json` | Lottie JSON | Sleep animation, 1000x1000px, 180 frames |
-| `/public/models/penguin.glb` | **(not yet)** | Upgrade path: AI generate via Meshy.ai → `useGLTF` in PenguinModel.tsx |
+### Gamification Elements
+- **Streak badge** in OceanHeader (CSS clip-path flame + number)
+- **Avatar initials** in TestimonialsSection (colored circles)
+- **Score badges** with gradient bg + hard shadow (game achievement feel)
+- **Bouncy animations**: `duo-bounce`, `pop-in`, `wiggle`, `float` keyframes
 
 ---
 
 ## Project Structure
 - `src/app/` — Pages (App Router)
-- `src/app/landing/` — Cinematic ocean landing page (self-contained)
-  - `sections/` — HeroSection, FeaturesSection, HowItWorksSection, StatsSection, TestimonialsSection, CTASection, FooterSection, OceanHeader
+- `src/app/landing/` — Cinematic Duolingo landing page (self-contained)
+  - `sections/` — OceanHeader, HeroSection, FeaturesSection, HowItWorksSection, StatsSection, TestimonialsSection, CTASection, FooterSection
   - `three/` — PenguinScene, PenguinModel, PenguinController, OceanEnvironment
-  - `effects/` — OceanParticleCanvas, CustomCursor, ScrollProgressBar, SectionDots
-  - `hooks/` — useScrollProgress, useCountUp, useSectionInView, useOceanConfetti
-  - `landing-ocean.css`, `fonts.ts`, `data.ts`, `LandingPage.tsx`
-- `src/app/components/` — Shared effects (ParticleCanvas, useMouseParallax, mascot, effects store)
-- `src/components/` — Shared components (legacy custom)
-- `src/components/ui/` — shadcn/ui components (standard)
-- `src/types/` — TypeScript type definitions
-- `src/utils/` — API services (Axios)
-- `src/lib/` — Utilities (cn helper)
-- `src/app/store/` — Zustand stores
-- `src/app/page.legacy.tsx` — Backup of old Vietnamese light-themed landing page
+  - `effects/` — OceanParticleCanvas, CustomCursor, ScrollProgressBar, SectionDots, LoadingScreen, CausticOverlay
+  - `hooks/` — useScrollProgress, useCountUp, useSectionInView, useOceanConfetti, useMediaQuery, useReducedMotion
+  - `ui/` — Button, GradientText, ScrollIndicator, SectionHeading, StepCard, FeatureVisual
+  - `lib/` — gsap-provider, animation-config, utils (lerp, clamp, mapRange)
+  - `data.ts`, `LandingPage.tsx`
+- `src/app/components/` — Shared effects and interactions
+  - `effects/` — useDeviceCapability, useLandingEffectsStore, useScrollVelocity, useIdleDetection
+  - `mascot/` — MascotWrapper, useMascotReactions
+  - `interactions/` — InteractiveEffects, useConfetti
+  - `gamification/` — GamificationHUD, ProgressRing (currently unused)
+  - ParticleCanvas.tsx, useMouseParallax.ts, GoogleButton.tsx (root level)
+- `src/components/` — Shared components
+  - `LangfensHeader.tsx` — Main app header
+  - `Button.tsx`, `Input.tsx` — Legacy (do not use in new code)
+- `src/components/ui/` — shadcn/ui: badge, button, card, separator
+- `src/types/` — TypeScript types
+- `src/utils/` — API services (`api.customize.ts`, `api.ts`, `audio.ts`)
+- `src/lib/` — Utilities (`utils.ts`, `mapApiQuestionToUi.ts`, `practice.meta.ts`)
+- `src/app/store/` — Zustand stores (loading, userStore, useAttemptStore, practiceStore)
 
 ## API Architecture
-Backend is microservices. API clients defined in `src/utils/api.customize.ts`:
-- api-auth, api-exams, api-attempts, api-vocabulary, api-speaking
-- api-writing, api-dictionary, api-gamification, api-analytics
-- api-notification, api-course
-
-All use Bearer token auth with automatic refresh on 401.
+Backend is microservices. 13 services defined in `src/utils/api.customize.ts`:
+- auth, exam, attempt, vocabulary, speaking, writing, chatbot, dictionary, gamification, analytics, notification, studyplan, course
+- Gateway: `NEXT_PUBLIC_GATEWAY_URL` env var
+- Bearer token auth from localStorage, auto-refresh on 401
+- Business logic: `src/utils/api.ts` (100+ functions)
 
 ## Important Notes
 - Landing page (`/`) and auth pages (`/auth/*`) do NOT show the main header
-- `AppShell.tsx` conditionally removes `bg-gray-50` when on `/` (landing page manages its own dark background)
-- Other pages still use legacy components (Material Symbols icons, custom Button) — do not break them
-- The app is bilingual (Vietnamese primary, English secondary)
+- `src/app/page.tsx` re-exports `LandingPage` from `src/app/landing/LandingPage.tsx`
+- `AppShell.tsx` conditionally removes `bg-gray-50` when on `/`
+- Other pages still use legacy components — do NOT break them
+- The app is bilingual (Vietnamese primary, English secondary) — landing page is English only
 - Target audience: IELTS students, primarily Vietnamese high school/university students
+- Path alias: `@/*` → `src/*`

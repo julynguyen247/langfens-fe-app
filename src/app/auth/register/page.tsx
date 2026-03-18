@@ -4,8 +4,9 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/Button";
-import Input from "@/components/Input";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { register } from "@/utils/api";
 import { useLoadingStore } from "@/app/store/loading";
 
@@ -13,6 +14,7 @@ export default function Register() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const { setLoading } = useLoadingStore();
 
@@ -104,26 +106,39 @@ export default function Register() {
           </p>
         </div>
         <div className="mt-8">
-          <Input
-            value={email}
-            onChangeFunc={emailChangeHandler}
-            placeholder="name@email.com"
-            label="Email"
-            type="email"
-            className="text-black"
-          />
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              value={email}
+              onChange={emailChangeHandler}
+              placeholder="name@email.com"
+              type="email"
+            />
+          </div>
           <p className="mt-1 text-xs text-gray-500">
             Sử dụng email bạn thường xuyên kiểm tra để nhận mã xác thực.
           </p>
 
-          <Input
-            value={password}
-            onChangeFunc={passwordChangeHandler}
-            placeholder="Mật khẩu"
-            label="Mật khẩu"
-            type="password"
-            className="mt-5"
-          />
+          <div className="flex flex-col gap-2 mt-5">
+            <Label htmlFor="password">Mật khẩu</Label>
+            <div className="relative">
+              <Input
+                id="password"
+                value={password}
+                onChange={passwordChangeHandler}
+                placeholder="Mật khẩu"
+                type={showPassword ? "text" : "password"}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-gray-500 hover:text-gray-700"
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
+            </div>
+          </div>
           {password.length > 0 && (
             <div className="mt-2 text-sm">
               <div className={`font-medium ${strengthColor}`}>
@@ -149,9 +164,9 @@ export default function Register() {
           {error && <div className="text-[#B91C1C] text-sm mt-3">{error}</div>}
 
           <Button
-            isValid={isFormValid}
+            disabled={!isFormValid}
             className="w-full mt-5"
-            onClickFunc={registerHandler}
+            onClick={registerHandler}
           >
             Tiếp tục
           </Button>

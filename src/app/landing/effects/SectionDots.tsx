@@ -37,7 +37,7 @@ export default function SectionDots() {
           aria-label={`Scroll to ${section.label}`}
         >
           {/* Tooltip on hover */}
-          <span className="absolute right-6 px-2 py-0.5 text-xs font-code text-[var(--ocean-text-secondary)] bg-[var(--ocean-surface)] border border-[var(--ocean-border)] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+          <span className="absolute right-6 px-2 py-0.5 text-xs text-[var(--ocean-text-secondary)] bg-[var(--ocean-surface)] border border-[var(--ocean-border)] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none" style={{ fontFamily: 'var(--font-code)' }}>
             {section.label}
           </span>
 

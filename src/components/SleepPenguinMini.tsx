@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Lottie from "lottie-react";
 
 export default function SleepPenguinMini() {
-  const [animationData, setAnimationData] = useState<any>(null);
+  const [animationData, setAnimationData] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
     fetch("/animation/sleepPenguin.json")

@@ -2,8 +2,9 @@
 
 import GoogleLoginButton from "@/app/components/GoogleButton";
 import { useLoadingStore } from "@/app/store/loading";
-import { Button } from "@/components/Button";
-import Input from "@/components/Input";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { login } from "@/utils/api";
 import Image from "next/image";
 import Link from "next/link";
@@ -14,6 +15,7 @@ export default function Login() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const { setLoading } = useLoadingStore();
 
@@ -97,21 +99,35 @@ export default function Login() {
           }}
           className="w-full mt-8"
         >
-          <Input
-            value={email}
-            onChangeFunc={emailChangeHandler}
-            placeholder="name@email.com"
-            label="Email"
-            type="email"
-          />
-          <Input
-            className="mt-5"
-            value={password}
-            onChangeFunc={passwordChangeHandler}
-            placeholder="Password"
-            label="Password"
-            type="password"
-          />
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              value={email}
+              onChange={emailChangeHandler}
+              placeholder="name@email.com"
+              type="email"
+            />
+          </div>
+          <div className="flex flex-col gap-2 mt-5">
+            <Label htmlFor="password">Password</Label>
+            <div className="relative">
+              <Input
+                id="password"
+                value={password}
+                onChange={passwordChangeHandler}
+                placeholder="Password"
+                type={showPassword ? "text" : "password"}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-gray-500 hover:text-gray-700"
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
+            </div>
+          </div>
 
           {error && <div className="text-[#B91C1C] text-sm mt-3">{error}</div>}
 
@@ -124,7 +140,7 @@ export default function Login() {
             </Link>
           </div>
 
-          <Button isValid={isFormValid} className="w-full mt-6" type="submit">
+          <Button disabled={!isFormValid} className="w-full mt-6" type="submit">
             Đăng nhập
           </Button>
         </form>

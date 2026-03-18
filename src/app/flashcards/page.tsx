@@ -35,7 +35,7 @@ type Subscription = {
   subscribeAt?: string;
 };
 
-function pickArray<T = any>(res: any): T[] {
+function pickArray<T = unknown>(res: any): T[] {
   const payload = res?.data?.data ?? res?.data ?? [];
   if (Array.isArray(payload)) return payload as T[];
   return [payload as T];

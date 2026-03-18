@@ -2,6 +2,7 @@ import { cn } from "@/lib/utils";
 
 interface SectionHeadingProps {
   label?: string;
+  labelColor?: string;
   title: string;
   subtitle?: string;
   className?: string;
@@ -10,6 +11,7 @@ interface SectionHeadingProps {
 
 export function SectionHeading({
   label,
+  labelColor,
   title,
   subtitle,
   className,
@@ -24,11 +26,14 @@ export function SectionHeading({
       )}
     >
       {label && (
-        <p className="mb-4 font-code text-xs uppercase tracking-[0.2em] text-[var(--ocean-primary)]">
+        <p
+          className="mb-4 text-sm font-bold tracking-wide text-[var(--ocean-primary)]"
+          style={{ fontFamily: 'var(--font-heading)', ...(labelColor ? { color: labelColor } : {}) }}
+        >
           {label}
         </p>
       )}
-      <h2 className="font-heading text-[clamp(2.5rem,5vw,4.5rem)] font-bold leading-[1.1] text-[var(--ocean-text)]">
+      <h2 className="text-[clamp(2.5rem,5vw,4.5rem)] font-bold leading-[1.1] text-[var(--ocean-text)]" style={{ fontFamily: 'var(--font-heading)' }}>
         {title}
       </h2>
       {subtitle && (

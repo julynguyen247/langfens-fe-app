@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Button } from "@/components/Button";
+import { Button } from "@/components/ui/button";
 import { verifyEmail, resendEmail } from "@/utils/api";
 import { useLoadingStore } from "@/app/store/loading";
 
@@ -118,7 +118,7 @@ export default function VerifyEmailPage() {
           {digits.map((d, i) => (
             <input
               key={i}
-              ref={(el: any) => (inputsRef.current[i] = el)}
+              ref={(el) => { inputsRef.current[i] = el; }}
               inputMode="numeric"
               pattern="\d*"
               maxLength={1}
@@ -136,9 +136,9 @@ export default function VerifyEmailPage() {
         )}
 
         <Button
-          isValid={isComplete}
+          disabled={!isComplete}
           className="w-full mt-5"
-          onClickFunc={submit}
+          onClick={submit}
         >
           Xác minh
         </Button>

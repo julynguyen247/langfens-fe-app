@@ -57,18 +57,23 @@ export default function LoadingScreen() {
                 initial={{ width: "0%" }}
                 animate={{ width: "100%" }}
                 transition={{ duration: 1.8, ease: "easeInOut" }}
-                className="loading-progress-bar h-full rounded-full"
+                className="h-full rounded-full"
+                style={{
+                  background: 'linear-gradient(90deg, var(--ocean-primary), var(--ocean-accent), var(--ocean-primary))',
+                  backgroundSize: '200% 100%',
+                  animation: 'shimmer 2s linear infinite',
+                }}
               />
             </div>
 
             {/* Brand name */}
-            <p className="font-heading text-lg font-bold text-[var(--ocean-text)] mt-6 tracking-wide">
+            <p className="text-lg font-bold text-[var(--ocean-text)] mt-6 tracking-wide" style={{ fontFamily: 'var(--font-heading)' }}>
               Langfens
             </p>
 
             {/* Loading text */}
-            <p className="font-code text-xs text-[var(--ocean-text-muted)] mt-2 tracking-widest uppercase">
-              Diving in...
+            <p className="text-sm font-medium tracking-wide text-[var(--ocean-text-muted)] mt-2" style={{ fontFamily: 'var(--font-heading)' }}>
+              Almost there...
             </p>
           </div>
         </motion.div>

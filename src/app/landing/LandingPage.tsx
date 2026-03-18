@@ -4,8 +4,6 @@ import { useRef } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 
-import { landingFontVars } from "./fonts";
-import "./landing-ocean.css";
 import { GSAPProvider } from "./lib/gsap-provider";
 
 import { useDeviceCapability } from "@/app/components/effects/useDeviceCapability";
@@ -38,30 +36,32 @@ export default function LandingPage() {
   const heroRef = useRef<HTMLElement>(null);
 
   const { tier: deviceTier } = useDeviceCapability();
-  const { progress, currentSection } = useScrollProgress();
+  useScrollProgress(); // registers scroll listener → updates Zustand store (no React state)
   const confetti = useOceanConfetti();
   useMouseParallax(pageRef);
 
   return (
     <GSAPProvider>
-    <div ref={pageRef} className={`landing-ocean ${landingFontVars}`}>
+    <div ref={pageRef} className="landing-ocean bg-[var(--ocean-bg)] text-[var(--ocean-text)] min-h-screen overflow-x-hidden relative">
       {/* Loading screen (z-200, renders above everything) */}
       <LoadingScreen />
 
       {/* 3D penguin scene (fixed behind content) — skip on minimal tier */}
       {deviceTier !== "minimal" && (
-        <PenguinScene
-          scrollProgress={progress}
-          currentSection={currentSection}
-        />
+        <PenguinScene tier={deviceTier} />
       )}
 
-      {/* Static overlays only — Selenis-style (no animations) */}
-      <div className="noise-static" />
-      <div className="ocean-vignette" />
+      {/* Static noise overlay */}
+      <div
+        className="fixed inset-0 z-[4] pointer-events-none opacity-[0.03] mix-blend-overlay bg-repeat"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+          backgroundSize: '256px 256px',
+        }}
+      />
 
       {/* Scroll progress bar */}
-      <ScrollProgressBar progress={progress} />
+      <ScrollProgressBar />
 
       {/* Custom bioluminescent cursor — desktop + full tier only */}
       {deviceTier === "full" && <CustomCursor />}
@@ -70,12 +70,14 @@ export default function LandingPage() {
       {/* Sticky navigation */}
       <OceanHeader onCTA={goSignUp} />
 
-      {/* Sections */}
+      {/* Sections with ocean-gap spacers */}
       <HeroSection ref={heroRef} onCTA={goSignUp} />
       <FeaturesSection />
+      <div className="h-[40vh]" /> {/* Ocean gap: twilight transition */}
       <HowItWorksSection />
+      <div className="h-[30vh]" /> {/* Ocean gap: midnight descent */}
       <StatsSection />
-      <TestimonialsSection />
+      <div className="h-[30vh]" /> {/* Ocean gap: deep zone */}
       <CTASection onCTA={goSignUp} onConfetti={confetti.celebration} />
       <FooterSection />
     </div>

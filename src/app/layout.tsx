@@ -1,13 +1,21 @@
-import { Nunito } from "next/font/google";
+import { Fredoka, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import AppShell from "./AppShell";
 import { Suspense } from "react";
 import LoadingLayer from "@/components/LoadingLayer";
 
-const nunito = Nunito({
-  variable: "--font-nunito",
-  subsets: ["latin", "vietnamese"],
-  weight: ["400", "500", "600", "700", "800", "900"],
+const fredoka = Fredoka({
+  variable: "--font-fredoka",
+  subsets: ["latin", "latin-ext"],
+  weight: ["300", "400", "500", "600", "700"],
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains-mono",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
 });
 
 export const metadata = {
@@ -23,13 +31,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning className={nunito.variable}>
-      <head>
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0"
-        />
-      </head>
+    <html lang="en" suppressHydrationWarning className={`${fredoka.variable} ${jetbrainsMono.variable}`}>
+      <head />
       <body
         className="antialiased font-sans text-gray-900 bg-[#F8FAFC]"
         suppressHydrationWarning

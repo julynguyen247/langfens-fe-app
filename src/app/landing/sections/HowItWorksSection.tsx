@@ -29,7 +29,7 @@ export default function HowItWorksSection() {
           y: 0,
           opacity: 1,
           duration: 0.8,
-          ease: EASE.smooth,
+          ease: EASE.bounce,
           scrollTrigger: { trigger: sectionRef.current, start: "top 80%" },
         }
       );
@@ -41,7 +41,7 @@ export default function HowItWorksSection() {
           opacity: 1,
           duration: 0.8,
           stagger: STAGGER.wide,
-          ease: EASE.smooth,
+          ease: EASE.bounce,
           scrollTrigger: { trigger: sectionRef.current, start: "top 85%" },
         }
       );
@@ -53,7 +53,7 @@ export default function HowItWorksSection() {
     <section
       ref={sectionRef}
       id="how-it-works"
-      className="relative z-10 py-24 lg:py-32 section-bg"
+      className="relative z-10 py-24 lg:py-32"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Header */}
@@ -88,11 +88,14 @@ export default function HowItWorksSection() {
             />
           </svg>
 
-          {STEPS.map((step, i) => (
-            <div key={i} className="hiw-card" style={{ opacity: 0 }}>
-              <StepCard step={step} />
-            </div>
-          ))}
+          {STEPS.map((step, i) => {
+            const accentColors = ["#2563EB", "#06D6A0", "#8B5CF6"];
+            return (
+              <div key={i} className="hiw-card" style={{ opacity: 0 }}>
+                <StepCard step={step} accentColor={accentColors[i]} />
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>
