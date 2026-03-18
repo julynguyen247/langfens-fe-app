@@ -66,30 +66,30 @@ export default function CTASection({ onCTA, onConfetti }: CTASectionProps) {
     <section
       ref={sectionRef}
       data-section="cta"
-      className="vignette-cta relative z-10 min-h-screen flex items-center py-24 lg:py-32 section-bg"
+      className="relative z-10 min-h-screen flex items-center py-24 lg:py-32"
     >
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center w-full">
-        <div className="ocean-card rounded-3xl p-12 sm:p-16 space-y-6">
+        <div className="bg-[var(--ocean-bg-light)] border-[3px] border-[rgba(255,255,255,0.07)] rounded-[2rem] shadow-[0_5px_0_rgba(0,0,0,0.35),0_0_0_1px_rgba(255,255,255,0.04)] transition-all duration-150 hover:-translate-y-[3px] hover:scale-[1.01] hover:border-[var(--ocean-border-glow)] hover:shadow-[0_7px_0_rgba(0,0,0,0.35),0_0_25px_var(--ocean-primary-glow)] rounded-3xl p-12 sm:p-16 space-y-6">
           {/* Label */}
           <span
-            className="cta-label font-code text-xs tracking-[0.2em] uppercase text-[var(--ocean-primary)]"
-            style={{ opacity: 0 }}
+            className="cta-label text-sm font-bold text-[var(--ocean-primary)]"
+            style={{ opacity: 0, fontFamily: 'var(--font-heading)' }}
           >
             {CTA.label}
           </span>
 
           {/* Headline */}
           <h2
-            className="cta-title font-heading text-3xl sm:text-4xl lg:text-6xl font-bold text-gradient-ocean text-glow leading-tight"
-            style={{ opacity: 0 }}
+            className="cta-title text-3xl sm:text-4xl lg:text-6xl font-bold bg-gradient-to-br from-[#2563EB] to-[#06D6A0] bg-clip-text text-transparent leading-tight"
+            style={{ opacity: 0, fontFamily: 'var(--font-heading)', textShadow: '0 0 40px rgba(37, 99, 235, 0.3)' }}
           >
             {CTA.headline}
           </h2>
 
           {/* Subtitle */}
           <p
-            className="cta-subtitle font-body text-lg text-[var(--ocean-text-secondary)] max-w-2xl mx-auto"
-            style={{ opacity: 0 }}
+            className="cta-subtitle text-lg text-[var(--ocean-text-secondary)] max-w-2xl mx-auto"
+            style={{ opacity: 0, fontFamily: 'var(--font-body)' }}
           >
             {CTA.subtitle}
           </p>
@@ -108,7 +108,10 @@ export default function CTASection({ onCTA, onConfetti }: CTASectionProps) {
           </div>
 
           {/* Note */}
-          <p className="font-code text-sm text-[var(--ocean-text-muted)]">
+          <p
+            className="text-sm text-[var(--ocean-text-muted)]"
+            style={{ fontFamily: 'var(--font-code)' }}
+          >
             {CTA.note}
           </p>
         </div>

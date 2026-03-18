@@ -12,8 +12,8 @@ export async function webmToWavFile(mediaBlobUrl: string): Promise<File> {
   const audioBuffer: AudioBuffer = await new Promise((resolve, reject) => {
     audioCtx.decodeAudioData(
       arrayBuffer,
-      (buf: any) => resolve(buf),
-      (err: any) => reject(err)
+      (buf: AudioBuffer) => resolve(buf),
+      (err: DOMException) => reject(err)
     );
   });
   const wavArrayBuffer = toWav(audioBuffer);

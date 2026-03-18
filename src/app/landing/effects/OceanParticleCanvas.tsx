@@ -121,19 +121,18 @@ export default function OceanParticleCanvas() {
         // Wobble
         const wobble = Math.sin(time * p.wobbleSpeed + p.wobbleOffset) * 0.5;
 
-        // Mouse interaction (full tier only)
+        // Mouse interaction (full tier only, squared distance avoids sqrt)
         if (tier === "full" && mx > 0 && my > 0) {
           const dx = p.x - mx;
           const dy = p.y - my;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 120) {
+          const distSq = dx * dx + dy * dy;
+          if (distSq < 14400) { // 120 * 120
+            const dist = Math.sqrt(distSq);
             const force = (120 - dist) / 120;
             if (p.type === "bubble") {
-              // Bubbles repel
               p.vx += (dx / dist) * force * 0.15;
               p.vy += (dy / dist) * force * 0.15;
             } else if (p.type === "plankton") {
-              // Plankton attract
               p.vx -= (dx / dist) * force * 0.05;
               p.vy -= (dy / dist) * force * 0.05;
             }
@@ -204,14 +203,19 @@ export default function OceanParticleCanvas() {
 
     rafRef.current = requestAnimationFrame(animate);
 
+    let resizeTimer: ReturnType<typeof setTimeout>;
     const onResize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }, 200);
     };
     window.addEventListener("resize", onResize);
 
     return () => {
       cancelAnimationFrame(rafRef.current);
+      clearTimeout(resizeTimer);
       window.removeEventListener("resize", onResize);
     };
   }, [tier, init]);

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/Button";
+import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
 import { FiArrowRight } from "react-icons/fi";
@@ -86,9 +86,9 @@ export default function ResetPassword() {
         </div>
 
         <Button
-          className="w-full mt-2 py-3 text-base font-semibold"
-          onClickFunc={submit}
-          isValid={canSubmit}
+          className="w-full mt-2"
+          onClick={submit}
+          disabled={!canSubmit}
         >
           {loading ? "Đang gửi..." : "Gửi mã OTP"}
         </Button>

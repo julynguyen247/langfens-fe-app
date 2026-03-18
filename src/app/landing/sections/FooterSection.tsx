@@ -9,7 +9,7 @@ export default function FooterSection() {
   };
 
   return (
-    <footer className="relative z-10 border-t border-[var(--ocean-border)] section-bg">
+    <footer className="relative z-10 border-t border-[var(--ocean-border)]">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex flex-col md:flex-row items-center justify-between gap-8">
           {/* Logo + tagline */}
@@ -21,7 +21,7 @@ export default function FooterSection() {
               alt="Langfens"
               className="brightness-0 invert opacity-80"
             />
-            <p className="font-body text-sm text-[var(--ocean-text-muted)]">
+            <p className="text-sm text-[var(--ocean-text-muted)]" style={{ fontFamily: 'var(--font-body)' }}>
               {FOOTER.tagline}
             </p>
           </div>
@@ -32,7 +32,8 @@ export default function FooterSection() {
               <a
                 key={link.label}
                 href={link.href}
-                className="font-body text-sm text-[var(--ocean-text-muted)] hover:text-[var(--ocean-primary)] transition-colors duration-300"
+                className="text-sm text-[var(--ocean-text-muted)] hover:text-[var(--ocean-primary)] transition-colors duration-300"
+                style={{ fontFamily: 'var(--font-body)' }}
               >
                 {link.label}
               </a>
@@ -51,7 +52,7 @@ export default function FooterSection() {
 
         {/* Copyright */}
         <div className="mt-8 pt-8 border-t border-[var(--ocean-border)] text-center">
-          <p className="font-body text-sm text-[var(--ocean-text-muted)]">
+          <p className="text-sm text-[var(--ocean-text-muted)]" style={{ fontFamily: 'var(--font-body)' }}>
             {FOOTER.copyright}
           </p>
         </div>

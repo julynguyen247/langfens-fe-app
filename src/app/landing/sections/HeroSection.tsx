@@ -3,14 +3,11 @@
 import { forwardRef, useRef, useCallback } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { HERO } from "../data";
 import { Button } from "../ui/Button";
 import { ScrollIndicator } from "../ui/ScrollIndicator";
 import { useReducedMotion } from "../hooks/useReducedMotion";
 import { EASE, STAGGER } from "../lib/animation-config";
-
-gsap.registerPlugin(ScrollTrigger);
 
 interface HeroSectionProps {
   onCTA: () => void;
@@ -68,43 +65,49 @@ const HeroSection = forwardRef<HTMLElement, HeroSectionProps>(
       <section
         ref={mergedRef}
         data-section="hero"
-        className="relative z-10 min-h-screen flex items-center pt-16 vignette-hero"
+        className="relative z-10 min-h-screen flex items-center pt-16"
       >
         <div className="hero-content mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 lg:py-24 grid lg:grid-cols-2 gap-12 items-center w-full">
           {/* Left: Text content */}
           <div className="space-y-6">
             {/* Pre-headline */}
             <span
-              className="hero-el font-code text-xs tracking-[0.2em] uppercase text-[var(--ocean-primary)] block"
-              style={{ opacity: 0 }}
+              className="hero-el text-sm tracking-wide font-bold text-[var(--ocean-primary)] block"
+              style={{ opacity: 0, fontFamily: 'var(--font-heading)' }}
             >
               {HERO.preHeadline}
             </span>
 
             {/* Main headline */}
             <h1
-              className="hero-el font-heading text-4xl sm:text-5xl lg:text-7xl font-bold leading-[1.1] tracking-tight"
+              className="hero-el text-4xl sm:text-5xl lg:text-7xl font-bold leading-[1.1] tracking-tight"
               data-parallax-depth="0.5"
-              style={{ opacity: 0 }}
+              style={{ opacity: 0, fontFamily: 'var(--font-heading)' }}
             >
               {HERO.headline}
               <br />
-              <span className="text-gradient-ocean text-glow">
+              <span
+                className="bg-gradient-to-br from-[#2563EB] to-[#06D6A0] bg-clip-text text-transparent"
+                style={{ textShadow: 'none' }}
+              >
                 {HERO.headlineAccent}
               </span>
             </h1>
 
             {/* Subtitle */}
             <p
-              className="hero-el font-body text-lg sm:text-xl text-[var(--ocean-text-secondary)] max-w-xl leading-relaxed"
-              style={{ opacity: 0 }}
+              className="hero-el text-lg sm:text-xl text-[var(--ocean-text-secondary)] max-w-xl leading-relaxed"
+              style={{ opacity: 0, fontFamily: 'var(--font-body)' }}
             >
               {HERO.subtitle}
             </p>
 
             {/* Social proof badge */}
             <div className="hero-el" style={{ opacity: 0 }}>
-              <span className="font-code text-sm font-bold text-[var(--ocean-primary-light)] bg-[rgba(37,99,235,0.12)] px-5 py-2 rounded-full border-2 border-[rgba(37,99,235,0.25)]">
+              <span
+                className="text-sm font-bold text-[var(--ocean-primary-light)] bg-[var(--ocean-primary)]/10 px-5 py-2 rounded-full border-2 border-[var(--ocean-primary)]/25"
+                style={{ fontFamily: 'var(--font-code)' }}
+              >
                 {HERO.socialProof}
               </span>
             </div>
@@ -121,8 +124,8 @@ const HeroSection = forwardRef<HTMLElement, HeroSectionProps>(
 
             {/* Free note */}
             <p
-              className="hero-el font-code text-sm text-[var(--ocean-text-muted)]"
-              style={{ opacity: 0 }}
+              className="hero-el text-sm text-[var(--ocean-text-muted)]"
+              style={{ opacity: 0, fontFamily: 'var(--font-body)' }}
             >
               {HERO.ctaNote}
             </p>
@@ -136,7 +139,13 @@ const HeroSection = forwardRef<HTMLElement, HeroSectionProps>(
           >
             {/* Ambient glow circle — penguin renders behind via R3F fixed canvas */}
             <div className="relative w-80 h-80">
-              <div className="absolute inset-0 rounded-full bg-[var(--ocean-primary)]/5 scale-150 ocean-ambient-glow" />
+              <div
+                className="absolute inset-0 rounded-full bg-[var(--ocean-primary)]/5 scale-150"
+                style={{
+                  boxShadow: '0 0 100px rgba(37,99,235,0.2)',
+                  animation: 'oceanAmbientGlow 4s ease-in-out infinite',
+                }}
+              />
             </div>
           </div>
         </div>

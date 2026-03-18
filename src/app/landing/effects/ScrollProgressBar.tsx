@@ -1,22 +1,33 @@
 "use client";
 
-interface ScrollProgressBarProps {
-  progress: number;
-}
+import { useEffect, useRef } from "react";
+import { useScrollStore } from "../hooks/useScrollStore";
 
 /**
  * Thin progress bar fixed at the top of the viewport.
- * Width scales with scroll progress.
+ * Subscribes to scroll store and updates width via ref — zero React re-renders.
  */
-export default function ScrollProgressBar({ progress }: ScrollProgressBarProps) {
+export default function ScrollProgressBar() {
+  const barRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    return useScrollStore.subscribe((state) => {
+      if (barRef.current) {
+        barRef.current.style.width = `${state.scrollProgress * 100}%`;
+      }
+    });
+  }, []);
+
   return (
     <div className="fixed top-0 left-0 right-0 z-[101] h-[3px]">
       <div
-        className="h-full transition-[width] duration-100 ease-linear"
+        ref={barRef}
+        className="h-full"
         style={{
-          width: `${progress * 100}%`,
+          width: "0%",
           background: "var(--ocean-primary)",
-          boxShadow: "0 0 8px rgba(37, 99, 235, 0.4)",
+          boxShadow: "0 0 8px var(--ocean-primary-glow)",
+          willChange: "width",
         }}
       />
     </div>

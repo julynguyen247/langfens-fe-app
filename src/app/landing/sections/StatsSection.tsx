@@ -26,14 +26,23 @@ function StatCard({
   return (
     <div
       ref={ref}
-      className="stat-card ocean-card rounded-3xl p-8 text-center h-full transition-all duration-500 hover:-translate-y-1 hover:border-[var(--ocean-primary)]/30 hover:shadow-[0_0_30px_rgba(37,99,235,0.1)]"
+      className="stat-card bg-[var(--ocean-bg-light)] border-[3px] border-[rgba(255,255,255,0.07)] rounded-[2rem] shadow-[0_5px_0_rgba(0,0,0,0.35),0_0_0_1px_rgba(255,255,255,0.04)] transition-all duration-150 hover:-translate-y-[3px] hover:scale-[1.01] hover:border-[var(--ocean-border-glow)] hover:shadow-[0_7px_0_rgba(0,0,0,0.35),0_0_25px_var(--ocean-primary-glow)] rounded-3xl p-8 text-center h-full"
       style={{ opacity: 0 }}
     >
-      <div className="font-heading text-5xl sm:text-6xl font-bold text-gradient-ocean mb-3">
+      <div
+        className="text-5xl sm:text-6xl font-bold bg-gradient-to-br from-[#2563EB] to-[#06D6A0] bg-clip-text text-transparent mb-3"
+        style={{ fontFamily: 'var(--font-heading)' }}
+      >
         {display}
       </div>
-      <h3 className="font-heading text-lg font-semibold mb-2">{label}</h3>
-      <p className="font-body text-sm text-[var(--ocean-text-muted)]">
+      <h3
+        className="text-lg font-semibold mb-2"
+        style={{ fontFamily: 'var(--font-heading)' }}
+      >{label}</h3>
+      <p
+        className="text-sm text-[var(--ocean-text-muted)]"
+        style={{ fontFamily: 'var(--font-body)' }}
+      >
         {sublabel}
       </p>
     </div>
@@ -58,7 +67,7 @@ export default function StatsSection() {
           y: 0,
           opacity: 1,
           duration: 0.8,
-          ease: EASE.smooth,
+          ease: EASE.bounce,
           scrollTrigger: { trigger: sectionRef.current, start: "top 80%" },
         }
       );
@@ -70,7 +79,7 @@ export default function StatsSection() {
           opacity: 1,
           duration: 0.8,
           stagger: STAGGER.relaxed,
-          ease: EASE.smooth,
+          ease: EASE.bounce,
           scrollTrigger: { trigger: sectionRef.current, start: "top 85%" },
         }
       );
@@ -82,7 +91,7 @@ export default function StatsSection() {
     <section
       ref={sectionRef}
       data-section="stats"
-      className="relative z-10 py-24 lg:py-32 section-bg"
+      className="relative z-10 py-24 lg:py-32"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Header */}

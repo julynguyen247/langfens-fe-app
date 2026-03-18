@@ -1,22 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { NAV_LINKS } from "../data";
+import { useScrollStore } from "../hooks/useScrollStore";
 
 interface OceanHeaderProps {
   onCTA: () => void;
 }
 
 export default function OceanHeader({ onCTA }: OceanHeaderProps) {
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 60);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  // Read from scroll store — only re-renders when boolean changes (at most 2 times)
+  const scrolled = useScrollStore((s) => s.scrollProgress > 0.005);
 
   return (
     <header
@@ -53,19 +48,30 @@ export default function OceanHeader({ onCTA }: OceanHeaderProps) {
                   .getElementById(item.target)
                   ?.scrollIntoView({ behavior: "smooth" })
               }
-              className="font-body text-sm font-medium text-[var(--ocean-text-secondary)] hover:text-[var(--ocean-primary)] transition-colors duration-300"
+              className="text-sm font-medium text-[var(--ocean-text-secondary)] hover:text-[var(--ocean-primary)] transition-colors duration-300"
+              style={{ fontFamily: 'var(--font-body)' }}
             >
               {item.label}
             </button>
           ))}
         </nav>
 
+        {/* Streak badge */}
+        <span className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full border-2 border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.04)] text-[var(--ocean-text-secondary)] text-xs font-bold">
+          <span
+            className="inline-block w-3 h-4 bg-orange-500"
+            style={{ clipPath: 'polygon(50% 0%, 100% 35%, 80% 100%, 20% 100%, 0% 35%)' }}
+          />
+          <span>12</span>
+        </span>
+
         {/* CTA */}
         <motion.button
           whileHover={{ y: -1 }}
           whileTap={{ scale: 0.98 }}
           onClick={onCTA}
-          className="btn-ocean rounded-xl px-5 py-2 text-sm font-semibold cursor-pointer"
+          className="bg-[var(--ocean-primary)] text-white font-bold text-sm border-2 border-[var(--ocean-primary-dark)] border-b-[4px] rounded-full px-6 py-2 transition-all duration-[120ms] hover:bg-[var(--ocean-primary-light)] hover:border-[var(--ocean-primary)] hover:-translate-y-0.5 hover:shadow-[0_0_20px_var(--ocean-primary-glow)] active:translate-y-[3px] active:border-b-[2px] cursor-pointer"
+          style={{ fontFamily: 'var(--font-heading)' }}
         >
           Start Free
         </motion.button>

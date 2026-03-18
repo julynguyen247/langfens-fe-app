@@ -9,6 +9,7 @@ const BUBBLE_COUNT = 120;
 
 export default function Bubbles() {
   const pointsRef = useRef<THREE.Points>(null);
+  const frameCounter = useRef(0);
 
   const { positions, riseSpeeds, sizes } = useMemo(() => {
     const pos = new Float32Array(BUBBLE_COUNT * 3);
@@ -17,7 +18,7 @@ export default function Bubbles() {
 
     for (let i = 0; i < BUBBLE_COUNT; i++) {
       pos[i * 3] = (Math.random() - 0.5) * 50; // X: [-25, 25]
-      pos[i * 3 + 1] = Math.random() * 30 - 15; // Y: [-15, 15]
+      pos[i * 3 + 1] = Math.random() * 30 - 25; // Y: [-25, 5]
       pos[i * 3 + 2] = Math.random() * -25 + 5; // Z: [-20, 5]
       speeds[i] = 0.3 + Math.random() * 1.2; // [0.3, 1.5]
       sz[i] = 0.03 + Math.random() * 0.09; // [0.03, 0.12]
@@ -27,6 +28,15 @@ export default function Bubbles() {
   }, []);
 
   useFrame(({ clock }, delta) => {
+    if (pointsRef.current) {
+      pointsRef.current.visible = cameraYRef.current < 2;
+    }
+    if (cameraYRef.current >= 2) return;
+
+    // Frame-skip: update every 2nd frame (bubbles move slowly, imperceptible at 30fps)
+    frameCounter.current++;
+    if (frameCounter.current % 2 !== 0) return;
+
     const geom = pointsRef.current?.geometry;
     if (!geom) return;
 
@@ -39,8 +49,8 @@ export default function Bubbles() {
       arr[i * 3 + 1] += riseSpeeds[i] * delta;
 
       // Reset when exceeding top boundary
-      if (arr[i * 3 + 1] > 15) {
-        arr[i * 3 + 1] = -15;
+      if (arr[i * 3 + 1] > 5) {
+        arr[i * 3 + 1] = -25;
       }
 
       // Wobble

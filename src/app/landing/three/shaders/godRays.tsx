@@ -62,7 +62,7 @@ export function GodRaysOverlay() {
 
     materialRef.current.uniforms.uDepthFactor.value = Math.max(
       0,
-      Math.min(1.0, cameraYRef.current * 0.1 + 0.4)
+      Math.min(1.0, 1.0 + cameraYRef.current * 0.1)
     );
   });
 

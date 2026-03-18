@@ -1,32 +1,30 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useScrollStore } from "./useScrollStore";
 
 /**
- * Returns a normalized scroll progress value (0-1) for the entire page.
- * Also provides the current section name based on scroll position.
+ * Registers a RAF-throttled scroll listener that updates the scroll store.
+ * Call once in LandingPage — no return value, no React state, no re-renders.
  */
 
 interface SectionRange {
   id: string;
-  start: number; // scroll % where section begins
-  end: number; // scroll % where section ends
+  start: number;
+  end: number;
 }
 
 const SECTION_RANGES: SectionRange[] = [
-  { id: "hero", start: 0, end: 0.12 },
-  { id: "features", start: 0.12, end: 0.55 },
-  { id: "how-it-works", start: 0.55, end: 0.68 },
-  { id: "stats", start: 0.68, end: 0.78 },
-  { id: "testimonials", start: 0.78, end: 0.88 },
-  { id: "cta", start: 0.88, end: 0.96 },
-  { id: "footer", start: 0.96, end: 1 },
+  { id: "hero", start: 0, end: 0.10 },
+  { id: "features", start: 0.10, end: 0.28 },
+  { id: "how-it-works", start: 0.28, end: 0.40 },
+  { id: "stats", start: 0.40, end: 0.50 },
+  { id: "testimonials", start: 0.50, end: 0.58 },
+  { id: "cta", start: 0.58, end: 0.72 },
+  { id: "footer", start: 0.72, end: 1 },
 ];
 
 export function useScrollProgress() {
-  const [progress, setProgress] = useState(0);
-  const [currentSection, setCurrentSection] = useState("hero");
-
   useEffect(() => {
     let raf: number;
 
@@ -34,12 +32,12 @@ export function useScrollProgress() {
       const scrollY = window.scrollY;
       const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
       const p = maxScroll > 0 ? Math.max(0, Math.min(1, scrollY / maxScroll)) : 0;
-      setProgress(p);
 
       const section = SECTION_RANGES.find(
         (s) => p >= s.start && p < s.end
       );
-      if (section) setCurrentSection(section.id);
+
+      useScrollStore.getState().setScroll(p, section?.id ?? "hero");
     };
 
     const onScroll = () => {
@@ -55,6 +53,4 @@ export function useScrollProgress() {
       cancelAnimationFrame(raf);
     };
   }, []);
-
-  return { progress, currentSection };
 }

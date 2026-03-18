@@ -36,7 +36,7 @@ export default function LandingPage() {
   const heroRef = useRef<HTMLElement>(null);
 
   const { tier: deviceTier } = useDeviceCapability();
-  const { progress, currentSection } = useScrollProgress();
+  useScrollProgress(); // registers scroll listener → updates Zustand store (no React state)
   const confetti = useOceanConfetti();
   useMouseParallax(pageRef);
 
@@ -48,11 +48,7 @@ export default function LandingPage() {
 
       {/* 3D penguin scene (fixed behind content) — skip on minimal tier */}
       {deviceTier !== "minimal" && (
-        <PenguinScene
-          scrollProgress={progress}
-          currentSection={currentSection}
-          tier={deviceTier}
-        />
+        <PenguinScene tier={deviceTier} />
       )}
 
       {/* Static noise overlay */}
@@ -65,7 +61,7 @@ export default function LandingPage() {
       />
 
       {/* Scroll progress bar */}
-      <ScrollProgressBar progress={progress} />
+      <ScrollProgressBar />
 
       {/* Custom bioluminescent cursor — desktop + full tier only */}
       {deviceTier === "full" && <CustomCursor />}
@@ -74,12 +70,14 @@ export default function LandingPage() {
       {/* Sticky navigation */}
       <OceanHeader onCTA={goSignUp} />
 
-      {/* Sections */}
+      {/* Sections with ocean-gap spacers */}
       <HeroSection ref={heroRef} onCTA={goSignUp} />
       <FeaturesSection />
+      <div className="h-[40vh]" /> {/* Ocean gap: twilight transition */}
       <HowItWorksSection />
+      <div className="h-[30vh]" /> {/* Ocean gap: midnight descent */}
       <StatsSection />
-      <TestimonialsSection />
+      <div className="h-[30vh]" /> {/* Ocean gap: deep zone */}
       <CTASection onCTA={goSignUp} onConfetti={confetti.celebration} />
       <FooterSection />
     </div>

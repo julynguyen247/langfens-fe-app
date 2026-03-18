@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Button } from "@/components/Button";
+import { Button } from "@/components/ui/button";
 import { resendEmailForgot, verifyEmailForgot } from "@/utils/api";
 import { useLoadingStore } from "@/app/store/loading";
 
@@ -198,9 +198,9 @@ export default function VerifyForgotPasswordPage() {
         )}
 
         <Button
-          isValid={canSubmit}
+          disabled={!canSubmit}
           className="w-full mt-5"
-          onClickFunc={submit}
+          onClick={submit}
         >
           Xác nhận & đổi mật khẩu
         </Button>

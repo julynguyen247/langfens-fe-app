@@ -59,10 +59,13 @@ export default function OceanTerrain() {
   useFrame((_, delta) => {
     if (!materialRef.current) return;
 
+    // Skip updates when camera is above surface (terrain hidden behind fog)
+    if (cameraYRef.current > 5) return;
+
     materialRef.current.uniforms.uTime.value += delta;
 
     // Denser fog the deeper the camera goes
-    const density = 0.02 + Math.max(0, -cameraYRef.current) * 0.005;
+    const density = 0.015 + Math.max(0, -cameraYRef.current) * 0.003;
     materialRef.current.uniforms.uFogDensity.value = density;
 
     // Sync fog color with scene fog
@@ -73,19 +76,58 @@ export default function OceanTerrain() {
     // Caustic intensity: bright near surface, fades to zero at depth
     materialRef.current.uniforms.uCausticIntensity.value = Math.max(
       0,
-      Math.min(0.15, (cameraYRef.current + 2) * 0.015)
+      Math.min(0.15, (2 - cameraYRef.current) * 0.01)
     );
   });
 
+  const chimneyPositions: [number, number, number][] = useMemo(
+    () => [
+      [0, -25, -5],
+      [-5, -25, -10],
+      [4, -25, -8],
+      [-2, -25, -14],
+    ],
+    []
+  );
+
   return (
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -15, 0]}>
-      <planeGeometry args={[80, 80, 128, 128]} />
-      <shaderMaterial
-        ref={materialRef}
-        vertexShader={vertexShader}
-        fragmentShader={fragmentShader}
-        uniforms={uniforms}
-      />
-    </mesh>
+    <group>
+      {/* Terrain plane */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -25, 0]}>
+        <planeGeometry args={[80, 80, 64, 64]} />
+        <shaderMaterial
+          ref={materialRef}
+          vertexShader={vertexShader}
+          fragmentShader={fragmentShader}
+          uniforms={uniforms}
+        />
+      </mesh>
+
+      {/* Vent chimneys — Zone 5 (Abyss, Y=-25) */}
+      {chimneyPositions.map(([x, y, z], i) => (
+        <group key={i} position={[x, y, z]}>
+          {/* Chimney body */}
+          <mesh position={[0, 1.5, 0]}>
+            <cylinderGeometry args={[0.3, 0.5, 3, 8]} />
+            <meshStandardMaterial
+              color="#1a1008"
+              roughness={0.9}
+              emissive="#FF6B35"
+              emissiveIntensity={0.05}
+            />
+          </mesh>
+          {/* Chimney cap */}
+          <mesh position={[0, 3.5, 0]}>
+            <coneGeometry args={[0.6, 1, 8]} />
+            <meshStandardMaterial
+              color="#1a1008"
+              roughness={0.9}
+              emissive="#FF6B35"
+              emissiveIntensity={0.05}
+            />
+          </mesh>
+        </group>
+      ))}
+    </group>
   );
 }

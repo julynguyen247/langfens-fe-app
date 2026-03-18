@@ -52,7 +52,7 @@ export function CausticOverlay3D() {
     materialRef.current.uniforms.uTime.value += delta;
     materialRef.current.uniforms.uDepthFactor.value = Math.max(
       0,
-      Math.min(1, (cameraYRef.current + 2) / 12)
+      Math.min(1, 1.0 + cameraYRef.current / 8)
     );
   });
 

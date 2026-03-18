@@ -6,12 +6,14 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { motion } from "framer-motion";
 import { FEATURES } from "../data";
-import { FeatureVisual } from "../ui/FeatureVisual";
+import { FeatureVisual } from "../ui/feature-visuals";
 import { useDeviceCapability } from "@/app/components/effects/useDeviceCapability";
 import { useReducedMotion } from "../hooks/useReducedMotion";
 import { EASE, DURATION } from "../lib/animation-config";
 
 const VISUAL_TYPES = ["skills", "grading", "questions", "analytics", "flashcards", "gamification"] as const;
+
+const FEATURE_COLORS = ['#2563EB', '#06D6A0', '#FF9600', '#8B5CF6', '#2563EB', '#F59E0B'];
 
 export default function FeaturesSection() {
   const { tier } = useDeviceCapability();
@@ -28,10 +30,32 @@ export default function FeaturesSection() {
     const total = texts.length;
     if (total === 0) return;
 
+    // Helper: set dot to active/inactive via individual CSS properties
+    const setDotActive = (dot: HTMLElement) => {
+      gsap.set(dot, {
+        width: 14,
+        height: 14,
+        backgroundColor: 'var(--ocean-primary)',
+        borderColor: 'var(--ocean-primary-light)',
+        opacity: 1,
+        boxShadow: '0 0 12px var(--ocean-primary-glow)',
+      });
+    };
+    const setDotInactive = (dot: HTMLElement) => {
+      gsap.set(dot, {
+        width: 10,
+        height: 10,
+        backgroundColor: 'var(--ocean-surface-light)',
+        borderColor: 'rgba(255,255,255,0.1)',
+        opacity: 0.5,
+        boxShadow: 'none',
+      });
+    };
+
     // Show first items
     gsap.set(texts[0], { opacity: 1, y: 0 });
     gsap.set(visuals[0], { opacity: 1, scale: 1 });
-    if (dots[0]) gsap.set(dots[0], { className: "feature-dot active" });
+    if (dots[0]) setDotActive(dots[0] as HTMLElement);
 
     // Build timeline for transitions between features
     const tl = gsap.timeline({
@@ -40,7 +64,7 @@ export default function FeaturesSection() {
         start: "top top",
         end: "bottom bottom",
         pin: pinRef.current,
-        scrub: 0.5,
+        scrub: 1,
       },
     });
 
@@ -53,7 +77,7 @@ export default function FeaturesSection() {
 
       // Deactivate current dot
       if (dots[i]) {
-        tl.set(dots[i], { className: "feature-dot" }, position + 0.3);
+        tl.call(() => setDotInactive(dots[i] as HTMLElement), [], position + 0.3);
       }
 
       // Fade in next
@@ -62,7 +86,7 @@ export default function FeaturesSection() {
 
       // Activate next dot
       if (dots[i + 1]) {
-        tl.set(dots[i + 1], { className: "feature-dot active" }, position + 0.3);
+        tl.call(() => setDotActive(dots[i + 1] as HTMLElement), [], position + 0.3);
       }
     }
   }, { scope: sectionRef, dependencies: [tier, reducedMotion] });
@@ -73,10 +97,16 @@ export default function FeaturesSection() {
       <section id="features" className="relative z-10 py-16 lg:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <span className="font-code text-xs tracking-[0.2em] uppercase text-[var(--ocean-primary)]">
-              FEATURES
+            <span
+              className="text-sm font-bold tracking-wide text-[var(--ocean-primary)]"
+              style={{ fontFamily: 'var(--font-heading)' }}
+            >
+              What you&apos;ll get
             </span>
-            <h2 className="font-heading text-3xl sm:text-4xl font-bold mt-3">
+            <h2
+              className="text-3xl sm:text-4xl font-bold mt-3"
+              style={{ fontFamily: 'var(--font-heading)' }}
+            >
               Everything You Need to Succeed
             </h2>
           </div>
@@ -88,15 +118,24 @@ export default function FeaturesSection() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.2 }}
                 transition={{ delay: i * 0.08, duration: 0.6 }}
-                className="ocean-card rounded-2xl p-6"
+                className="bg-[var(--ocean-bg-light)] border-[3px] border-[rgba(255,255,255,0.07)] rounded-[2rem] shadow-[0_5px_0_rgba(0,0,0,0.35),0_0_0_1px_rgba(255,255,255,0.04)] transition-all duration-150 hover:-translate-y-[3px] hover:scale-[1.01] hover:border-[var(--ocean-border-glow)] hover:shadow-[0_7px_0_rgba(0,0,0,0.35),0_0_25px_var(--ocean-primary-glow)] p-6"
               >
-                <span className="font-code text-xs text-[var(--ocean-primary)] tracking-widest">
+                <span
+                  className="text-xs tracking-widest"
+                  style={{ color: FEATURE_COLORS[i], fontFamily: 'var(--font-code)' }}
+                >
                   {f.number} — {f.label}
                 </span>
-                <h3 className="font-heading text-xl font-semibold mt-3 mb-2">
+                <h3
+                  className="text-xl font-semibold mt-3 mb-2"
+                  style={{ fontFamily: 'var(--font-heading)' }}
+                >
                   {f.title}
                 </h3>
-                <p className="font-body text-sm text-[var(--ocean-text-secondary)] leading-relaxed">
+                <p
+                  className="text-sm text-[var(--ocean-text-secondary)] leading-relaxed"
+                  style={{ fontFamily: 'var(--font-body)' }}
+                >
                   {f.description}
                 </p>
               </motion.div>
@@ -128,30 +167,48 @@ export default function FeaturesSection() {
                 className="feature-text absolute inset-0 flex flex-col justify-center"
                 style={{ opacity: i === 0 ? 1 : 0 }}
               >
-                <span className="font-code text-xs tracking-[0.2em] text-[var(--ocean-primary)] mb-4">
+                <span
+                  className="text-xs tracking-wide mb-4"
+                  style={{ color: FEATURE_COLORS[i], fontFamily: 'var(--font-code)' }}
+                >
                   {feature.number} — {feature.label}
                 </span>
-                <h3 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight mb-4">
+                <h3
+                  className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight mb-4"
+                  style={{ fontFamily: 'var(--font-heading)' }}
+                >
                   {feature.title}
                 </h3>
-                <p className="font-body text-lg text-[var(--ocean-text-secondary)] leading-relaxed mb-6 max-w-lg">
+                <p
+                  className="text-lg text-[var(--ocean-text-secondary)] leading-relaxed mb-6 max-w-lg"
+                  style={{ fontFamily: 'var(--font-body)' }}
+                >
                   {feature.description}
                 </p>
-                <span className="font-body text-sm font-medium text-[var(--ocean-accent)] cursor-pointer hover:underline">
+                <span
+                  className="text-sm font-medium cursor-pointer hover:underline"
+                  style={{ color: FEATURE_COLORS[i], fontFamily: 'var(--font-body)' }}
+                >
                   {feature.cta} →
                 </span>
               </div>
             ))}
           </div>
 
-          {/* Right: Visual panel — FeatureVisual SVGs, GSAP controls visibility */}
-          <div className="hidden lg:flex items-center justify-center">
+          {/* Right: Visual panel — FeatureVisual SVGs with pseudo-3D depth */}
+          <div className="hidden lg:flex items-center justify-center" style={{ perspective: "800px" }}>
             <div className="relative w-full max-w-lg aspect-[16/10]">
               {FEATURES.map((_, i) => (
                 <div
                   key={i}
-                  className="feature-visual absolute inset-0 flex items-center justify-center rounded-2xl border border-[var(--ocean-border)]/50 bg-[var(--ocean-bg-light)]/30 overflow-hidden"
-                  style={{ opacity: i === 0 ? 1 : 0 }}
+                  className="feature-visual absolute inset-0 flex items-center justify-center rounded-[2rem] border border-[var(--ocean-border)]/50 overflow-hidden shadow-[inset_0_0_40px_rgba(37,99,235,0.06)]"
+                  style={{
+                    opacity: i === 0 ? 1 : 0,
+                    background: "linear-gradient(135deg, rgba(37,99,235,0.04), rgba(6,214,160,0.02))",
+                    backdropFilter: "blur(2px)",
+                    transform: "rotateY(2deg) rotateX(-1deg)",
+                    transformStyle: "preserve-3d",
+                  }}
                 >
                   <FeatureVisual type={VISUAL_TYPES[i]} />
                 </div>
@@ -165,7 +222,15 @@ export default function FeaturesSection() {
           {FEATURES.map((_, i) => (
             <div
               key={i}
-              className={`feature-dot ${i === 0 ? "active" : ""}`}
+              className="feature-dot rounded-full border-2 transition-all duration-300"
+              style={{
+                width: i === 0 ? 14 : 10,
+                height: i === 0 ? 14 : 10,
+                backgroundColor: i === 0 ? 'var(--ocean-primary)' : 'var(--ocean-surface-light)',
+                borderColor: i === 0 ? 'var(--ocean-primary-light)' : 'rgba(255,255,255,0.1)',
+                opacity: i === 0 ? 1 : 0.5,
+                boxShadow: i === 0 ? '0 0 12px var(--ocean-primary-glow)' : 'none',
+              }}
             />
           ))}
         </div>

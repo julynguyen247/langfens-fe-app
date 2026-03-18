@@ -10,13 +10,13 @@ export const NAV_LINKS = [
 ] as const;
 
 export const HERO = {
-  preHeadline: "AI-POWERED IELTS PREPARATION",
+  preHeadline: "Your IELTS study buddy",
   headline: "Master IELTS",
   headlineAccent: "With Confidence",
   subtitle:
     "Smart practice with AI grading, detailed analytics, and gamification that makes studying addictive. Conquer your dream band score with your penguin companion.",
   socialProof: "4.8/5 from 2,000+ students",
-  ctaPrimary: "Start Free",
+  ctaPrimary: "Start Learning",
   ctaSecondary: "Watch Demo",
   ctaNote: "Free forever. No credit card required.",
 } as const;
@@ -139,11 +139,11 @@ export const TESTIMONIALS = [
 ] as const;
 
 export const CTA = {
-  label: "READY?",
-  headline: "Ready to Conquer Your Dream Band?",
+  label: "Ready to start?",
+  headline: "Ready to hit your dream band?",
   subtitle:
-    "Start practicing today. Track your progress with AI-powered insights. It's free.",
-  ctaPrimary: "Start Free",
+    "Join thousands of students already practicing smarter with AI.",
+  ctaPrimary: "Start Learning",
   ctaSecondary: "Contact Us",
   note: "Free forever. No credit card required.",
 } as const;
