@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useState, useRef, useCallback } from "react";
-import { FiClock } from "react-icons/fi";
 
 interface TimerDisplayProps {
   startedAt?: string | Date;
@@ -49,12 +48,12 @@ export default function TimerDisplay({
 
   const mm = String(Math.floor(seconds / 60)).padStart(2, "0");
   const ss = String(seconds % 60).padStart(2, "0");
-  
+
   // Color thresholds
   const isWarning = seconds <= 5 * 60; // < 5 min = orange
   const isCritical = seconds <= 60; // < 1 min = red + pulse
 
-  let colorClass = "border-emerald-200 bg-emerald-50 text-emerald-700";
+  let colorClass = "border-[var(--skill-speaking-border)] bg-[var(--skill-speaking-light)] text-[var(--skill-speaking)]";
   if (isCritical) {
     colorClass = "border-red-300 bg-red-50 text-red-600 animate-pulse";
   } else if (isWarning) {
@@ -65,7 +64,7 @@ export default function TimerDisplay({
     <div
       className={`flex items-center gap-2 px-3 py-1 rounded-lg border ${colorClass} transition-colors duration-500`}
     >
-      <FiClock className="text-base" />
+      <span className="text-xs font-bold" style={{ color: 'var(--text-muted)' }}>Time</span>
       <span className="font-semibold tabular-nums">
         {mm}:{ss}
       </span>

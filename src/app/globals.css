@@ -38,6 +38,20 @@
   --border: #E5E7EB;
   --border-light: #F3F4F6;
 
+  /* Skill colors */
+  --skill-reading: #2563EB;
+  --skill-reading-light: #DBEAFE;
+  --skill-reading-border: #BFDBFE;
+  --skill-listening: #7C3AED;
+  --skill-listening-light: #EDE9FE;
+  --skill-listening-border: #DDD6FE;
+  --skill-writing: #D97706;
+  --skill-writing-light: #FEF3C7;
+  --skill-writing-border: #FDE68A;
+  --skill-speaking: #059669;
+  --skill-speaking-light: #D1FAE5;
+  --skill-speaking-border: #A7F3D0;
+
   /* Fonts - Fredoka (Duolingo-style rounded sans-serif) */
   --font-sans: var(--font-fredoka), "Fredoka", ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--font-fredoka), "Fredoka", ui-sans-serif, system-ui, sans-serif;
@@ -115,6 +129,18 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  --color-skill-reading: var(--skill-reading);
+  --color-skill-reading-light: var(--skill-reading-light);
+  --color-skill-reading-border: var(--skill-reading-border);
+  --color-skill-listening: var(--skill-listening);
+  --color-skill-listening-light: var(--skill-listening-light);
+  --color-skill-listening-border: var(--skill-listening-border);
+  --color-skill-writing: var(--skill-writing);
+  --color-skill-writing-light: var(--skill-writing-light);
+  --color-skill-writing-border: var(--skill-writing-border);
+  --color-skill-speaking: var(--skill-speaking);
+  --color-skill-speaking-light: var(--skill-speaking-light);
+  --color-skill-speaking-border: var(--skill-speaking-border);
 }
 
 /* Font utilities - all use Fredoka */

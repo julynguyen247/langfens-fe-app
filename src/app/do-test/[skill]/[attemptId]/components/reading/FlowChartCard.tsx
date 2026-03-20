@@ -55,8 +55,8 @@ const FlowChartCard = memo(function FlowChartCard({
   }, [order, steps, onChange]);
 
   return (
-    <div className="p-4 border border-slate-200 rounded-lg bg-white space-y-4 text-black">
-      <div className="font-bold text-gray-800">{stem}</div>
+    <div className="p-4 border border-[var(--border)] rounded-lg bg-white space-y-4 text-black">
+      <div className="font-bold text-[var(--foreground)]">{stem}</div>
       <div className="space-y-3">
         {steps.map((label, idx) => (
           <div key={nodes[idx]?.key ?? idx} className="flex items-center gap-4">
@@ -65,7 +65,7 @@ const FlowChartCard = memo(function FlowChartCard({
               type="number"
               min={1}
               max={steps.length}
-              className="w-16 px-2 py-1 border border-slate-300 rounded-md text-center 
+              className="w-16 px-2 py-1 border border-[var(--border)] rounded-md text-center 
                 focus:ring-2 focus:ring-blue-500"
               value={order[idx] === "" ? "" : order[idx]}
               onChange={(e) => updateOrder(idx, e.target.value)}

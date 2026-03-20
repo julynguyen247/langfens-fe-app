@@ -1,20 +1,6 @@
 "use client";
 import React, { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-const closeBtn = (
-  <svg
-    width="21"
-    height="21"
-    viewBox="0 0 21 21"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <path
-      d="M10.5 21C4.70101 21 0 16.2989 0 10.5C0 4.70101 4.70101 0 10.5 0C16.2989 0 21 4.70101 21 10.5C21 16.2989 16.2989 21 10.5 21ZM10.5 18.9C15.1392 18.9 18.9 15.1392 18.9 10.5C18.9 5.86081 15.1392 2.1 10.5 2.1C5.86081 2.1 2.1 5.86081 2.1 10.5C2.1 15.1392 5.86081 18.9 10.5 18.9ZM10.5 9.01509L13.4698 6.04523L14.9547 7.53015L11.9849 10.5L14.9547 13.4698L13.4698 14.9547L10.5 11.9849L7.53015 14.9547L6.04523 13.4698L9.01509 10.5L6.04523 7.53015L7.53015 6.04523L10.5 9.01509Z"
-      fill="black"
-    />
-  </svg>
-);
 
 export interface ModalProps {
   open: boolean;
@@ -92,10 +78,15 @@ export default function Modal({
         <div
           ref={panelRef}
           tabIndex={-1}
-          className={`w-full max-w-md rounded-2xl bg-white text-slate-900 shadow-xl ring-1 ring-black/5 animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-150 ${className}`}
+          className={`w-full max-w-md rounded-[2rem] border-[3px] shadow-[0_4px_0_rgba(0,0,0,0.08)] animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-150 ${className}`}
+          style={{
+            backgroundColor: "var(--background)",
+            color: "var(--foreground)",
+            borderColor: "var(--border)",
+          }}
         >
           {(title || showCloseButton) && (
-            <div className="flex items-center justify-between gap-4 p-2 border-b border-slate-200">
+            <div className="flex items-center justify-between gap-4 p-2 border-b" style={{ borderColor: "var(--border)" }}>
               <h2 id="modal-title" className="text-md font-semibold leading-6">
                 {title}
               </h2>
@@ -103,10 +94,15 @@ export default function Modal({
                 <button
                   ref={closeBtnRef}
                   onClick={onClose}
-                  className="shrink-0 rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="shrink-0 rounded-lg p-2 transition font-bold text-sm focus:outline-none focus:ring-2"
+                  style={{
+                    color: "var(--text-muted)",
+                    // @ts-ignore
+                    "--tw-ring-color": "var(--primary)",
+                  } as React.CSSProperties}
                   aria-label="Close"
                 >
-                  {closeBtn}
+                  x
                 </button>
               )}
             </div>

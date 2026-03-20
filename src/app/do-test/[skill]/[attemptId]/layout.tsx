@@ -15,11 +15,6 @@ import { useLoadingStore } from "@/app/store/loading";
 import Modal from "@/components/Modal";
 import { submitAttempt } from "@/utils/api";
 
-// Material Icon
-function Icon({ name, className = "" }: { name: string; className?: string }) {
-  return <span className={`material-symbols-rounded ${className}`}>{name}</span>;
-}
-
 type Skill = "reading" | "listening" | "writing" | "speaking";
 
 function getDeadlineMs(
@@ -169,7 +164,7 @@ export default function DoTestAttemptLayout({
     }
   };
 
-  // Timer component with blue theme
+  // Timer component
   const timerSlot = showTimer && attempt ? (
     <TimerDisplay
       startedAt={attempt.startedAt}
@@ -183,7 +178,7 @@ export default function DoTestAttemptLayout({
     <button
       onClick={() => setSubmitConfirm(true)}
       disabled={isSubmitting}
-      className="inline-flex items-center gap-2 bg-[#3B82F6] hover:bg-[#2563EB] text-white px-6 py-2 rounded-lg font-medium shadow-sm transition-all disabled:opacity-60"
+      className="inline-flex items-center gap-2 bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white px-6 py-2 rounded-full font-medium shadow-sm transition-all border-b-[4px] border-[var(--primary-dark)] active:translate-y-[2px] active:border-b-[2px] disabled:opacity-60"
     >
       {isSubmitting ? (
         <>
@@ -195,7 +190,6 @@ export default function DoTestAttemptLayout({
         </>
       ) : (
         <>
-          <Icon name="send" className="text-lg" />
           Submit Test
         </>
       )}
@@ -204,7 +198,7 @@ export default function DoTestAttemptLayout({
 
   return (
     <>
-      <div className="h-screen flex flex-col bg-[#F8FAFC] overflow-hidden">
+      <div className="h-screen flex flex-col bg-[var(--background)] overflow-hidden">
         <TopBar
           title={testTitle}
           subtitle={subtitle}
@@ -240,21 +234,21 @@ export default function DoTestAttemptLayout({
           <div className="flex justify-end gap-3">
             <button
               onClick={() => setOpenConfirm(false)}
-              className="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
+              className="px-4 py-2 rounded-full bg-[var(--background)] text-[var(--text-body)] hover:bg-[var(--border)] transition-colors"
             >
               Continue Test
             </button>
             <button
               onClick={confirmExit}
               disabled={isSubmitting}
-              className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition-colors"
+              className="px-4 py-2 rounded-full bg-[var(--destructive)] text-white hover:bg-red-700 disabled:opacity-50 transition-colors border-b-[4px] border-red-700 active:translate-y-[2px] active:border-b-[2px]"
             >
               Exit & Submit
             </button>
           </div>
         }
       >
-        <p className="text-sm text-slate-700">
+        <p className="text-sm text-[var(--text-body)]">
           {isAutoGraded
             ? "If you exit now, your test will be submitted and graded immediately."
             : "If you exit now, your progress will not be saved."}
@@ -270,7 +264,7 @@ export default function DoTestAttemptLayout({
           <div className="flex justify-end gap-3">
             <button
               onClick={() => setSubmitConfirm(false)}
-              className="px-4 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
+              className="px-4 py-2 rounded-full border-[2px] border-[var(--border)] text-[var(--text-body)] hover:bg-[var(--background)] transition-colors"
             >
               Cancel
             </button>
@@ -280,14 +274,14 @@ export default function DoTestAttemptLayout({
                 handleSubmit();
               }}
               disabled={isSubmitting}
-              className="px-4 py-2 rounded-lg bg-[#3B82F6] hover:bg-[#2563EB] text-white disabled:opacity-50 transition-colors"
+              className="px-4 py-2 rounded-full bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white disabled:opacity-50 transition-colors border-b-[4px] border-[var(--primary-dark)] active:translate-y-[2px] active:border-b-[2px]"
             >
               Submit
             </button>
           </div>
         }
       >
-        <p className="text-sm text-slate-700">
+        <p className="text-sm text-[var(--text-body)]">
           Are you sure you want to submit your test? You cannot change your answers after submission.
         </p>
       </Modal>

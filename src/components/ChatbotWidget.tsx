@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { FiMessageCircle, FiX } from "react-icons/fi";
 import SleepPenguinMini from "./SleepPenguinMini";
 
 type ChatMessage = {
@@ -18,9 +17,9 @@ const WELCOME_MESSAGE: ChatMessage = {
 function TypingIndicator() {
   return (
     <div className="flex items-center gap-1 px-3 py-2">
-      <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:-0.2s]" />
-      <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:-0.1s]" />
-      <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" />
+      <span className="w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:-0.2s]" style={{ backgroundColor: "var(--text-muted)" }} />
+      <span className="w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:-0.1s]" style={{ backgroundColor: "var(--text-muted)" }} />
+      <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: "var(--text-muted)" }} />
     </div>
   );
 }
@@ -103,12 +102,12 @@ export default function ChatbotWidget() {
           onClick={() => setOpen(true)}
           className="
     fixed bottom-6 right-6
-    bg-white
     p-2 rounded-full shadow-xl z-[9999]
     hover:scale-105 transition-all duration-300
     animate-[chatbot-pop_0.35s_ease-out]
     flex items-center justify-center
   "
+          style={{ backgroundColor: "var(--background)" }}
         >
           <SleepPenguinMini />
         </button>
@@ -118,30 +117,34 @@ export default function ChatbotWidget() {
         <div
           className="
             fixed bottom-6 right-6 w-80 h-96
-            bg-gradient-to-b from-slate-50 to-slate-100
-            rounded-2xl shadow-2xl z-[9999]
-            flex flex-col border border-slate-200
+            rounded-[2rem] z-[9999]
+            flex flex-col border-[3px]
+            shadow-[0_4px_0_rgba(0,0,0,0.08)]
             animate-[chatbot-open_0.35s_ease-out]
           "
+          style={{
+            backgroundColor: "var(--background)",
+            borderColor: "var(--border)",
+          }}
         >
           <div
             className="
               px-4 py-3 flex justify-between items-center
-              rounded-t-2xl bg-gradient-to-r from-blue-600 to-indigo-500
-              text-white
+              rounded-t-[calc(2rem-3px)] text-white
             "
+            style={{ backgroundColor: "var(--primary)" }}
           >
             <div className="flex flex-col">
               <span className="font-semibold text-sm">Langfens Assistant</span>
-              <span className="text-[11px] text-blue-100">
+              <span className="text-[11px] opacity-80">
                 Hỗ trợ tiếng Anh & bài test
               </span>
             </div>
             <button
               onClick={() => setOpen(false)}
-              className="text-blue-100 hover:text-white transition"
+              className="opacity-80 hover:opacity-100 transition text-white font-bold text-sm"
             >
-              <FiX size={18} />
+              x
             </button>
           </div>
 
@@ -156,10 +159,19 @@ export default function ChatbotWidget() {
               >
                 <div
                   className={
-                    "max-w-[85%] px-3 py-2 rounded-2xl whitespace-pre-wrap text-[13px] shadow-sm transition-all duration-150 " +
+                    "max-w-[85%] px-3 py-2 rounded-2xl whitespace-pre-wrap text-[13px] transition-all duration-150 " +
                     (m.role === "user"
-                      ? "bg-blue-600 text-white rounded-br-sm"
-                      : "bg-white text-gray-900 rounded-bl-sm border border-slate-100")
+                      ? "text-white rounded-br-sm"
+                      : "rounded-bl-sm border")
+                  }
+                  style={
+                    m.role === "user"
+                      ? { backgroundColor: "var(--primary)" }
+                      : {
+                          backgroundColor: "var(--background)",
+                          color: "var(--foreground)",
+                          borderColor: "var(--border)",
+                        }
                   }
                 >
                   {m.role === "assistant" && !m.content && loading ? (
@@ -175,19 +187,30 @@ export default function ChatbotWidget() {
           <form
             onSubmit={handleSend}
             className="
-              p-3 bg-slate-50 rounded-b-2xl
-              border-t border-slate-200 flex gap-2
+              p-3 rounded-b-[calc(2rem-3px)]
+              border-t flex gap-2
             "
+            style={{
+              backgroundColor: "var(--background)",
+              borderColor: "var(--border)",
+            }}
           >
             <input
               type="text"
               placeholder="Nhập câu hỏi..."
               className="
-                flex-1 px-3 py-2 rounded-xl bg-white text-gray-900 text-[13px]
-                border border-slate-200
-                focus:outline-none focus:ring-2 focus:ring-blue-500
-                placeholder:text-slate-400 transition
+                flex-1 px-3 py-2 rounded-xl text-[13px]
+                border
+                focus:outline-none focus:ring-2
+                transition
               "
+              style={{
+                backgroundColor: "var(--background)",
+                color: "var(--foreground)",
+                borderColor: "var(--border)",
+                // @ts-ignore
+                "--tw-ring-color": "var(--primary)",
+              } as React.CSSProperties}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               disabled={loading}
@@ -196,10 +219,14 @@ export default function ChatbotWidget() {
               type="submit"
               disabled={loading || !input.trim()}
               className="
-                px-3 py-2 rounded-xl text-xs font-semibold
-                bg-blue-600 text-white disabled:opacity-50
-                hover:bg-blue-700 transition shadow-sm
+                px-3 py-2 rounded-full text-xs font-semibold
+                text-white disabled:opacity-50
+                transition border-b-[4px]
               "
+              style={{
+                backgroundColor: "var(--primary)",
+                borderBottomColor: "var(--primary-dark)",
+              }}
             >
               Gửi
             </button>

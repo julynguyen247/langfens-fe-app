@@ -6,21 +6,21 @@ export default function InstructionBox({
   className = "",
   sticky = true,
 }: {
-  title: string; // "Question 1–6 Do the following statements…"
-  note?: string; // dòng mô tả phụ (optional)
-  items: { label: string; text: string }[]; // TRUE/FALSE/NOT GIVEN …
+  title: string; // "Question 1-6 Do the following statements..."
+  note?: string; // optional secondary description
+  items: { label: string; text: string }[]; // TRUE/FALSE/NOT GIVEN ...
   className?: string;
-  sticky?: boolean; // sticky header trong panel
+  sticky?: boolean; // sticky header in panel
 }) {
   return (
     <div
       className={[
-        "rounded-xl p-4 text-white",
-        "bg-blue-600",
+        "rounded-[1.5rem] p-4 text-white border-[3px] border-[var(--primary-dark)]",
+        "bg-[var(--primary)]",
         sticky ? "sticky top-0 z-10" : "",
 
         sticky
-          ? "bg-blue-600/95 backdrop-blur supports-[backdrop-filter]:bg-blue-600/75"
+          ? "bg-[var(--primary)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--primary)]/75"
           : "",
         className,
       ].join(" ")}
@@ -31,7 +31,7 @@ export default function InstructionBox({
       <div className="mt-3 grid gap-1 text-sm">
         {items.map((it) => (
           <div key={it.label} className="flex gap-2">
-            <span className="font-extrabold uppercase">{it.label}</span>
+            <span className="font-extrabold">{it.label}</span>
             <span className="text-blue-100">{it.text}</span>
           </div>
         ))}

@@ -40,7 +40,7 @@ Thumbs.db
 # testing
 coverage/
 .playwright-mcp/
-
+.mcp**
 # misc
 *.png
 *.jpg

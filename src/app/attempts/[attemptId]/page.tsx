@@ -7,10 +7,14 @@ import {
   getWritingHistoryById,
   getSpeakingHistoryById,
 } from "@/utils/api";
-import { FiChevronDown, FiChevronUp } from "react-icons/fi";
 import ReactMarkdown from "react-markdown";
 import BookmarkButton from "@/components/BookmarkButton";
 import { ResultHeader } from "@/components/result/ResultHeader";
+import { ScoreCounter } from "@/components/ui/ScoreCounter";
+import { SkillProgressBar } from "@/components/ui/SkillProgressBar";
+import { SkillBadge } from "@/components/ui/SkillBadge";
+import { motion, AnimatePresence } from "framer-motion";
+import confetti from "canvas-confetti";
 
 type PageSource = "attempt" | "writing" | "speaking";
 
@@ -90,23 +94,29 @@ type SpeakingDetail = {
 };
 
 const QUESTION_TYPE_LABELS: Record<string, string> = {
-  "TRUE_FALSE_NOT_GIVEN": "True/False/Not Given",
-  "YES_NO_NOT_GIVEN": "Yes/No/Not Given",
-  "MCQ_SINGLE": "Multiple Choice",
-  "MCQ_MULTIPLE": "Multiple Selection",
-  "MATCHING_HEADING": "Matching Headings",
-  "MATCHING_INFORMATION": "Matching Information",
-  "MATCHING_FEATURES": "Matching Features",
-  "SUMMARY_COMPLETION": "Summary Completion",
-  "TABLE_COMPLETION": "Table Completion",
-  "SENTENCE_COMPLETION": "Sentence Completion",
-  "DIAGRAM_LABEL": "Diagram Labelling",
-  "SHORT_ANSWER": "Short Answer",
-  "MAP_LABEL": "Map Labelling",
+  TRUE_FALSE_NOT_GIVEN: "True/False/Not Given",
+  YES_NO_NOT_GIVEN: "Yes/No/Not Given",
+  MCQ_SINGLE: "Multiple Choice",
+  MCQ_MULTIPLE: "Multiple Selection",
+  MATCHING_HEADING: "Matching Headings",
+  MATCHING_INFORMATION: "Matching Information",
+  MATCHING_FEATURES: "Matching Features",
+  SUMMARY_COMPLETION: "Summary Completion",
+  TABLE_COMPLETION: "Table Completion",
+  SENTENCE_COMPLETION: "Sentence Completion",
+  DIAGRAM_LABEL: "Diagram Labelling",
+  SHORT_ANSWER: "Short Answer",
+  MAP_LABEL: "Map Labelling",
 };
 
 function formatQuestionType(type: string): string {
-  return QUESTION_TYPE_LABELS[type] || type.split("_").map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(" ");
+  return (
+    QUESTION_TYPE_LABELS[type] ||
+    type
+      .split("_")
+      .map((w) => w.charAt(0) + w.slice(1).toLowerCase())
+      .join(" ")
+  );
 }
 
 export default function AttemptResultPage() {
@@ -143,9 +153,11 @@ export default function AttemptResultPage() {
 
           if (paper?.sections) {
             for (const sec of paper.sections) {
-              // Support both direct questions and questionGroups structure
-              const questions = sec.questions ?? 
-                (sec.questionGroups ?? []).flatMap((g: any) => g.questions ?? []);
+              const questions =
+                sec.questions ??
+                (sec.questionGroups ?? []).flatMap(
+                  (g: any) => g.questions ?? []
+                );
               for (const q of questions) {
                 if (!q?.id) continue;
                 questionMetaById[String(q.id)] = {
@@ -250,11 +262,9 @@ export default function AttemptResultPage() {
           };
 
           setAttemptData(mapped);
-          // Auto-detect skill from questions (e.g., LISTENING for listening exams)
           const firstSkill = mapped.questions?.[0]?.skill ?? "READING";
           setActiveSkill(firstSkill as any);
         } else if (source === "writing") {
-          // ========= CASE 2: WRITING DETAIL =========
           const res = await getWritingHistoryById(attemptId);
           const raw = (res as any)?.data?.data ?? (res as any)?.data ?? res;
 
@@ -300,7 +310,6 @@ export default function AttemptResultPage() {
           const raw = (res as any)?.data?.data ?? (res as any)?.data ?? res;
 
           const totalTimeSec = parseSecondsAny((raw as any).timeUsedSec) ?? 0;
-
           const overallBand = Number(
             raw.overallBand ?? raw.band ?? raw.speakingBand ?? 0
           );
@@ -355,18 +364,29 @@ export default function AttemptResultPage() {
 
   if (loading)
     return (
-      <div className="p-6 text-center text-slate-500">Đang tải kết quả…</div>
+      <div className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center gap-4">
+        <div className="h-10 w-10 animate-spin rounded-full border-[4px] border-[var(--border)] border-t-[var(--primary)]" />
+        <p
+          className="text-base font-bold text-[var(--text-muted)]"
+          style={{ fontFamily: "var(--font-sans)" }}
+        >
+          Loading results...
+        </p>
+      </div>
     );
 
   if (!attemptData)
     return (
-      <div className="p-6 text-center text-slate-500">
-        Không tìm thấy kết quả{" "}
+      <div className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center gap-4">
+        <p className="text-base text-[var(--text-muted)]">
+          No results found.
+        </p>
         <button
           onClick={() => router.push("/home")}
-          className="text-blue-600 underline"
+          className="px-6 py-2.5 rounded-full bg-[var(--primary)] text-white font-bold border-b-[4px] border-[var(--primary-dark)] hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px] transition-all duration-150"
+          style={{ fontFamily: "var(--font-sans)" }}
         >
-          Quay lại trang chủ
+          Go Home
         </button>
       </div>
     );
@@ -393,88 +413,178 @@ export default function AttemptResultPage() {
     ).length;
 
     const blankCount = skillFiltered.length - answeredCount;
-    const accuracy = skillFiltered.length > 0 
-      ? Math.round((attemptData.correctCount / skillFiltered.length) * 100) 
-      : 0;
+
+    const accuracy =
+      skillFiltered.length > 0
+        ? Math.round(
+            (attemptData.correctCount / skillFiltered.length) * 100
+          )
+        : 0;
 
     const isProductiveSkill =
       activeSkill === "WRITING" || activeSkill === "SPEAKING";
 
-    // Get criteria for productive skills
-    const writingCriteria = attemptData.writingGrade ? [
-      { code: "TR", name: "Task Response", score: attemptData.writingGrade.taskResponse?.band },
-      { code: "CC", name: "Coherence", score: attemptData.writingGrade.coherenceAndCohesion?.band },
-      { code: "LR", name: "Lexical", score: attemptData.writingGrade.lexicalResource?.band },
-      { code: "GRA", name: "Grammar", score: attemptData.writingGrade.grammaticalRangeAndAccuracy?.band },
-    ].filter(c => c.score !== undefined) : [];
+    const writingCriteria = attemptData.writingGrade
+      ? [
+          {
+            code: "TR",
+            name: "Task Response",
+            score: attemptData.writingGrade.taskResponse?.band,
+          },
+          {
+            code: "CC",
+            name: "Coherence",
+            score: attemptData.writingGrade.coherenceAndCohesion?.band,
+          },
+          {
+            code: "LR",
+            name: "Lexical",
+            score: attemptData.writingGrade.lexicalResource?.band,
+          },
+          {
+            code: "GRA",
+            name: "Grammar",
+            score:
+              attemptData.writingGrade.grammaticalRangeAndAccuracy?.band,
+          },
+        ].filter((c) => c.score !== undefined)
+      : [];
 
-    const speakingCriteria = attemptData.speakingGrade ? [
-      { code: "FC", name: "Fluency", score: attemptData.speakingGrade.fluencyAndCoherence?.band },
-      { code: "LR", name: "Lexical", score: attemptData.speakingGrade.lexicalResource?.band },
-      { code: "GRA", name: "Grammar", score: attemptData.speakingGrade.grammaticalRangeAndAccuracy?.band },
-      { code: "P", name: "Pronunciation", score: attemptData.speakingGrade.pronunciation?.band },
-    ].filter(c => c.score !== undefined) : [];
+    const speakingCriteria = attemptData.speakingGrade
+      ? [
+          {
+            code: "FC",
+            name: "Fluency",
+            score: attemptData.speakingGrade.fluencyAndCoherence?.band,
+          },
+          {
+            code: "LR",
+            name: "Lexical",
+            score: attemptData.speakingGrade.lexicalResource?.band,
+          },
+          {
+            code: "GRA",
+            name: "Grammar",
+            score:
+              attemptData.speakingGrade.grammaticalRangeAndAccuracy?.band,
+          },
+          {
+            code: "P",
+            name: "Pronunciation",
+            score: attemptData.speakingGrade.pronunciation?.band,
+          },
+        ].filter((c) => c.score !== undefined)
+      : [];
 
-    const productiveBand = activeSkill === "WRITING" ? attemptData.writingBand : attemptData.speakingBand;
-    const productiveCriteria = activeSkill === "WRITING" ? writingCriteria : speakingCriteria;
+    const productiveBand =
+      activeSkill === "WRITING"
+        ? attemptData.writingBand
+        : attemptData.speakingBand;
+    const productiveCriteria =
+      activeSkill === "WRITING" ? writingCriteria : speakingCriteria;
 
-    // Metrics based on skill type
-    const metrics = isProductiveSkill 
-      ? productiveCriteria.map(c => ({ label: c.code, value: c.score?.toFixed(1) ?? "--" }))
+    const metrics = isProductiveSkill
+      ? productiveCriteria.map((c) => ({
+          label: c.code,
+          value: c.score?.toFixed(1) ?? "--",
+        }))
       : [
-          { label: "Correct", value: `${attemptData.correctCount}/${skillFiltered.length}` },
+          {
+            label: "Correct",
+            value: `${attemptData.correctCount}/${skillFiltered.length}`,
+          },
           { label: "Skipped", value: String(blankCount) },
           { label: "Time", value: attemptData.totalTime },
           { label: "Accuracy", value: `${accuracy}%` },
         ];
 
+    // Build band breakdowns for the progress bars
+    const bandBreakdowns = isProductiveSkill
+      ? productiveCriteria.map((c) => ({
+          skill: c.name,
+          score: c.score ?? 0,
+        }))
+      : undefined;
+
     return (
-      <div className="min-h-screen bg-[#F8FAFC] py-10 px-4 font-sans">
-        {/* THE MASTER CARD - SPA Style */}
-        <div className="max-w-6xl mx-auto bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden">
+      <div className="min-h-screen bg-[var(--background)] py-10 px-4">
+        <div className="max-w-3xl mx-auto space-y-8">
+          {/* Score Reveal Section */}
+          <ConfettiTrigger
+            score={
+              isProductiveSkill
+                ? typeof productiveBand === "number"
+                  ? productiveBand
+                  : 0
+                : typeof overallBand === "number"
+                ? overallBand
+                : 0
+            }
+            targetScore={6}
+          />
 
-          {/* A. HEADER - Using Shared Component */}
-          <div className="p-10 border-b border-slate-100">
-            <ResultHeader
-              skill={activeSkill}
-              overallScore={isProductiveSkill
-                ? (typeof productiveBand === "number" ? productiveBand : "--")
-                : (typeof overallBand === "number" ? overallBand : "--")
-              }
-              date={new Date(attemptData.finishedAt).toLocaleDateString("en-US", {
-                month: "short", day: "numeric", year: "numeric"
-              })}
-              metrics={metrics}
-            />
-          </div>
+          <ResultHeader
+            skill={activeSkill}
+            overallScore={
+              isProductiveSkill
+                ? typeof productiveBand === "number"
+                  ? productiveBand
+                  : "--"
+                : typeof overallBand === "number"
+                ? overallBand
+                : "--"
+            }
+            date={new Date(attemptData.finishedAt).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })}
+            metrics={metrics}
+            bandBreakdowns={bandBreakdowns}
+          />
 
-          {/* B. SKILL TABS (Switcher) */}
-          <div className="flex justify-center bg-slate-50/50 border-b border-slate-100">
+          {/* Skill Tabs */}
+          <motion.div
+            className="flex justify-center rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-white overflow-hidden"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.8, ease: "easeOut" }}
+          >
             {["READING", "LISTENING", "WRITING", "SPEAKING"].map((sk) => (
               <button
                 key={sk}
                 onClick={() => setActiveSkill(sk as any)}
-                className={`px-10 py-5 text-xs font-bold uppercase tracking-[0.15em] transition-all ${
+                className={`flex-1 px-6 py-4 text-sm font-bold transition-all duration-150 ${
                   activeSkill === sk
-                    ? "text-[#3B82F6] border-b-2 border-[#3B82F6] bg-white shadow-sm"
-                    : "text-slate-400 hover:text-slate-600 border-b-2 border-transparent"
+                    ? "text-[var(--primary)] border-b-[3px] border-[var(--primary)] bg-[var(--primary-light)]"
+                    : "text-[var(--text-muted)] hover:text-[var(--foreground)] border-b-[3px] border-transparent"
                 }`}
+                style={{ fontFamily: "var(--font-sans)" }}
               >
-                {sk}
+                {sk.charAt(0) + sk.slice(1).toLowerCase()}
               </button>
             ))}
-          </div>
+          </motion.div>
 
           {/* Manual Review Warning */}
           {!isProductiveSkill && attemptData.needsManualReview > 0 && (
-            <div className="mx-10 mt-8 p-4 rounded-xl border border-amber-200 bg-amber-50 text-amber-800 text-sm flex items-center gap-2">
-              <span className="text-amber-500">⚠️</span>
-              {attemptData.needsManualReview} questions need manual review — band may change.
-            </div>
+            <motion.div
+              className="p-4 rounded-[2rem] border-[3px] border-[var(--skill-writing-border)] bg-[var(--skill-writing-light)] text-[var(--skill-writing)] text-sm font-bold shadow-[0_4px_0_rgba(0,0,0,0.08)]"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.9 }}
+            >
+              {attemptData.needsManualReview} questions need manual review --
+              band may change.
+            </motion.div>
           )}
 
-          {/* C. CONTENT BODY (Polymorphic View) */}
-          <div className="p-10 bg-white min-h-[500px]">
+          {/* Content Body */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 1.0, ease: "easeOut" }}
+          >
             {isProductiveSkill ? (
               <ProductiveBandSection
                 skill={activeSkill}
@@ -486,448 +596,689 @@ export default function AttemptResultPage() {
               <QuestionReview details={skillFiltered} />
             )}
 
-            {/* Empty State Handler */}
             {!isProductiveSkill && skillFiltered.length === 0 && (
-              <div className="flex items-center justify-center gap-2 py-20 text-slate-400">
-                <span className="material-symbols-rounded text-2xl">do_not_disturb_on</span>
+              <div className="flex items-center justify-center gap-2 py-20 text-[var(--text-muted)]">
                 <span>No data for {activeSkill}</span>
               </div>
             )}
-          </div>
+          </motion.div>
 
-        </div>
-
-        {/* FOOTER ACTIONS */}
-        <div className="text-center mt-8 space-y-4">
-          {/* Primary Action */}
-          <button
-            onClick={() => router.push("/home")}
-            className="bg-[#3B82F6] text-white font-bold text-sm px-8 py-3 rounded-xl hover:bg-blue-600 transition-colors inline-flex items-center gap-2"
+          {/* Footer Actions */}
+          <motion.div
+            className="text-center space-y-4 pb-10"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4, delay: 1.2 }}
           >
-            <span className="material-symbols-rounded text-base">refresh</span>
-            Take New Placement Test
-          </button>
-          
-          {/* Secondary Links */}
-          <div className="flex justify-center gap-4">
             <button
-              onClick={() => router.push(`/attempts/${attemptData.attemptId}/review`)}
-              className="text-slate-500 font-bold text-sm hover:text-[#3B82F6] transition-colors"
+              onClick={() => router.push("/home")}
+              className="px-8 py-3 rounded-full bg-[var(--primary)] text-white font-bold text-sm border-b-[4px] border-[var(--primary-dark)] hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px] transition-all duration-150"
+              style={{ fontFamily: "var(--font-sans)" }}
             >
-              ← Review All Answers
+              Take New Placement Test
             </button>
-            <span className="text-slate-300">|</span>
-            <button
-              onClick={() => router.push("/practice")}
-              className="text-slate-500 font-bold text-sm hover:text-[#3B82F6] transition-colors"
-            >
-              Back to Library →
-            </button>
-          </div>
+
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={() =>
+                  router.push(`/attempts/${attemptData.attemptId}/review`)
+                }
+                className="text-[var(--text-muted)] font-bold text-sm hover:text-[var(--primary)] transition-colors"
+                style={{ fontFamily: "var(--font-sans)" }}
+              >
+                Review All Answers
+              </button>
+              <span className="text-[var(--border)]">|</span>
+              <button
+                onClick={() => router.push("/practice")}
+                className="text-[var(--text-muted)] font-bold text-sm hover:text-[var(--primary)] transition-colors"
+                style={{ fontFamily: "var(--font-sans)" }}
+              >
+                Back to Library
+              </button>
+            </div>
+          </motion.div>
         </div>
       </div>
     );
   }
 
   if (source === "writing" && writingDetail) {
-    // Build strengths/weaknesses for critique
     const strengths: string[] = [];
     const weaknesses: string[] = [];
-    
+
     if (writingDetail.taskResponse) {
-      if (writingDetail.taskResponse.band >= 6) strengths.push("Task Response");
+      if (writingDetail.taskResponse.band >= 6)
+        strengths.push("Task Response");
       else weaknesses.push("Task Response");
     }
     if (writingDetail.coherenceAndCohesion) {
-      if (writingDetail.coherenceAndCohesion.band >= 6) strengths.push("Coherence");
+      if (writingDetail.coherenceAndCohesion.band >= 6)
+        strengths.push("Coherence");
       else weaknesses.push("Coherence");
     }
     if (writingDetail.lexicalResource) {
-      if (writingDetail.lexicalResource.band >= 6) strengths.push("Vocabulary");
+      if (writingDetail.lexicalResource.band >= 6)
+        strengths.push("Vocabulary");
       else weaknesses.push("Vocabulary");
     }
     if (writingDetail.grammaticalRangeAndAccuracy) {
-      if (writingDetail.grammaticalRangeAndAccuracy.band >= 6) strengths.push("Grammar");
+      if (writingDetail.grammaticalRangeAndAccuracy.band >= 6)
+        strengths.push("Grammar");
       else weaknesses.push("Grammar");
     }
 
-
+    const writingBandBreakdowns = [
+      writingDetail.taskResponse && {
+        skill: "WRITING",
+        score: writingDetail.taskResponse.band,
+        label: "Task",
+      },
+      writingDetail.coherenceAndCohesion && {
+        skill: "READING",
+        score: writingDetail.coherenceAndCohesion.band,
+        label: "Coherence",
+      },
+      writingDetail.lexicalResource && {
+        skill: "LISTENING",
+        score: writingDetail.lexicalResource.band,
+        label: "Lexical",
+      },
+      writingDetail.grammaticalRangeAndAccuracy && {
+        skill: "SPEAKING",
+        score: writingDetail.grammaticalRangeAndAccuracy.band,
+        label: "Grammar",
+      },
+    ].filter(Boolean) as { skill: string; score: number; label: string }[];
 
     return (
-      <div className="max-w-5xl mx-auto py-8 px-4 space-y-8">
-        {/* Score Header - Examiner's Report Style */}
-        <div className="bg-white border-b border-slate-200 rounded-2xl overflow-hidden shadow-sm">
-          <div className="p-8 flex flex-col md:flex-row items-center justify-between gap-8">
-            {/* Left: Big Score */}
-            <div className="text-center md:text-left">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="material-symbols-rounded text-xl text-slate-400">edit_note</span>
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
-                  Writing Assessment
-                </span>
-              </div>
-              <div className="text-8xl font-serif font-bold text-[#3B82F6] leading-none">
-                {writingDetail.overallBand.toFixed(1)}
-              </div>
-              <p className="mt-2 text-[10px] uppercase tracking-[0.25em] text-slate-400">
-                Overall Band Score
-              </p>
-            </div>
+      <div className="min-h-screen bg-[var(--background)] py-10 px-4">
+        <div className="max-w-3xl mx-auto space-y-8">
+          {/* Confetti */}
+          <ConfettiTrigger
+            score={writingDetail.overallBand}
+            targetScore={6}
+          />
 
-            {/* Right: Criteria Breakdown */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {writingDetail.taskResponse && (
-                <div className="bg-slate-50 border border-slate-100 p-4 rounded-lg text-center min-w-[90px]">
-                  <p className="text-[10px] font-bold uppercase text-slate-500 mb-1">Task</p>
-                  <p className="text-2xl font-bold text-slate-800">{writingDetail.taskResponse.band.toFixed(1)}</p>
-                </div>
-              )}
-              {writingDetail.coherenceAndCohesion && (
-                <div className="bg-slate-50 border border-slate-100 p-4 rounded-lg text-center min-w-[90px]">
-                  <p className="text-[10px] font-bold uppercase text-slate-500 mb-1">Coherence</p>
-                  <p className="text-2xl font-bold text-slate-800">{writingDetail.coherenceAndCohesion.band.toFixed(1)}</p>
-                </div>
-              )}
-              {writingDetail.lexicalResource && (
-                <div className="bg-slate-50 border border-slate-100 p-4 rounded-lg text-center min-w-[90px]">
-                  <p className="text-[10px] font-bold uppercase text-slate-500 mb-1">Lexical</p>
-                  <p className="text-2xl font-bold text-slate-800">{writingDetail.lexicalResource.band.toFixed(1)}</p>
-                </div>
-              )}
-              {writingDetail.grammaticalRangeAndAccuracy && (
-                <div className="bg-slate-50 border border-slate-100 p-4 rounded-lg text-center min-w-[90px]">
-                  <p className="text-[10px] font-bold uppercase text-slate-500 mb-1">Grammar</p>
-                  <p className="text-2xl font-bold text-slate-800">{writingDetail.grammaticalRangeAndAccuracy.band.toFixed(1)}</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Task Prompt - Subtle */}
-        <div className="bg-slate-50 border border-slate-100 rounded-xl p-5">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="material-symbols-rounded text-slate-400">description</span>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Task Prompt</h3>
-          </div>
-          <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
-            {writingDetail.taskText || <span className="italic text-slate-400">(No task text)</span>}
-          </p>
-        </div>
-
-        {/* Feedback Body - 3 Column Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* LEFT: The Essay (Paper View) */}
-          <div className="lg:col-span-2">
-            <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-8">
-              <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">
-                Your Submission
-              </h3>
-              <div className="font-serif text-lg leading-loose text-slate-800 whitespace-pre-wrap">
-                {writingDetail.essayRaw || <span className="italic text-slate-400">(No essay content)</span>}
-              </div>
-              <div className="mt-6 pt-6 border-t border-slate-100 flex justify-between text-sm text-slate-500">
-                <span className="flex items-center gap-1">
-                  <span className="material-symbols-rounded text-base">notes</span>
-                  {writingDetail.wordCount} words
-                </span>
-                <span className="text-xs text-slate-400">
-                  {writingDetail.gradedAt && new Date(writingDetail.gradedAt).toLocaleDateString("en-US", {
-                    year: "numeric", month: "short", day: "numeric"
-                  })}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* RIGHT: Examiner's Notes (Sidebar) */}
-          <div className="space-y-6">
-            {/* Examiner's Critique */}
-            <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-6">
-              <h3 className="flex items-center gap-2 font-bold text-blue-700 mb-4">
-                <span className="material-symbols-rounded text-xl">psychology</span>
-                Examiner's Critique
-              </h3>
-              <div className="space-y-4 text-sm text-slate-700 leading-relaxed">
-                {strengths.length > 0 && (
-                  <div>
-                    <p className="font-semibold text-emerald-700 mb-1 flex items-center gap-1">
-                      <span className="material-symbols-rounded text-base">check_circle</span>
-                      Strengths
-                    </p>
-                    <ul className="list-disc list-inside space-y-1 text-slate-600 text-xs">
-                      {strengths.map((s, i) => <li key={i}>{s}</li>)}
-                    </ul>
-                  </div>
-                )}
-                {weaknesses.length > 0 && (
-                  <div>
-                    <p className="font-semibold text-amber-700 mb-1 flex items-center gap-1">
-                      <span className="material-symbols-rounded text-base">error</span>
-                      Areas to Improve
-                    </p>
-                    <ul className="list-disc list-inside space-y-1 text-slate-600 text-xs">
-                      {weaknesses.map((w, i) => <li key={i}>{w}</li>)}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Suggestions */}
-            {writingDetail.suggestions.length > 0 && (
-              <div className="bg-white border border-slate-200 rounded-xl p-6">
-                <h3 className="flex items-center gap-2 font-bold text-slate-800 mb-3">
-                  <span className="material-symbols-rounded text-amber-500">lightbulb</span>
-                  Tips
-                </h3>
-                <ul className="text-xs text-slate-600 space-y-2">
-                  {writingDetail.suggestions.slice(0, 3).map((s, i) => (
-                    <li key={i} className="flex gap-2">
-                      <span className="text-slate-400">{i + 1}.</span>
-                      <span>{s}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Model Answer Toggle */}
-            {writingDetail.improvedParagraph && (
-              <div className="bg-white border border-slate-200 rounded-xl p-6">
-                <h3 className="font-bold text-slate-800 mb-2">Better Version?</h3>
-                <p className="text-xs text-slate-500 mb-4">See how an improved version would look.</p>
-                <button
-                  onClick={() => setShowModel(!showModel)}
-                  className="w-full bg-slate-800 text-white py-2.5 rounded-lg font-medium text-sm hover:bg-black transition-colors flex items-center justify-center gap-2"
-                >
-                  <span className="material-symbols-rounded text-base">{showModel ? "visibility_off" : "visibility"}</span>
-                  {showModel ? "Hide Model Answer" : "View Model Answer"}
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Model Answer (Expandable) */}
-        {showModel && writingDetail.improvedParagraph && (
-          <div className="bg-gradient-to-br from-slate-800 to-slate-900 text-white rounded-xl p-8 shadow-lg">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="material-symbols-rounded text-amber-400">auto_awesome</span>
-              <h3 className="font-bold">Improved Version</h3>
-            </div>
-            <p className="font-serif text-lg leading-loose opacity-90 whitespace-pre-wrap">
-              {writingDetail.improvedParagraph}
-            </p>
-          </div>
-        )}
-
-        {/* Detailed Criteria Cards */}
-        <div className="grid md:grid-cols-2 gap-4">
-          {writingDetail.taskResponse && (
-            <CriterionCard title="Task Response" criterion={writingDetail.taskResponse} />
-          )}
-          {writingDetail.coherenceAndCohesion && (
-            <CriterionCard title="Coherence & Cohesion" criterion={writingDetail.coherenceAndCohesion} />
-          )}
-          {writingDetail.lexicalResource && (
-            <CriterionCard title="Lexical Resource" criterion={writingDetail.lexicalResource} />
-          )}
-          {writingDetail.grammaticalRangeAndAccuracy && (
-            <CriterionCard title="Grammatical Range & Accuracy" criterion={writingDetail.grammaticalRangeAndAccuracy} />
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="flex justify-center gap-4 pt-4">
-          <button
-            onClick={() => router.push("/home")}
-            className="px-6 py-2.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition-colors"
+          {/* Score Reveal */}
+          <motion.div
+            className="flex flex-col items-center py-10"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
           >
-            Back to Home
-          </button>
+            <p
+              className="text-sm font-bold text-[var(--text-muted)] mb-2"
+              style={{ fontFamily: "var(--font-sans)" }}
+            >
+              Writing Assessment
+            </p>
+            <ScoreCounter
+              value={writingDetail.overallBand}
+              duration={1.5}
+              decimals={1}
+              className="text-6xl font-bold text-[var(--primary)]"
+            />
+            <p
+              className="text-sm font-semibold text-[var(--text-muted)] mt-3"
+              style={{ fontFamily: "var(--font-sans)" }}
+            >
+              Overall Band Score
+            </p>
+            <p className="text-xs text-[var(--text-muted)] mt-2">
+              {writingDetail.gradedAt &&
+                new Date(writingDetail.gradedAt).toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                })}
+            </p>
+          </motion.div>
+
+          {/* Band Breakdown Bars */}
+          <div className="max-w-md mx-auto space-y-3">
+            {writingBandBreakdowns.map((b, idx) => (
+              <motion.div
+                key={b.label}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{
+                  duration: 0.4,
+                  delay: 0.2 * idx,
+                  ease: "easeOut",
+                }}
+              >
+                <SkillProgressBar
+                  skill={b.label}
+                  score={b.score}
+                  delay={0.2 * idx}
+                />
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Summary Cards Row */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {writingBandBreakdowns.map((b, idx) => (
+              <motion.div
+                key={`card-${b.label}`}
+                className="rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-[var(--background)] p-4 flex flex-col items-center justify-center text-center hover:-translate-y-[3px] hover:border-[var(--primary)] hover:shadow-[0_6px_0_rgba(0,0,0,0.08)] transition-all duration-150"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  duration: 0.4,
+                  delay: 0.6 + idx * 0.1,
+                  ease: "easeOut",
+                }}
+              >
+                <span
+                  className="text-3xl font-bold text-[var(--foreground)] mb-1"
+                  style={{ fontFamily: "var(--font-mono)" }}
+                >
+                  {b.score.toFixed(1)}
+                </span>
+                <span className="text-xs font-bold text-[var(--text-muted)]">
+                  {b.label}
+                </span>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Task Prompt */}
+          <motion.div
+            className="rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-white p-6"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.8, ease: "easeOut" }}
+          >
+            <h3
+              className="text-sm font-bold text-[var(--text-muted)] mb-2"
+              style={{ fontFamily: "var(--font-sans)" }}
+            >
+              Task Prompt
+            </h3>
+            <p className="text-sm text-[var(--text-body)] leading-relaxed whitespace-pre-wrap">
+              {writingDetail.taskText || (
+                <span className="italic text-[var(--text-muted)]">
+                  (No task text)
+                </span>
+              )}
+            </p>
+          </motion.div>
+
+          {/* Feedback Body */}
+          <motion.div
+            className="grid grid-cols-1 lg:grid-cols-3 gap-8"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.9, ease: "easeOut" }}
+          >
+            {/* LEFT: The Essay */}
+            <div className="lg:col-span-2">
+              <div className="rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-white p-8">
+                <h3
+                  className="text-sm font-bold text-[var(--text-muted)] mb-4"
+                  style={{ fontFamily: "var(--font-sans)" }}
+                >
+                  Your Submission
+                </h3>
+                <div className="text-lg leading-loose text-[var(--foreground)] whitespace-pre-wrap">
+                  {writingDetail.essayRaw || (
+                    <span className="italic text-[var(--text-muted)]">
+                      (No essay content)
+                    </span>
+                  )}
+                </div>
+                <div className="mt-6 pt-6 border-t-[2px] border-[var(--border)] flex justify-between text-sm text-[var(--text-muted)]">
+                  <span>{writingDetail.wordCount} words</span>
+                  <span className="text-xs">
+                    {writingDetail.gradedAt &&
+                      new Date(writingDetail.gradedAt).toLocaleDateString(
+                        "en-US",
+                        {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        }
+                      )}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* RIGHT: Sidebar */}
+            <div className="space-y-6">
+              {/* Critique */}
+              <div className="rounded-[2rem] border-[3px] border-[var(--primary)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-[var(--primary-light)] p-6">
+                <h3
+                  className="font-bold text-[var(--primary-dark)] mb-4"
+                  style={{ fontFamily: "var(--font-sans)" }}
+                >
+                  Examiner&apos;s Critique
+                </h3>
+                <div className="space-y-4 text-sm text-[var(--text-body)] leading-relaxed">
+                  {strengths.length > 0 && (
+                    <div>
+                      <p className="font-bold text-[var(--skill-speaking)] mb-1">
+                        Strengths
+                      </p>
+                      <ul className="list-disc list-inside space-y-1 text-[var(--text-body)] text-xs">
+                        {strengths.map((s, i) => (
+                          <li key={i}>{s}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {weaknesses.length > 0 && (
+                    <div>
+                      <p className="font-bold text-[var(--skill-writing)] mb-1">
+                        Areas to Improve
+                      </p>
+                      <ul className="list-disc list-inside space-y-1 text-[var(--text-body)] text-xs">
+                        {weaknesses.map((w, i) => (
+                          <li key={i}>{w}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Suggestions */}
+              {writingDetail.suggestions.length > 0 && (
+                <div className="rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-white p-6">
+                  <h3
+                    className="font-bold text-[var(--foreground)] mb-3"
+                    style={{ fontFamily: "var(--font-sans)" }}
+                  >
+                    Tips
+                  </h3>
+                  <ul className="text-xs text-[var(--text-body)] space-y-2">
+                    {writingDetail.suggestions.slice(0, 3).map((s, i) => (
+                      <li key={i} className="flex gap-2">
+                        <span className="text-[var(--text-muted)]">
+                          {i + 1}.
+                        </span>
+                        <span>{s}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Model Answer Toggle */}
+              {writingDetail.improvedParagraph && (
+                <div className="rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-white p-6">
+                  <h3
+                    className="font-bold text-[var(--foreground)] mb-2"
+                    style={{ fontFamily: "var(--font-sans)" }}
+                  >
+                    Better Version?
+                  </h3>
+                  <p className="text-xs text-[var(--text-muted)] mb-4">
+                    See how an improved version would look.
+                  </p>
+                  <button
+                    onClick={() => setShowModel(!showModel)}
+                    className="w-full py-2.5 rounded-full bg-[var(--foreground)] text-white font-bold text-sm border-b-[4px] border-black hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px] transition-all duration-150"
+                    style={{ fontFamily: "var(--font-sans)" }}
+                  >
+                    {showModel ? "Hide Model Answer" : "View Model Answer"}
+                  </button>
+                </div>
+              )}
+            </div>
+          </motion.div>
+
+          {/* Model Answer (Expandable) */}
+          <AnimatePresence>
+            {showModel && writingDetail.improvedParagraph && (
+              <motion.div
+                className="bg-[var(--foreground)] text-white rounded-[2rem] border-[3px] border-[var(--foreground)] shadow-[0_4px_0_rgba(0,0,0,0.3)] p-8"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <h3
+                  className="font-bold mb-4"
+                  style={{ fontFamily: "var(--font-sans)" }}
+                >
+                  Improved Version
+                </h3>
+                <p className="text-lg leading-loose opacity-90 whitespace-pre-wrap">
+                  {writingDetail.improvedParagraph}
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Detailed Criteria Cards */}
+          <div className="grid md:grid-cols-2 gap-4">
+            {writingDetail.taskResponse && (
+              <CriterionCard
+                title="Task Response"
+                criterion={writingDetail.taskResponse}
+              />
+            )}
+            {writingDetail.coherenceAndCohesion && (
+              <CriterionCard
+                title="Coherence & Cohesion"
+                criterion={writingDetail.coherenceAndCohesion}
+              />
+            )}
+            {writingDetail.lexicalResource && (
+              <CriterionCard
+                title="Lexical Resource"
+                criterion={writingDetail.lexicalResource}
+              />
+            )}
+            {writingDetail.grammaticalRangeAndAccuracy && (
+              <CriterionCard
+                title="Grammatical Range & Accuracy"
+                criterion={writingDetail.grammaticalRangeAndAccuracy}
+              />
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="flex justify-center gap-4 pt-4 pb-10">
+            <button
+              onClick={() => router.push("/home")}
+              className="px-8 py-3 rounded-full bg-[var(--primary)] text-white font-bold border-b-[4px] border-[var(--primary-dark)] hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px] transition-all duration-150"
+              style={{ fontFamily: "var(--font-sans)" }}
+            >
+              Back to Home
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="max-w-4xl mx-auto py-8 px-4">
-      
-      {/* 1. REPORT CARD HERO - Classic Academic Style */}
-      <div className="bg-white rounded-2xl border border-blue-100 shadow-sm p-10 text-center mb-8">
-        <h2 className="text-sm font-bold text-slate-400 uppercase tracking-[0.2em] mb-1">
-          {headerTitle}
-        </h2>
-        <p className="text-xs text-slate-400 mb-6">
-          {speakingDetail?.gradedAt
-            ? new Date(speakingDetail.gradedAt).toLocaleString("vi-VN")
-            : new Date().toLocaleString("vi-VN")}
-        </p>
-        
-        {/* Large Serif Band Score */}
-        <div className="inline-block">
-          <span className="text-7xl font-serif font-bold text-[#3B82F6]">
-            {typeof overallBand === "number" ? overallBand.toFixed(1) : "--"}
-          </span>
-        </div>
-        <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mt-3">
-          Overall Speaking Band
-        </p>
-        {typeof speakingDetail?.wordCount === "number" && (
-          <p className="text-sm text-slate-500 mt-2">
-            {speakingDetail.wordCount} words spoken
-          </p>
-        )}
-      </div>
+  // SPEAKING RESULT (source === "speaking")
+  const speakingBandBreakdowns = [
+    speakingDetail?.fluencyAndCoherence && {
+      skill: "Fluency",
+      score: speakingDetail.fluencyAndCoherence.band,
+    },
+    speakingDetail?.pronunciation && {
+      skill: "Pronunciation",
+      score: speakingDetail.pronunciation.band,
+    },
+    speakingDetail?.lexicalResource && {
+      skill: "Vocabulary",
+      score: speakingDetail.lexicalResource.band,
+    },
+    speakingDetail?.grammaticalRangeAndAccuracy && {
+      skill: "Grammar",
+      score: speakingDetail.grammaticalRangeAndAccuracy.band,
+    },
+  ].filter(Boolean) as { skill: string; score: number }[];
 
-      {/* 2. INTERVIEW TRANSCRIPT (Court Transcript Style) */}
-      {speakingDetail?.transcript && (
-        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden mb-8">
-          {/* Header */}
-          <div className="bg-slate-50 px-4 py-3 border-b border-slate-100">
-            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              Interview Transcript
-            </h2>
-          </div>
-          {/* Content */}
-          <div className="p-6">
-            {/* Task/Prompt (Examiner) */}
-            {speakingDetail?.taskText && (
-              <div className="mb-6">
-                <p className="text-slate-500 italic text-sm mb-2">
-                  Examiner asks:
+  return (
+    <div className="min-h-screen bg-[var(--background)] py-10 px-4">
+      <div className="max-w-3xl mx-auto space-y-8">
+        {/* Confetti */}
+        <ConfettiTrigger
+          score={typeof overallBand === "number" ? overallBand : 0}
+          targetScore={6}
+        />
+
+        {/* Score Reveal Hero */}
+        <motion.div
+          className="flex flex-col items-center py-10"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+        >
+          <h2
+            className="text-sm font-bold text-[var(--text-muted)] mb-1"
+            style={{ fontFamily: "var(--font-sans)" }}
+          >
+            {headerTitle}
+          </h2>
+          <p className="text-xs text-[var(--text-muted)] mb-6">
+            {speakingDetail?.gradedAt
+              ? new Date(speakingDetail.gradedAt).toLocaleString("vi-VN")
+              : new Date().toLocaleString("vi-VN")}
+          </p>
+
+          {typeof overallBand === "number" ? (
+            <ScoreCounter
+              value={overallBand}
+              duration={1.5}
+              decimals={1}
+              className="text-6xl font-bold text-[var(--primary)]"
+            />
+          ) : (
+            <span
+              className="text-6xl font-bold text-[var(--primary)]"
+              style={{ fontFamily: "var(--font-mono)" }}
+            >
+              --
+            </span>
+          )}
+          <p
+            className="text-sm font-semibold text-[var(--text-muted)] mt-3"
+            style={{ fontFamily: "var(--font-sans)" }}
+          >
+            Overall Band Score
+          </p>
+          {typeof speakingDetail?.wordCount === "number" && (
+            <p className="text-sm text-[var(--text-muted)] mt-2">
+              {speakingDetail.wordCount} words spoken
+            </p>
+          )}
+        </motion.div>
+
+        {/* Band Breakdown Bars */}
+        <div className="max-w-md mx-auto space-y-3">
+          {speakingBandBreakdowns.map((b, idx) => (
+            <motion.div
+              key={b.skill}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{
+                duration: 0.4,
+                delay: 0.2 * idx,
+                ease: "easeOut",
+              }}
+            >
+              <SkillProgressBar
+                skill={b.skill}
+                score={b.score}
+                delay={0.2 * idx}
+              />
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Summary Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {speakingBandBreakdowns.map((b, idx) => (
+            <motion.div
+              key={`card-${b.skill}`}
+              className="p-4 rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-white text-center hover:-translate-y-[3px] hover:border-[var(--primary)] hover:shadow-[0_6px_0_rgba(0,0,0,0.08)] transition-all duration-150"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                duration: 0.4,
+                delay: 0.6 + idx * 0.1,
+                ease: "easeOut",
+              }}
+            >
+              <span
+                className="text-3xl font-bold text-[var(--primary)]"
+                style={{ fontFamily: "var(--font-mono)" }}
+              >
+                {b.score?.toFixed(1) ?? "--"}
+              </span>
+              <p className="text-xs font-bold text-[var(--text-muted)] mt-2">
+                {b.skill}
+              </p>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Transcript */}
+        {speakingDetail?.transcript && (
+          <motion.div
+            className="rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-white overflow-hidden"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.8, ease: "easeOut" }}
+          >
+            <div className="bg-[var(--background)] px-6 py-4 border-b-[2px] border-[var(--border)]">
+              <h2
+                className="text-sm font-bold text-[var(--text-muted)]"
+                style={{ fontFamily: "var(--font-sans)" }}
+              >
+                Interview Transcript
+              </h2>
+            </div>
+            <div className="p-6">
+              {speakingDetail?.taskText && (
+                <div className="mb-6">
+                  <p className="text-[var(--text-muted)] italic text-sm mb-2">
+                    Examiner asks:
+                  </p>
+                  <p className="text-[var(--text-body)] text-sm leading-relaxed">
+                    &ldquo;{speakingDetail.taskText}&rdquo;
+                  </p>
+                </div>
+              )}
+
+              <div className="pl-4 border-l-[3px] border-[var(--primary)]">
+                <p className="text-[var(--text-muted)] text-xs font-bold mb-2">
+                  Your Response:
                 </p>
-                <p className="text-slate-700 text-sm leading-relaxed">
-                  "{speakingDetail.taskText}"
+                <p className="text-[var(--foreground)] font-medium text-lg leading-relaxed whitespace-pre-wrap">
+                  {speakingDetail.transcript}
                 </p>
               </div>
-            )}
-            
-            {/* Candidate Response */}
-            <div className="pl-4 border-l-2 border-blue-200">
-              <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">
-                Your Response:
-              </p>
-              <p className="text-slate-900 font-medium text-lg leading-relaxed whitespace-pre-wrap">
-                {speakingDetail.transcript}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Detailed Feedback Cards */}
+        <div className="grid md:grid-cols-2 gap-4">
+          {speakingDetail?.fluencyAndCoherence && (
+            <CriterionCard
+              title="Fluency & Coherence"
+              criterion={speakingDetail.fluencyAndCoherence}
+            />
+          )}
+          {speakingDetail?.lexicalResource && (
+            <CriterionCard
+              title="Lexical Resource"
+              criterion={speakingDetail.lexicalResource}
+            />
+          )}
+          {speakingDetail?.grammaticalRangeAndAccuracy && (
+            <CriterionCard
+              title="Grammatical Range & Accuracy"
+              criterion={speakingDetail.grammaticalRangeAndAccuracy}
+            />
+          )}
+          {speakingDetail?.pronunciation && (
+            <CriterionCard
+              title="Pronunciation"
+              criterion={speakingDetail.pronunciation}
+            />
+          )}
+        </div>
+
+        {/* Suggestions */}
+        {speakingDetail?.suggestions &&
+          speakingDetail.suggestions.length > 0 && (
+            <motion.div
+              className="rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-white overflow-hidden"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 1.0, ease: "easeOut" }}
+            >
+              <div className="bg-[var(--background)] px-6 py-4 border-b-[2px] border-[var(--border)]">
+                <h2
+                  className="text-sm font-bold text-[var(--text-muted)]"
+                  style={{ fontFamily: "var(--font-sans)" }}
+                >
+                  Improvement Suggestions
+                </h2>
+              </div>
+              <div className="p-6">
+                <ul className="space-y-2">
+                  {speakingDetail.suggestions.map((s, i) => (
+                    <li
+                      key={i}
+                      className="flex items-start gap-2 text-sm text-[var(--text-body)]"
+                    >
+                      <span className="text-[var(--primary)] shrink-0 font-bold">
+                        {i + 1}.
+                      </span>
+                      {s}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </motion.div>
+          )}
+
+        {/* Model Answer */}
+        {speakingDetail?.improvedAnswer && (
+          <motion.div
+            className="rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-white overflow-hidden"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 1.1, ease: "easeOut" }}
+          >
+            <div className="bg-[var(--background)] px-6 py-4 border-b-[2px] border-[var(--border)]">
+              <h2
+                className="text-sm font-bold text-[var(--text-muted)]"
+                style={{ fontFamily: "var(--font-sans)" }}
+              >
+                Model Answer
+              </h2>
+            </div>
+            <div className="p-6">
+              <p className="text-[var(--text-body)] text-sm leading-relaxed whitespace-pre-wrap">
+                {speakingDetail.improvedAnswer}
               </p>
             </div>
-          </div>
+          </motion.div>
+        )}
+
+        <div className="flex justify-center gap-4 pb-10">
+          <button
+            onClick={() => router.push("/home")}
+            className="px-8 py-3 rounded-full bg-[var(--primary)] text-white font-bold border-b-[4px] border-[var(--primary-dark)] hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px] transition-all duration-150"
+            style={{ fontFamily: "var(--font-sans)" }}
+          >
+            Back to Home
+          </button>
         </div>
-      )}
-
-      {/* 3. SPEAKING CRITERIA STATS - Clean Cards with Serif Numbers */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        {speakingDetail?.fluencyAndCoherence && (
-          <div className="p-4 border border-slate-100 rounded-lg bg-slate-50 text-center">
-            <span className="text-3xl font-serif font-bold text-[#3B82F6]">
-              {speakingDetail.fluencyAndCoherence.band?.toFixed(1) ?? "--"}
-            </span>
-            <p className="text-xs font-bold text-slate-500 uppercase mt-2">Fluency</p>
-          </div>
-        )}
-        {speakingDetail?.pronunciation && (
-          <div className="p-4 border border-slate-100 rounded-lg bg-slate-50 text-center">
-            <span className="text-3xl font-serif font-bold text-[#3B82F6]">
-              {speakingDetail.pronunciation.band?.toFixed(1) ?? "--"}
-            </span>
-            <p className="text-xs font-bold text-slate-500 uppercase mt-2">Pronunciation</p>
-          </div>
-        )}
-        {speakingDetail?.lexicalResource && (
-          <div className="p-4 border border-slate-100 rounded-lg bg-slate-50 text-center">
-            <span className="text-3xl font-serif font-bold text-[#3B82F6]">
-              {speakingDetail.lexicalResource.band?.toFixed(1) ?? "--"}
-            </span>
-            <p className="text-xs font-bold text-slate-500 uppercase mt-2">Vocabulary</p>
-          </div>
-        )}
-        {speakingDetail?.grammaticalRangeAndAccuracy && (
-          <div className="p-4 border border-slate-100 rounded-lg bg-slate-50 text-center">
-            <span className="text-3xl font-serif font-bold text-[#3B82F6]">
-              {speakingDetail.grammaticalRangeAndAccuracy.band?.toFixed(1) ?? "--"}
-            </span>
-            <p className="text-xs font-bold text-slate-500 uppercase mt-2">Grammar</p>
-          </div>
-        )}
-      </div>
-
-      {/* 4. DETAILED FEEDBACK CARDS */}
-      <div className="grid md:grid-cols-2 gap-4 mb-8">
-        {speakingDetail?.fluencyAndCoherence && (
-          <CriterionCard
-            title="Fluency & Coherence"
-            criterion={speakingDetail.fluencyAndCoherence}
-          />
-        )}
-        {speakingDetail?.lexicalResource && (
-          <CriterionCard
-            title="Lexical Resource"
-            criterion={speakingDetail.lexicalResource}
-          />
-        )}
-        {speakingDetail?.grammaticalRangeAndAccuracy && (
-          <CriterionCard
-            title="Grammatical Range & Accuracy"
-            criterion={speakingDetail.grammaticalRangeAndAccuracy}
-          />
-        )}
-        {speakingDetail?.pronunciation && (
-          <CriterionCard
-            title="Pronunciation"
-            criterion={speakingDetail.pronunciation}
-          />
-        )}
-      </div>
-
-      {/* 5. SUGGESTIONS */}
-      {speakingDetail?.suggestions && speakingDetail.suggestions.length > 0 && (
-        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden mb-8">
-          <div className="bg-slate-50 px-4 py-3 border-b border-slate-100">
-            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              Improvement Suggestions
-            </h2>
-          </div>
-          <div className="p-4">
-            <ul className="space-y-2">
-              {speakingDetail.suggestions.map((s, i) => (
-                <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
-                  <span className="text-blue-600 shrink-0">•</span>
-                  {s}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      )}
-
-      {/* 6. MODEL ANSWER */}
-      {speakingDetail?.improvedAnswer && (
-        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden mb-8">
-          <div className="bg-slate-50 px-4 py-3 border-b border-slate-100">
-            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              Model Answer
-            </h2>
-          </div>
-          <div className="p-4">
-            <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-wrap">
-              {speakingDetail.improvedAnswer}
-            </p>
-          </div>
-        </div>
-      )}
-
-      <div className="flex justify-center gap-4 pb-10">
-        <button
-          onClick={() => router.push("/home")}
-          className="px-6 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium"
-        >
-          Về trang chủ
-        </button>
       </div>
     </div>
   );
+}
+
+/* ─── Confetti trigger component ─── */
+function ConfettiTrigger({
+  score,
+  targetScore,
+}: {
+  score: number;
+  targetScore: number;
+}) {
+  useEffect(() => {
+    if (score >= targetScore) {
+      const timer = setTimeout(() => {
+        confetti({ particleCount: 100, spread: 70 });
+      }, 1600);
+      return () => clearTimeout(timer);
+    }
+  }, [score, targetScore]);
+  return null;
 }
 
 function ProductiveBandSection({
@@ -945,18 +1296,19 @@ function ProductiveBandSection({
 
   return (
     <div className="space-y-6">
-
-      {/* Writing Grade Details - Simple Form */}
+      {/* Writing Grade Details */}
       {skill === "WRITING" && writingGrade && (
         <div className="space-y-6">
           {/* Task Prompt */}
           {writingGrade.taskText && (
-            <section className="bg-slate-50 border border-slate-100 rounded-xl p-5">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="material-symbols-rounded text-slate-400">description</span>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Task Prompt</h3>
-              </div>
-              <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+            <section className="rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-[var(--background)] p-6">
+              <h3
+                className="text-sm font-bold text-[var(--text-muted)] mb-2"
+                style={{ fontFamily: "var(--font-sans)" }}
+              >
+                Task Prompt
+              </h3>
+              <p className="text-sm text-[var(--text-body)] leading-relaxed whitespace-pre-wrap">
                 {writingGrade.taskText}
               </p>
             </section>
@@ -965,30 +1317,46 @@ function ProductiveBandSection({
           {/* Criteria Cards Grid */}
           <section className="grid md:grid-cols-2 gap-4">
             {writingGrade.taskResponse && (
-              <CriterionCard title="Task Response" criterion={writingGrade.taskResponse} />
+              <CriterionCard
+                title="Task Response"
+                criterion={writingGrade.taskResponse}
+              />
             )}
             {writingGrade.coherenceAndCohesion && (
-              <CriterionCard title="Coherence & Cohesion" criterion={writingGrade.coherenceAndCohesion} />
+              <CriterionCard
+                title="Coherence & Cohesion"
+                criterion={writingGrade.coherenceAndCohesion}
+              />
             )}
             {writingGrade.lexicalResource && (
-              <CriterionCard title="Lexical Resource" criterion={writingGrade.lexicalResource} />
+              <CriterionCard
+                title="Lexical Resource"
+                criterion={writingGrade.lexicalResource}
+              />
             )}
             {writingGrade.grammaticalRangeAndAccuracy && (
-              <CriterionCard title="Grammatical Range & Accuracy" criterion={writingGrade.grammaticalRangeAndAccuracy} />
+              <CriterionCard
+                title="Grammatical Range & Accuracy"
+                criterion={writingGrade.grammaticalRangeAndAccuracy}
+              />
             )}
           </section>
 
           {/* Suggestions */}
           {writingGrade.suggestions && writingGrade.suggestions.length > 0 && (
-            <section className="bg-blue-50/50 border border-blue-100 rounded-xl p-5">
-              <h3 className="flex items-center gap-2 font-bold text-blue-700 mb-3">
-                <span className="material-symbols-rounded">lightbulb</span>
+            <section className="rounded-[2rem] border-[3px] border-[var(--primary)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-[var(--primary-light)] p-6">
+              <h3
+                className="font-bold text-[var(--primary-dark)] mb-3"
+                style={{ fontFamily: "var(--font-sans)" }}
+              >
                 Improvement Suggestions
               </h3>
-              <ul className="text-sm text-slate-700 space-y-2">
+              <ul className="text-sm text-[var(--text-body)] space-y-2">
                 {writingGrade.suggestions.map((s, i) => (
                   <li key={i} className="flex gap-2">
-                    <span className="text-blue-400 font-bold">{i + 1}.</span>
+                    <span className="text-[var(--primary)] font-bold">
+                      {i + 1}.
+                    </span>
                     <span>{s}</span>
                   </li>
                 ))}
@@ -1001,23 +1369,33 @@ function ProductiveBandSection({
             <>
               <button
                 onClick={() => setShowModel(!showModel)}
-                className="w-full bg-slate-800 text-white py-3 rounded-xl font-medium text-sm hover:bg-black transition-colors flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-full bg-[var(--foreground)] text-white font-bold text-sm border-b-[4px] border-black hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px] transition-all duration-150"
+                style={{ fontFamily: "var(--font-sans)" }}
               >
-                <span className="material-symbols-rounded text-base">{showModel ? "visibility_off" : "auto_awesome"}</span>
                 {showModel ? "Hide Model Answer" : "View Model Answer"}
               </button>
 
-              {showModel && (
-                <div className="bg-gradient-to-br from-slate-800 to-slate-900 text-white rounded-xl p-6 shadow-lg">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="material-symbols-rounded text-amber-400">auto_awesome</span>
-                    <h3 className="font-bold">Improved Version</h3>
-                  </div>
-                  <p className="font-serif text-base leading-relaxed opacity-90 whitespace-pre-wrap">
-                    {writingGrade.improvedParagraph}
-                  </p>
-                </div>
-              )}
+              <AnimatePresence>
+                {showModel && (
+                  <motion.div
+                    className="bg-[var(--foreground)] text-white rounded-[2rem] border-[3px] border-[var(--foreground)] shadow-[0_4px_0_rgba(0,0,0,0.3)] p-6"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <h3
+                      className="font-bold mb-3"
+                      style={{ fontFamily: "var(--font-sans)" }}
+                    >
+                      Improved Version
+                    </h3>
+                    <p className="text-base leading-relaxed opacity-90 whitespace-pre-wrap">
+                      {writingGrade.improvedParagraph}
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </>
           )}
         </div>
@@ -1027,68 +1405,92 @@ function ProductiveBandSection({
       {skill === "SPEAKING" && speakingGrade && (
         <div className="space-y-6">
           {speakingGrade.taskText && (
-            <section className="bg-slate-50 border rounded-lg p-4">
-              <h3 className="text-sm font-semibold text-slate-800 mb-2">Task prompt</h3>
-              <div className="text-sm text-slate-700 whitespace-pre-wrap">{speakingGrade.taskText}</div>
+            <section className="rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-[var(--background)] p-6">
+              <h3
+                className="text-sm font-bold text-[var(--foreground)] mb-2"
+                style={{ fontFamily: "var(--font-sans)" }}
+              >
+                Task prompt
+              </h3>
+              <div className="text-sm text-[var(--text-body)] whitespace-pre-wrap">
+                {speakingGrade.taskText}
+              </div>
             </section>
           )}
 
           {speakingGrade.transcript && (
-            <section className="bg-slate-50 border rounded-lg p-4">
-              <h3 className="text-sm font-semibold text-slate-800 mb-2">Transcript</h3>
-              <div className="text-sm text-slate-700 whitespace-pre-wrap">{speakingGrade.transcript}</div>
+            <section className="rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-[var(--background)] p-6">
+              <h3
+                className="text-sm font-bold text-[var(--foreground)] mb-2"
+                style={{ fontFamily: "var(--font-sans)" }}
+              >
+                Transcript
+              </h3>
+              <div className="text-sm text-[var(--text-body)] whitespace-pre-wrap">
+                {speakingGrade.transcript}
+              </div>
             </section>
           )}
 
           <section className="grid md:grid-cols-2 gap-4">
             {speakingGrade.fluencyAndCoherence && (
-              <CriterionCard title="Fluency & Coherence" criterion={speakingGrade.fluencyAndCoherence} />
+              <CriterionCard
+                title="Fluency & Coherence"
+                criterion={speakingGrade.fluencyAndCoherence}
+              />
             )}
             {speakingGrade.lexicalResource && (
-              <CriterionCard title="Lexical Resource" criterion={speakingGrade.lexicalResource} />
+              <CriterionCard
+                title="Lexical Resource"
+                criterion={speakingGrade.lexicalResource}
+              />
             )}
             {speakingGrade.grammaticalRangeAndAccuracy && (
-              <CriterionCard title="Grammatical Range & Accuracy" criterion={speakingGrade.grammaticalRangeAndAccuracy} />
+              <CriterionCard
+                title="Grammatical Range & Accuracy"
+                criterion={speakingGrade.grammaticalRangeAndAccuracy}
+              />
             )}
             {speakingGrade.pronunciation && (
-              <CriterionCard title="Pronunciation" criterion={speakingGrade.pronunciation} />
+              <CriterionCard
+                title="Pronunciation"
+                criterion={speakingGrade.pronunciation}
+              />
             )}
           </section>
 
-          {speakingGrade.suggestions && speakingGrade.suggestions.length > 0 && (
-            <section className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
-              <h3 className="text-sm font-semibold text-emerald-900 mb-2">Gợi ý cải thiện</h3>
-              <ul className="list-disc list-inside text-sm text-emerald-900 space-y-1">
-                {speakingGrade.suggestions.map((s, i) => (
-                  <li key={i}>{s}</li>
-                ))}
-              </ul>
-            </section>
-          )}
+          {speakingGrade.suggestions &&
+            speakingGrade.suggestions.length > 0 && (
+              <section className="rounded-[2rem] border-[3px] border-[var(--skill-speaking-border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-[var(--skill-speaking-light)] p-6">
+                <h3
+                  className="text-sm font-bold text-[var(--skill-speaking)] mb-2"
+                  style={{ fontFamily: "var(--font-sans)" }}
+                >
+                  Improvement suggestions
+                </h3>
+                <ul className="list-disc list-inside text-sm text-[var(--skill-speaking)] space-y-1">
+                  {speakingGrade.suggestions.map((s, i) => (
+                    <li key={i}>{s}</li>
+                  ))}
+                </ul>
+              </section>
+            )}
 
           {speakingGrade.improvedAnswer && (
-            <section className="bg-slate-50 border rounded-lg p-4">
-              <h3 className="text-sm font-semibold text-slate-800 mb-2">Câu trả lời cải thiện</h3>
-              <div className="text-sm text-slate-700 whitespace-pre-wrap">{speakingGrade.improvedAnswer}</div>
+            <section className="rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-[var(--background)] p-6">
+              <h3
+                className="text-sm font-bold text-[var(--foreground)] mb-2"
+                style={{ fontFamily: "var(--font-sans)" }}
+              >
+                Improved answer
+              </h3>
+              <div className="text-sm text-[var(--text-body)] whitespace-pre-wrap">
+                {speakingGrade.improvedAnswer}
+              </div>
             </section>
           )}
         </div>
       )}
-    </div>
-  );
-}
-
-function Stat({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="bg-slate-50 rounded-lg border p-4">
-      <p className="text-sm text-slate-500 mb-1">{label}</p>
-      <div className="text-xl font-semibold">{children}</div>
     </div>
   );
 }
@@ -1114,12 +1516,11 @@ function QuestionReview({ details }: { details: AttemptQuestionResult[] }) {
       return normalized.filter((d) => d.isCorrect === false);
     return normalized.filter((d) => d.state === "none");
   }, [normalized, filter]);
-  
-  // Track which items are expanded
+
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
-  
+
   const toggleExpand = (id: string) => {
-    setExpandedIds(prev => {
+    setExpandedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
         next.delete(id);
@@ -1133,9 +1534,17 @@ function QuestionReview({ details }: { details: AttemptQuestionResult[] }) {
   return (
     <div>
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
-        <h3 className="font-bold text-slate-800 text-lg">Detailed Review</h3>
+        <h3
+          className="font-bold text-[var(--foreground)] text-lg"
+          style={{ fontFamily: "var(--font-sans)" }}
+        >
+          Detailed Review
+        </h3>
         <div className="flex gap-2 flex-wrap">
-          <FilterBtn active={filter === "all"} onClick={() => setFilter("all")}>
+          <FilterBtn
+            active={filter === "all"}
+            onClick={() => setFilter("all")}
+          >
             All ({normalized.length})
           </FilterBtn>
           <FilterBtn
@@ -1160,22 +1569,35 @@ function QuestionReview({ details }: { details: AttemptQuestionResult[] }) {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="p-6 text-center text-slate-500 border rounded-lg bg-slate-50">
+        <div className="p-6 text-center text-[var(--text-muted)] border-[3px] border-[var(--border)] rounded-[2rem] bg-[var(--background)]">
           No question details available for this filter.
         </div>
       ) : (
-        <div className="space-y-3" style={{ maxHeight: '600px', overflowY: 'auto' }}>
-          {filtered.slice(0, 10).map((d) => (
-            <ReviewItem 
-              key={d.questionId} 
-              data={d} 
-              isExpanded={expandedIds.has(d.questionId)}
-              onToggleExpand={() => toggleExpand(d.questionId)}
-            />
+        <div
+          className="space-y-3"
+          style={{ maxHeight: "600px", overflowY: "auto" }}
+        >
+          {filtered.slice(0, 10).map((d, idx) => (
+            <motion.div
+              key={d.questionId}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                duration: 0.3,
+                delay: Math.min(idx * 0.05, 0.5),
+                ease: "easeOut",
+              }}
+            >
+              <ReviewItem
+                data={d}
+                isExpanded={expandedIds.has(d.questionId)}
+                onToggleExpand={() => toggleExpand(d.questionId)}
+              />
+            </motion.div>
           ))}
           {filtered.length > 10 && (
-            <LoadMoreReviewItems 
-              items={filtered.slice(10)} 
+            <LoadMoreReviewItems
+              items={filtered.slice(10)}
               expandedIds={expandedIds}
               onToggleExpand={toggleExpand}
             />
@@ -1186,52 +1608,50 @@ function QuestionReview({ details }: { details: AttemptQuestionResult[] }) {
   );
 }
 
-// Lazy load remaining items to avoid initial render bottleneck
-function LoadMoreReviewItems({ 
-  items, 
+function LoadMoreReviewItems({
+  items,
   expandedIds,
-  onToggleExpand 
-}: { 
-  items: ReturnType<typeof normalizeDetail>[]; 
+  onToggleExpand,
+}: {
+  items: ReturnType<typeof normalizeDetail>[];
   expandedIds: Set<string>;
   onToggleExpand: (id: string) => void;
 }) {
   const [visibleCount, setVisibleCount] = useState(0);
-  
+
   useEffect(() => {
-    // Load 5 more items every 100ms for smooth progressive loading
     if (visibleCount < items.length) {
       const timer = setTimeout(() => {
-        setVisibleCount(prev => Math.min(prev + 5, items.length));
+        setVisibleCount((prev) => Math.min(prev + 5, items.length));
       }, 50);
       return () => clearTimeout(timer);
     }
   }, [visibleCount, items.length]);
-  
+
   return (
     <>
       {items.slice(0, visibleCount).map((d) => (
-        <ReviewItem 
-          key={d.questionId} 
-          data={d} 
+        <ReviewItem
+          key={d.questionId}
+          data={d}
           isExpanded={expandedIds.has(d.questionId)}
           onToggleExpand={() => onToggleExpand(d.questionId)}
         />
       ))}
       {visibleCount < items.length && (
-        <div className="p-4 text-center text-slate-500">
-          Đang tải thêm câu hỏi... ({visibleCount}/{items.length})
+        <div className="p-4 text-center text-[var(--text-muted)]">
+          Loading more questions... ({visibleCount}/{items.length})
         </div>
       )}
     </>
   );
 }
 
-function ReviewItem({ 
-  data, 
-  isExpanded, 
-  onToggleExpand 
-}: { 
+function ReviewItem({
+  data,
+  isExpanded,
+  onToggleExpand,
+}: {
   data: ReturnType<typeof normalizeDetail>;
   isExpanded?: boolean;
   onToggleExpand?: () => void;
@@ -1241,125 +1661,149 @@ function ReviewItem({
   const toggleOpen = onToggleExpand || (() => setInternalOpen((v) => !v));
 
   const isCorrect = data.isCorrect === true;
+  const isWrong = data.isCorrect === false;
   const isSkipped = data.state === "none";
-  
-  // Clean border - always slate for classic academic look
-  const borderColor = "border-slate-200";
 
-  // Status icon instead of loud badges
-  const statusIcon = isSkipped ? (
-    <span className="text-slate-400 text-lg">—</span>
+  const borderColor = isCorrect
+    ? "var(--skill-speaking)"
+    : isWrong
+    ? "var(--destructive)"
+    : "var(--border)";
+
+  const statusLabel = isSkipped ? (
+    <span className="text-[var(--text-muted)] text-sm font-bold">--</span>
   ) : isCorrect ? (
-    <span className="text-green-600 text-lg">✓</span>
+    <span className="px-3 py-1 rounded-full border-[2px] border-[var(--skill-speaking-border)] bg-[var(--skill-speaking-light)] text-[var(--skill-speaking)] text-xs font-bold">
+      Correct
+    </span>
   ) : (
-    <span className="text-red-500 text-lg">✗</span>
+    <span className="px-3 py-1 rounded-full border-[2px] border-red-300 bg-red-50 text-red-600 text-xs font-bold">
+      Wrong
+    </span>
   );
-  
-  // Question number badge - simple slate style
+
   const numberBadge = (
-    <span className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-sm font-bold text-slate-600">
+    <span className="w-8 h-8 rounded-full bg-[var(--primary-light)] border-[2px] border-[var(--primary)] flex items-center justify-center text-sm font-bold text-[var(--primary)]">
       {data.index ?? "?"}
     </span>
   );
 
   return (
-    <div className={`bg-white border rounded-xl p-5 mb-4 shadow-sm hover:shadow-md transition-shadow ${borderColor}`}>
-      {/* Header */}
-      <div className="bg-slate-50/80 px-4 py-3 border-b border-slate-100 flex items-start gap-3">
+    <div
+      className="rounded-[2rem] border-[3px] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-white mb-4 overflow-hidden cursor-pointer hover:-translate-y-[3px] hover:shadow-[0_6px_0_rgba(0,0,0,0.08)] transition-all duration-150"
+      style={{ borderColor, borderLeftWidth: "4px" }}
+      onClick={toggleOpen}
+    >
+      {/* Collapsed Header */}
+      <div className="px-5 py-4 flex items-center gap-3">
         {numberBadge}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              {data.skill && data.skill !== "UNKNOWN" && (
-                <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700">
-                  {data.skill}
-                </span>
-              )}
-              {data.questionType && data.questionType !== "UNKNOWN" && (
-                <span className="px-2 py-0.5 rounded text-xs font-medium bg-orange-50 text-orange-700">
-                  {formatQuestionType(data.questionType)}
-                </span>
-              )}
-              {typeof data.timeSpentSec === "number" && (
-                <span className="px-2 py-0.5 rounded text-xs bg-slate-100 text-slate-600">
-                  ⏱ {fmtMinSec(data.timeSpentSec)}
-                </span>
-              )}
-            </div>
-            {statusIcon}
-          </div>
-          <div className="prose prose-slate prose-sm max-w-none text-slate-800">
-            <ReactMarkdown>{data.prompt}</ReactMarkdown>
-          </div>
+        <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
+          {data.skill && data.skill !== "UNKNOWN" && (
+            <SkillBadge skill={data.skill} size="sm" />
+          )}
+          {data.questionType && data.questionType !== "UNKNOWN" && (
+            <span className="px-3 py-0.5 rounded-full border-[2px] border-[var(--skill-writing-border)] text-xs font-bold bg-[var(--skill-writing-light)] text-[var(--skill-writing)]">
+              {formatQuestionType(data.questionType)}
+            </span>
+          )}
+          {typeof data.timeSpentSec === "number" && (
+            <span
+              className="px-3 py-0.5 rounded-full border-[2px] border-[var(--border)] text-xs font-bold bg-white text-[var(--text-muted)]"
+              style={{ fontFamily: "var(--font-mono)" }}
+            >
+              {fmtMinSec(data.timeSpentSec)}
+            </span>
+          )}
         </div>
-        <BookmarkButton 
-          questionId={data.questionId} 
+        {statusLabel}
+        <BookmarkButton
+          questionId={data.questionId}
           questionContent={data.prompt}
           skill={data.skill}
           questionType={data.questionType}
         />
       </div>
 
-      {/* Comparison Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100">
-        {/* Your Answer */}
-        <div className="p-4 bg-white">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">
-            Your Answer
-          </p>
-          <div className={`text-base font-medium flex items-center gap-2 ${
-            isSkipped 
-              ? "text-slate-400 italic" 
-              : isCorrect 
-                ? "text-green-600" 
-                : "text-red-500"
-          }`}>
-            {!isCorrect && !isSkipped && (
-              <span className="text-red-400">✗</span>
-            )}
-            <span className={!isCorrect && !isSkipped ? "line-through decoration-2 decoration-red-200" : ""}>
-              {data.selectedText || "— No Answer —"}
-            </span>
-          </div>
-        </div>
-
-        {/* Correct Answer - Classic Blue Style */}
-        <div className="p-4 bg-blue-50/30 min-h-[72px]">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-2">
-            Correct Key
-          </p>
-          <div className={`text-base font-bold ${data.correctText ? "text-[#3B82F6]" : "text-slate-400 italic font-normal text-sm"}`}>
-            {data.correctText || "(Answer key not available)"}
-          </div>
-        </div>
-      </div>
-
-      {/* Explanation Toggle */}
-      {data.explanation && (
-        <>
-          <button
-            onClick={toggleOpen}
-            className="w-full px-4 py-2 text-sm text-slate-600 bg-slate-50 border-t border-slate-100 hover:bg-slate-100 transition flex items-center justify-center gap-2"
+      {/* Expanded Content */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            onClick={(e) => e.stopPropagation()}
           >
-            {open ? <FiChevronUp /> : <FiChevronDown />}
-            {open ? "Hide Explanation" : "Show Explanation"}
-          </button>
+            {/* Question text */}
+            <div className="px-5 pb-4 border-t-[2px] border-[var(--border)] pt-4">
+              <div className="prose prose-sm max-w-none text-[var(--foreground)]">
+                <ReactMarkdown>{data.prompt}</ReactMarkdown>
+              </div>
+            </div>
 
-          {open && (
-            <div className="px-4 py-3 bg-blue-50/50 border-t border-blue-100">
-              <div className="flex items-start gap-2">
-                <span className="text-amber-500 mt-0.5">💡</span>
-                <div>
-                  <p className="text-xs font-bold text-slate-700 uppercase mb-1">Why is this correct?</p>
-                  <div className="prose prose-sm prose-slate max-w-none text-slate-700">
-                    <ReactMarkdown>{data.explanation}</ReactMarkdown>
-                  </div>
+            {/* Comparison Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-[var(--border)]">
+              {/* Your Answer */}
+              <div className="p-5 bg-white">
+                <p className="text-xs font-bold text-[var(--text-muted)] mb-2">
+                  Your Answer
+                </p>
+                <div
+                  className={`text-base font-medium flex items-center gap-2 ${
+                    isSkipped
+                      ? "text-[var(--text-muted)] italic"
+                      : isCorrect
+                      ? "text-[var(--skill-speaking)]"
+                      : "text-[var(--destructive)]"
+                  }`}
+                >
+                  <span
+                    className={
+                      !isCorrect && !isSkipped
+                        ? "line-through decoration-2 decoration-red-200"
+                        : ""
+                    }
+                  >
+                    {data.selectedText || "-- No Answer --"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Correct Answer */}
+              <div className="p-5 bg-[var(--primary-light)] min-h-[72px]">
+                <p className="text-xs font-bold text-[var(--text-muted)] mb-2">
+                  Correct Key
+                </p>
+                <div
+                  className={`text-base font-bold ${
+                    data.correctText
+                      ? "text-[var(--primary)]"
+                      : "text-[var(--text-muted)] italic font-normal text-sm"
+                  }`}
+                >
+                  {data.correctText || "(Answer key not available)"}
                 </div>
               </div>
             </div>
-          )}
-        </>
-      )}
+
+            {/* Explanation */}
+            {data.explanation && (
+              <div className="px-5 py-4 bg-[var(--primary-light)] border-t-[2px] border-[var(--primary)]">
+                <div className="flex items-start gap-2">
+                  <div>
+                    <p className="text-xs font-bold text-[var(--primary-dark)] mb-1">
+                      Why is this correct?
+                    </p>
+                    <div className="prose prose-sm max-w-none text-[var(--text-body)]">
+                      <ReactMarkdown>{data.explanation}</ReactMarkdown>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -1376,11 +1820,12 @@ function FilterBtn({
   return (
     <button
       onClick={onClick}
-      className={`px-3 py-1.5 rounded-lg text-sm border transition ${
+      className={`px-4 py-1.5 rounded-full text-sm font-bold border-[2px] transition-all duration-150 ${
         active
-          ? "bg-slate-900 text-white border-slate-900"
-          : "bg-white text-slate-700 hover:bg-slate-50"
+          ? "bg-[var(--primary)] text-white border-[var(--primary-dark)] border-b-[4px] shadow-[0_2px_0_rgba(0,0,0,0.1)]"
+          : "bg-white text-[var(--text-body)] border-[var(--border)] hover:border-[var(--primary)] hover:-translate-y-0.5"
       }`}
+      style={{ fontFamily: "var(--font-sans)" }}
     >
       {children}
     </button>
@@ -1395,17 +1840,30 @@ function CriterionCard({
   criterion: WritingCriterion | SpeakingCriterion;
 }) {
   return (
-    <div className="bg-slate-50 border rounded-lg p-4">
+    <motion.div
+      className="rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-white p-5 hover:-translate-y-[3px] hover:border-[var(--primary)] hover:shadow-[0_6px_0_rgba(0,0,0,0.08)] transition-all duration-150"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+    >
       <div className="flex items-baseline justify-between mb-2">
-        <h3 className="text-sm font-semibold text-slate-800">{title}</h3>
-        <span className="text-sm font-bold text-emerald-700">
+        <h3
+          className="text-sm font-bold text-[var(--foreground)]"
+          style={{ fontFamily: "var(--font-sans)" }}
+        >
+          {title}
+        </h3>
+        <span
+          className="px-3 py-1 rounded-full border-[2px] border-[var(--skill-speaking-border)] bg-[var(--skill-speaking-light)] text-[var(--skill-speaking)] text-sm font-bold"
+          style={{ fontFamily: "var(--font-mono)" }}
+        >
           Band {criterion.band.toFixed(1)}
         </span>
       </div>
-      <p className="text-sm text-slate-700 whitespace-pre-wrap">
+      <p className="text-sm text-[var(--text-body)] whitespace-pre-wrap">
         {criterion.comment}
       </p>
-    </div>
+    </motion.div>
   );
 }
 
@@ -1440,45 +1898,37 @@ function cleanQuestion(s: string) {
 
 function cleanAnswer(s: string) {
   if (!s) return "";
-  
+
   let clean = String(s)
-    // Normalize newlines
     .replace(/\\n/g, "\n")
-    // Remove blank-X: prefixes
     .replace(/blank[-_]\w+:\s*/gi, "")
     .replace(/\[blank[-_]\w+\]/gi, "")
-    // Remove label-X: prefixes
     .replace(/label[-_ ]*\w*:\s*/gi, "")
-    // Remove paragraph/info/step/flow/node/part/section prefixes
-    .replace(/^\s*(?:paragraph|info|step|flow|node|part|section)?[-_ ]*\w*:\s*/i, "")
+    .replace(
+      /^\s*(?:paragraph|info|step|flow|node|part|section)?[-_ ]*\w*:\s*/i,
+      ""
+    )
     .replace(/\b(?:paragraph|info)[-_ ]*\w*:\s*/gi, "")
-    // Remove "feature-qX:" prefix (e.g., feature-q1:, feature_q2:)
     .replace(/^feature[-_]?q?\d*:\s*/i, "")
-    // Remove "q1:", "q2:" etc
     .replace(/^q\d+:\s*/i, "")
-    // Remove "heading-X:", "item-X:" etc
     .replace(/^(heading|item|answer|key|option)[-_]?\d*:\s*/gi, "")
-    // Remove general "key:" prefix if still present
     .replace(/^[\w-]+:\s*/, "")
-    // Normalize whitespace
     .replace(/\s+/g, " ")
     .trim();
-  
-  // Handle "D / D" or "Value / Value" patterns - take first value
+
   if (clean.includes(" / ")) {
     clean = clean.split(" / ")[0].trim();
   }
-  
-  // Also handle "D/D" without spaces
+
   if (/^([A-Za-z0-9]+)\/\1$/i.test(clean)) {
     clean = clean.split("/")[0].trim();
   }
-  
+
   return clean;
 }
 
 function fmtMinSec(totalSec: number) {
-  if (!totalSec || totalSec < 0) return "—";
+  if (!totalSec || totalSec < 0) return "--";
   const m = Math.floor(totalSec / 60);
   const s = Math.floor(totalSec % 60);
   return `${m}m${String(s).padStart(2, "0")}s`;
@@ -1541,8 +1991,12 @@ function mapAnswerContent({
   }
 
   let normalizedIds = (ids ?? []).map((v) => String(v)).filter(Boolean);
-  
-  if (normalizedIds.length === 0 && fallbackText && fallbackText.startsWith("[")) {
+
+  if (
+    normalizedIds.length === 0 &&
+    fallbackText &&
+    fallbackText.startsWith("[")
+  ) {
     try {
       const parsed = JSON.parse(fallbackText);
       if (Array.isArray(parsed)) {
@@ -1551,7 +2005,7 @@ function mapAnswerContent({
     } catch {
     }
   }
-  
+
   const idsToUse =
     normalizedIds.length > 0
       ? normalizedIds

@@ -13,7 +13,7 @@ type ServiceKey =
   | "analytics"
   | "notification"
   | "studyplan"
-  | "course"
+  | "course";
 
 const GATEWAY_BASE = process.env.NEXT_PUBLIC_GATEWAY_URL || "";
 const buildBase = (suffix: string) =>
@@ -44,6 +44,37 @@ const setToken = (t: string | null) => {
   else localStorage.removeItem("access_token");
 };
 
+// Raw axios instance for refresh — no interceptors, prevents infinite loop
+const rawAuthClient = axios.create({
+  baseURL: BASE_URL.auth,
+  withCredentials: true,
+  headers: { "Content-Type": "application/json" },
+});
+
+// Mutex: only one refresh at a time, others wait for the same promise
+let refreshPromise: Promise<string | null> | null = null;
+
+async function refreshToken(): Promise<string | null> {
+  if (refreshPromise) return refreshPromise;
+
+  refreshPromise = rawAuthClient
+    .post("/auth/refresh")
+    .then((r) => {
+      const newToken: string | null = r.data?.data ?? null;
+      setToken(newToken);
+      return newToken;
+    })
+    .catch(() => {
+      setToken(null);
+      return null;
+    })
+    .finally(() => {
+      refreshPromise = null;
+    });
+
+  return refreshPromise;
+}
+
 const apis = Object.fromEntries(
   (Object.keys(BASE_URL) as (keyof typeof BASE_URL)[]).map((k) => {
     const api = axios.create({
@@ -72,21 +103,12 @@ const apis = Object.fromEntries(
 
         if (err.response?.status === 401 && original && !original._retry) {
           original._retry = true;
-          try {
-            const r = await apisAuth.post("/auth/refresh", undefined, {
-              withCredentials: true,
-            });
-            const newToken = r.data.data;
+          const newToken = await refreshToken();
 
-            if (newToken) {
-              setToken(newToken);
-              original.headers = original.headers ?? {};
-              (original.headers as any).Authorization = `Bearer ${newToken}`;
-            }
-
+          if (newToken) {
+            original.headers = original.headers ?? {};
+            (original.headers as any).Authorization = `Bearer ${newToken}`;
             return api.request(original);
-          } catch {
-            setToken(null);
           }
         }
 

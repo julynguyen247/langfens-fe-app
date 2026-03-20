@@ -22,30 +22,30 @@ export default function LoadingLayer() {
       aria-busy
     >
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-      <div className="relative z-10 flex flex-col items-center gap-6 p-6 rounded-2xl bg-gradient-to-br from-white/5 to-white/3 border border-white/10 shadow-2xl">
+      <div
+        className="relative z-10 flex flex-col items-center gap-6 p-6 rounded-[2rem] border-[3px] shadow-[0_4px_0_rgba(0,0,0,0.08)]"
+        style={{
+          backgroundColor: "var(--background)",
+          borderColor: "var(--border)",
+        }}
+      >
         <div className="relative w-40 h-40 flex items-center justify-center">
-          <div
-            className="absolute inset-0 rounded-full"
-            style={{
-              background:
-                "radial-gradient(closest-side, rgba(99,102,241,0.18), rgba(99,102,241,0.06) 30%, transparent 60%)",
-              filter: "blur(18px)",
-              transform: "scale(1.15)",
-            }}
-          />
-          <div className="absolute w-full h-full rounded-full border-2 border-white/10 flex items-center justify-center">
+          <div className="absolute w-full h-full rounded-full flex items-center justify-center" style={{ borderWidth: "2px", borderColor: "var(--border)" }}>
             <div
-              className="absolute inset-0 rounded-full border-t-[3px] border-t-white/40 animate-spin-slow"
+              className="absolute inset-0 rounded-full border-t-[3px] animate-spin-slow"
               style={{
                 borderStyle: "solid",
                 borderColor: "transparent",
-                borderTopColor: "rgba(255,255,255,0.25)",
+                borderTopColor: "var(--primary)",
               }}
             />
           </div>
           <div
-            className="relative w-28 h-28 rounded-full flex items-center justify-center bg-white/5 backdrop-blur-sm"
-            style={{ boxShadow: "0 10px 30px rgba(2,6,23,0.6)" }}
+            className="relative w-28 h-28 rounded-full flex items-center justify-center"
+            style={{
+              backgroundColor: "var(--primary-light)",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
+            }}
           >
             <Image
               src="/langfens.svg"
@@ -53,13 +53,11 @@ export default function LoadingLayer() {
               height={40}
               alt="ProMan"
               className="w-20 h-20 object-contain animate-logo-spin"
-              style={{
-                filter: "drop-shadow(0 6px 20px rgba(99,102,241,0.35))",
-              }}
             />
             <span
-              className="absolute w-2.5 h-2.5 rounded-full bg-rose-400"
+              className="absolute w-2.5 h-2.5 rounded-full"
               style={{
+                backgroundColor: "var(--destructive)",
                 top: "12%",
                 left: "50%",
                 transform: "translateX(-50%)",
@@ -67,8 +65,9 @@ export default function LoadingLayer() {
               }}
             />
             <span
-              className="absolute w-2.5 h-2.5 rounded-full bg-blue-400"
+              className="absolute w-2.5 h-2.5 rounded-full"
               style={{
+                backgroundColor: "var(--primary)",
                 top: "50%",
                 right: "10%",
                 transform: "translateY(-50%)",
@@ -89,7 +88,7 @@ export default function LoadingLayer() {
           </div>
         </div>
         <div className="flex flex-col items-center text-center">
-          <div className="text-white text-lg font-semibold">
+          <div className="text-lg font-semibold" style={{ color: "var(--foreground)" }}>
             Loading, please wait
           </div>
         </div>

@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiFileText, FiTrash2, FiEdit2, FiX, FiCheck, FiClock, FiSearch, FiFilter } from "react-icons/fi";
 import { getNotes, updateNote, deleteNote } from "@/utils/api";
 import { useUserStore } from "@/app/store/userStore";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 type Note = {
   id: string;
@@ -60,11 +60,11 @@ export default function NotesPage() {
 
   const handleSaveEdit = async (noteId: string) => {
     if (!editContent.trim()) return;
-    
+
     try {
       setSaving(true);
       await updateNote(noteId, editContent.trim());
-      setNotes(notes.map(n => 
+      setNotes(notes.map(n =>
         n.id === noteId ? { ...n, content: editContent.trim(), updatedAt: new Date().toISOString() } : n
       ));
       setEditingId(null);
@@ -77,8 +77,8 @@ export default function NotesPage() {
   };
 
   const handleDelete = async (noteId: string) => {
-    if (!confirm("Bạn có chắc muốn xóa ghi chú này?")) return;
-    
+    if (!confirm("Are you sure you want to delete this note?")) return;
+
     try {
       await deleteNote(noteId);
       setNotes(notes.filter(n => n.id !== noteId));
@@ -100,7 +100,7 @@ export default function NotesPage() {
   };
 
   const filteredNotes = searchQuery
-    ? notes.filter(n => 
+    ? notes.filter(n =>
         n.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
         n.selectedText?.toLowerCase().includes(searchQuery.toLowerCase())
       )
@@ -110,139 +110,140 @@ export default function NotesPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-center">
-          <p className="text-slate-600">Vui lòng đăng nhập để xem ghi chú</p>
+      <div className="min-h-screen flex items-center justify-center bg-[var(--background)]">
+        <div className="bg-white rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-8 text-center">
+          <p className="text-[var(--text-body)] font-bold">Please log in to view notes</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-8">
-      <div className="max-w-4xl mx-auto px-4">
+    <div className="min-h-screen bg-[var(--background)]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-              <FiFileText className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-slate-800">Ghi chú của tôi</h1>
-              <p className="text-sm text-slate-500">
-                {total} ghi chú từ các bài đọc
-              </p>
-            </div>
-          </div>
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
+          <h1
+            className="text-3xl sm:text-4xl font-extrabold text-[var(--foreground)]"
+            style={{ fontFamily: "var(--font-sans)" }}
+          >
+            My Notes
+          </h1>
+          <p className="text-[var(--text-muted)] mt-2">
+            <span style={{ fontFamily: "var(--font-mono)" }}>{total}</span> notes from reading passages
+          </p>
+        </motion.div>
 
         {/* Search */}
-        <div className="mb-6">
-          <div className="relative">
-            <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Tìm kiếm ghi chú..."
-              className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
-            />
-          </div>
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="mb-8"
+        >
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search notes..."
+            className="w-full px-6 py-4 bg-white rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] text-[var(--foreground)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--primary)] font-bold text-sm transition-all"
+          />
+        </motion.div>
 
-        {/* Notes List */}
+        {/* Notes Grid */}
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <div className="w-8 h-8 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+            <div className="w-10 h-10 border-[3px] border-[var(--primary-light)] border-t-[var(--primary)] rounded-full animate-spin" />
           </div>
         ) : filteredNotes.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-2xl border border-slate-200">
-            <FiFileText className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-            <p className="text-lg text-slate-500 mb-2">Chưa có ghi chú nào</p>
-            <p className="text-sm text-slate-400">
-              Ghi chú sẽ xuất hiện ở đây khi bạn tạo trong lúc làm bài Reading
-            </p>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-8"
+          >
+            <EmptyState
+              title="No notes yet"
+              subtitle="Notes will appear here when you create them during Reading practice"
+            />
+          </motion.div>
         ) : (
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <AnimatePresence mode="popLayout">
-              {filteredNotes.map((note) => (
+              {filteredNotes.map((note, idx) => (
                 <motion.div
                   key={note.id}
                   layout
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+                  transition={{ delay: idx * 0.03 }}
+                  className="bg-white rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] overflow-hidden transition-all hover:-translate-y-[3px] hover:border-[var(--primary)] hover:shadow-[0_6px_0_rgba(0,0,0,0.08)]"
                 >
                   {/* Selected text preview */}
                   {note.selectedText && (
-                    <div className="px-5 py-3 bg-gradient-to-r from-blue-50 to-white border-b border-blue-100">
-                      <p className="text-sm text-blue-700 italic line-clamp-2">
-                        "{note.selectedText}"
+                    <div className="px-6 py-3 bg-[var(--primary-light)] border-b-[2px] border-[var(--border)]">
+                      <p className="text-sm text-[var(--primary)] font-bold italic line-clamp-2">
+                        &ldquo;{note.selectedText}&rdquo;
                       </p>
                     </div>
                   )}
 
                   {/* Content */}
-                  <div className="p-5">
+                  <div className="p-6">
                     {editingId === note.id ? (
                       <div className="space-y-4">
                         <textarea
                           value={editContent}
                           onChange={(e) => setEditContent(e.target.value)}
-                          className="w-full h-32 p-3 text-sm text-slate-800 border border-slate-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full h-32 p-4 text-sm text-[var(--foreground)] rounded-[1.5rem] border-[3px] border-[var(--border)] resize-none focus:outline-none focus:border-[var(--primary)] transition-all"
                           autoFocus
                         />
                         <div className="flex gap-2 justify-end">
                           <button
                             onClick={handleCancelEdit}
-                            className="px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition flex items-center gap-2"
+                            className="px-5 py-2 text-sm font-bold text-[var(--text-body)] bg-white rounded-full border-[2px] border-[var(--border)] hover:border-[var(--text-muted)] transition-all"
                           >
-                            <FiX className="w-4 h-4" />
-                            Hủy
+                            Cancel
                           </button>
                           <button
                             onClick={() => handleSaveEdit(note.id)}
                             disabled={saving || !editContent.trim()}
-                            className="px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition disabled:opacity-50 flex items-center gap-2"
+                            className="px-5 py-2 text-sm rounded-full bg-[var(--primary)] text-white font-bold border-b-[4px] border-[var(--primary-dark)] hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px] transition-all disabled:opacity-50"
                           >
-                            {saving ? (
-                              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                            ) : (
-                              <FiCheck className="w-4 h-4" />
-                            )}
-                            Lưu
+                            {saving ? "Saving..." : "Save"}
                           </button>
                         </div>
                       </div>
                     ) : (
                       <>
-                        <p className="text-slate-700 whitespace-pre-wrap leading-relaxed">{note.content}</p>
-                        
+                        {/* Title-like preview */}
+                        <p className="text-[var(--text-body)] whitespace-pre-wrap leading-relaxed line-clamp-4">{note.content}</p>
+
                         {/* Footer */}
-                        <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-100">
-                          <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                            <FiClock className="w-4 h-4" />
+                        <div className="flex items-center justify-between mt-5 pt-4 border-t-[2px] border-[var(--border)]">
+                          <span
+                            className="text-xs font-bold text-[var(--text-muted)]"
+                            style={{ fontFamily: "var(--font-mono)" }}
+                          >
                             {formatDate(note.createdAt)}
-                          </div>
-                          
+                          </span>
+
                           <div className="flex gap-2">
                             <button
                               onClick={() => handleEdit(note)}
-                              className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition flex items-center gap-1.5"
-                              title="Sửa"
+                              className="px-4 py-1.5 text-xs font-bold text-[var(--primary)] bg-[var(--primary-light)] rounded-full border-[2px] border-[var(--border)] hover:bg-[var(--primary)] hover:text-white hover:border-[var(--primary-dark)] transition-all"
                             >
-                              <FiEdit2 className="w-4 h-4" />
-                              <span className="text-xs">Sửa</span>
+                              Edit
                             </button>
                             <button
                               onClick={() => handleDelete(note.id)}
-                              className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition flex items-center gap-1.5"
-                              title="Xóa"
+                              className="px-4 py-1.5 text-xs font-bold text-[var(--destructive)] bg-red-50 rounded-full border-[2px] border-red-200 hover:bg-[var(--destructive)] hover:text-white hover:border-red-700 transition-all"
                             >
-                              <FiTrash2 className="w-4 h-4" />
-                              <span className="text-xs">Xóa</span>
+                              Delete
                             </button>
                           </div>
                         </div>
@@ -257,25 +258,32 @@ export default function NotesPage() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex justify-center gap-2 mt-8">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex justify-center gap-2 mt-8"
+          >
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              className="px-5 py-2.5 text-sm font-bold text-[var(--text-body)] bg-white rounded-full border-[2px] border-[var(--border)] hover:border-[var(--primary)] hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
-              Trước
+              Previous
             </button>
-            <div className="flex items-center px-4 py-2 text-sm text-slate-600 bg-white border border-slate-200 rounded-lg">
+            <div
+              className="flex items-center px-5 py-2.5 text-sm font-bold text-[var(--primary)] bg-[var(--primary-light)] rounded-full border-[2px] border-[var(--border)]"
+              style={{ fontFamily: "var(--font-mono)" }}
+            >
               {page} / {totalPages}
             </div>
             <button
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              className="px-5 py-2.5 text-sm font-bold text-[var(--text-body)] bg-white rounded-full border-[2px] border-[var(--border)] hover:border-[var(--primary)] hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
-              Sau
+              Next
             </button>
-          </div>
+          </motion.div>
         )}
       </div>
     </div>

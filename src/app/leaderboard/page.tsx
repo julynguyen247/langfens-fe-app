@@ -4,8 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { getLeaderboard } from "@/utils/api";
-import { FiArrowLeft } from "react-icons/fi";
-import { HiOutlineFire } from "react-icons/hi";
 import { useUserStore } from "@/app/store/userStore";
 
 type LeaderboardEntry = {
@@ -45,8 +43,8 @@ export default function LeaderboardPage() {
 
   if (loading) {
     return (
-      <div className="w-full min-h-screen bg-gradient-to-b from-blue-50 to-white">
-        <main className="mx-auto max-w-4xl px-4 py-8">
+      <div className="w-full min-h-screen bg-[var(--background)]">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <SkeletonLeaderboard />
         </main>
       </div>
@@ -54,8 +52,8 @@ export default function LeaderboardPage() {
   }
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-b from-blue-50 to-white">
-      <main className="mx-auto max-w-4xl px-4 sm:px-6 py-8 space-y-6">
+    <div className="w-full min-h-screen bg-[var(--background)]">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
@@ -64,14 +62,19 @@ export default function LeaderboardPage() {
         >
           <button
             onClick={() => router.push("/profile")}
-            className="p-2 rounded-lg hover:bg-slate-100 transition"
+            className="px-4 py-2.5 rounded-full bg-white border-[2px] border-[var(--border)] text-[var(--text-body)] font-bold shadow-[0_3px_0_rgba(0,0,0,0.06)] hover:-translate-y-0.5 hover:border-[var(--primary)] transition-all"
           >
-            <FiArrowLeft className="w-5 h-5 text-slate-600" />
+            Back
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Bảng xếp hạng</h1>
-            <p className="text-sm text-slate-500">
-              Top {entries.length} người dùng
+            <h1
+              className="text-2xl font-bold text-[var(--foreground)]"
+              style={{ fontFamily: "var(--font-sans)" }}
+            >
+              Leaderboard
+            </h1>
+            <p className="text-sm text-[var(--text-muted)]">
+              Top {entries.length} users
             </p>
           </div>
         </motion.div>
@@ -98,13 +101,18 @@ export default function LeaderboardPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-white rounded-2xl shadow-sm overflow-hidden"
+          className="bg-white rounded-[1.5rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] overflow-hidden"
         >
-          <div className="p-4 border-b border-slate-100">
-            <h2 className="font-semibold text-slate-900">Xếp hạng đầy đủ</h2>
+          <div className="p-5 border-b-[2px] border-[var(--border)]">
+            <h2
+              className="font-bold text-[var(--foreground)]"
+              style={{ fontFamily: "var(--font-sans)" }}
+            >
+              Full rankings
+            </h2>
           </div>
 
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-[var(--border)]">
             {entries.map((entry, index) => (
               <LeaderboardRow
                 key={entry.userId}
@@ -116,8 +124,8 @@ export default function LeaderboardPage() {
           </div>
 
           {entries.length === 0 && (
-            <div className="p-8 text-center text-slate-500">
-              Chưa có dữ liệu xếp hạng.
+            <div className="p-8 text-center text-[var(--text-muted)]">
+              No leaderboard data available yet.
             </div>
           )}
         </motion.div>
@@ -136,28 +144,28 @@ function PodiumItem({
   currentUserId?: string;
 }) {
   const isCurrentUser = currentUserId === entry.userId;
-  
+
   const podiumConfig = {
     1: {
       height: "h-32",
-      bgGradient: "from-yellow-400 to-yellow-500",
-      emoji: "🥇",
+      bg: "bg-amber-400",
+      borderColor: "border-amber-500",
       size: "w-20 h-20",
-      shadow: "shadow-yellow-200",
+      label: "1st",
     },
     2: {
       height: "h-24",
-      bgGradient: "from-slate-300 to-slate-400",
-      emoji: "🥈",
+      bg: "bg-[var(--text-muted)]",
+      borderColor: "border-[var(--text-body)]",
       size: "w-16 h-16",
-      shadow: "shadow-slate-200",
+      label: "2nd",
     },
     3: {
       height: "h-20",
-      bgGradient: "from-orange-400 to-orange-500",
-      emoji: "🥉",
+      bg: "bg-orange-400",
+      borderColor: "border-orange-500",
       size: "w-16 h-16",
-      shadow: "shadow-orange-200",
+      label: "3rd",
     },
   };
 
@@ -165,28 +173,37 @@ function PodiumItem({
 
   return (
     <div className="flex flex-col items-center">
-      {/* Avatar */}
+      {/* Avatar Circle */}
       <div
-        className={`${config.size} rounded-full bg-gradient-to-br ${config.bgGradient} flex items-center justify-center text-white shadow-lg ${config.shadow} mb-2 ${
-          isCurrentUser ? "ring-4 ring-blue-500" : ""
+        className={`${config.size} rounded-full ${config.bg} flex items-center justify-center text-white font-bold shadow-[0_4px_0_rgba(0,0,0,0.15)] border-b-[4px] ${config.borderColor} mb-2 ${
+          isCurrentUser ? "ring-4 ring-[var(--primary)]" : ""
         }`}
       >
-        <span className="text-2xl">{config.emoji}</span>
+        <span className="text-lg font-bold" style={{ fontFamily: "var(--font-sans)" }}>
+          {config.label}
+        </span>
       </div>
 
       {/* Name */}
-      <div className={`text-sm font-semibold ${isCurrentUser ? "text-blue-600" : "text-slate-700"}`}>
+      <div className={`text-sm font-bold ${isCurrentUser ? "text-[var(--primary)]" : "text-[var(--text-body)]"}`}>
         {entry.displayName || `User ${entry.userId.slice(0, 8)}`}
       </div>
 
       {/* XP */}
-      <div className="text-xs text-slate-500">{entry.totalXp.toLocaleString()} XP</div>
+      <div className="text-xs text-[var(--text-muted)]" style={{ fontFamily: "var(--font-mono)" }}>
+        {entry.totalXp.toLocaleString()} XP
+      </div>
 
       {/* Podium Block */}
       <div
-        className={`mt-2 w-24 ${config.height} rounded-t-xl bg-gradient-to-b ${config.bgGradient} flex items-center justify-center`}
+        className={`mt-2 w-24 ${config.height} rounded-t-xl ${config.bg} border-b-[4px] ${config.borderColor} flex items-center justify-center`}
       >
-        <span className="text-3xl font-bold text-white/80">{position}</span>
+        <span
+          className="text-3xl font-bold text-white/80"
+          style={{ fontFamily: "var(--font-mono)" }}
+        >
+          {position}
+        </span>
       </div>
     </div>
   );
@@ -202,9 +219,9 @@ function LeaderboardRow({
   isCurrentUser: boolean;
 }) {
   const rankColors: Record<number, string> = {
-    0: "bg-yellow-100 text-yellow-700",
-    1: "bg-slate-100 text-slate-600",
-    2: "bg-orange-100 text-orange-700",
+    0: "bg-amber-100 text-amber-700 border-amber-200",
+    1: "bg-[var(--background)] text-[var(--text-body)] border-[var(--border)]",
+    2: "bg-orange-100 text-orange-700 border-orange-200",
   };
 
   return (
@@ -212,51 +229,57 @@ function LeaderboardRow({
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.02 }}
-      className={`flex items-center gap-4 px-4 py-3 ${
-        isCurrentUser ? "bg-blue-50" : "hover:bg-slate-50"
+      className={`flex items-center gap-4 px-5 py-3.5 ${
+        isCurrentUser ? "bg-[var(--primary-light)]" : "hover:bg-[var(--background)]"
       } transition`}
     >
       {/* Rank */}
       <div
-        className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-          rankColors[index] || "bg-slate-50 text-slate-500"
+        className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border-[2px] ${
+          rankColors[index] || "bg-[var(--background)] text-[var(--text-muted)] border-[var(--border)]"
         }`}
+        style={{ fontFamily: "var(--font-mono)" }}
       >
         {entry.rank}
       </div>
 
       {/* Avatar/Initials */}
-      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm">
+      <div className="w-10 h-10 rounded-full bg-[var(--primary)] flex items-center justify-center text-white font-bold text-sm border-b-[3px] border-[var(--primary-dark)]">
         {(entry.displayName || entry.userId).slice(0, 2).toUpperCase()}
       </div>
 
       {/* Name & Level */}
       <div className="flex-1 min-w-0">
-        <div className={`font-medium truncate ${isCurrentUser ? "text-blue-600" : "text-slate-900"}`}>
+        <div className={`font-bold truncate ${isCurrentUser ? "text-[var(--primary)]" : "text-[var(--foreground)]"}`}>
           {entry.displayName || `User ${entry.userId.slice(0, 8)}`}
           {isCurrentUser && (
-            <span className="ml-2 text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">
-              Bạn
+            <span className="ml-2 text-xs bg-[var(--primary-light)] text-[var(--primary)] px-2.5 py-0.5 rounded-full font-bold border-[1px] border-blue-200">
+              You
             </span>
           )}
         </div>
-        <div className="text-xs text-slate-500">Level {entry.level}</div>
+        <div className="text-xs text-[var(--text-muted)]">Level {entry.level}</div>
       </div>
 
       {/* Streak */}
       {entry.currentStreak > 0 && (
-        <div className="flex items-center gap-1 text-orange-500">
-          <HiOutlineFire className="w-4 h-4" />
-          <span className="text-sm font-medium">{entry.currentStreak}</span>
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-orange-50 border-[2px] border-orange-200">
+          <span className="text-sm font-bold text-orange-600" style={{ fontFamily: "var(--font-mono)" }}>
+            {entry.currentStreak}
+          </span>
+          <span className="text-xs font-bold text-orange-500">streak</span>
         </div>
       )}
 
       {/* XP */}
       <div className="text-right">
-        <div className="font-bold text-slate-900">
+        <div
+          className="font-bold text-[var(--foreground)]"
+          style={{ fontFamily: "var(--font-mono)" }}
+        >
           {entry.totalXp.toLocaleString()}
         </div>
-        <div className="text-xs text-slate-400">XP</div>
+        <div className="text-xs text-[var(--text-muted)]">XP</div>
       </div>
     </motion.div>
   );
@@ -266,18 +289,18 @@ function SkeletonLeaderboard() {
   return (
     <div className="space-y-6 animate-pulse">
       <div className="flex items-center gap-4">
-        <div className="w-10 h-10 bg-slate-200 rounded-lg" />
+        <div className="w-16 h-10 bg-[var(--border)] rounded-full" />
         <div className="space-y-2">
-          <div className="h-6 w-40 bg-slate-200 rounded" />
-          <div className="h-4 w-32 bg-slate-200 rounded" />
+          <div className="h-6 w-40 bg-[var(--border)] rounded-full" />
+          <div className="h-4 w-32 bg-[var(--border)] rounded-full" />
         </div>
       </div>
       <div className="flex items-end justify-center gap-4 py-6">
-        <div className="w-24 h-40 bg-slate-200 rounded-t-xl" />
-        <div className="w-24 h-52 bg-slate-200 rounded-t-xl" />
-        <div className="w-24 h-32 bg-slate-200 rounded-t-xl" />
+        <div className="w-24 h-40 bg-[var(--border)] rounded-t-xl" />
+        <div className="w-24 h-52 bg-[var(--border)] rounded-t-xl" />
+        <div className="w-24 h-32 bg-[var(--border)] rounded-t-xl" />
       </div>
-      <div className="bg-slate-200 rounded-2xl h-96" />
+      <div className="bg-[var(--border)] rounded-[1.5rem] h-96" />
     </div>
   );
 }

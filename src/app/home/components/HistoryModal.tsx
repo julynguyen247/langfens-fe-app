@@ -39,12 +39,12 @@ export function HistoryModal({
             className="w-full max-w-2xl bg-white rounded-2xl shadow-xl p-5 max-h-[80vh] flex flex-col"
           >
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-slate-900">
+              <h3 className="text-sm font-semibold text-[var(--foreground)]">
                 Lịch sử làm bài
               </h3>
               <button
                 onClick={onClose}
-                className="text-sm font-medium text-slate-500 hover:text-slate-700"
+                className="text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text-body)]"
               >
                 Đóng
               </button>
@@ -61,10 +61,10 @@ export function HistoryModal({
                       <div className="text-xs text-blue-600 font-semibold">
                         {a.skill}
                       </div>
-                      <div className="text-sm font-medium text-slate-900">
+                      <div className="text-sm font-medium text-[var(--foreground)]">
                         {a.title}
                       </div>
-                      <div className="text-xs text-slate-500">
+                      <div className="text-xs text-[var(--text-muted)]">
                         {new Date(a.dateISO).toLocaleString("vi-VN")} •{" "}
                         {a.durationMin} phút
                       </div>
@@ -92,7 +92,7 @@ export function HistoryModal({
               ))}
 
               {attempts.length === 0 && (
-                <div className="text-sm text-slate-500">
+                <div className="text-sm text-[var(--text-muted)]">
                   Chưa có lịch sử làm bài.
                 </div>
               )}

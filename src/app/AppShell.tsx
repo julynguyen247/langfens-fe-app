@@ -55,7 +55,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <>
       {!hideHeader && <LangfensHeader />}
-      <main className={cn("min-h-screen", !isLanding && "bg-gray-50")}>
+      <main className={cn("min-h-screen", !isLanding && "bg-[var(--background)]")}>
         {content}
         {requireAuth && <ChatbotWidget />}
       </main>

@@ -5,11 +5,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import { getPublicExams, getWritingExams, getSpeakingExams, getExamsByQuestionType } from "@/utils/api";
 import { useUserStore } from "@/app/store/userStore";
 import PracticeBank, { PracticeItem } from "@/components/PracticeBank";
-
-// Material Icon Component
-function Icon({ name, className = "" }: { name: string; className?: string }) {
-  return <span className={`material-symbols-rounded ${className}`}>{name}</span>;
-}
+import { SkillBadge } from "@/components/ui/SkillBadge";
 
 function detectSkillFromSlug(
   slug: string
@@ -28,26 +24,22 @@ function detectPartFromQuery(itemParam: string): "1" | "2" | "3" | null {
 }
 
 // Skill metadata
-const SKILL_META: Record<string, { title: string; description: string; icon: string }> = {
+const SKILL_META: Record<string, { title: string; description: string }> = {
   reading: {
-    title: "Reading Practice",
+    title: "Reading Quests",
     description: "Improve your comprehension and scanning techniques",
-    icon: "menu_book",
   },
   listening: {
-    title: "Listening Practice",
+    title: "Listening Quests",
     description: "Enhance your audio comprehension skills",
-    icon: "headphones",
   },
   writing: {
-    title: "Writing Practice",
+    title: "Writing Quests",
     description: "Master essay structure and task responses",
-    icon: "edit_note",
   },
   speaking: {
-    title: "Speaking Practice",
+    title: "Speaking Quests",
     description: "Build confidence with interview simulations",
-    icon: "mic",
   },
 };
 
@@ -161,9 +153,26 @@ export default function GroupPage() {
   if (!user?.id) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="text-center">
-          <Icon name="lock" className="text-5xl text-slate-300 mb-3" />
-          <p className="text-slate-600">Please log in to access the practice library</p>
+        <div className="bg-white border-[3px] border-[var(--border)] rounded-[2rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-8 text-center max-w-sm">
+          <div
+            className="w-14 h-14 rounded-full bg-[var(--primary-light)] flex items-center justify-center mx-auto mb-4"
+          >
+            <span
+              className="text-lg font-bold text-[var(--primary)]"
+              style={{ fontFamily: "var(--font-sans)" }}
+            >
+              ?
+            </span>
+          </div>
+          <p
+            className="text-[var(--text-body)] font-semibold mb-1"
+            style={{ fontFamily: "var(--font-sans)" }}
+          >
+            Login required
+          </p>
+          <p className="text-sm text-[var(--text-muted)]">
+            Please log in to access the quest board
+          </p>
         </div>
       </div>
     );
@@ -171,20 +180,29 @@ export default function GroupPage() {
 
   return (
     <div className="w-full">
-      {/* Page Header */}
+      {/* Quest Board Header */}
       <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 rounded-lg bg-[#EFF6FF] flex items-center justify-center">
-            <Icon name={skillMeta.icon} className="text-2xl text-[#3B82F6]" />
-          </div>
-          <div>
-            <h1 className="font-serif text-2xl font-bold text-slate-800">{skillMeta.title}</h1>
-            <p className="text-sm text-slate-500">{skillMeta.description}</p>
-          </div>
+        <div className="flex items-center gap-3 mb-3">
+          <SkillBadge skill={groupId} size="md" />
+          <span
+            className="text-sm font-semibold text-[var(--text-muted)]"
+            style={{ fontFamily: "var(--font-sans)" }}
+          >
+            Quest Board
+          </span>
         </div>
+        <h1
+          className="text-2xl sm:text-3xl font-bold text-[var(--foreground)] mb-1"
+          style={{ fontFamily: "var(--font-sans)" }}
+        >
+          {skillMeta.title}
+        </h1>
+        <p className="text-[var(--text-muted)] text-base">
+          {skillMeta.description}
+        </p>
       </div>
 
-      {/* Practice Bank */}
+      {/* Quest Cards */}
       <PracticeBank
         items={filtered}
         pageSize={12}

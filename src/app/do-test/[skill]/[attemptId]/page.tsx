@@ -59,7 +59,7 @@ function getYouTubeId(url: string) {
 function AudioBar({ src }: { src: string }) {
   if (!src) {
     return (
-      <div className="text-xs text-amber-600">Đề này chưa có audioUrl.</div>
+      <div className="text-xs text-[var(--skill-writing)] font-bold p-3">No audio URL available for this test.</div>
     );
   }
 
@@ -67,16 +67,16 @@ function AudioBar({ src }: { src: string }) {
     const id = getYouTubeId(src);
     if (!id) {
       return (
-        <div className="text-xs text-red-600">YouTube URL không hợp lệ.</div>
+        <div className="text-xs text-[var(--destructive)] font-bold p-3">Invalid YouTube URL.</div>
       );
     }
     const embed = `https://www.youtube.com/embed/${id}?controls=1&rel=0&modestbranding=1`;
     return (
-      <div className="rounded-lg  overflow-hidden border bg-white">
+      <div className="rounded-[1rem] overflow-hidden border-[2px] border-[var(--border)] bg-white">
         <iframe
           src={embed}
           title="Listening Audio (YouTube)"
-          className="w-full  h-16"
+          className="w-full h-16"
           allow="autoplay; encrypted-media; picture-in-picture"
           allowFullScreen
         />
@@ -100,9 +100,11 @@ export default function DoTestAttemptPage() {
 
   if (!attempt) {
     return (
-      <div className="p-6 text-sm text-slate-600">
-        Đang tải bài thi… Nếu bạn vừa refresh trang, vui lòng thử quay lại danh
-        sách và vào lại bài.
+      <div className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center gap-4">
+        <div className="h-10 w-10 animate-spin rounded-full border-[4px] border-[var(--border)] border-t-[var(--primary)]" />
+        <p className="text-sm text-[var(--text-muted)] font-bold" style={{ fontFamily: "var(--font-sans)" }}>
+          Loading test... If you refreshed, please go back and re-enter.
+        </p>
       </div>
     );
   }
@@ -112,15 +114,15 @@ export default function DoTestAttemptPage() {
   if (skill === "speaking") return <SpeakingScreen attemptId={attemptId} />;
   if (skill === "writing") return <WritingScreen attemptId={attemptId} />;
 
-  return <div className="p-6">Unknown skill: {String(skill)}</div>;
+  return <div className="p-6 text-[var(--text-muted)]">Unknown skill: {String(skill)}</div>;
 }
 
-export function ReadingScreen({ 
+export function ReadingScreen({
   attemptId,
   isReviewMode = false,
   reviewData = [],
   initialAnswers = {},
-}: { 
+}: {
   attemptId: string;
   isReviewMode?: boolean;
   reviewData?: Array<{ questionId: string; isCorrect: boolean | null; correctAnswer?: string; explanation?: string }>;
@@ -143,11 +145,9 @@ export function ReadingScreen({
   const activeSec = sections.find((s) => s.id === secFromUrl) ?? sections[0];
 
   const panelQuestions = useMemo<UiQuestion[]>(() => {
-    // Flatten questions from all questionGroups
     const allQuestions = (activeSec?.questionGroups ?? []).flatMap(
       (grp) => grp.questions ?? []
     );
-    // Deduplicate by question ID (groups may overlap)
     const seen = new Set<string>();
     const uniqueQuestions = allQuestions.filter((q: any) => {
       if (seen.has(q.id)) return false;
@@ -186,7 +186,9 @@ export function ReadingScreen({
 
   if (!attempt?.paper) {
     return (
-      <div className="p-6 text-center text-slate-500">Đang tải đề thi…</div>
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+        <p className="text-sm text-[var(--text-muted)] font-bold">Loading test paper...</p>
+      </div>
     );
   }
 
@@ -223,19 +225,19 @@ export function ReadingScreen({
 
   if (!attempt || !activeSec) {
     return (
-      <div className="p-6 text-sm text-slate-600">
-        Không có dữ liệu bài Reading.
+      <div className="p-6 text-sm text-[var(--text-muted)]">
+        No Reading data available.
       </div>
     );
   }
 
   const testTitle = activeSec?.title || attempt?.paper?.title || "Reading Test";
   const totalQuestions = panelQuestions.length;
-  
+
   // Mobile tab state
   const [mobileTab, setMobileTab] = useState<"passage" | "questions">("passage");
 
-  // Passage content component (reusable for both layouts)
+  // Passage content component
   const passageContent = (
     <div className="h-full overflow-hidden bg-white">
       <PassageView
@@ -250,17 +252,19 @@ export function ReadingScreen({
     </div>
   );
 
-  // Questions content component (reusable for both layouts)
+  // Questions content component
   const questionsContent = (
-    <div className="h-full flex flex-col overflow-hidden bg-[#F8FAFC]">
-      {/* Questions Header - Desktop only, mobile has tabs */}
-      <div className="hidden lg:block px-6 py-4 bg-white border-b 
-      border-slate-200 flex-shrink-0">
+    <div className="h-full flex flex-col overflow-hidden bg-[var(--background)]">
+      {/* Questions Header - Desktop only */}
+      <div className="hidden lg:block px-6 py-4 bg-white border-b-[2px] border-[var(--border)] flex-shrink-0">
         <div className="flex items-center justify-between">
-          <h2 className="font-semibold text-slate-900">
+          <h2
+            className="font-bold text-[var(--foreground)]"
+            style={{ fontFamily: "var(--font-sans)" }}
+          >
             {isReviewMode ? "Questions - Review Mode" : "Questions"}
           </h2>
-          <span className="text-sm text-slate-500">
+          <span className="text-sm text-[var(--text-muted)] font-bold" style={{ fontFamily: "var(--font-mono)" }}>
             {totalQuestions} questions
           </span>
         </div>
@@ -268,10 +272,10 @@ export function ReadingScreen({
 
       {/* Questions List */}
       <div className="flex-1 overflow-auto p-4 lg:p-6
-        [scrollbar-width:thin] [scrollbar-color:theme(colors.slate.300)_transparent]
+        [scrollbar-width:thin] [scrollbar-color:var(--border)_transparent]
         [&::-webkit-scrollbar]:w-2
         [&::-webkit-scrollbar-track]:bg-transparent
-        [&::-webkit-scrollbar-thumb]:bg-slate-300
+        [&::-webkit-scrollbar-thumb]:bg-[var(--border)]
         [&::-webkit-scrollbar-thumb]:rounded-full
       ">
         <QuestionPanel
@@ -300,54 +304,52 @@ export function ReadingScreen({
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      {/* ========== MOBILE TAB BAR (< lg) ========== */}
-      <div className="lg:hidden flex bg-white border-b border-slate-200 flex-shrink-0">
+      {/* Mobile Tab Bar */}
+      <div className="lg:hidden flex bg-white border-b-[3px] border-[var(--border)] flex-shrink-0">
         <button
           onClick={() => setMobileTab("passage")}
-          className={`flex-1 py-3 px-4 text-sm font-medium transition-colors relative ${
+          className={`flex-1 py-3 px-4 text-sm font-bold transition-all duration-150 relative ${
             mobileTab === "passage"
-              ? "text-[#3B82F6]"
-              : "text-slate-500 hover:text-slate-700"
+              ? "text-[var(--primary)]"
+              : "text-[var(--text-muted)] hover:text-[var(--foreground)]"
           }`}
+          style={{ fontFamily: "var(--font-sans)" }}
         >
-          <span className="material-symbols-rounded text-lg align-middle mr-1">article</span>
           Passage
           {mobileTab === "passage" && (
-            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#3B82F6]" />
+            <span className="absolute bottom-0 left-0 right-0 h-[3px] bg-[var(--primary)] rounded-full" />
           )}
         </button>
         <button
           onClick={() => setMobileTab("questions")}
-          className={`flex-1 py-3 px-4 text-sm font-medium transition-colors relative ${
+          className={`flex-1 py-3 px-4 text-sm font-bold transition-all duration-150 relative ${
             mobileTab === "questions"
-              ? "text-[#3B82F6]"
-              : "text-slate-500 hover:text-slate-700"
+              ? "text-[var(--primary)]"
+              : "text-[var(--text-muted)] hover:text-[var(--foreground)]"
           }`}
+          style={{ fontFamily: "var(--font-sans)" }}
         >
-          <span className="material-symbols-rounded text-lg align-middle mr-1">quiz</span>
           Questions ({totalQuestions})
           {mobileTab === "questions" && (
-            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#3B82F6]" />
+            <span className="absolute bottom-0 left-0 right-0 h-[3px] bg-[var(--primary)] rounded-full" />
           )}
         </button>
       </div>
 
-      {/* ========== MOBILE CONTENT (< lg) ========== */}
+      {/* Mobile Content */}
       <div className="lg:hidden flex-1 overflow-hidden">
         {mobileTab === "passage" ? passageContent : questionsContent}
       </div>
 
-      {/* ========== DESKTOP SPLIT VIEW (>= lg) ========== */}
+      {/* Desktop Split View */}
       <div className="hidden lg:flex flex-1 overflow-hidden">
         <Group orientation="horizontal">
-          {/* Left Panel: Passage */}
           <Panel defaultSize={55} minSize={35} className="overflow-hidden">
-            <div className="h-full border-r border-slate-200">
+            <div className="h-full border-r-[2px] border-[var(--border)]">
               {passageContent}
             </div>
           </Panel>
 
-          {/* Right Panel: Questions */}
           <Panel defaultSize={45} minSize={30} className="overflow-hidden">
             {questionsContent}
           </Panel>
@@ -383,7 +385,6 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
   const sectionOfQuestion = useMemo(() => {
     const m = new Map<string, string>();
     for (const s of sections as any[]) {
-      // Read from questionGroups like allQs does
       for (const grp of s.questionGroups ?? []) {
         for (const q of grp.questions ?? []) {
           m.set(String(q.id), s.id);
@@ -394,11 +395,9 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
   }, [sections]);
 
   const allQs = useMemo(() => {
-    // Flatten questions from all questionGroups (same as ReadingScreen)
     const flattened = (sections as any[]).flatMap((s) =>
       (s.questionGroups ?? []).flatMap((grp: any) => grp.questions ?? [])
     );
-    // Deduplicate by question ID (groups may overlap)
     const seen = new Set<string>();
     return flattened.filter((q: any) => {
       if (seen.has(q.id)) return false;
@@ -449,7 +448,6 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
       setLoading(true);
       cancelAutoSave();
 
-      // Try to save first, but don't block submit if it fails
       try {
         await saveNow(
           lastAnswersRef.current,
@@ -466,7 +464,7 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
       await submitAttempt(attemptId);
       router.replace(`/attempts/${attemptId}`);
     } catch {
-      alert("Nộp bài thất bại.");
+      alert("Submit failed. Please try again.");
     } finally {
       setIsSubmitting(false);
       setLoading(false);
@@ -475,37 +473,37 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
 
   if (!attempt) {
     return (
-      <div className="p-6 text-sm text-slate-600">
-        Không có dữ liệu bài Listening.
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+        <p className="text-sm text-[var(--text-muted)] font-bold">No Listening data available.</p>
       </div>
     );
   }
 
   return (
     <>
-      <div className="flex h-full w-full max-h-full bg-white rounded-xl shadow overflow-hidden">
+      <div className="flex h-full w-full max-h-full bg-white overflow-hidden">
         <Group orientation="horizontal">
           <Panel>
-            <div className="h-full flex flex-col overflow-hidden border-l bg-white shadow-xl z-20">
-              <div className="shrink-0 h-[280px] overflow-hidden border-b bg-black relative">
+            <div className="h-full flex flex-col overflow-hidden border-r-[2px] border-[var(--border)] bg-white z-20">
+              <div className="shrink-0 h-[280px] overflow-hidden border-b-[2px] border-[var(--border)] bg-black relative">
                 <YouTubePlayer src={listeningAudioUrl} />
               </div>
               <div className="flex-1 min-h-0 overflow-y-auto p-5">
                 {listeningSection?.passageMd && (
-                  <div className="mb-6 p-5 bg-white border border-slate-200 rounded-lg shadow-sm">
+                  <div className="mb-6 p-5 bg-white border-[3px] border-[var(--border)] rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)]">
                     <div
-                      className="prose prose-sm max-w-none 
-                  [&_h1]:text-gray-900 [&_h1]:font-bold [&_h1]:text-xl [&_h1]:mb-4
-                  [&_h2]:text-gray-900 [&_h2]:font-bold [&_h2]:text-lg [&_h2]:mt-5 [&_h2]:mb-3
-                  [&_h3]:text-gray-900 [&_h3]:font-semibold [&_h3]:text-base
-                  [&_p]:text-gray-900 [&_p]:leading-relaxed
-                  [&_strong]:text-gray-900 [&_strong]:font-semibold
-                  [&_li]:text-gray-900 [&_li]:my-1
+                      className="prose prose-sm max-w-none
+                  [&_h1]:text-[var(--foreground)] [&_h1]:font-bold [&_h1]:text-xl [&_h1]:mb-4
+                  [&_h2]:text-[var(--foreground)] [&_h2]:font-bold [&_h2]:text-lg [&_h2]:mt-5 [&_h2]:mb-3
+                  [&_h3]:text-[var(--foreground)] [&_h3]:font-bold [&_h3]:text-base
+                  [&_p]:text-[var(--foreground)] [&_p]:leading-relaxed
+                  [&_strong]:text-[var(--foreground)] [&_strong]:font-bold
+                  [&_li]:text-[var(--foreground)] [&_li]:my-1
                   [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5
-                  [&_table]:text-gray-900 [&_table]:w-full
-                  [&_th]:text-gray-900 [&_th]:font-semibold [&_th]:text-left [&_th]:p-2 [&_th]:border [&_th]:border-gray-300 [&_th]:bg-gray-100
-                  [&_td]:text-gray-900 [&_td]:p-2 [&_td]:border [&_td]:border-gray-300
-                  [&_hr]:border-gray-300 [&_hr]:my-4"
+                  [&_table]:text-[var(--foreground)] [&_table]:w-full
+                  [&_th]:text-[var(--foreground)] [&_th]:font-bold [&_th]:text-left [&_th]:p-2 [&_th]:border [&_th]:border-[var(--border)] [&_th]:bg-[var(--background)]
+                  [&_td]:text-[var(--foreground)] [&_td]:p-2 [&_td]:border [&_td]:border-[var(--border)]
+                  [&_hr]:border-[var(--border)] [&_hr]:my-4"
                     >
                       <ReactMarkdown>
                         {listeningSection.passageMd}
@@ -517,11 +515,14 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
             </div>
           </Panel>
           <Panel>
-            <div className="h-full flex flex-col overflow-hidden border-l bg-white shadow-xl z-20">
-              <div className="border-b px-5 py-4 bg-white sticky top-0 z-10 flex justify-between items-center shadow-sm">
+            <div className="h-full flex flex-col overflow-hidden bg-white z-20">
+              <div className="border-b-[3px] border-[var(--border)] px-5 py-4 bg-white sticky top-0 z-10 flex justify-between items-center">
                 <div className="flex items-center gap-4">
                   <div>
-                    <h2 className="text-lg font-bold text-slate-800">
+                    <h2
+                      className="text-lg font-bold text-[var(--foreground)]"
+                      style={{ fontFamily: "var(--font-sans)" }}
+                    >
                       Listening
                     </h2>
                     {allQs.length > 0 &&
@@ -529,8 +530,8 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
                         (q) =>
                           String(q.skill ?? "").toLowerCase() === "listening"
                       ).length === 0 && (
-                        <div className="mt-1 text-xs text-amber-600 font-medium">
-                          Toàn bộ câu hỏi (không filter skill)
+                        <div className="mt-1 text-xs text-[var(--skill-writing)] font-bold">
+                          All questions (no skill filter)
                         </div>
                       )}
                   </div>
@@ -539,10 +540,15 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
                 <button
                   onClick={() => setConfirmOpen(true)}
                   disabled={isSubmitting}
-                  className="inline-flex items-center gap-2 px-5 py-2 rounded-full text-sm font-semibold bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white disabled:opacity-60 transition-all shadow-md hover:shadow-lg active:scale-95"
+                  className={`px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-150 ${
+                    isSubmitting
+                      ? "bg-[var(--border)] text-[var(--text-muted)] cursor-not-allowed"
+                      : "bg-[var(--primary)] text-white border-b-[4px] border-[var(--primary-dark)] hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px]"
+                  }`}
+                  style={{ fontFamily: "var(--font-sans)" }}
                 >
                   {isSubmitting ? (
-                    <>
+                    <span className="flex items-center gap-2">
                       <svg
                         className="animate-spin w-4 h-4"
                         fill="none"
@@ -562,18 +568,18 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                         />
                       </svg>
-                      Đang nộp...
-                    </>
+                      Submitting...
+                    </span>
                   ) : (
-                    "Nộp bài"
+                    "Submit"
                   )}
                 </button>
               </div>
 
               <div className="flex-1 overflow-auto p-5 scroll-smooth">
                 {panelQuestions.length === 0 ? (
-                  <div className="text-sm text-slate-600">
-                    Không có câu hỏi để hiển thị.
+                  <div className="text-sm text-[var(--text-muted)] font-bold text-center py-10">
+                    No questions to display.
                   </div>
                 ) : (
                   <QuestionPanel
@@ -598,37 +604,36 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
             </div>
           </Panel>
         </Group>
-
-        {/* Right panel - Questions */}
       </div>
 
       <Modal
         open={confirmOpen}
         onClose={() => setConfirmOpen(false)}
-        title="Xác nhận nộp bài Listening"
+        title="Confirm Listening Submission"
         footer={
           <div className="flex justify-end gap-3">
             <button
               onClick={() => setConfirmOpen(false)}
-              className="px-4 py-2 rounded-lg border text-slate-600"
+              className="px-5 py-2.5 rounded-full border-[2px] border-[var(--border)] text-[var(--text-body)] font-bold text-sm hover:-translate-y-0.5 hover:border-[var(--primary)] transition-all duration-150"
+              style={{ fontFamily: "var(--font-sans)" }}
             >
-              Hủy
+              Cancel
             </button>
             <button
               onClick={() => {
                 setConfirmOpen(false);
                 doSubmit();
               }}
-              className="px-4 py-2 rounded-lg bg-[#317EFF] text-white"
+              className="px-5 py-2.5 rounded-full bg-[var(--primary)] text-white font-bold text-sm border-b-[4px] border-[var(--primary-dark)] hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px] transition-all duration-150"
+              style={{ fontFamily: "var(--font-sans)" }}
             >
-              Đồng ý
+              Submit
             </button>
           </div>
         }
       >
-        <p className="text-sm text-slate-700">
-          Bạn chắc chắn muốn nộp bài Listening? Sau khi nộp, bạn không thể thay
-          đổi câu trả lời.
+        <p className="text-sm text-[var(--text-body)]">
+          Are you sure you want to submit your Listening answers? You cannot change them afterwards.
         </p>
       </Modal>
     </>
@@ -681,7 +686,7 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
       } catch (e) {
         console.error(e);
         if (!cancelled)
-          setErrorExam("Không tải được đề Speaking. Hãy thử lại sau.");
+          setErrorExam("Could not load speaking test. Please try again.");
       } finally {
         if (!cancelled) setLoadingExam(false);
       }
@@ -725,7 +730,7 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
 
   const handleOpenConfirmGrade = () => {
     if (!mediaBlobUrl) {
-      alert("Chưa có đoạn ghi âm để chấm điểm.");
+      alert("No recording to grade yet.");
       return;
     }
     setConfirmOpen(true);
@@ -733,7 +738,7 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
 
   const doGrade = async () => {
     if (!mediaBlobUrl) {
-      alert("Chưa có đoạn ghi âm để chấm điểm.");
+      alert("No recording to grade yet.");
       return;
     }
 
@@ -754,10 +759,10 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
 
       if (submissionId)
         router.push(`/attempts/${submissionId}?source=speaking`);
-      else alert("Đã chấm xong nhưng không tìm thấy submissionId.");
+      else alert("Grading complete but submissionId not found.");
     } catch (e) {
       console.error(e);
-      alert("Chấm điểm speaking thất bại, thử lại nhé.");
+      alert("Speaking grading failed. Please try again.");
     } finally {
       setGrading(false);
       setLoading(false);
@@ -783,10 +788,10 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
 
       if (submissionId)
         router.push(`/attempts/${submissionId}?source=speaking`);
-      else alert("Không tìm thấy submissionId.");
+      else alert("Could not find submissionId.");
     } catch (e) {
       console.error(e);
-      alert("Upload & chấm điểm thất bại.");
+      alert("Upload & grading failed.");
       setAudioSource("none");
     } finally {
       setLoading(false);
@@ -800,18 +805,27 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
 
   if (loadingExam) {
     return (
-      <div className="p-6 text-sm text-slate-600">Đang tải đề Speaking...</div>
+      <div className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center gap-4">
+        <div className="h-10 w-10 animate-spin rounded-full border-[4px] border-[var(--border)] border-t-[var(--primary)]" />
+        <p className="text-sm text-[var(--text-muted)] font-bold">Loading speaking test...</p>
+      </div>
     );
   }
 
   if (errorExam) {
-    return <div className="p-6 text-sm text-red-600">{errorExam}</div>;
+    return (
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+        <p className="text-sm text-[var(--destructive)] font-bold">{errorExam}</p>
+      </div>
+    );
   }
 
   if (!exam) {
     return (
-      <div className="p-6 text-sm text-slate-600">
-        Không tìm thấy đề Speaking. Hãy quay lại danh sách và thử lại.
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+        <p className="text-sm text-[var(--text-muted)] font-bold">
+          Speaking test not found. Go back and try again.
+        </p>
       </div>
     );
   }
@@ -824,33 +838,40 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
 
   return (
     <>
-      <div className="flex h-full min-h-0 bg-slate-50">
-        <div className="flex flex-1 max-w-5xl mx-auto my-8 gap-8 w-full px-6">
+      <div className="flex h-full min-h-0 bg-[var(--background)]">
+        <div className="flex flex-1 max-w-7xl mx-auto my-8 gap-8 w-full px-4 sm:px-6 lg:px-8">
           <main className="flex-1 flex flex-col gap-5 min-h-0">
-            <div className="bg-white border rounded-2xl px-8 py-5 flex items-center justify-between shadow-md">
+            {/* Header Card */}
+            <div className="bg-white border-[3px] border-[var(--border)] rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] px-8 py-5 flex items-center justify-between">
               <div>
-                <p className="text-xs uppercase tracking-[0.25em] text-slate-400">
+                <p className="text-xs text-[var(--text-muted)] font-bold">
                   IELTS Speaking
                 </p>
-                <h2 className="text-xl font-semibold text-slate-800 mt-1">
+                <h2
+                  className="text-xl font-bold text-[var(--foreground)] mt-1"
+                  style={{ fontFamily: "var(--font-sans)" }}
+                >
                   {title}
                 </h2>
               </div>
 
               <div className="flex items-center gap-6 text-sm">
                 <div className="flex flex-col items-end">
-                  <span className="text-xs text-slate-500">Timer</span>
-                  <span className="font-mono font-semibold text-lg text-slate-800">
+                  <span className="text-xs text-[var(--text-muted)] font-bold">Timer</span>
+                  <span
+                    className="font-bold text-lg text-[var(--foreground)]"
+                    style={{ fontFamily: "var(--font-mono)" }}
+                  >
                     {formatTime(seconds)}
                   </span>
                 </div>
                 <span
-                  className={`inline-flex items-center px-4 py-1.5 rounded-full text-xs font-medium ${
+                  className={`inline-flex items-center px-4 py-1.5 rounded-full border-[2px] text-xs font-bold ${
                     status === "recording"
-                      ? "bg-red-100 text-red-700"
+                      ? "border-red-300 bg-red-50 text-red-700"
                       : status === "stopped"
-                      ? "bg-emerald-100 text-emerald-700"
-                      : "bg-slate-100 text-slate-600"
+                      ? "border-[var(--skill-speaking-border)] bg-[var(--skill-speaking-light)] text-[var(--skill-speaking)]"
+                      : "border-[var(--border)] bg-[var(--background)] text-[var(--text-muted)]"
                   }`}
                 >
                   <span
@@ -858,8 +879,8 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
                       status === "recording"
                         ? "bg-red-500 animate-pulse"
                         : status === "stopped"
-                        ? "bg-emerald-500"
-                        : "bg-slate-400"
+                        ? "bg-[var(--skill-speaking)]"
+                        : "bg-[var(--text-muted)]"
                     }`}
                   />
                   {status === "idle" && "Ready"}
@@ -870,12 +891,16 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
             </div>
 
             <div className="flex flex-1 gap-5 min-h-0">
-              <section className="flex-1 bg-white border rounded-2xl p-7 shadow-md flex flex-col min-h-0">
+              {/* Task question card */}
+              <section className="flex-1 bg-white border-[3px] border-[var(--border)] rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-7 flex flex-col min-h-0">
                 <div>
-                  <h3 className="text-base font-semibold text-slate-800">
+                  <h3
+                    className="text-base font-bold text-[var(--foreground)]"
+                    style={{ fontFamily: "var(--font-sans)" }}
+                  >
                     Task question
                   </h3>
-                  <p className="text-base text-slate-700 leading-relaxed whitespace-pre-line">
+                  <p className="text-base text-[var(--text-body)] leading-relaxed whitespace-pre-line mt-2">
                     {description}
                   </p>
                 </div>
@@ -898,37 +923,46 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
                 }}
               />
 
+              {/* Recording panel */}
               <section className="w-full max-w-md flex flex-col gap-4">
-                <div className="bg-white border rounded-2xl p-6 shadow-md flex flex-col gap-4">
-                  <h3 className="text-sm font-semibold text-slate-800">
+                <div className="bg-white border-[3px] border-[var(--border)] rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-6 flex flex-col gap-4">
+                  <h3
+                    className="text-sm font-bold text-[var(--foreground)]"
+                    style={{ fontFamily: "var(--font-sans)" }}
+                  >
                     Recording panel
                   </h3>
 
                   <div className="flex items-center justify-center">
-                    <div className="w-52 h-52 rounded-full border-[6px] border-slate-200 flex items-center justify-center relative">
+                    <div className="w-52 h-52 rounded-full border-[6px] border-[var(--border)] flex items-center justify-center relative">
                       <div
-                        className={`w-36 h-36 rounded-full flex items-center justify-center text-sm font-semibold ${
+                        className={`w-36 h-36 rounded-full flex items-center justify-center text-sm font-bold ${
                           isRecording
-                            ? "bg-red-500 text-white shadow-lg"
-                            : "bg-slate-100 text-slate-700"
+                            ? "bg-[var(--destructive)] text-white"
+                            : "bg-[var(--background)] text-[var(--text-body)]"
                         }`}
+                        style={{ fontFamily: "var(--font-sans)" }}
                       >
-                        {isRecording ? "Recording…" : "Tap Start to record"}
+                        {isRecording ? "Recording..." : "Tap Start to record"}
                       </div>
-                      <div className="absolute -bottom-4 text-[11px] text-slate-500 font-mono">
+                      <div
+                        className="absolute -bottom-4 text-xs text-[var(--text-muted)] font-bold"
+                        style={{ fontFamily: "var(--font-mono)" }}
+                      >
                         {formatTime(seconds)}
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex gap-3 text-xs text-slate-500 mt-3">
+                  <div className="flex gap-3 mt-3">
                     <label
                       htmlFor="speaking-upload"
-                      className={`flex-1 px-4 py-2.5 rounded-lg font-semibold text-sm text-center transition ${
+                      className={`flex-1 px-4 py-2.5 rounded-full font-bold text-sm text-center transition-all duration-150 ${
                         isRecording || grading || uploading || !!mediaBlobUrl
-                          ? "bg-gray-200 text-gray-400 cursor-not-allowed pointer-events-none"
-                          : "bg-white text-[#317EFF] hover:bg-indigo-100 border border-indigo-200 cursor-pointer"
+                          ? "bg-[var(--background)] text-[var(--text-muted)] cursor-not-allowed pointer-events-none border-[2px] border-[var(--border)]"
+                          : "bg-white text-[var(--primary)] border-[2px] border-[var(--primary)] cursor-pointer hover:-translate-y-0.5 hover:bg-[var(--primary-light)]"
                       }`}
+                      style={{ fontFamily: "var(--font-sans)" }}
                     >
                       Upload mp3 / wav
                     </label>
@@ -942,14 +976,15 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
                         uploading ||
                         audioSource === "upload"
                       }
-                      className={`flex-1 px-4 py-2.5 rounded-lg font-semibold text-sm transition ${
+                      className={`flex-1 px-4 py-2.5 rounded-full font-bold text-sm transition-all duration-150 ${
                         isRecording ||
                         grading ||
                         uploading ||
                         audioSource === "upload"
-                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                          : "bg-[#317EFF] text-white hover:bg-[#74a4f6] active:scale-[0.98]"
+                          ? "bg-[var(--background)] text-[var(--text-muted)] cursor-not-allowed border-[2px] border-[var(--border)]"
+                          : "bg-[var(--primary)] text-white border-b-[4px] border-[var(--primary-dark)] hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px]"
                       }`}
+                      style={{ fontFamily: "var(--font-sans)" }}
                     >
                       Start
                     </button>
@@ -958,11 +993,12 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
                       type="button"
                       onClick={handleStop}
                       disabled={!isRecording || grading}
-                      className={`flex-1 px-4 py-2.5 rounded-lg font-semibold text-sm transition ${
+                      className={`flex-1 px-4 py-2.5 rounded-full font-bold text-sm transition-all duration-150 ${
                         !isRecording || grading
-                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                          : "bg-red-500 text-white hover:bg-red-600"
+                          ? "bg-[var(--background)] text-[var(--text-muted)] cursor-not-allowed border-[2px] border-[var(--border)]"
+                          : "bg-[var(--destructive)] text-white border-b-[4px] border-red-700 hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px]"
                       }`}
+                      style={{ fontFamily: "var(--font-sans)" }}
                     >
                       Stop
                     </button>
@@ -972,14 +1008,15 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
                     type="button"
                     onClick={handleOpenConfirmGrade}
                     disabled={!mediaBlobUrl || grading}
-                    className={`mt-3 w-full px-4 py-2.5 rounded-lg font-semibold text-sm transition ${
+                    className={`mt-3 w-full px-4 py-2.5 rounded-full font-bold text-sm transition-all duration-150 ${
                       mediaBlobUrl && !grading
-                        ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200"
-                        : "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
+                        ? "bg-[var(--skill-speaking-light)] text-[var(--skill-speaking)] border-[2px] border-[var(--skill-speaking-border)] hover:-translate-y-0.5 hover:border-[var(--skill-speaking)]"
+                        : "bg-[var(--background)] text-[var(--text-muted)] cursor-not-allowed border-[2px] border-[var(--border)]"
                     }`}
+                    style={{ fontFamily: "var(--font-sans)" }}
                   >
                     {grading
-                      ? "Đang chấm..."
+                      ? "Grading..."
                       : mediaBlobUrl
                       ? "Grade & generate transcript"
                       : "Record first to grade"}
@@ -989,9 +1026,10 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
                     <button
                       type="button"
                       onClick={resetAudio}
-                      className="w-full text-xs text-slate-500 hover:text-red-600 underline mt-2"
+                      className="w-full text-xs text-[var(--text-muted)] hover:text-[var(--destructive)] font-bold underline mt-2"
+                      style={{ fontFamily: "var(--font-sans)" }}
                     >
-                      Xóa audio & làm lại
+                      Reset audio & try again
                     </button>
                   )}
                 </div>
@@ -1004,30 +1042,32 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
       <Modal
         open={confirmOpen}
         onClose={() => setConfirmOpen(false)}
-        title="Xác nhận chấm điểm Speaking"
+        title="Confirm Speaking Grade"
         footer={
           <div className="flex justify-end gap-3">
             <button
               type="button"
               onClick={() => setConfirmOpen(false)}
-              className="px-4 py-2 rounded-lg text-sm font-medium border border-slate-200 text-slate-600 hover:bg-slate-50"
+              className="px-5 py-2.5 rounded-full border-[2px] border-[var(--border)] text-[var(--text-body)] font-bold text-sm hover:-translate-y-0.5 hover:border-[var(--primary)] transition-all duration-150"
+              style={{ fontFamily: "var(--font-sans)" }}
             >
-              Hủy
+              Cancel
             </button>
             <button
               type="button"
               onClick={handleConfirmGrade}
-              className="px-4 py-2 rounded-lg text-sm font-semibold bg-[#317EFF] text-white hover:bg-[#74a4f6]"
+              className="px-5 py-2.5 rounded-full bg-[var(--primary)] text-white font-bold text-sm border-b-[4px] border-[var(--primary-dark)] hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px] transition-all duration-150"
+              style={{ fontFamily: "var(--font-sans)" }}
             >
-              Đồng ý
+              Submit
             </button>
           </div>
         }
       >
-        <p className="text-sm text-slate-700">
-          Bạn chắc chắn muốn gửi đoạn ghi âm để chấm điểm không?
+        <p className="text-sm text-[var(--text-body)]">
+          Are you sure you want to submit your recording for grading?
           <br />
-          Sau khi chấm xong, bạn sẽ được chuyển tới trang xem kết quả Speaking.
+          You will be redirected to the results page after grading.
         </p>
       </Modal>
     </>
@@ -1065,14 +1105,13 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
           return;
         }
 
-        // Otherwise fetch from API
         const res = await getWritingExam(examId);
         if (cancelled) return;
         setExam(res.data?.data ?? null);
       } catch (e) {
         console.error(e);
         if (!cancelled)
-          setErrorExam("Không tải được đề Writing. Hãy thử lại sau.");
+          setErrorExam("Could not load writing test. Please try again.");
       } finally {
         if (!cancelled) setLoadingExam(false);
       }
@@ -1097,7 +1136,7 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
 
   const handleOpenConfirmSubmit = () => {
     if (!answer.trim()) {
-      alert("Bạn chưa viết gì cả.");
+      alert("You haven't written anything yet.");
       return;
     }
     setConfirmOpen(true);
@@ -1105,7 +1144,7 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
 
   const doSubmit = async () => {
     if (!answer.trim()) {
-      alert("Bạn chưa viết gì cả.");
+      alert("You haven't written anything yet.");
       return;
     }
 
@@ -1119,10 +1158,10 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
         payload?.submissionId ?? (payload as any)?.submissionId;
 
       if (submissionId) router.push(`/attempts/${submissionId}?source=writing`);
-      else alert("Đã chấm xong nhưng không tìm thấy submissionId.");
+      else alert("Grading complete but submissionId not found.");
     } catch (e) {
       console.error(e);
-      alert("Chấm điểm thất bại!");
+      alert("Grading failed!");
     } finally {
       setGrading(false);
       setLoading(false);
@@ -1136,18 +1175,27 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
 
   if (loadingExam) {
     return (
-      <div className="p-6 text-sm text-slate-600">Đang tải đề Writing...</div>
+      <div className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center gap-4">
+        <div className="h-10 w-10 animate-spin rounded-full border-[4px] border-[var(--border)] border-t-[var(--primary)]" />
+        <p className="text-sm text-[var(--text-muted)] font-bold">Loading writing test...</p>
+      </div>
     );
   }
 
   if (errorExam) {
-    return <div className="p-6 text-sm text-red-600">{errorExam}</div>;
+    return (
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+        <p className="text-sm text-[var(--destructive)] font-bold">{errorExam}</p>
+      </div>
+    );
   }
 
   if (!exam) {
     return (
-      <div className="p-6 text-sm text-slate-600">
-        Không tìm thấy đề Writing. Hãy quay lại danh sách và thử lại.
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+        <p className="text-sm text-[var(--text-muted)] font-bold">
+          Writing test not found. Go back and try again.
+        </p>
       </div>
     );
   }
@@ -1157,7 +1205,6 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
     exam?.taskText ??
     "Write an essay of at least 150 words on the following topic:\n\nDo you think technology improves the quality of life? Why or why not?";
 
-  // Format time as MM:SS
   const formatTimeLeft = (sec: number) => {
     const mins = Math.floor(sec / 60);
     const secs = sec % 60;
@@ -1166,92 +1213,102 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
 
   return (
     <>
-      {/* SPLIT-SCREEN EXAM INTERFACE */}
-      <div className="flex h-full w-full overflow-hidden font-sans">
-        
-        {/* --- LEFT PANEL: THE PROMPT (Paper Style) --- */}
-        <div className="w-1/2 bg-slate-100 border-r border-slate-300 overflow-y-auto p-6">
-          <div className="bg-white border border-slate-200 shadow-sm p-8 min-h-[90%]">
+      {/* Split-screen exam interface */}
+      <div className="flex h-full w-full overflow-hidden">
+
+        {/* Left Panel: The Prompt */}
+        <div className="w-1/2 bg-[var(--background)] border-r-[3px] border-[var(--border)] overflow-y-auto p-6">
+          <div className="bg-white border-[3px] border-[var(--border)] rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-8 min-h-[90%]">
             {/* Task Type Badge */}
-            <span className="inline-block bg-slate-800 text-white text-[10px] font-bold px-3 py-1 mb-6 uppercase tracking-[0.2em]">
+            <span className="inline-block rounded-full bg-[var(--foreground)] text-white text-xs font-bold px-4 py-1.5 mb-6 border-b-[3px] border-black">
               {examTitle}
             </span>
-            
-            {/* Prompt Text (Serif - Academic Style) */}
+
+            {/* Prompt Text */}
             <div className="prose prose-lg max-w-none">
-              <p className="font-serif text-lg leading-loose text-slate-800 whitespace-pre-line">
+              <p className="text-lg leading-loose text-[var(--foreground)] whitespace-pre-line">
                 {writingPrompt}
               </p>
             </div>
 
             {/* Instructions Footer */}
-            <div className="mt-8 pt-6 border-t border-slate-200">
-              <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold mb-2">
+            <div className="mt-8 pt-6 border-t-[2px] border-[var(--border)]">
+              <p
+                className="text-sm font-bold text-[var(--text-muted)] mb-2"
+                style={{ fontFamily: "var(--font-sans)" }}
+              >
                 Instructions
               </p>
-              <ul className="text-sm text-slate-600 space-y-1">
-                <li>• Write at least <strong>150 words</strong> for Task 1, or <strong>250 words</strong> for Task 2.</li>
-                <li>• You should spend about <strong>20 minutes</strong> on Task 1, or <strong>40 minutes</strong> on Task 2.</li>
-                <li>• Write your response in the editor on the right.</li>
+              <ul className="text-sm text-[var(--text-body)] space-y-1">
+                <li>Write at least <strong>150 words</strong> for Task 1, or <strong>250 words</strong> for Task 2.</li>
+                <li>You should spend about <strong>20 minutes</strong> on Task 1, or <strong>40 minutes</strong> on Task 2.</li>
+                <li>Write your response in the editor on the right.</li>
               </ul>
             </div>
           </div>
         </div>
 
-        {/* --- RIGHT PANEL: THE EDITOR (Word Processor) --- */}
+        {/* Right Panel: The Editor */}
         <div className="w-1/2 flex flex-col bg-white relative">
-          
-          {/* 1. Toolbar */}
-          <div className="shrink-0 h-10 border-b border-slate-200 bg-[#F1F5F9] flex items-center px-3 gap-1">
-            {['undo', 'redo', 'content_cut', 'content_copy', 'content_paste'].map(icon => (
-              <button key={icon} className="p-1.5 hover:bg-slate-200 rounded text-slate-400 cursor-default" disabled>
-                <span className="material-symbols-rounded text-lg">{icon}</span>
-              </button>
-            ))}
-            <div className="w-px h-4 bg-slate-300 mx-2"></div>
-            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Word Processor</span>
+
+          {/* Toolbar */}
+          <div className="shrink-0 h-12 border-b-[2px] border-[var(--border)] bg-[var(--background)] flex items-center px-4 gap-2">
+            <span
+              className="text-xs text-[var(--text-muted)] font-bold"
+              style={{ fontFamily: "var(--font-sans)" }}
+            >
+              Word Processor
+            </span>
           </div>
 
-          {/* 2. Typing Area */}
-          <textarea 
+          {/* Typing Area */}
+          <textarea
             value={answer}
             onChange={handleChange}
-            className="flex-1 w-full p-8 resize-none outline-none text-lg text-slate-800 font-sans leading-8 selection:bg-blue-100"
+            className="flex-1 w-full p-8 resize-none outline-none text-lg text-[var(--foreground)] leading-8 selection:bg-[var(--primary-light)]"
             placeholder="Start typing your answer here..."
             spellCheck={false}
             autoFocus
           />
 
-          {/* 3. Status Bar (Word Count & Timer & Submit) */}
-          <div className="shrink-0 h-16 border-t border-slate-200 bg-white px-6 flex items-center justify-between z-10">
-            
+          {/* Status Bar */}
+          <div className="shrink-0 h-16 border-t-[3px] border-[var(--border)] bg-white px-6 flex items-center justify-between z-10">
+
             {/* Left Stats */}
             <div className="flex items-center gap-6">
               <div className="flex flex-col">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Word Count</span>
-                <span className={`text-xl font-bold ${wordCount >= 150 ? 'text-emerald-600' : 'text-slate-800'}`}>
+                <span className="text-xs font-bold text-[var(--text-muted)]">Word Count</span>
+                <span
+                  className={`text-xl font-bold ${wordCount >= 150 ? 'text-[var(--skill-speaking)]' : 'text-[var(--foreground)]'}`}
+                  style={{ fontFamily: "var(--font-mono)" }}
+                >
                   {wordCount}
                 </span>
               </div>
-              <div className="w-px h-8 bg-slate-200"></div>
+              <div className="w-px h-8 bg-[var(--border)]"></div>
               <div className="flex flex-col">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Time Elapsed</span>
-                <span className="text-xl font-bold text-slate-800 font-mono">{formatTimeLeft(seconds)}</span>
+                <span className="text-xs font-bold text-[var(--text-muted)]">Time Elapsed</span>
+                <span
+                  className="text-xl font-bold text-[var(--foreground)]"
+                  style={{ fontFamily: "var(--font-mono)" }}
+                >
+                  {formatTimeLeft(seconds)}
+                </span>
               </div>
             </div>
 
             {/* Submit Button */}
-            <button 
+            <button
               onClick={handleOpenConfirmSubmit}
               disabled={grading}
-              className={`font-bold py-2.5 px-8 rounded-lg shadow-sm transition-all flex items-center gap-2 ${
-                grading 
-                  ? 'bg-slate-300 text-slate-500 cursor-not-allowed' 
-                  : 'bg-[#3B82F6] hover:bg-blue-700 text-white'
+              className={`font-bold py-2.5 px-8 rounded-full transition-all duration-150 ${
+                grading
+                  ? 'bg-[var(--border)] text-[var(--text-muted)] cursor-not-allowed'
+                  : 'bg-[var(--primary)] text-white border-b-[4px] border-[var(--primary-dark)] hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px]'
               }`}
+              style={{ fontFamily: "var(--font-sans)" }}
             >
-              <span>{grading ? 'Grading...' : 'Submit Answer'}</span>
-              {!grading && <span className="material-symbols-rounded text-sm">arrow_forward</span>}
+              {grading ? 'Grading...' : 'Submit Answer'}
             </button>
 
           </div>
@@ -1269,24 +1326,26 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
             <button
               type="button"
               onClick={() => setConfirmOpen(false)}
-              className="px-4 py-2 rounded-lg text-sm font-medium border border-slate-200 text-slate-600 hover:bg-slate-50"
+              className="px-5 py-2.5 rounded-full border-[2px] border-[var(--border)] text-[var(--text-body)] font-bold text-sm hover:-translate-y-0.5 hover:border-[var(--primary)] transition-all duration-150"
+              style={{ fontFamily: "var(--font-sans)" }}
             >
               Cancel
             </button>
             <button
               type="button"
               onClick={handleConfirmSubmit}
-              className="px-4 py-2 rounded-lg text-sm font-semibold bg-[#3B82F6] text-white hover:bg-blue-700"
+              className="px-5 py-2.5 rounded-full bg-[var(--primary)] text-white font-bold text-sm border-b-[4px] border-[var(--primary-dark)] hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px] transition-all duration-150"
+              style={{ fontFamily: "var(--font-sans)" }}
             >
               Submit
             </button>
           </div>
         }
       >
-        <p className="text-sm text-slate-700">
+        <p className="text-sm text-[var(--text-body)]">
           Are you sure you want to submit your writing for grading?
           <br />
-          <span className="text-slate-500">Word count: <strong>{wordCount}</strong> • Time: <strong>{formatTimeLeft(seconds)}</strong></span>
+          <span className="text-[var(--text-muted)]">Word count: <strong>{wordCount}</strong> -- Time: <strong>{formatTimeLeft(seconds)}</strong></span>
         </p>
       </Modal>
     </>

@@ -35,7 +35,7 @@
 
 ### Visual Rules for NEW Code (STRICT)
 - **No icons** on new/redesigned pages. No Material Symbols, no lucide-react, no react-icons, no emoji icons. Use text labels, numbers, or CSS shapes.
-- **No gradients** on new pages. Solid colors only.
+- **No gradients** on new pages — except `bg-gradient-to-b from-[var(--primary-light)] to-white` for welcome banners. Solid colors otherwise.
 - **No emojis** in UI content.
 - Prefer shadcn primitives. Keep formal, standard.
 
@@ -56,11 +56,11 @@
 | `--border` | `#E5E7EB` | Card/section borders |
 | `--destructive` | `#EF4444` | Error states |
 
-**Skill badge colors:**
-- Reading: `bg-blue-50 text-blue-700`
-- Listening: `bg-purple-50 text-purple-700`
-- Writing: `bg-amber-50 text-amber-700`
-- Speaking: `bg-emerald-50 text-emerald-700`
+**Skill badge colors (use CSS variables):**
+- Reading: `bg-[var(--skill-reading-light)] text-[var(--skill-reading)]`
+- Listening: `bg-[var(--skill-listening-light)] text-[var(--skill-listening)]`
+- Writing: `bg-[var(--skill-writing-light)] text-[var(--skill-writing)]`
+- Speaking: `bg-[var(--skill-speaking-light)] text-[var(--skill-speaking)]`
 
 ### Typography
 - **Font**: Fredoka — used for EVERYTHING (headings + body). Do NOT use Nunito, Inter, Merriweather, Geist, or any other font. Loaded globally in `layout.tsx`.
@@ -219,7 +219,7 @@ Via `useDeviceCapability` hook:
   - `effects/` — useDeviceCapability, useLandingEffectsStore, useScrollVelocity, useIdleDetection
   - `mascot/` — MascotWrapper, useMascotReactions
   - `interactions/` — InteractiveEffects, useConfetti
-  - `gamification/` — GamificationHUD, ProgressRing (currently unused)
+  - `gamification/` — GamificationHUD
   - ParticleCanvas.tsx, useMouseParallax.ts, GoogleButton.tsx (root level)
 - `src/components/` — Shared components
   - `LangfensHeader.tsx` — Main app header
