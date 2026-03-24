@@ -41,6 +41,49 @@
 
 > **Reality:** Legacy pages (home, analytics, achievements, leaderboard) still use Material Symbols, react-icons (Feather/Heroicons), and gradients on achievement tiers. Do NOT break them — apply the strict rules only to **new** code.
 
+### Icon Usage (Material Symbols)
+
+When icons are needed on legacy pages, use the **Material Icon Component pattern**:
+
+```tsx
+// Material Icon Component
+function Icon({ name, className = "" }: { name: string; className?: string }) {
+  return <span className={`material-symbols-rounded ${className}`}>{name}</span>;
+}
+
+// Usage
+<Icon name="emoji_events" className="text-2xl text-amber-500" />
+```
+
+**Rules:**
+- Use `material-symbols-rounded` class (loaded via `material-symbols-css` in AppShell)
+- Prefer `text-xl` size for standard icons, `text-2xl` for featured icons
+- Always include color class (`text-amber-500`, `text-slate-400`, etc.)
+- Use `aria-label` on parent elements when icon meaning is not obvious
+- Do NOT use text abbreviations (e.g., "S", "A", "T") as icons — use descriptive Material Icon names
+
+**Common Material Icons:**
+| Purpose | Icon Name |
+|---------|-----------|
+| Achievement/Trophy | `emoji_events` |
+| Streak/Fire | `local_fire_department` |
+| Score/Grade | `grade` |
+| Time/Schedule | `schedule` |
+| Tests/Quiz | `quiz` |
+| Skill/Psychology | `psychology` |
+| Check | `check_circle` |
+| Error | `error` |
+| Search | `search` |
+| Arrow Forward | `arrow_forward` |
+| Chevron Left/Right | `chevron_left`, `chevron_right` |
+| Close | `close` |
+| Lock | `lock` |
+| Star | `star` |
+
+**Icon containers:**
+- Standard: `w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center`
+- Small: `w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center`
+
 ### Colors
 | Token | Value | Usage |
 |-------|-------|-------|

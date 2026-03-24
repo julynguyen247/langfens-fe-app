@@ -1,4 +1,4 @@
-import { Attempt } from "../page";
+import type { Attempt } from "../types";
 
 export function formatDate(iso: string) {
   try {
@@ -60,5 +60,16 @@ export function mapSpeakingHistoryToAttempt(item: any): Attempt {
       1,
       Math.round(Number(item.timeSpentSeconds ?? 0) / 60)
     ),
+  };
+}
+
+export function normalizeAttemptItem(item: any): Attempt {
+  return {
+    id: item.attemptId ?? item.id ?? cryptoRandom(),
+    title: item.examTitle ?? item.title ?? "Practice Test",
+    skill: item.skill ?? "Reading",
+    dateISO: item.finishedAt ?? item.startedAt ?? new Date().toISOString(),
+    score: item.score ?? item.correctPercent,
+    durationMin: item.durationMin ?? Math.round((item.timeUsedSec ?? 0) / 60),
   };
 }
