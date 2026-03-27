@@ -25,14 +25,15 @@ import {
 
 import { EmptyState } from "@/components/ui/EmptyState";
 
-import { HeroHeader } from "./components/HeroHeader";
-import { SkillCards } from "./components/SkillCards";
-import { StatsBar } from "./components/StatsBar";
+import { HeroDashboard } from "./components/HeroDashboard";
+import { SkillProgressGrid } from "./components/SkillProgressGrid";
+import { StatsRow } from "./components/StatsRow";
+import { TodayGoal } from "./components/TodayGoal";
 import { StreakCalendar } from "./components/StreakCalendar";
-import { LeaderboardMini } from "./components/LeaderboardMini";
-import { AchievementTeaser } from "./components/AchievementTeaser";
+import { LeaderboardWidget } from "./components/LeaderboardWidget";
+import { AchievementsWidget } from "./components/AchievementsWidget";
 import { ContinueLearning } from "./components/ContinueLearning";
-import { RecentActivity } from "./components/RecentActivity";
+import { RecentActivityTimeline } from "./components/RecentActivityTimeline";
 
 // ====================================
 // TYPES
@@ -339,10 +340,10 @@ export default function Home() {
     return { ...defaults, ...analytics.skillScores };
   }, [analytics]);
 
-  // Convert attempts for RecentActivity
+  // Convert attempts for RecentActivityTimeline
   const recentActivityAttempts = useMemo(
     () =>
-      attempts.slice(0, 4).map((a) => ({
+      attempts.slice(0, 5).map((a) => ({
         id: a.id,
         title: a.title,
         skill: a.skill,
@@ -378,7 +379,7 @@ export default function Home() {
           <div className="lg:col-span-2 space-y-6">
             {/* Welcome Banner */}
             <motion.div {...motionProps}>
-              <HeroHeader
+              <HeroDashboard
                 userName={userName}
                 streak={streak}
                 level={gamification?.level ?? 0}
@@ -480,7 +481,7 @@ export default function Home() {
                     <SkeletonCard className="h-40" />
                   </div>
                 ) : (
-                  <SkillCards scores={skillScores} />
+                  <SkillProgressGrid scores={skillScores} />
                 )}
               </motion.div>
             )}
@@ -512,7 +513,7 @@ export default function Home() {
             {/* Stats Summary Row */}
             {analytics && analytics.totalAttempts > 0 && (
               <motion.div {...motionProps}>
-                <StatsBar
+                <StatsRow
                   totalAttempts={analytics.totalAttempts}
                   avgScore={analytics.avgScore}
                   totalStudyTimeMin={analytics.totalStudyTimeMin}
@@ -521,10 +522,20 @@ export default function Home() {
               </motion.div>
             )}
 
+            {/* Today Goal */}
+            {!isNewUser && gamification && (
+              <motion.div {...motionProps}>
+                <TodayGoal
+                  currentXP={gamification.currentXP}
+                  dailyTarget={gamification.dailyTarget}
+                />
+              </motion.div>
+            )}
+
             {/* Recent Activity */}
             {!isNewUser && !isLoading && (
               <motion.div {...motionProps}>
-                <RecentActivity attempts={recentActivityAttempts} />
+                <RecentActivityTimeline attempts={recentActivityAttempts} />
               </motion.div>
             )}
           </div>
@@ -550,7 +561,7 @@ export default function Home() {
               {loadingGamification ? (
                 <SkeletonCard className="h-44" />
               ) : leaderboardUsers.length > 0 ? (
-                <LeaderboardMini
+                <LeaderboardWidget
                   topUsers={leaderboardUsers}
                   currentUserId={userId}
                   currentUserRank={currentUserRank}
@@ -563,7 +574,7 @@ export default function Home() {
               {loadingGamification ? (
                 <SkeletonCard className="h-36" />
               ) : achievementsList.length > 0 ? (
-                <AchievementTeaser achievements={achievementsList} />
+                <AchievementsWidget achievements={achievementsList} />
               ) : null}
             </motion.div>
           </div>
