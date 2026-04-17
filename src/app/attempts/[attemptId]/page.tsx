@@ -15,6 +15,9 @@ import { SkillProgressBar } from "@/components/ui/SkillProgressBar";
 import { SkillBadge } from "@/components/ui/SkillBadge";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
+import { WritingComparativeTab } from './components/writing/WritingComparativeTab';
+import { GrammarBatchView } from './components/grammar/GrammarBatchView';
+import { useGrammarBatchExplain } from '@/hooks/useGrammarExplain';
 
 type PageSource = "attempt" | "writing" | "speaking";
 
@@ -138,6 +141,7 @@ export default function AttemptResultPage() {
     "READING" | "LISTENING" | "WRITING" | "SPEAKING"
   >("READING");
   const [showModel, setShowModel] = useState(false);
+  const [writingTab, setWritingTab] = useState<'grading' | 'comparative' | 'grammar'>('grading');
 
   useEffect(() => {
     (async () => {
@@ -980,6 +984,45 @@ export default function AttemptResultPage() {
               />
             )}
           </div>
+
+          {/* Writing Analysis Tabs */}
+          <motion.div
+            className="flex justify-center rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-white overflow-hidden"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 1.0, ease: 'easeOut' }}
+          >
+            {(['grading', 'comparative', 'grammar'] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setWritingTab(tab)}
+                className={`flex-1 px-6 py-4 text-sm font-bold transition-all duration-150 ${
+                  writingTab === tab
+                    ? 'text-[var(--primary)] border-b-[3px] border-[var(--primary)] bg-[var(--primary-light)]'
+                    : 'text-[var(--text-muted)] hover:text-[var(--foreground)] border-b-[3px] border-transparent'
+                }`}
+                style={{ fontFamily: 'var(--font-sans)' }}
+              >
+                {tab === 'grading' ? 'Grading' : tab === 'comparative' ? 'Comparative' : 'Grammar'}
+              </button>
+            ))}
+          </motion.div>
+
+          {/* Tab Content */}
+          {writingTab === 'comparative' && (
+            <WritingComparativeTab submissionId={attemptId || ''} />
+          )}
+          {writingTab === 'grammar' && (
+            <GrammarBatchView
+              results={[]}
+              errorTexts={[]}
+              isLoading={false}
+              isError={false}
+              failedCount={0}
+              totalCount={0}
+              onRetry={() => {}}
+            />
+          )}
 
           {/* Footer */}
           <div className="flex justify-center gap-4 pt-4 pb-10">
