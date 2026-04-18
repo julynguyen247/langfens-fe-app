@@ -1,3 +1,4 @@
+// TODO: Wire to API — currently using mock data
 import { RoleplayScenario } from "@/types/speaking";
 
 export const MOCK_SCENARIOS: RoleplayScenario[] = [

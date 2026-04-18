@@ -41,7 +41,7 @@ export function useRoleplaySession({
 
       try {
         const response = await fetch(
-          `/api/v1/speaking/roleplay/scenarios/${scenario.slug}/chat`,
+          `/api/speaking/roleplay/scenarios/${scenario.slug}/chat`,
           {
             method: "POST",
             headers: {

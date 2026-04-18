@@ -21,7 +21,7 @@ export async function GET(
   }
 
   const gatewayUrl = process.env.NEXT_PUBLIC_GATEWAY_URL || 'http://localhost:5000';
-  const backendUrl = `${gatewayUrl}/api-writing/attempts/${attemptId}/compare`;
+  const backendUrl = `${gatewayUrl}/api-writing/writing/${attemptId}/comparison`;
 
   try {
     const response = await fetch(backendUrl, {

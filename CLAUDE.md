@@ -27,7 +27,6 @@
 - Use Next.js `<Image>` for all images
 - Use Framer Motion for app page animations
 - Use GSAP for landing page scroll animations
-- Legacy: `src/components/Button.tsx`, `src/components/Input.tsx` — do NOT use in new code
 
 ---
 
@@ -223,7 +222,6 @@ Via `useDeviceCapability` hook:
   - ParticleCanvas.tsx, useMouseParallax.ts, GoogleButton.tsx (root level)
 - `src/components/` — Shared components
   - `LangfensHeader.tsx` — Main app header
-  - `Button.tsx`, `Input.tsx` — Legacy (do not use in new code)
 - `src/components/ui/` — shadcn/ui: badge, button, card, separator
 - `src/types/` — TypeScript types
 - `src/utils/` — API services (`api.customize.ts`, `api.ts`, `audio.ts`)

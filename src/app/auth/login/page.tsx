@@ -43,7 +43,6 @@ export default function Login() {
     try {
       const res = await login(email, password);
       if (res && res.data) {
-        localStorage.setItem("access_token", res.data.data);
         router.replace("/home");
         return;
       }

@@ -20,7 +20,7 @@ export function useRoleplayScenarios(): UseRoleplayScenariosReturn {
     setError(null);
 
     try {
-      const response = await fetch("/api/v1/speaking/roleplay/scenarios");
+      const response = await fetch("/api/speaking/roleplay/scenarios");
 
       if (!response.ok) {
         throw new Error(`Failed to fetch scenarios: ${response.status}`);

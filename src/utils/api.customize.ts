@@ -1,4 +1,5 @@
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from "axios";
+import { getToken as getCookieToken, setTokenCookie } from "./cookie";
 
 type ServiceKey =
   | "auth"
@@ -7,7 +8,6 @@ type ServiceKey =
   | "vocabulary"
   | "speaking"
   | "writing"
-  | "chatbot"
   | "dictionary"
   | "gamification"
   | "analytics"
@@ -26,7 +26,6 @@ const BASE_URL: Record<ServiceKey, string> = {
   vocabulary: buildBase("/api-vocabulary"),
   speaking: buildBase("/api-speaking"),
   writing: buildBase("/api-writing"),
-  chatbot: buildBase("/api-chatbot"),
   dictionary: buildBase("/api-dictionary"),
   gamification: buildBase("/api-gamification"),
   analytics: buildBase("/api-analytics"),
@@ -35,13 +34,10 @@ const BASE_URL: Record<ServiceKey, string> = {
   course: buildBase("/api-course"),
 };
 
-const getToken = () =>
-  typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
+const getToken = () => getCookieToken();
 
 const setToken = (t: string | null) => {
-  if (typeof window === "undefined") return;
-  if (t) localStorage.setItem("access_token", t);
-  else localStorage.removeItem("access_token");
+  setTokenCookie(t);
 };
 
 // Raw axios instance for refresh — no interceptors, prevents infinite loop
@@ -61,7 +57,7 @@ async function refreshToken(): Promise<string | null> {
     .post("/auth/refresh")
     .then((r) => {
       const newToken: string | null = r.data?.data ?? null;
-      setToken(newToken);
+      setTokenCookie(newToken);
       return newToken;
     })
     .catch(() => {
@@ -127,7 +123,6 @@ export const apisAttempt = apis.attempt;
 export const apisVocabulary = apis.vocabulary;
 export const apisSpeaking = apis.speaking;
 export const apisWriting = apis.writing;
-export const apisChatbot = apis.chatbot;
 export const apisDictionary = apis.dictionary;
 export const apisGamification = apis.gamification;
 export const apisAnalytics = apis.analytics;

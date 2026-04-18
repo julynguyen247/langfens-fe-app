@@ -1,6 +1,7 @@
 "use client";
 
 import { getMe, logout } from "@/utils/api";
+import { removeTokenCookie } from "@/utils/cookie";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -77,7 +78,7 @@ export default function LangfensHeader() {
     try {
       setRouteLoading(true);
       await logout();
-      localStorage.removeItem("access_token");
+      removeTokenCookie();
       router.replace("/auth/login");
     } catch {
       setRouteLoading(false);
