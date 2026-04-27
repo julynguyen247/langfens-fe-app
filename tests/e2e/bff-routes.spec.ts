@@ -5,7 +5,7 @@ test.describe("BFF route smoke", () => {
   test("grammar/explain BFF proxies to ai-service", async ({ request }) => {
     const gateway = process.env.GATEWAY_URL ?? "http://localhost:5000";
     const login = await request.post(
-      `${gateway}/api-auth/api/auth/login`,
+      `${gateway}/api-auth/auth/login`,
       { data: { email: TEST_EMAIL, password: TEST_PASSWORD } },
     );
     expect(login.ok(), `login: ${login.status()}`).toBeTruthy();

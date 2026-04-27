@@ -23,7 +23,7 @@ export async function loginViaApi(
   page: Page,
   gateway = process.env.GATEWAY_URL ?? "http://localhost:5000",
 ): Promise<void> {
-  const resp = await page.request.post(`${gateway}/api-auth/api/auth/login`, {
+  const resp = await page.request.post(`${gateway}/api-auth/auth/login`, {
     data: { email: TEST_EMAIL, password: TEST_PASSWORD },
   });
   if (!resp.ok()) {
