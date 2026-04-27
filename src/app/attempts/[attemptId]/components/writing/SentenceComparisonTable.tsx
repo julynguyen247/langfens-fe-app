@@ -35,6 +35,7 @@ function ComparisonRow({ sc, index }: { sc: SentenceComparison; index: number })
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.1, ease: 'easeOut' }}
+      data-testid="sentence-comparison-row"
     >
       <div className="grid grid-cols-2 gap-4">
         <div>
@@ -125,7 +126,7 @@ export function SentenceComparisonTable({ comparisons }: Props) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" data-testid="sentence-comparison-table">
       <h3
         className="text-lg font-bold text-[var(--foreground)]"
         style={{ fontFamily: 'var(--font-sans)' }}

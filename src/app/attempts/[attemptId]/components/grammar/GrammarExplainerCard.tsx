@@ -31,6 +31,7 @@ export function GrammarExplainerCard({ data, errorText, defaultExpanded = false 
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
+      data-testid="grammar-explainer-card"
     >
       <button
         onClick={() => setExpanded(!expanded)}

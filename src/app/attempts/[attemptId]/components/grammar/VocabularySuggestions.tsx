@@ -25,7 +25,7 @@ export function VocabularySuggestions({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" data-testid="vocabulary-suggestions">
       <h3
         className="text-lg font-bold text-[var(--foreground)]"
         style={{ fontFamily: 'var(--font-sans)' }}

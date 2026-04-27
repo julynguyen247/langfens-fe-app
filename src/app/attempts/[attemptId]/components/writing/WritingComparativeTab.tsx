@@ -64,6 +64,7 @@ export function WritingComparativeTab({ submissionId }: Props) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
+      data-testid="writing-comparative-tab"
     >
       <BandProgressIndicator currentBand={data.step_up_band} targetBand={data.target_band} />
 
