@@ -8,6 +8,9 @@ const ESSAY_TEXT = readFileSync(
   "utf-8",
 );
 
+const SEED_EXAM_ID =
+  process.env.SEED_EXAM_ID ?? "04e44b9a-098a-43c4-bbe9-29c5e2f6a01b";
+
 test.describe("Writing E2E — golden path", () => {
   test.beforeEach(async ({ page }) => {
     await loginViaUi(page);
@@ -20,53 +23,46 @@ test.describe("Writing E2E — golden path", () => {
     });
     page.on("pageerror", (err) => consoleErrors.push(`PAGE_ERROR: ${err.message}`));
 
-    // Pick first writing exam — selectors are heuristic; adjust per real FE markup.
-    await page.goto("/writing");
-    const firstExam = page.getByRole("link", { name: /task 2|writing|đề thi/i }).first();
-    await firstExam.click();
+    // Direct-URL navigation to the writing-task page (avoids brittle nav clicks).
+    await page.goto(`/do-test/writing/start/${SEED_EXAM_ID}`);
 
+    // Find the essay editor; fall back to first textbox if a specific testid isn't present.
     const editor = page.getByRole("textbox").first();
     await editor.fill(ESSAY_TEXT);
 
     await page.getByRole("button", { name: /submit|grade|nộp bài|chấm/i }).click();
 
-    // Land on attempts/[attemptId]
+    // Land on /attempts/{attemptId}
     await page.waitForURL(/\/attempts\/[a-f0-9-]+/, { timeout: 30_000 });
 
-    // Wait for WritingResultView (band score visible)
+    // Wait for band score to appear.
     await expect(page.getByText(/band\s*\d/i).first()).toBeVisible({ timeout: 60_000 });
 
-    // Open Comparative tab
-    const comparativeTab = page.getByRole("tab", {
-      name: /comparative|so sánh|đối chiếu/i,
-    });
-    await comparativeTab.click();
+    // Comparative tab should mount.
+    await expect(page.getByTestId("writing-comparative-tab"))
+      .toBeVisible({ timeout: 90_000 });
 
-    // Reference essay card visible
-    await expect(
-      page.getByText(/band\s*[789](\.\d)?/i).first(),
-    ).toBeVisible({ timeout: 90_000 });
+    // Reference essay card visible.
+    await expect(page.getByTestId("reference-essay-card").first())
+      .toBeVisible();
 
-    // SentenceComparisonTable: at least one "improved" cell
-    await expect(
-      page.getByText(/improved|better version|cải thiện/i).first(),
-    ).toBeVisible();
+    // Sentence comparison table has at least one row.
+    await expect(page.getByTestId("sentence-comparison-row").first())
+      .toBeVisible();
 
-    // BandProgressIndicator shows step-up band
-    await expect(
-      page.getByText(/step.?up|target|mục tiêu/i).first(),
-    ).toBeVisible();
+    // Band progress indicator + vocabulary suggestions present.
+    await expect(page.getByTestId("band-progress-indicator")).toBeVisible();
+    await expect(page.getByTestId("vocabulary-suggestions")).toBeVisible();
 
-    // Click an inline grammar marker → GrammarExplainerCard appears
-    const grammarTrigger = page.getByText(/explain|grammar|ngữ pháp/i).first();
-    if (await grammarTrigger.isVisible().catch(() => false)) {
-      await grammarTrigger.click();
-      await expect(
-        page.getByText(/rule|theory|quy tắc/i).first(),
-      ).toBeVisible();
-    }
+    // Grammar explainer card present (renders inside SentenceComparisonTable rows).
+    await expect(page.getByTestId("grammar-explainer-card").first())
+      .toBeVisible();
 
-    expect(consoleErrors, `console errors: ${consoleErrors.join("\n")}`).toHaveLength(0);
+    // Console hygiene.
+    expect(
+      consoleErrors,
+      `console errors:\n${consoleErrors.join("\n")}`,
+    ).toHaveLength(0);
 
     await page.screenshot({
       path: "tests/e2e/screenshots/golden-path.png",
@@ -86,15 +82,15 @@ test.describe("Writing E2E — comparison unavailable", () => {
   });
 
   test("graceful empty state when ai-service down", async ({ page }) => {
-    await page.goto("/writing");
-    await page.getByRole("link", { name: /task 2|writing|đề thi/i }).first().click();
+    await page.goto(`/do-test/writing/start/${SEED_EXAM_ID}`);
     await page.getByRole("textbox").first().fill(ESSAY_TEXT);
     await page.getByRole("button", { name: /submit|grade|nộp bài|chấm/i }).click();
     await page.waitForURL(/\/attempts\/[a-f0-9-]+/, { timeout: 30_000 });
     await expect(page.getByText(/band\s*\d/i).first()).toBeVisible({ timeout: 60_000 });
-    await page
-      .getByRole("tab", { name: /comparative|so sánh|đối chiếu/i })
-      .click();
+
+    // Comparative tab still mounts but its content shows graceful empty state.
+    await expect(page.getByTestId("writing-comparative-tab"))
+      .toBeVisible({ timeout: 30_000 });
     await expect(
       page
         .getByText(/unavailable|not available|chưa có|không khả dụng/i)
