@@ -40,6 +40,8 @@ export type WritingCriterion = {
 export type WritingDetail = {
   submissionId: string;
   taskText: string;
+  imageUrl?: string;
+  examType?: string;
   essayRaw: string;
   essayNormalized: string;
   wordCount: number;

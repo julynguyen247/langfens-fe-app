@@ -1,9 +1,19 @@
+import path from "node:path";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   // React strict mode helps identify potential problems
   reactStrictMode: true,
-  
+
+  // Pin both Turbopack and Webpack workspace roots so neither inferring
+  // mechanism walks up to /home/khoa/Projects/langfens/ (where a stray
+  // package-lock.json without a sibling package.json lives) and loses track
+  // of node_modules during dev.
+  turbopack: {
+    root: path.resolve(__dirname),
+  },
+  outputFileTracingRoot: path.resolve(__dirname),
+
   // Compiler optimizations
   compiler: {
     // Remove console logs in production

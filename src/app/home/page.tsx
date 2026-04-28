@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
 import {
@@ -39,16 +39,6 @@ import { RecentActivityTimeline } from "./components/RecentActivityTimeline";
 // ====================================
 // TYPES
 // ====================================
-export type Attempt = {
-  id: string;
-  title: string;
-  skill: "Reading" | "Listening" | "Writing" | "Speaking";
-  dateISO: string;
-  score?: number;
-  durationMin: number;
-};
-
-// Types
 import type {
   Attempt,
   PlacementStatus,
@@ -597,17 +587,6 @@ export default function Home() {
 // ====================================
 // HELPER FUNCTIONS
 // ====================================
-function normalizeAttemptItem(item: any): Attempt {
-  return {
-    id: item.attemptId ?? item.id ?? "",
-    title: item.examTitle ?? item.title ?? "Practice Test",
-    skill: item.skill ?? "Reading",
-    dateISO: item.finishedAt ?? item.startedAt ?? new Date().toISOString(),
-    score: item.score ?? item.correctPercent,
-    durationMin: item.durationMin ?? Math.round((item.timeUsedSec ?? 0) / 60),
-  };
-}
-
 function buildAttemptUrl(a: Attempt) {
   if (a.skill === "Writing") return `/attempts/${a.id}?source=writing`;
   if (a.skill === "Speaking") return `/attempts/${a.id}?source=speaking`;

@@ -186,6 +186,16 @@ export function WritingResultView({
               </span>
             )}
           </p>
+          {writingDetail.imageUrl && (
+            <div className="mt-4">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={writingDetail.imageUrl}
+                alt="Writing task chart"
+                className="w-full rounded-2xl border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)]"
+              />
+            </div>
+          )}
         </motion.div>
 
         {/* Feedback Body */}

@@ -183,6 +183,8 @@ export function useAttemptResult(attemptId: string, source: PageSource) {
           const detail: WritingDetail = {
             submissionId: String(raw.submissionId ?? attemptId),
             taskText: raw.taskText ?? "",
+            imageUrl: raw.imageUrl ?? undefined,
+            examType: raw.examType ?? undefined,
             essayRaw: raw.essayRaw ?? "",
             essayNormalized: raw.essayNormalized ?? "",
             wordCount: Number(raw.wordCount ?? 0),

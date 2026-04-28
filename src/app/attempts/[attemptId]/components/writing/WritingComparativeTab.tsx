@@ -12,9 +12,9 @@ interface Props {
   submissionId: string;
 }
 
-function LoadingSkeleton() {
+function LoadingSkeleton({ caption }: { caption?: string }) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="writing-comparative-skeleton">
       <div className="rounded-[2rem] border-[3px] border-[var(--border)] bg-white p-6 animate-pulse">
         <div className="h-6 w-48 bg-gray-200 rounded mb-4" />
         <div className="h-4 rounded-full bg-gray-200" />
@@ -25,14 +25,43 @@ function LoadingSkeleton() {
           <div className="h-4 w-1/2 bg-gray-200 rounded" />
         </div>
       ))}
+      {caption && (
+        <p
+          className="text-sm text-[var(--text-muted)] text-center"
+          style={{ fontFamily: 'var(--font-sans)' }}
+          data-testid="writing-comparative-polling-caption"
+        >
+          {caption}
+        </p>
+      )}
     </div>
   );
 }
 
 export function WritingComparativeTab({ submissionId }: Props) {
-  const { data, isLoading, isError, refetch } = useWritingCompare(submissionId);
+  const { data, isLoading, isPolling, isError, isTimeout, refetch } = useWritingCompare(submissionId);
 
   if (isLoading) return <LoadingSkeleton />;
+  if (isPolling) return <LoadingSkeleton caption="Đang chấm so sánh, vui lòng đợi…" />;
+
+  if (isTimeout) {
+    return (
+      <div
+        className="rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-white p-8 text-center"
+        data-testid="writing-comparative-timeout"
+      >
+        <p className="text-[var(--text-body)] font-bold mb-2">Phân tích so sánh đang mất nhiều thời gian hơn dự kiến.</p>
+        <p className="text-sm text-[var(--text-muted)] mb-4">Vui lòng thử lại sau giây lát.</p>
+        <button
+          onClick={refetch}
+          className="px-6 py-2.5 rounded-full bg-[var(--primary)] text-white font-bold text-sm border-b-[4px] border-[var(--primary-dark)] hover:-translate-y-0.5 active:translate-y-[2px] active:border-b-[2px] transition-all duration-150"
+          style={{ fontFamily: 'var(--font-sans)' }}
+        >
+          Thử lại
+        </button>
+      </div>
+    );
+  }
 
   if (isError) {
     return (

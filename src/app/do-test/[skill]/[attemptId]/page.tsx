@@ -1231,6 +1231,18 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
               </p>
             </div>
 
+            {/* Task Image (Task 1 chart/graph/map) */}
+            {(exam as any)?.imageUrl && (
+              <div className="mt-6">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={(exam as any).imageUrl}
+                  alt={`${examTitle} chart`}
+                  className="w-full rounded-2xl border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)]"
+                />
+              </div>
+            )}
+
             {/* Instructions Footer */}
             <div className="mt-8 pt-6 border-t-[2px] border-[var(--border)]">
               <p
