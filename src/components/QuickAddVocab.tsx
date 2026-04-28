@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiX, FiPlus, FiCheck, FiLoader, FiBookOpen, FiVolume2 } from "react-icons/fi";
 import { enrichVocabulary } from "@/utils/api";
 
 type EnrichedWord = {
@@ -55,7 +54,7 @@ export default function QuickAddVocab({ isOpen, onClose, initialWord = "", onAdd
     debounceRef.current = setTimeout(async () => {
       setLoading(true);
       setError(null);
-      
+
       try {
         const data = await enrichVocabulary(word);
         setEnrichedData(data);
@@ -114,19 +113,23 @@ export default function QuickAddVocab({ isOpen, onClose, initialWord = "", onAdd
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ duration: 0.2 }}
-          className="relative w-full max-w-md mx-4 bg-white rounded-xl border border-slate-200 shadow-xl"
+          className="relative w-full max-w-md mx-4 rounded-[1.5rem] border-[3px] shadow-[0_4px_0_rgba(0,0,0,0.08)]"
+          style={{
+            backgroundColor: "var(--background)",
+            borderColor: "var(--border)",
+          }}
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-slate-100">
+          <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: "var(--border)" }}>
             <div className="flex items-center gap-2">
-              <FiBookOpen className="w-5 h-5 text-blue-500" />
-              <span className="font-semibold text-slate-900">Thêm từ vựng nhanh</span>
+              <span className="font-semibold" style={{ color: "var(--foreground)" }}>Thêm từ vựng nhanh</span>
             </div>
             <button
               onClick={handleClose}
-              className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition"
+              className="p-1.5 rounded-lg transition font-bold text-sm"
+              style={{ color: "var(--text-muted)" }}
             >
-              <FiX className="w-5 h-5" />
+              x
             </button>
           </div>
 
@@ -134,7 +137,7 @@ export default function QuickAddVocab({ isOpen, onClose, initialWord = "", onAdd
           <div className="p-4 space-y-4">
             {/* Word Input */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
+              <label className="block text-sm font-medium mb-1" style={{ color: "var(--foreground)" }}>
                 Nhập từ vựng
               </label>
               <input
@@ -143,33 +146,39 @@ export default function QuickAddVocab({ isOpen, onClose, initialWord = "", onAdd
                 value={word}
                 onChange={(e) => setWord(e.target.value)}
                 placeholder="Nhập từ tiếng Anh..."
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-900"
+                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2"
+                style={{
+                  borderColor: "var(--border)",
+                  color: "var(--foreground)",
+                  // @ts-ignore
+                  "--tw-ring-color": "var(--primary)",
+                } as React.CSSProperties}
               />
             </div>
 
             {/* Loading */}
             {loading && (
               <div className="flex items-center justify-center py-6">
-                <FiLoader className="w-6 h-6 text-blue-500 animate-spin" />
-                <span className="ml-2 text-sm text-slate-500">Đang lấy thông tin từ AI...</span>
+                <div className="w-6 h-6 border-2 rounded-full animate-spin" style={{ borderColor: "var(--primary-light)", borderTopColor: "var(--primary)" }} />
+                <span className="ml-2 text-sm" style={{ color: "var(--text-muted)" }}>Đang lấy thông tin từ AI...</span>
               </div>
             )}
 
             {/* Error */}
             {error && (
-              <div className="text-center py-4 text-red-500 text-sm">
+              <div className="text-center py-4 text-sm" style={{ color: "var(--destructive)" }}>
                 {error}
               </div>
             )}
 
             {/* Enriched Data Preview */}
             {enrichedData && !loading && (
-              <div className="space-y-3 p-3 bg-slate-50 rounded-lg border border-slate-100">
+              <div className="space-y-3 p-3 rounded-lg border" style={{ backgroundColor: "var(--background)", borderColor: "var(--border)" }}>
                 {/* Word & IPA */}
                 <div className="flex items-center gap-2">
-                  <span className="text-lg font-semibold text-slate-900">{enrichedData.word}</span>
+                  <span className="text-lg font-semibold" style={{ color: "var(--foreground)" }}>{enrichedData.word}</span>
                   {enrichedData.partOfSpeech && (
-                    <span className="text-xs px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded">
+                    <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: "var(--primary-light)", color: "var(--primary)" }}>
                       {enrichedData.partOfSpeech}
                     </span>
                   )}
@@ -181,28 +190,28 @@ export default function QuickAddVocab({ isOpen, onClose, initialWord = "", onAdd
                 </div>
 
                 {enrichedData.ipa && (
-                  <div className="flex items-center gap-2 text-sm text-slate-500">
+                  <div className="flex items-center gap-2 text-sm" style={{ color: "var(--text-muted)" }}>
                     <span>/{enrichedData.ipa}/</span>
-                    <button className="p-1 text-slate-400 hover:text-blue-500 transition">
-                      <FiVolume2 className="w-4 h-4" />
+                    <button className="p-1 transition text-xs" style={{ color: "var(--text-muted)" }}>
+                      Sound
                     </button>
                   </div>
                 )}
 
                 {/* Definition */}
                 <div className="space-y-1">
-                  <div className="text-sm font-medium text-slate-600">Định nghĩa</div>
-                  <div className="text-sm text-slate-700">{enrichedData.definition}</div>
+                  <div className="text-sm font-medium" style={{ color: "var(--text-muted)" }}>Định nghĩa</div>
+                  <div className="text-sm" style={{ color: "var(--foreground)" }}>{enrichedData.definition}</div>
                   {enrichedData.definitionVi && (
-                    <div className="text-sm text-blue-600">{enrichedData.definitionVi}</div>
+                    <div className="text-sm" style={{ color: "var(--primary)" }}>{enrichedData.definitionVi}</div>
                   )}
                 </div>
 
                 {/* Example */}
                 {enrichedData.example && (
                   <div className="space-y-1">
-                    <div className="text-sm font-medium text-slate-600">Ví dụ</div>
-                    <div className="text-sm text-slate-500 italic">"{enrichedData.example}"</div>
+                    <div className="text-sm font-medium" style={{ color: "var(--text-muted)" }}>Ví dụ</div>
+                    <div className="text-sm italic" style={{ color: "var(--text-muted)" }}>"{enrichedData.example}"</div>
                   </div>
                 )}
 
@@ -210,7 +219,7 @@ export default function QuickAddVocab({ isOpen, onClose, initialWord = "", onAdd
                 {enrichedData.synonyms && enrichedData.synonyms.length > 0 && (
                   <div className="flex flex-wrap gap-1">
                     {enrichedData.synonyms.map((syn, idx) => (
-                      <span key={idx} className="text-xs px-2 py-0.5 bg-slate-200 text-slate-600 rounded">
+                      <span key={idx} className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: "var(--primary-light)", color: "var(--text-muted)" }}>
                         {syn}
                       </span>
                     ))}
@@ -221,28 +230,29 @@ export default function QuickAddVocab({ isOpen, onClose, initialWord = "", onAdd
           </div>
 
           {/* Footer */}
-          <div className="p-4 border-t border-slate-100">
+          <div className="p-4 border-t" style={{ borderColor: "var(--border)" }}>
             <button
               onClick={handleAdd}
               disabled={!enrichedData || loading || added}
-              className={`w-full py-2.5 font-medium rounded-lg transition flex items-center justify-center gap-2 ${
+              className={`w-full py-2.5 font-medium rounded-full transition flex items-center justify-center gap-2 ${
                 added
                   ? "bg-emerald-500 text-white"
                   : enrichedData && !loading
-                  ? "bg-blue-500 hover:bg-blue-600 text-white"
-                  : "bg-slate-100 text-slate-400 cursor-not-allowed"
+                  ? "text-white border-b-[4px]"
+                  : "cursor-not-allowed"
               }`}
+              style={
+                added
+                  ? {}
+                  : enrichedData && !loading
+                  ? { backgroundColor: "var(--primary)", borderBottomColor: "var(--primary-dark)" }
+                  : { backgroundColor: "var(--border)", color: "var(--text-muted)" }
+              }
             >
               {added ? (
-                <>
-                  <FiCheck className="w-4 h-4" />
-                  Đã thêm!
-                </>
+                "Đã thêm!"
               ) : (
-                <>
-                  <FiPlus className="w-4 h-4" />
-                  Thêm vào Flashcard
-                </>
+                "+ Thêm vào Flashcard"
               )}
             </button>
           </div>

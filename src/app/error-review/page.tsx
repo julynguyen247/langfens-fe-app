@@ -7,11 +7,6 @@ import { getWrongAnswers, getQuestionTypes } from "@/utils/api";
 import ReactMarkdown from "react-markdown";
 import PenguinLottie from "@/components/PenguinLottie";
 
-// Material Icon Component
-function Icon({ name, className = "" }: { name: string; className?: string }) {
-  return <span className={`material-symbols-rounded ${className}`}>{name}</span>;
-}
-
 type WrongAnswer = {
   answerId: string;
   questionId: string;
@@ -43,11 +38,11 @@ const DATE_RANGES = [
   { label: "All time", days: 365 },
 ];
 
-const SKILL_ICONS: Record<string, string> = {
-  READING: "menu_book",
-  LISTENING: "headphones",
-  WRITING: "edit_note",
-  SPEAKING: "mic",
+const SKILL_BADGE_STYLES: Record<string, string> = {
+  READING: "bg-[var(--skill-reading-light)] text-[var(--skill-reading)] border-[var(--skill-reading-border)]",
+  LISTENING: "bg-[var(--skill-listening-light)] text-[var(--skill-listening)] border-[var(--skill-listening-border)]",
+  WRITING: "bg-[var(--skill-writing-light)] text-[var(--skill-writing)] border-[var(--skill-writing-border)]",
+  SPEAKING: "bg-[var(--skill-speaking-light)] text-[var(--skill-speaking)] border-[var(--skill-speaking-border)]",
 };
 
 const QUESTION_TYPE_LABELS: Record<string, string> = {
@@ -66,41 +61,34 @@ const QUESTION_TYPE_LABELS: Record<string, string> = {
   "MAP_LABEL": "Map Labelling",
 };
 
-// Clean and format correct answer based on question type
 function formatCorrectAnswer(raw: string | undefined, questionType: string): string {
   if (!raw || raw.trim() === "") {
     return "(No answer key)";
   }
-  
+
   let clean = String(raw)
-    // Remove prefixes like "feature-q1:", "blank-1:", "label-A:" etc.
     .replace(/^(feature|blank|label|heading|item|q|answer|key)[-_]?\d*:\s*/gi, "")
-    // Remove general "key:" prefix pattern 
     .replace(/^[\w-]+:\s*/, "")
     .trim();
-  
-  // Handle "A / A" or "B / B" patterns - take first value
+
   if (clean.includes(" / ")) {
     clean = clean.split(" / ")[0].trim();
   }
-  
-  // Handle "A/A" without spaces (duplicate)
+
   if (/^([A-Za-z0-9]+)\/\1$/i.test(clean)) {
     clean = clean.split("/")[0].trim();
   }
-  
-  // Format based on question type
+
   const type = questionType.toUpperCase();
-  
+
   if (type.includes("MATCHING") && clean.length <= 3) {
-    // For matching types with short keys (A, B, iv, vii), add context
     if (/^[ivx]+$/i.test(clean)) {
       return `Heading ${clean}`;
     } else if (/^[A-H]$/i.test(clean)) {
       return `Paragraph ${clean}`;
     }
   }
-  
+
   return clean || "(No answer key)";
 }
 
@@ -112,17 +100,14 @@ export default function ErrorReviewPage() {
   const [data, setData] = useState<WrongAnswersResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [questionTypes, setQuestionTypes] = useState<string[]>([]);
-  
-  // Filters
+
   const [skillFilter, setSkillFilter] = useState<string>("");
   const [typeFilter, setTypeFilter] = useState<string>("");
   const [dateRange, setDateRange] = useState(30);
   const [page, setPage] = useState(1);
-  
-  // Modal
+
   const [selectedAnswer, setSelectedAnswer] = useState<WrongAnswer | null>(null);
 
-  // Fetch question types
   useEffect(() => {
     async function fetchTypes() {
       try {
@@ -136,14 +121,13 @@ export default function ErrorReviewPage() {
     fetchTypes();
   }, []);
 
-  // Fetch wrong answers
   useEffect(() => {
     async function fetchErrors() {
       try {
         setLoading(true);
         const fromDate = new Date();
         fromDate.setDate(fromDate.getDate() - dateRange);
-        
+
         const res = await getWrongAnswers({
           skill: skillFilter || undefined,
           questionType: typeFilter || undefined,
@@ -151,7 +135,7 @@ export default function ErrorReviewPage() {
           page,
           pageSize: 20,
         });
-        
+
         const result = (res as any).data?.data;
         setData(result);
       } catch (e) {
@@ -175,85 +159,80 @@ export default function ErrorReviewPage() {
   const maxPage = Math.ceil(totalErrors / 20) || 1;
 
   return (
-    <div className="min-h-screen w-full bg-[#F8FAFC]">
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* =============================================
-            PAGE HEADER
-        ============================================= */}
+    <div className="min-h-screen w-full bg-[var(--background)]">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* PAGE HEADER */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
-                <Icon name="error" className="text-2xl text-red-600" />
-              </div>
-              <div>
-                <h1 className="font-serif text-3xl font-bold text-slate-900">
-                  Error Review
-                </h1>
-                <p className="text-slate-500 text-sm mt-1">
-                  Review wrong answers to avoid repeating mistakes
-                </p>
-              </div>
+            <div>
+              <h1
+                className="text-3xl sm:text-4xl font-extrabold text-[var(--foreground)]"
+                style={{ fontFamily: "var(--font-sans)" }}
+              >
+                Error Review
+              </h1>
+              <p className="text-[var(--text-muted)] text-sm mt-2">
+                Review wrong answers to avoid repeating mistakes
+              </p>
             </div>
-            <div className="text-right">
-              <div className="text-2xl font-bold text-red-600">{totalErrors}</div>
-              <div className="text-xs text-slate-500">wrong answers</div>
+            <div className="bg-red-50 border-[3px] border-red-200 rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] px-5 py-3 text-center">
+              <div
+                className="text-2xl font-extrabold text-[var(--destructive)]"
+                style={{ fontFamily: "var(--font-mono)" }}
+              >
+                {totalErrors}
+              </div>
+              <div className="text-xs font-bold text-[var(--text-muted)]">wrong answers</div>
             </div>
           </div>
         </motion.div>
 
-        {/* =============================================
-            STATS BY TYPE
-        ============================================= */}
+        {/* STATS BY TYPE */}
         {data?.statsByType && Object.keys(data.statsByType).length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
-            className="bg-white rounded-xl border border-slate-200 p-4 mb-6 shadow-sm"
+            className="bg-white border-[3px] border-[var(--border)] rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-5 mb-6"
           >
-            <div className="flex items-center gap-2 mb-3">
-              <Icon name="analytics" className="text-lg text-slate-500" />
-              <span className="text-sm font-medium text-slate-700">Errors by Type</span>
-            </div>
+            <span className="text-sm font-bold text-[var(--text-body)] mb-3 block">Errors by Type</span>
             <div className="flex flex-wrap gap-2">
               {Object.entries(data.statsByType).map(([type, count]) => (
                 <span
                   key={type}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 border border-red-100"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1.5 text-xs font-bold text-red-700 border-[2px] border-red-200"
                 >
                   {formatQuestionType(type)}
-                  <span className="px-1.5 py-0.5 bg-red-100 rounded text-red-800">{count}</span>
+                  <span
+                    className="px-1.5 py-0.5 bg-red-100 rounded-full text-red-800 font-extrabold"
+                    style={{ fontFamily: "var(--font-mono)" }}
+                  >
+                    {count}
+                  </span>
                 </span>
               ))}
             </div>
           </motion.div>
         )}
 
-        {/* =============================================
-            FILTERS
-        ============================================= */}
+        {/* FILTERS */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-white rounded-xl border border-slate-200 p-4 mb-6 shadow-sm"
+          className="bg-white border-[3px] border-[var(--border)] rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-5 mb-6"
         >
           <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-2 text-slate-500">
-              <Icon name="filter_list" className="text-lg" />
-              <span className="text-sm font-medium">Filters:</span>
-            </div>
-            
-            {/* Skill filter */}
+            <span className="text-sm font-bold text-[var(--text-muted)]">Filters:</span>
+
             <select
               value={skillFilter}
               onChange={(e) => { setSkillFilter(e.target.value); setPage(1); }}
-              className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:border-transparent bg-white"
+              className="rounded-full border-[3px] border-[var(--border)] px-4 py-2 text-sm font-bold text-[var(--text-body)] focus:outline-none focus:border-[var(--primary)] bg-white transition-all"
             >
               <option value="">All Skills</option>
               {SKILLS.map((s) => (
@@ -261,11 +240,10 @@ export default function ErrorReviewPage() {
               ))}
             </select>
 
-            {/* Question type filter */}
             <select
               value={typeFilter}
               onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }}
-              className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:border-transparent bg-white"
+              className="rounded-full border-[3px] border-[var(--border)] px-4 py-2 text-sm font-bold text-[var(--text-body)] focus:outline-none focus:border-[var(--primary)] bg-white transition-all"
             >
               <option value="">All Types</option>
               {questionTypes.map((t: any) => {
@@ -276,11 +254,10 @@ export default function ErrorReviewPage() {
               })}
             </select>
 
-            {/* Date range */}
             <select
               value={dateRange}
               onChange={(e) => { setDateRange(Number(e.target.value)); setPage(1); }}
-              className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:border-transparent bg-white"
+              className="rounded-full border-[3px] border-[var(--border)] px-4 py-2 text-sm font-bold text-[var(--text-body)] focus:outline-none focus:border-[var(--primary)] bg-white transition-all"
             >
               {DATE_RANGES.map((r) => (
                 <option key={r.days} value={r.days}>{r.label}</option>
@@ -290,36 +267,36 @@ export default function ErrorReviewPage() {
             {(skillFilter || typeFilter) && (
               <button
                 onClick={clearFilters}
-                className="flex items-center gap-1 text-sm text-slate-500 hover:text-red-600 transition-colors"
+                className="text-sm font-bold text-[var(--destructive)] bg-red-50 px-4 py-2 rounded-full border-[2px] border-red-200 hover:bg-[var(--destructive)] hover:text-white hover:border-red-700 transition-all"
               >
-                <Icon name="close" className="text-base" />
                 Clear filters
               </button>
             )}
           </div>
         </motion.div>
 
-        {/* =============================================
-            CONTENT
-        ============================================= */}
+        {/* CONTENT */}
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <div className="animate-spin h-8 w-8 border-4 border-[#3B82F6] border-t-transparent rounded-full" />
+            <div className="animate-spin h-10 w-10 border-[3px] border-[var(--primary-light)] border-t-[var(--primary)] rounded-full" />
           </div>
         ) : totalErrors === 0 ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-xl border border-slate-200 p-12 text-center shadow-sm"
+            className="bg-white border-[3px] border-[var(--border)] rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-12 text-center"
           >
             <div className="w-32 h-32 mx-auto mb-6">
               <PenguinLottie />
             </div>
-            <h3 className="font-serif text-xl font-semibold text-slate-900 mb-2">
+            <h3
+              className="text-xl font-bold text-[var(--foreground)] mb-2"
+              style={{ fontFamily: "var(--font-sans)" }}
+            >
               {skillFilter || typeFilter ? "No errors match your filters" : "Great job!"}
             </h3>
-            <p className="text-slate-500 max-w-md mx-auto">
-              {skillFilter || typeFilter 
+            <p className="text-[var(--text-muted)] max-w-md mx-auto">
+              {skillFilter || typeFilter
                 ? "Try adjusting your filters to see more results"
                 : "You haven't made any mistakes in this time period. Keep it up!"
               }
@@ -338,34 +315,31 @@ export default function ErrorReviewPage() {
                     exit={{ opacity: 0, x: -50 }}
                     transition={{ delay: index * 0.03 }}
                     onClick={() => setSelectedAnswer(item)}
-                    className="bg-white rounded-xl border border-slate-200 p-5 cursor-pointer hover:shadow-md hover:border-red-200 transition-all shadow-sm"
+                    className="bg-white border-[3px] border-[var(--border)] rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-5 cursor-pointer transition-all hover:-translate-y-[3px] hover:border-[var(--destructive)] hover:shadow-[0_6px_0_rgba(0,0,0,0.08)]"
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         {/* Tags */}
                         <div className="flex items-center gap-2 mb-3 flex-wrap">
-                          <span className="inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700">
-                            <Icon name={SKILL_ICONS[item.skill] || "help"} className="text-sm" />
+                          <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold border-[2px] ${SKILL_BADGE_STYLES[item.skill] || "bg-[var(--background)] text-[var(--text-body)] border-[var(--border)]"}`}>
                             {item.skill}
                           </span>
-                          <span className="inline-flex rounded-lg bg-orange-50 px-2.5 py-1 text-xs font-medium text-orange-700">
+                          <span className="inline-flex rounded-full bg-orange-50 px-3 py-1 text-xs font-bold text-orange-700 border-[2px] border-orange-200">
                             {formatQuestionType(item.questionType)}
                           </span>
                         </div>
-                        
+
                         {/* Question Content */}
-                        <p className="text-sm text-slate-700 line-clamp-2 mb-3">
+                        <p className="text-sm font-bold text-[var(--text-body)] line-clamp-2 mb-3">
                           {item.questionContent}
                         </p>
-                        
+
                         {/* Meta */}
-                        <div className="flex items-center gap-4 text-xs text-slate-400">
-                          <span className="flex items-center gap-1">
-                            <Icon name="article" className="text-sm" />
-                            {item.sectionTitle}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Icon name="calendar_today" className="text-sm" />
+                        <div className="flex items-center gap-4 text-xs font-bold text-[var(--text-muted)]">
+                          <span>{item.sectionTitle}</span>
+                          <span
+                            style={{ fontFamily: "var(--font-mono)" }}
+                          >
                             {new Date(item.attemptDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                           </span>
                         </div>
@@ -374,14 +348,14 @@ export default function ErrorReviewPage() {
                       {/* Answer Comparison */}
                       <div className="text-right flex-shrink-0 space-y-2">
                         <div>
-                          <div className="text-xs text-slate-400 mb-0.5">Your answer:</div>
-                          <div className="text-sm font-medium text-red-600 bg-red-50 px-2 py-1 rounded line-through">
+                          <div className="text-xs font-bold text-[var(--text-muted)] mb-0.5">Your answer:</div>
+                          <div className="text-sm font-bold text-[var(--destructive)] bg-red-50 px-3 py-1 rounded-full border-[2px] border-red-200 line-through">
                             {item.userAnswer || "(Empty)"}
                           </div>
                         </div>
                         <div>
-                          <div className="text-xs text-slate-400 mb-0.5">Correct:</div>
-                          <div className="text-sm font-medium text-emerald-700 bg-emerald-50 px-2 py-1 rounded">
+                          <div className="text-xs font-bold text-[var(--text-muted)] mb-0.5">Correct:</div>
+                          <div className="text-sm font-bold text-[var(--skill-speaking)] bg-[var(--skill-speaking-light)] px-3 py-1 rounded-full border-[2px] border-[var(--skill-speaking-border)]">
                             {formatCorrectAnswer(item.correctAnswer, item.questionType)}
                           </div>
                         </div>
@@ -398,9 +372,9 @@ export default function ErrorReviewPage() {
                 <button
                   onClick={() => setPage(Math.max(1, page - 1))}
                   disabled={page === 1}
-                  className="w-10 h-10 rounded-lg bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 transition shadow-sm flex items-center justify-center"
+                  className="px-5 py-2.5 rounded-full bg-white border-[2px] border-[var(--border)] text-[var(--text-body)] font-bold hover:border-[var(--primary)] hover:-translate-y-0.5 disabled:opacity-40 transition-all"
                 >
-                  <Icon name="chevron_left" className="text-xl" />
+                  Prev
                 </button>
 
                 <div className="flex items-center gap-2">
@@ -415,13 +389,13 @@ export default function ErrorReviewPage() {
                       <button
                         key={pageNum}
                         onClick={() => setPage(pageNum)}
-                        className={`w-10 h-10 rounded-lg text-sm font-medium transition shadow-sm flex items-center justify-center ${
+                        className={`w-10 h-10 rounded-full text-sm font-bold transition-all ${
                           pageNum === page
-                            ? "bg-[#3B82F6] text-white"
-                            : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+                            ? "bg-[var(--primary)] text-white border-b-[4px] border-[var(--primary-dark)]"
+                            : "bg-white border-[2px] border-[var(--border)] text-[var(--text-body)] hover:border-[var(--primary)] hover:-translate-y-0.5"
                         }`}
                       >
-                        {pageNum}
+                        <span style={{ fontFamily: "var(--font-mono)" }}>{pageNum}</span>
                       </button>
                     );
                   })}
@@ -430,88 +404,88 @@ export default function ErrorReviewPage() {
                 <button
                   onClick={() => setPage(Math.min(maxPage, page + 1))}
                   disabled={page === maxPage}
-                  className="w-10 h-10 rounded-lg bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 transition shadow-sm flex items-center justify-center"
+                  className="px-5 py-2.5 rounded-full bg-white border-[2px] border-[var(--border)] text-[var(--text-body)] font-bold hover:border-[var(--primary)] hover:-translate-y-0.5 disabled:opacity-40 transition-all"
                 >
-                  <Icon name="chevron_right" className="text-xl" />
+                  Next
                 </button>
               </div>
             )}
           </>
         )}
 
-        {/* =============================================
-            DETAIL MODAL
-        ============================================= */}
+        {/* DETAIL MODAL */}
         <AnimatePresence>
           {selectedAnswer && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
               onClick={() => setSelectedAnswer(null)}
             >
-              <motion.div 
+              <motion.div
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
-                className="bg-white rounded-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden shadow-2xl"
+                className="bg-white border-[3px] border-[var(--border)] rounded-[1.5rem] shadow-lg max-w-2xl w-full max-h-[85vh] overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Modal Header */}
-                <div className="sticky top-0 bg-white border-b border-slate-200 p-5 flex items-center justify-between">
-                  <h3 className="font-serif text-lg font-semibold text-slate-900">Question Details</h3>
+                <div className="sticky top-0 bg-white border-b-[2px] border-[var(--border)] p-5 flex items-center justify-between">
+                  <h3
+                    className="text-lg font-bold text-[var(--foreground)]"
+                    style={{ fontFamily: "var(--font-sans)" }}
+                  >
+                    Question Details
+                  </h3>
                   <button
                     onClick={() => setSelectedAnswer(null)}
-                    className="p-2 hover:bg-slate-100 rounded-lg transition"
+                    className="px-4 py-1.5 text-sm font-bold text-[var(--text-muted)] bg-[var(--background)] rounded-full border-[2px] border-[var(--border)] hover:border-[var(--text-muted)] transition-all"
                   >
-                    <Icon name="close" className="text-xl text-slate-500" />
+                    Close
                   </button>
                 </div>
-                
+
                 {/* Modal Body */}
                 <div className="p-6 overflow-y-auto max-h-[calc(85vh-80px)]">
                   {/* Tags */}
                   <div className="flex items-center justify-between gap-4 mb-4">
                     <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center gap-1.5 rounded-lg bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700">
-                        <Icon name={SKILL_ICONS[selectedAnswer.skill] || "help"} className="text-sm" />
+                      <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold border-[2px] ${SKILL_BADGE_STYLES[selectedAnswer.skill] || "bg-[var(--background)] text-[var(--text-body)] border-[var(--border)]"}`}>
                         {selectedAnswer.skill}
                       </span>
-                      <span className="inline-flex rounded-lg bg-orange-50 px-2.5 py-1 text-xs font-medium text-orange-700">
+                      <span className="inline-flex rounded-full bg-orange-50 px-3 py-1 text-xs font-bold text-orange-700 border-[2px] border-orange-200">
                         {formatQuestionType(selectedAnswer.questionType)}
                       </span>
                     </div>
                     <Link
                       href={`/attempts/${selectedAnswer.attemptId}`}
-                      className="text-sm text-[#3B82F6] hover:text-[#2563EB] flex items-center gap-1 font-medium"
+                      className="text-sm font-bold text-[var(--primary)] bg-[var(--primary-light)] px-4 py-1.5 rounded-full border-[2px] border-[var(--skill-reading-border)] hover:bg-[var(--primary)] hover:text-white hover:border-[var(--primary-dark)] transition-all"
                     >
-                      View attempt <Icon name="arrow_forward" className="text-base" />
+                      View attempt
                     </Link>
                   </div>
 
                   {/* Question Content */}
-                  <div className="prose prose-sm max-w-none mb-6 p-4 bg-[#F8FAFC] rounded-lg border border-slate-100">
+                  <div className="prose prose-sm max-w-none mb-6 p-4 bg-[var(--background)] rounded-[1rem] border-[2px] border-[var(--border)]">
                     <ReactMarkdown>{selectedAnswer.questionContent}</ReactMarkdown>
                   </div>
 
                   {/* Answer Comparison */}
                   <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div className="bg-red-50 rounded-xl p-4 border border-red-100">
-                      <div className="text-xs text-red-600 mb-2 font-medium flex items-center gap-1">
-                        <Icon name="close" className="text-sm" />
+                    <div className="bg-red-50 rounded-[1.5rem] p-4 border-[3px] border-red-200">
+                      <div className="text-xs font-bold text-[var(--destructive)] mb-2">
                         Your Answer
                       </div>
-                      <div className="text-sm font-medium text-red-700">
+                      <div className="text-sm font-bold text-red-700">
                         {selectedAnswer.userAnswer || "(Empty)"}
                       </div>
                     </div>
-                    <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-100">
-                      <div className="text-xs text-emerald-600 mb-2 font-medium flex items-center gap-1">
-                        <Icon name="check" className="text-sm" />
+                    <div className="bg-[var(--skill-speaking-light)] rounded-[1.5rem] p-4 border-[3px] border-[var(--skill-speaking-border)]">
+                      <div className="text-xs font-bold text-[var(--skill-speaking)] mb-2">
                         Correct Answer
                       </div>
-                      <div className="text-sm font-medium text-emerald-700">
+                      <div className="text-sm font-bold text-[var(--skill-speaking)]">
                         {formatCorrectAnswer(selectedAnswer.correctAnswer, selectedAnswer.questionType)}
                       </div>
                     </div>
@@ -519,12 +493,11 @@ export default function ErrorReviewPage() {
 
                   {/* Explanation */}
                   {selectedAnswer.explanation && (
-                    <div className="bg-[#EFF6FF] rounded-xl p-4 border border-blue-100">
-                      <div className="text-xs text-[#2563EB] mb-2 font-medium flex items-center gap-1">
-                        <Icon name="lightbulb" className="text-sm" />
+                    <div className="bg-[var(--primary-light)] rounded-[1.5rem] p-4 border-[3px] border-[var(--skill-reading-border)]">
+                      <div className="text-xs font-bold text-[var(--primary)] mb-2">
                         Explanation
                       </div>
-                      <div className="prose prose-sm max-w-none text-slate-700">
+                      <div className="prose prose-sm max-w-none text-[var(--text-body)]">
                         <ReactMarkdown>{selectedAnswer.explanation}</ReactMarkdown>
                       </div>
                     </div>

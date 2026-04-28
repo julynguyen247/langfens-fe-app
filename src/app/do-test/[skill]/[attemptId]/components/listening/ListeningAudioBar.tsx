@@ -83,7 +83,7 @@ export default function ListeningAudioBar({ src }: ListeningAudioBarProps) {
       <button
         type="button"
         onClick={handleTogglePlay}
-        className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-900 text-white hover:bg-slate-700 transition"
+        className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--foreground)] text-white hover:bg-[var(--text-body)] transition"
       >
         {isPlaying ? (
           <span className="flex gap-1">
@@ -104,7 +104,7 @@ export default function ListeningAudioBar({ src }: ListeningAudioBarProps) {
         )}
       </button>
       <div className="flex-1 flex items-center gap-2">
-        <span className="text-xs tabular-nums text-slate-500 w-10 text-right">
+        <span className="text-xs tabular-nums text-[var(--text-muted)] w-10 text-right">
           {formatTime(currentTime)}
         </span>
         <input
@@ -114,9 +114,9 @@ export default function ListeningAudioBar({ src }: ListeningAudioBarProps) {
           step={0.1}
           value={currentTime}
           onChange={handleSeek}
-          className="flex-1 accent-[#317EFF]"
+          className="flex-1 accent-[var(--primary)]"
         />
-        <span className="text-xs tabular-nums text-slate-500 w-10">
+        <span className="text-xs tabular-nums text-[var(--text-muted)] w-10">
           {formatTime(duration)}
         </span>
       </div>

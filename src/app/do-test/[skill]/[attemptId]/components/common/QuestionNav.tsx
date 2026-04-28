@@ -39,8 +39,8 @@ export default function QuestionNav({
           className={`w-8 h-8 rounded transition-colors duration-150 font-medium
             ${
               n === current
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+                ? "bg-[var(--skill-reading)] text-white"
+                : "bg-[var(--background)] text-[var(--text-body)] hover:bg-[var(--skill-reading-light)] hover:text-[var(--skill-reading)]"
             }`}
         >
           {n}

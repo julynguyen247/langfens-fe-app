@@ -2,7 +2,6 @@
 
 import { useState, useEffect, createContext, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiEdit3, FiFileText, FiBook, FiX, FiPlus, FiVolume2, FiSave } from "react-icons/fi";
 import { lookupDictionary, createNote } from "@/utils/api";
 
 export type ToolMode = "highlight" | "notes" | "vocabulary" | null;
@@ -46,8 +45,8 @@ type ReadingToolbarProps = {
   sectionId?: string;
 };
 
-export default function ReadingToolbar({ 
-  onAddToFlashcard, 
+export default function ReadingToolbar({
+  onAddToFlashcard,
   activeMode,
   onModeChange,
   attemptId,
@@ -59,7 +58,7 @@ export default function ReadingToolbar({
   const [entry, setEntry] = useState<DictionaryEntry | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Notes state
   const [notePopup, setNotePopup] = useState<{
     visible: boolean;
@@ -70,16 +69,16 @@ export default function ReadingToolbar({
   const [savingNote, setSavingNote] = useState(false);
 
   const tools = [
-    { id: "highlight", icon: FiEdit3, label: "Highlight", shortcut: "H", activeColor: "bg-blue-500" },
-    { id: "notes", icon: FiFileText, label: "Notes", shortcut: "N", activeColor: "bg-blue-500" },
-    { id: "vocabulary", icon: FiBook, label: "Tra từ vựng", shortcut: "T", activeColor: "bg-blue-500" },
+    { id: "highlight", label: "Highlight", shortcut: "H" },
+    { id: "notes", label: "Notes", shortcut: "N" },
+    { id: "vocabulary", label: "Tra từ vựng", shortcut: "T" },
   ];
 
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      
+
       switch (e.key.toLowerCase()) {
         case "h":
           onModeChange(activeMode === "highlight" ? null : "highlight");
@@ -109,11 +108,11 @@ export default function ReadingToolbar({
     const handleDoubleClick = (e: MouseEvent) => {
       const selection = window.getSelection();
       const text = selection?.toString().trim();
-      
+
       if (text && text.length > 1 && text.length < 50 && /^[a-zA-Z\-']+$/.test(text)) {
         const range = selection?.getRangeAt(0);
         const rect = range?.getBoundingClientRect();
-        
+
         if (rect) {
           setWordPosition({
             x: rect.left + rect.width / 2,
@@ -135,11 +134,11 @@ export default function ReadingToolbar({
     const handleMouseUp = (e: MouseEvent) => {
       const selection = window.getSelection();
       const text = selection?.toString().trim();
-      
+
       if (text && text.length > 0) {
         const range = selection?.getRangeAt(0);
         const rect = range?.getBoundingClientRect();
-        
+
         if (rect) {
           setNotePopup({
             visible: true,
@@ -168,7 +167,7 @@ export default function ReadingToolbar({
     const fetchDefinition = async () => {
       setLoading(true);
       setError(null);
-      
+
       try {
         const data = await lookupDictionary(selectedWord);
         setEntry(data);
@@ -207,7 +206,7 @@ export default function ReadingToolbar({
 
   const handleSaveNote = async () => {
     if (!noteContent.trim()) return;
-    
+
     try {
       setSavingNote(true);
       await createNote({
@@ -235,42 +234,49 @@ export default function ReadingToolbar({
   return (
     <div>
       {/* Sidebar Toolbar - Takes layout space */}
-      <div className="w-20 shrink-0 bg-white border-r border-slate-200 flex flex-col h-full">
+      <div className="w-20 shrink-0 border-r flex flex-col h-full" style={{ backgroundColor: "var(--background)", borderColor: "var(--border)" }}>
         {/* Header */}
-        <div className="px-2 py-3 border-b border-slate-100 bg-slate-50">
-          <span className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider text-center">
+        <div className="px-2 py-3 border-b" style={{ borderColor: "var(--border)", backgroundColor: "var(--background)" }}>
+          <span className="block text-[10px] font-semibold tracking-wider text-center" style={{ color: "var(--text-muted)" }}>
             Công cụ
           </span>
         </div>
-        
+
         {/* Tools */}
         <div className="flex-1 p-2 space-y-2">
           {tools.map((tool) => {
-            const Icon = tool.icon;
             const isActive = activeMode === tool.id;
-            
+
             return (
               <button
                 key={tool.id}
                 onClick={() => handleToolClick(tool.id)}
                 className={`w-full flex flex-col items-center gap-1 px-2 py-3 rounded-lg transition-all border ${
-                  isActive 
-                    ? `${tool.activeColor} text-white border-transparent shadow-md` 
-                    : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
+                  isActive
+                    ? "text-white border-transparent shadow-md"
+                    : "border hover:opacity-80"
                 }`}
+                style={
+                  isActive
+                    ? { backgroundColor: "var(--primary)" }
+                    : {
+                        backgroundColor: "var(--background)",
+                        color: "var(--foreground)",
+                        borderColor: "var(--border)",
+                      }
+                }
               >
-                <Icon className="w-5 h-5" />
                 <span className="text-[9px] font-medium leading-tight text-center">
                   {tool.label}
                 </span>
-                <span className={`text-[8px] ${isActive ? 'text-white/70' : 'text-slate-400'}`}>
+                <span className="text-[8px]" style={{ opacity: isActive ? 0.7 : 0.5 }}>
                   Phím ({tool.shortcut})
                 </span>
               </button>
             );
           })}
         </div>
-        
+
         {/* Mode indicator */}
         <AnimatePresence>
           {activeMode && (
@@ -278,9 +284,10 @@ export default function ReadingToolbar({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
-              className="p-2 border-t border-slate-100"
+              className="p-2 border-t"
+              style={{ borderColor: "var(--border)" }}
             >
-              <div className="text-[9px] text-slate-500 text-center leading-tight">
+              <div className="text-[9px] text-center leading-tight" style={{ color: "var(--text-muted)" }}>
                 {activeMode === "highlight" && "Bôi đen để highlight"}
                 {activeMode === "notes" && "Chọn text để ghi chú"}
                 {activeMode === "vocabulary" && "Double-click tra từ"}
@@ -297,30 +304,32 @@ export default function ReadingToolbar({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
             transition={{ duration: 0.15 }}
-            className="fixed z-[9999] w-80 bg-white rounded-lg border border-slate-200 shadow-xl"
+            className="fixed z-[9999] w-80 rounded-[1.5rem] border-[3px] shadow-[0_4px_0_rgba(0,0,0,0.08)]"
             style={{
               left: Math.min(Math.max(notePopup.position.x - 160, 10), window.innerWidth - 340),
               top: Math.min(notePopup.position.y, window.innerHeight - 280),
+              backgroundColor: "var(--background)",
+              borderColor: "var(--border)",
             }}
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-3 border-b border-slate-100 bg-gradient-to-r from-blue-50 to-white">
+            <div className="flex items-center justify-between p-3 border-b" style={{ borderColor: "var(--border)" }}>
               <div className="flex items-center gap-2">
-                <FiFileText className="w-4 h-4 text-blue-500" />
-                <span className="font-semibold text-slate-900 text-sm">Thêm ghi chú</span>
+                <span className="font-semibold text-sm" style={{ color: "var(--foreground)" }}>Thêm ghi chú</span>
               </div>
               <button
                 onClick={closeNotePopup}
-                className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded transition"
+                className="p-1 rounded transition font-bold text-sm"
+                style={{ color: "var(--text-muted)" }}
               >
-                <FiX className="w-4 h-4" />
+                x
               </button>
             </div>
 
             {/* Selected text */}
             {notePopup.selectedText && (
-              <div className="px-3 py-2 bg-blue-50 border-b border-blue-100">
-                <p className="text-xs text-blue-700 italic line-clamp-2">
+              <div className="px-3 py-2 border-b" style={{ backgroundColor: "var(--primary-light)", borderColor: "var(--border)" }}>
+                <p className="text-xs italic line-clamp-2" style={{ color: "var(--primary)" }}>
                   "{notePopup.selectedText}"
                 </p>
               </div>
@@ -332,31 +341,43 @@ export default function ReadingToolbar({
                 value={noteContent}
                 onChange={(e) => setNoteContent(e.target.value)}
                 placeholder="Viết ghi chú của bạn..."
-                className="w-full h-24 p-2 text-sm text-slate-800 border border-slate-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full h-24 p-2 text-sm border rounded-lg resize-none focus:outline-none focus:ring-2"
+                style={{
+                  color: "var(--foreground)",
+                  borderColor: "var(--border)",
+                  // @ts-ignore
+                  "--tw-ring-color": "var(--primary)",
+                } as React.CSSProperties}
                 autoFocus
               />
             </div>
 
             {/* Footer */}
-            <div className="p-3 border-t border-slate-100 bg-slate-50 flex gap-2">
+            <div className="p-3 border-t flex gap-2" style={{ borderColor: "var(--border)" }}>
               <button
                 onClick={closeNotePopup}
-                className="flex-1 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition"
+                className="flex-1 py-2 text-sm font-medium border rounded-full transition"
+                style={{
+                  color: "var(--foreground)",
+                  borderColor: "var(--border)",
+                  backgroundColor: "var(--background)",
+                }}
               >
                 Hủy
               </button>
               <button
                 onClick={handleSaveNote}
                 disabled={!noteContent.trim() || savingNote}
-                className="flex-1 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 rounded-lg transition flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
+                className="flex-1 py-2 text-sm font-medium text-white rounded-full transition flex items-center justify-center gap-2 disabled:opacity-50 border-b-[4px]"
+                style={{
+                  backgroundColor: "var(--primary)",
+                  borderBottomColor: "var(--primary-dark)",
+                }}
               >
                 {savingNote ? (
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : (
-                  <>
-                    <FiSave className="w-4 h-4" />
-                    Lưu
-                  </>
+                  "Lưu"
                 )}
               </button>
             </div>
@@ -372,24 +393,25 @@ export default function ReadingToolbar({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
             transition={{ duration: 0.15 }}
-            className="fixed z-[9999] w-80 bg-white rounded-lg border border-slate-200 shadow-xl"
+            className="fixed z-[9999] w-80 rounded-[1.5rem] border-[3px] shadow-[0_4px_0_rgba(0,0,0,0.08)]"
             style={{
               left: Math.min(wordPosition.x - 160, window.innerWidth - 340),
               top: Math.min(wordPosition.y, window.innerHeight - 300),
+              backgroundColor: "var(--background)",
+              borderColor: "var(--border)",
             }}
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-3 border-b border-slate-100 
-             from-blue-50 to-white">
+            <div className="flex items-center justify-between p-3 border-b" style={{ borderColor: "var(--border)" }}>
               <div className="flex items-center gap-2">
-                <FiBook className="w-4 h-4 text-blue-500" />
-                <span className="font-semibold text-slate-900">{selectedWord}</span>
+                <span className="font-semibold" style={{ color: "var(--foreground)" }}>{selectedWord}</span>
               </div>
               <button
                 onClick={closeDictionary}
-                className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded transition"
+                className="p-1 rounded transition font-bold text-sm"
+                style={{ color: "var(--text-muted)" }}
               >
-                <FiX className="w-4 h-4" />
+                x
               </button>
             </div>
 
@@ -397,12 +419,12 @@ export default function ReadingToolbar({
             <div className="p-3 max-h-64 overflow-y-auto">
               {loading && (
                 <div className="flex items-center justify-center py-6">
-                  <div className="w-6 h-6 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin" />
+                  <div className="w-6 h-6 border-2 rounded-full animate-spin" style={{ borderColor: "var(--border)", borderTopColor: "var(--primary)" }} />
                 </div>
               )}
 
               {error && (
-                <div className="text-center py-6 text-slate-500 text-sm">
+                <div className="text-center py-6 text-sm" style={{ color: "var(--text-muted)" }}>
                   {error}
                 </div>
               )}
@@ -410,21 +432,21 @@ export default function ReadingToolbar({
               {entry && !loading && (
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-lg font-bold text-slate-900">{entry.word}</span>
+                    <span className="text-lg font-bold" style={{ color: "var(--foreground)" }}>{entry.word}</span>
                     {entry.pos && (
-                      <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full font-medium">
+                      <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: "var(--primary-light)", color: "var(--primary)" }}>
                         {entry.pos}
                       </span>
                     )}
                     {entry.pronunciations?.[0]?.ipa && (
-                      <button className="p-1 text-slate-400 hover:text-blue-500 transition">
-                        <FiVolume2 className="w-4 h-4" />
+                      <button className="p-1 transition text-sm" style={{ color: "var(--text-muted)" }}>
+                        Sound
                       </button>
                     )}
                   </div>
 
                   {entry.pronunciations?.[0]?.ipa && (
-                    <div className="text-sm text-slate-500 font-mono">/{entry.pronunciations[0].ipa}/</div>
+                    <div className="text-sm font-mono" style={{ color: "var(--text-muted)" }}>/{entry.pronunciations[0].ipa}/</div>
                   )}
 
                   {/* Vietnamese meanings from entry level */}
@@ -440,8 +462,8 @@ export default function ReadingToolbar({
                     <div className="space-y-3 pt-1">
                       {entry.senses.slice(0, 3).map((sense, idx) => (
                         <div key={idx} className="text-sm">
-                          <div className="text-slate-700">
-                            <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-medium text-blue-600 bg-blue-50 rounded-full mr-2">
+                          <div style={{ color: "var(--foreground)" }}>
+                            <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-medium rounded-full mr-2" style={{ color: "var(--primary)", backgroundColor: "var(--primary-light)" }}>
                               {idx + 1}
                             </span>
                             {sense.definitionEn}
@@ -453,7 +475,7 @@ export default function ReadingToolbar({
                             </div>
                           )}
                           {sense.examples && sense.examples[0] && (
-                            <div className="mt-1.5 text-xs text-slate-500 italic pl-7 border-l-2 border-blue-100 ml-2.5">
+                            <div className="mt-1.5 text-xs italic pl-7 border-l-2 ml-2.5" style={{ color: "var(--text-muted)", borderColor: "var(--primary-light)" }}>
                               "{sense.examples[0]}"
                             </div>
                           )}
@@ -467,13 +489,16 @@ export default function ReadingToolbar({
 
             {/* Footer */}
             {entry && !loading && onAddToFlashcard && (
-              <div className="p-3 border-t border-slate-100 bg-slate-50">
+              <div className="p-3 border-t" style={{ borderColor: "var(--border)" }}>
                 <button
                   onClick={handleAddToFlashcard}
-                  className="w-full py-2.5 text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 rounded-lg transition flex items-center justify-center gap-2 shadow-sm"
+                  className="w-full py-2.5 text-sm font-medium text-white rounded-full transition flex items-center justify-center gap-2 border-b-[4px]"
+                  style={{
+                    backgroundColor: "var(--primary)",
+                    borderBottomColor: "var(--primary-dark)",
+                  }}
                 >
-                  <FiPlus className="w-4 h-4" />
-                  Thêm vào Flashcard
+                  + Thêm vào Flashcard
                 </button>
               </div>
             )}

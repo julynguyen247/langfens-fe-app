@@ -1,138 +1,105 @@
 "use client";
 
-import { motion } from "framer-motion";
-import type { AchievementsWidgetProps, Achievement } from "../types";
+import Link from "next/link";
 
-// Material Icon Component
-function Icon({ name, className = "" }: { name: string; className?: string }) {
-  return <span className={`material-symbols-rounded ${className}`}>{name}</span>;
+interface Achievement {
+  id: string;
+  title: string;
+  description?: string;
+  progress: number; // 0-100
+  unlocked: boolean;
 }
 
-function AchievementIcon({ type, isUnlocked }: { type: Achievement["iconType"]; isUnlocked: boolean }) {
-  const color = isUnlocked ? "text-amber-500" : "text-slate-400";
+interface AchievementsWidgetProps {
+  achievements: Achievement[];
+}
 
-  // Material Icon names for each achievement type
-  const iconMap: Record<Achievement["iconType"], string> = {
-    streak: "local_fire_department",
-    score: "grade",
-    time: "schedule",
-    tests: "quiz",
-    skill: "psychology",
-  };
+export function AchievementsWidget({ achievements }: AchievementsWidgetProps) {
+  // Separate unlocked and in-progress achievements
+  const unlocked = achievements.filter((a) => a.unlocked);
+  const inProgress = achievements.filter((a) => !a.unlocked);
+
+  // Sort in-progress by progress descending (closest to unlock first)
+  const closestToUnlock = [...inProgress].sort((a, b) => b.progress - a.progress);
+
+  // Get 2 closest to unlock and 1 most recent unlocked
+  const displayInProgress = closestToUnlock.slice(0, 2);
+  const displayUnlocked = unlocked.slice(0, 1);
+
+  // Combine: in-progress first, then unlocked
+  const displayAchievements = [...displayInProgress, ...displayUnlocked];
+
+  if (displayAchievements.length === 0) {
+    return null;
+  }
 
   return (
-    <div
-      className={`w-10 h-10 rounded-full flex items-center justify-center bg-slate-100`}
-    >
-      <Icon name={iconMap[type] || "help"} className={`text-xl ${color}`} />
+    <div className="rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-white p-5">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-[var(--foreground)]">
+          Achievements
+        </h3>
+        <Link
+          href="/achievements"
+          className="text-sm font-medium text-[var(--primary)] hover:text-[var(--primary-hover)] transition-colors"
+        >
+          View All
+        </Link>
+      </div>
+
+      {/* Achievement List */}
+      <div className="space-y-3">
+        {displayInProgress.map((achievement) => (
+          <InProgressAchievement key={achievement.id} achievement={achievement} />
+        ))}
+        {displayUnlocked.map((achievement) => (
+          <UnlockedAchievement key={achievement.id} achievement={achievement} />
+        ))}
+      </div>
     </div>
   );
 }
 
-function AchievementCard({ achievement }: { achievement: Achievement }) {
-  const isUnlocked = achievement.isUnlocked;
-  const isClose = achievement.progress >= 75 && !isUnlocked;
-
+function InProgressAchievement({ achievement }: { achievement: Achievement }) {
   return (
-    <motion.div
-      className={`relative p-4 rounded-xl border-2 ${
-        isUnlocked
-          ? "border-amber-300 bg-amber-50"
-          : isClose
-          ? "border-amber-200 bg-amber-50/50"
-          : "border-slate-200 bg-slate-50"
-      }`}
-      whileHover={{ scale: 1.02 }}
-    >
-      {/* Glow effect for achievements ready to unlock */}
-      {isClose && (
-        <div className="absolute inset-0 rounded-xl bg-amber-400/20 animate-pulse" />
-      )}
-
-      <div className="relative flex items-start gap-3">
-        <AchievementIcon type={achievement.iconType} isUnlocked={isUnlocked} />
-        
-        <div className="flex-1 min-w-0">
-          <h4 className="text-sm font-semibold text-slate-800 truncate">
-            {achievement.name}
-          </h4>
-          
-          {!isUnlocked && (
-            <div className="mt-2">
-              {/* Progress bar */}
-              <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
-                <motion.div
-                  className="h-full bg-amber-500 rounded-full"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${achievement.progress}%` }}
-                  transition={{ duration: 0.8, delay: 0.5 }}
-                />
-              </div>
-              <p className="text-xs text-slate-500 mt-1">
-                {achievement.progress}% complete
-              </p>
-            </div>
-          )}
-
-          {isUnlocked && (
-            <p className="text-xs text-amber-600 font-medium mt-1">
-              +{achievement.xpReward} XP
-            </p>
-          )}
-        </div>
+    <div className="p-3 rounded-xl bg-[var(--primary-light)]/30 border border-[var(--primary-light)]">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm font-medium text-[var(--foreground)]">
+          {achievement.title}
+        </span>
+        <span className="text-xs text-[var(--text-muted)] font-mono">
+          {achievement.progress}%
+        </span>
       </div>
-    </motion.div>
+      {/* Progress Bar */}
+      <div className="h-2 rounded-full bg-[var(--border)] overflow-hidden">
+        <div
+          className="h-full rounded-full bg-[var(--primary)] transition-all duration-500"
+          style={{ width: `${achievement.progress}%` }}
+        />
+      </div>
+    </div>
   );
 }
 
-export default function AchievementsWidget({
-  achievements,
-  onViewAll,
-}: AchievementsWidgetProps) {
-  // Show up to 3 achievements: prioritize near-unlock, then recent unlocks
-  const sortedAchievements = [...achievements]
-    .sort((a, b) => {
-      // Unlocked achievements first (by recency - would need unlockDate)
-      if (a.isUnlocked !== b.isUnlocked) {
-        return a.isUnlocked ? -1 : 1;
-      }
-      // Then by progress (closer to unlocking first)
-      if (!a.isUnlocked && !b.isUnlocked) {
-        return b.progress - a.progress;
-      }
-      return 0;
-    })
-    .slice(0, 3);
-
+function UnlockedAchievement({ achievement }: { achievement: Achievement }) {
   return (
-    <motion.section
-      className="relative bg-white border-[3px] border-amber-200 rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-6"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.6, duration: 0.4 }}
-    >
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-slate-800">Achievements</h2>
-        <button
-          onClick={onViewAll}
-          className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-        >
-          View all
-        </button>
+    <div className="p-3 rounded-xl bg-[var(--accent-gold-bg)] border border-[var(--accent-gold-border)]">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          {/* Badge */}
+          <div className="w-6 h-6 rounded-full bg-[var(--accent-gold)] flex items-center justify-center">
+            <span className="text-[10px] font-bold text-white">★</span>
+          </div>
+          <span className="text-sm font-medium text-[var(--foreground)]">
+            {achievement.title}
+          </span>
+        </div>
+        <span className="text-xs font-medium text-[var(--accent-gold)]">
+          Unlocked!
+        </span>
       </div>
-
-      {sortedAchievements.length > 0 ? (
-        <div className="space-y-3">
-          {sortedAchievements.map((achievement) => (
-            <AchievementCard key={achievement.id} achievement={achievement} />
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-8 text-slate-500">
-          <p className="text-sm">No achievements yet</p>
-          <p className="text-xs mt-1">Start practicing to unlock achievements!</p>
-        </div>
-      )}
-    </motion.section>
+    </div>
   );
 }

@@ -1,87 +1,169 @@
-"use client";
+'use client';
 
-import { motion } from "framer-motion";
-import type { TodayGoalProps } from "../types";
+import { motion, useReducedMotion } from 'framer-motion';
 
-function getMotivationalMessage(progress: number): string {
-  if (progress >= 100) return "Goal reached! Amazing work!";
-  if (progress >= 75) return "So close! Just a bit more.";
-  if (progress >= 50) return "Halfway there! Keep going.";
-  if (progress >= 25) return "Good progress! Keep it up.";
-  return "Let's get started! You got this.";
+interface TodayGoalProps {
+  currentXP: number;
+  dailyTarget: number;
 }
 
-export default function TodayGoal({ todayXP, dailyTargetXP }: TodayGoalProps) {
-  const progress = Math.min((todayXP / dailyTargetXP) * 100, 100);
-  const remainingXP = Math.max(dailyTargetXP - todayXP, 0);
-  const message = getMotivationalMessage(progress);
+const STREAK_BONUS_XP = 10;
+
+export function TodayGoal({ currentXP, dailyTarget }: TodayGoalProps) {
+  const prefersReducedMotion = useReducedMotion();
+  const progress = dailyTarget > 0 ? Math.min((currentXP / dailyTarget) * 100, 100) : 0;
+  const remainingXP = Math.max(dailyTarget - currentXP, 0);
+  const isGoalReached = currentXP >= dailyTarget;
+
+  // Motivational message based on progress
+  const getMotivationalMessage = () => {
+    if (progress === 0) return "Let's get started!";
+    if (progress < 25) return "Let's get started!";
+    if (progress < 50) return "Great start! Keep going!";
+    if (progress < 75) return "You're on fire!";
+    if (progress < 100) return "Almost there!";
+    return "Goal reached! Amazing!";
+  };
+
+  // Milestone markers at 25%, 50%, 75%, 100%
+  const milestones = [
+    { position: 25, label: '25%' },
+    { position: 50, label: '50%' },
+    { position: 75, label: '75%' },
+    { position: 100, label: '✓' },
+  ];
 
   return (
-    <motion.section
-      className="relative bg-white border-[4px] border-blue-500 rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-6"
-      initial={{ opacity: 0, y: 20 }}
+    <motion.div
+      initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.4, duration: 0.4 }}
+      transition={{ duration: 0.4, ease: 'easeOut' }}
+      className="rounded-[2rem] border-[3px] border-[var(--border)] bg-white shadow-[0_4px_0_rgba(0,0,0,0.08)] p-6"
     >
-      {/* Title */}
+      {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-slate-800">Today's Goal</h2>
+        <h2 className="text-lg font-bold text-[var(--foreground)]">Daily Goal</h2>
         <span
-          className="text-sm text-blue-600 font-semibold"
-          style={{ fontFamily: "var(--font-mono)" }}
+          className="text-sm font-bold px-3 py-1 rounded-full"
+          style={{
+            backgroundColor: 'var(--primary-light)',
+            color: 'var(--primary)',
+            fontFamily: 'var(--font-mono)',
+          }}
         >
           {Math.round(progress)}%
         </span>
       </div>
 
-      {/* XP Display */}
-      <div className="flex items-baseline gap-2 mb-4">
-        <span
-          className="text-3xl font-bold text-slate-800"
-          style={{ fontFamily: "var(--font-mono)" }}
-        >
-          {todayXP}
-        </span>
-        <span className="text-slate-500">/ {dailyTargetXP} XP</span>
-      </div>
-
-      {/* Progress Bar */}
-      <div className="relative h-3 bg-slate-100 rounded-full overflow-hidden mb-3">
-        <motion.div
-          className="absolute inset-y-0 left-0 bg-blue-500 rounded-full"
-          initial={{ width: 0 }}
-          animate={{ width: `${progress}%` }}
-          transition={{ duration: 1, delay: 0.5, ease: "easeOut" }}
-        />
-        
-        {/* Milestone markers */}
-        {[25, 50, 75].map((milestone) => (
-          <div
-            key={milestone}
-            className="absolute top-0 bottom-0 w-0.5 bg-slate-300"
-            style={{ left: `${milestone}%` }}
+      {/* Progress Bar with Milestones */}
+      <div className="relative mb-4">
+        {/* Track */}
+        <div className="h-4 rounded-full bg-[var(--border)] overflow-hidden relative">
+          {/* Fill */}
+          <motion.div
+            className="h-full rounded-full"
+            style={{
+              background: isGoalReached
+                ? 'linear-gradient(90deg, var(--primary) 0%, var(--skill-speaking) 100%)'
+                : 'var(--primary)',
+            }}
+            initial={prefersReducedMotion ? { width: `${progress}%` } : { width: 0 }}
+            animate={{ width: `${progress}%` }}
+            transition={{ duration: 1, ease: 'easeOut' }}
           />
-        ))}
+
+          {/* Milestone markers */}
+          {milestones.map((milestone) => (
+            <div
+              key={milestone.position}
+              className="absolute top-0 bottom-0 flex items-center justify-center"
+              style={{ left: `${milestone.position}%` }}
+            >
+              <div
+                className="w-[3px] h-full"
+                style={{
+                  backgroundColor:
+                    progress >= milestone.position
+                      ? 'var(--foreground)'
+                      : 'rgba(0,0,0,0.15)',
+                }}
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* Milestone labels */}
+        <div className="relative mt-1">
+          {milestones.map((milestone) => (
+            <span
+              key={milestone.position}
+              className="absolute text-[10px] text-[var(--text-muted)] transform -translate-x-1/2"
+              style={{ left: `${milestone.position}%` }}
+            >
+              {milestone.label}
+            </span>
+          ))}
+        </div>
       </div>
 
-      {/* Motivational message */}
-      <p className="text-sm text-slate-600 mb-2">{message}</p>
+      {/* Motivational Message */}
+      <p
+        className="text-center font-bold mb-2"
+        style={{
+          color: isGoalReached ? 'var(--skill-speaking)' : 'var(--primary)',
+        }}
+      >
+        {getMotivationalMessage()}
+      </p>
 
-      {/* Remaining XP */}
-      {progress < 100 && (
-        <p className="text-xs text-slate-500">
-          <span style={{ fontFamily: "var(--font-mono)" }}>{remainingXP}</span>
-          {" XP to go"}
-        </p>
-      )}
-
-      {/* Goal reached celebration */}
-      {progress >= 100 && (
-        <div className="mt-3 flex items-center gap-2 text-amber-600">
-          <span className="text-lg">!</span>
-          <span className="text-sm font-semibold">Daily goal complete!</span>
+      {/* XP Stats */}
+      <div className="flex items-center justify-between text-sm">
+        <div className="text-[var(--text-muted)]">
+          {isGoalReached ? (
+            <span>Great job today!</span>
+          ) : (
+            <span>
+              <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--foreground)' }}>
+                {remainingXP}
+              </span>{' '}
+              XP to go
+            </span>
+          )}
         </div>
+        <div className="text-[var(--text-muted)]">
+          <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--foreground)' }}>
+            {currentXP}
+          </span>
+          <span className="mx-1">/</span>
+          <span style={{ fontFamily: 'var(--font-mono)' }}>{dailyTarget} XP</span>
+        </div>
+      </div>
+
+      {/* Streak Bonus Preview */}
+      {isGoalReached && (
+        <motion.div
+          initial={prefersReducedMotion ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3, ease: 'easeOut' }}
+          className="mt-4 pt-4 border-t-[2px] border-dashed border-[var(--border)]"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-bold text-[var(--foreground)]">Streak Bonus</span>
+            <span
+              className="text-lg font-bold"
+              style={{
+                color: 'var(--skill-speaking)',
+                fontFamily: 'var(--font-mono)',
+              }}
+            >
+              +{STREAK_BONUS_XP} XP
+            </span>
+          </div>
+          <p className="text-xs text-[var(--text-muted)] mt-1">
+            Keep your streak going tomorrow!
+          </p>
+        </motion.div>
       )}
-    </motion.section>
+    </motion.div>
   );
 }

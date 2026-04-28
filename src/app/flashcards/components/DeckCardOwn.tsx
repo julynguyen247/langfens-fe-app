@@ -2,7 +2,6 @@
 "use client";
 
 import Link from "next/link";
-import { Calendar, Folder, FileText } from "lucide-react";
 import { useState } from "react";
 import DeckCardsModal from "./DeckCardsModal";
 
@@ -23,33 +22,35 @@ export default function DeckCardOwn({ deck }: { deck: Deck }) {
 
   return (
     <>
-      <div className="flex h-full flex-col rounded-2xl border border-blue-100 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md hover:border-blue-200">
+      <div className="flex h-full flex-col rounded-[2rem] border-[3px] border-[var(--border)] bg-white p-4 shadow-[0_4px_0_rgba(0,0,0,0.08)] transition-all duration-200 hover:-translate-y-[3px] hover:shadow-[0_6px_0_rgba(0,0,0,0.08)] hover:border-[var(--primary)]">
         <div>
-          <h4 className="line-clamp-2 text-[15px] font-semibold leading-5 text-[#3B82F6]">
+          <h4
+            className="line-clamp-2 text-[15px] font-bold leading-5 text-[var(--foreground)] group-hover:text-[var(--primary)] transition-colors"
+            style={{ fontFamily: "var(--font-sans)" }}
+          >
             {deck.title}
           </h4>
           {deck.category && (
-            <div className="mt-2 flex items-center gap-1 text-[13px] text-[#3B82F6]">
-              <Folder className="h-3.5 w-3.5" />
-              <span>{deck.category}</span>
+            <div className="mt-2">
+              <span className="inline-flex items-center text-xs px-3 py-1 bg-[var(--primary-light)] text-[var(--primary)] rounded-full border-[2px] border-[var(--primary)]/20 font-bold">
+                {deck.category}
+              </span>
             </div>
           )}
           {deck.descriptionMd && (
-            <p className="mt-2 line-clamp-2 text-sm text-slate-600">
+            <p className="mt-2 line-clamp-2 text-sm text-[var(--text-muted)]">
               {deck.descriptionMd}
             </p>
           )}
         </div>
 
         <div className="mt-auto">
-          <div className="mt-4 flex items-center justify-between text-xs text-slate-500">
+          <div className="mt-4 flex items-center justify-between text-xs text-[var(--text-muted)]">
             <div className="flex items-center gap-1">
-              <FileText className="h-3.5 w-3.5" />
-              <span>{deck.status}</span>
+              <span className="font-bold">{deck.status}</span>
             </div>
             {deck.createdAt && (
               <div className="flex items-center gap-1">
-                <Calendar className="h-3.5 w-3.5" />
                 <span>
                   {new Date(deck.createdAt).toLocaleDateString("vi-VN")}
                 </span>
@@ -60,13 +61,13 @@ export default function DeckCardOwn({ deck }: { deck: Deck }) {
           <div className="mt-4 grid grid-cols-2 gap-2">
             <Link
               href={`/flashcards/${deck.id}`}
-              className="inline-block w-full rounded-xl bg-blue-600 px-4 py-2 text-center text-sm font-medium text-white hover:brightness-110"
+              className="inline-flex items-center justify-center w-full rounded-full border-b-[4px] border-[var(--primary-dark)] bg-[var(--primary)] px-4 py-2 text-center text-sm font-bold text-white hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px] transition-all"
             >
               Học ngay
             </Link>
             <button
               onClick={() => setOpen(true)}
-              className="w-full rounded-xl border border-blue-200 bg-white px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50"
+              className="w-full rounded-full border-[3px] border-[var(--border)] border-b-[5px] bg-white px-4 py-2 text-sm font-bold text-[var(--foreground)] hover:border-[var(--primary)] hover:text-[var(--primary)] hover:-translate-y-0.5 active:translate-y-[2px] active:border-b-[3px] transition-all"
             >
               Xem thẻ
             </button>

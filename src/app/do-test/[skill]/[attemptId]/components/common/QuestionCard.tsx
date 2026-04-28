@@ -10,11 +10,6 @@ type Choice =
       label: string;
     };
 
-// Material Icon Component
-function Icon({ name, className = "" }: { name: string; className?: string }) {
-  return <span className={`material-symbols-rounded ${className}`}>{name}</span>;
-}
-
 // Memoized markdown components for clean rendering
 const markdownComponents = {
   p: ({ node, ...props }: any) => (
@@ -32,9 +27,9 @@ const QuestionCard = memo(function QuestionCard({
   onSelect: (id: string, value: string) => void;
 }) {
   return (
-    <div className="rounded-xl bg-white border border-slate-200 p-5 shadow-sm hover:shadow-md transition-shadow group">
+    <div className="rounded-[1.5rem] bg-white border-[3px] border-[var(--border)] p-5 shadow-[0_4px_0_rgba(0,0,0,0.08)] hover:shadow-md transition-shadow group">
       {/* Question Stem */}
-      <div className="font-medium text-slate-800 mb-4 leading-relaxed">
+      <div className="font-medium text-[var(--foreground)] mb-4 leading-relaxed">
         <ReactMarkdown components={markdownComponents}>
           {question.stem}
         </ReactMarkdown>
@@ -53,25 +48,25 @@ const QuestionCard = memo(function QuestionCard({
               onClick={() => onSelect(question.id, value)}
               className={`w-full text-left px-4 py-3 rounded-lg border transition-all duration-200 flex items-start gap-3 ${
                 isActive
-                  ? "border-[#3B82F6] bg-[#EFF6FF] ring-2 ring-blue-500/20"
-                  : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+                  ? "border-[var(--primary)] bg-[var(--primary-light)] ring-2 ring-[var(--primary)]/20"
+                  : "border-[var(--border)] hover:border-[var(--border)] hover:bg-[var(--background)]"
               }`}
             >
               {/* Radio Indicator */}
               <span
                 className={`flex-shrink-0 mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
                   isActive
-                    ? "border-[#3B82F6] bg-[#3B82F6]"
-                    : "border-slate-300 group-hover:border-slate-400"
+                    ? "border-[var(--primary)] bg-[var(--primary)]"
+                    : "border-[var(--border)] group-hover:border-[var(--text-muted)]"
                 }`}
               >
                 {isActive && (
-                  <Icon name="check" className="text-[14px] text-white" />
+                  <span className="block w-2 h-2 rounded-full bg-white" />
                 )}
               </span>
-              
+
               {/* Choice Label */}
-              <span className={`flex-1 text-sm ${isActive ? "text-[#1D4ED8] font-medium" : "text-slate-700"}`}>
+              <span className={`flex-1 text-sm ${isActive ? "text-[var(--primary-hover)] font-medium" : "text-[var(--text-body)]"}`}>
                 <ReactMarkdown components={markdownComponents}>
                   {label}
                 </ReactMarkdown>

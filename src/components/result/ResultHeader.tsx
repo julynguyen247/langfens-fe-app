@@ -1,23 +1,22 @@
 "use client";
 
-import React from 'react';
+import React from "react";
+import { motion } from "framer-motion";
+import { ScoreCounter } from "@/components/ui/ScoreCounter";
+import { SkillProgressBar } from "@/components/ui/SkillProgressBar";
 
-// Helper to get friendly names from abbreviations
 const getLabel = (code: string): string => {
   const map: Record<string, string> = {
-    // Writing criteria
-    'TR': 'Task Response',
-    'CC': 'Coherence',
-    'LR': 'Vocabulary',
-    'GRA': 'Grammar',
-    // Speaking criteria
-    'FC': 'Fluency',
-    'P': 'Pronunciation',
-    // Reading/Listening stats
-    'Correct': 'Correct',
-    'Skipped': 'Skipped',
-    'Time': 'Time Taken',
-    'Accuracy': 'Accuracy',
+    TR: "Task Response",
+    CC: "Coherence",
+    LR: "Vocabulary",
+    GRA: "Grammar",
+    FC: "Fluency",
+    P: "Pronunciation",
+    Correct: "Correct",
+    Skipped: "Skipped",
+    Time: "Time Taken",
+    Accuracy: "Accuracy",
   };
   return map[code] || code;
 };
@@ -27,52 +26,121 @@ export interface MetricItem {
   value: string | number;
 }
 
+export interface BandBreakdown {
+  skill: string;
+  score: number;
+}
+
 interface ResultHeaderProps {
   skill: string;
   overallScore: number | string;
   date: string;
   metrics: MetricItem[];
+  bandBreakdowns?: BandBreakdown[];
 }
 
-export function ResultHeader({ skill, overallScore, date, metrics }: ResultHeaderProps) {
+export function ResultHeader({
+  skill,
+  overallScore,
+  date,
+  metrics,
+  bandBreakdowns,
+}: ResultHeaderProps) {
+  const numericScore =
+    typeof overallScore === "number" ? overallScore : parseFloat(overallScore);
+  const hasNumericScore = !isNaN(numericScore);
+
   return (
-    <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm p-8 flex flex-col md:flex-row gap-10 items-stretch">
-      
-      {/* LEFT: OVERALL SCORE */}
-      <div className="md:w-[40%] flex flex-col justify-center items-center border-b md:border-b-0 md:border-r border-slate-100 pb-8 md:pb-0 md:pr-8">
-        <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.25em] mb-4">
+    <motion.div
+      className="flex flex-col items-center gap-8"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+    >
+      {/* Animated Score Counter */}
+      <div className="flex flex-col items-center">
+        <p
+          className="text-sm font-bold text-[var(--text-muted)] mb-2"
+          style={{ fontFamily: "var(--font-sans)" }}
+        >
           {skill} Assessment
-        </h3>
-        <div className="text-[6rem] leading-none font-bold text-[#3B82F6] font-sans tracking-tighter">
-          {typeof overallScore === "number" ? overallScore.toFixed(1) : overallScore}
-        </div>
-        <div className="mt-6 flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide">
-          <span className="material-symbols-rounded text-sm">verified</span>
+        </p>
+        {hasNumericScore ? (
+          <ScoreCounter
+            value={numericScore}
+            duration={1.5}
+            decimals={1}
+            className="text-6xl font-bold text-[var(--primary)]"
+          />
+        ) : (
+          <span
+            className="text-6xl font-bold text-[var(--primary)]"
+            style={{ fontFamily: "var(--font-mono)" }}
+          >
+            {overallScore}
+          </span>
+        )}
+        <p
+          className="text-sm font-semibold text-[var(--text-muted)] mt-3"
+          style={{ fontFamily: "var(--font-sans)" }}
+        >
+          Overall Band Score
+        </p>
+        <div className="mt-4 flex items-center gap-2 bg-[var(--primary-light)] text-[var(--primary)] px-4 py-1.5 rounded-full border-[2px] border-[var(--primary)] text-xs font-bold">
           Official Result
         </div>
-        <p className="text-xs text-slate-400 mt-3 font-medium">{date}</p>
+        <p className="text-xs text-[var(--text-muted)] mt-2 font-medium">
+          {date}
+        </p>
       </div>
 
-      {/* RIGHT: 2x2 METRICS GRID */}
-      <div className="flex-1 grid grid-cols-2 gap-4">
+      {/* Band Breakdown Bars */}
+      {bandBreakdowns && bandBreakdowns.length > 0 && (
+        <div className="w-full max-w-md space-y-3">
+          {bandBreakdowns.map((b, idx) => (
+            <motion.div
+              key={b.skill}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.4, delay: 0.2 * idx, ease: "easeOut" }}
+            >
+              <SkillProgressBar
+                skill={b.skill}
+                score={b.score}
+                delay={0.2 * idx}
+              />
+            </motion.div>
+          ))}
+        </div>
+      )}
+
+      {/* Summary Cards row */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full">
         {metrics.slice(0, 4).map((m, idx) => (
-          <div 
-            key={`${m.label}-${idx}`} 
-            className="bg-slate-50 rounded-2xl border border-slate-100 p-4 flex flex-col items-center justify-center text-center hover:border-blue-200 transition-colors group"
+          <motion.div
+            key={`${m.label}-${idx}`}
+            className="rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-[var(--background)] p-4 flex flex-col items-center justify-center text-center hover:-translate-y-[3px] hover:border-[var(--primary)] hover:shadow-[0_6px_0_rgba(0,0,0,0.08)] transition-all duration-150"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              duration: 0.4,
+              delay: 0.6 + idx * 0.1,
+              ease: "easeOut",
+            }}
           >
-            {/* VALUE */}
-            <span className="text-3xl font-bold text-slate-800 group-hover:text-[#3B82F6] mb-1 transition-colors">
+            <span
+              className="text-3xl font-bold text-[var(--foreground)] mb-1"
+              style={{ fontFamily: "var(--font-mono)" }}
+            >
               {m.value}
             </span>
-            {/* LABEL (Full Text) */}
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2">
+            <span className="text-xs font-bold text-[var(--text-muted)]">
               {getLabel(m.label)}
             </span>
-          </div>
+          </motion.div>
         ))}
       </div>
-
-    </div>
+    </motion.div>
   );
 }
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   getAttempt,
   getMe,
@@ -12,8 +13,8 @@ import {
   getSpeakingHistory,
   getAnalyticsSummary,
   getGamificationStats,
-  getAchievements,
   getLeaderboard,
+  getAchievements,
 } from "@/utils/api";
 import { useAttemptStore } from "../store/useAttemptStore";
 import { useLoadingStore } from "../store/loading";
@@ -23,15 +24,29 @@ import {
   normalizeAttemptItem,
 } from "./components/utils";
 
-// New components
-import HeroDashboard from "./components/HeroDashboard";
-import StatsRow from "./components/StatsRow";
-import TodayGoal from "./components/TodayGoal";
-import ContinueLearningCard from "./components/ContinueLearningCard";
-import SkillProgressGrid from "./components/SkillProgressGrid";
-import AchievementsWidget from "./components/AchievementsWidget";
-import LeaderboardWidget from "./components/LeaderboardWidget";
-import RecentActivityTimeline from "./components/RecentActivityTimeline";
+import { EmptyState } from "@/components/ui/EmptyState";
+
+import { HeroDashboard } from "./components/HeroDashboard";
+import { SkillProgressGrid } from "./components/SkillProgressGrid";
+import { StatsRow } from "./components/StatsRow";
+import { TodayGoal } from "./components/TodayGoal";
+import { StreakCalendar } from "./components/StreakCalendar";
+import { LeaderboardWidget } from "./components/LeaderboardWidget";
+import { AchievementsWidget } from "./components/AchievementsWidget";
+import { ContinueLearning } from "./components/ContinueLearning";
+import { RecentActivityTimeline } from "./components/RecentActivityTimeline";
+
+// ====================================
+// TYPES
+// ====================================
+export type Attempt = {
+  id: string;
+  title: string;
+  skill: "Reading" | "Listening" | "Writing" | "Speaking";
+  dateISO: string;
+  score?: number;
+  durationMin: number;
+};
 
 // Types
 import type {
@@ -46,48 +61,35 @@ import type {
 } from "./types";
 
 // ====================================
-// HELPER FUNCTIONS
+// SKELETON COMPONENTS
 // ====================================
-
-function buildAttemptUrl(a: Attempt): string {
-  if (a.skill === "Writing") return `/attempts/${a.id}?source=writing`;
-  if (a.skill === "Speaking") return `/attempts/${a.id}?source=speaking`;
-  return `/attempts/${a.id}?source=attempt`;
+function SkeletonCard({ className = "" }: { className?: string }) {
+  return (
+    <div
+      className={`bg-[var(--border)] animate-pulse rounded-[2rem] ${className}`}
+    />
+  );
 }
 
-function findWeakestSkill(attempts: Attempt[]): Skill | undefined {
-  if (attempts.length === 0) return undefined;
+// ====================================
+// ANIMATION VARIANTS
+// ====================================
+const staggerContainer = {
+  hidden: { opacity: 1 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1, delayChildren: 0.1 },
+  },
+};
 
-  const skillScores: Record<Skill, { total: number; count: number }> = {
-    Reading: { total: 0, count: 0 },
-    Listening: { total: 0, count: 0 },
-    Writing: { total: 0, count: 0 },
-    Speaking: { total: 0, count: 0 },
-  };
-
-  attempts.forEach((a) => {
-    if (a.score !== undefined) {
-      skillScores[a.skill].total += a.score;
-      skillScores[a.skill].count += 1;
-    }
-  });
-
-  let weakest: Skill | undefined;
-  let lowestAvg = Infinity;
-
-  (Object.keys(skillScores) as Skill[]).forEach((skill) => {
-    const { total, count } = skillScores[skill];
-    if (count > 0) {
-      const avg = total / count;
-      if (avg < lowestAvg) {
-        lowestAvg = avg;
-        weakest = skill;
-      }
-    }
-  });
-
-  return weakest;
-}
+const fadeInUp = {
+  hidden: { opacity: 0, y: 16 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.4, ease: "easeOut" as const },
+  },
+};
 
 // ====================================
 // MAIN PAGE COMPONENT
@@ -95,43 +97,48 @@ function findWeakestSkill(attempts: Attempt[]): Skill | undefined {
 
 export default function Home() {
   const router = useRouter();
+  const prefersReducedMotion = useReducedMotion();
   const { setAttempt } = useAttemptStore();
   const { setLoading } = useLoadingStore();
 
-  // State
+  // Existing state
   const [userName, setUserName] = useState("there");
   const [userId, setUserId] = useState("");
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [loadingAttempts, setLoadingAttempts] = useState(true);
   const [placementTestId, setPlacementTestId] = useState("");
-  const [placementStatus, setPlacementStatus] = useState<PlacementStatus | null>(null);
+  const [placementStatus, setPlacementStatus] =
+    useState<PlacementStatus | null>(null);
   const [loadingPlacement, setLoadingPlacement] = useState(true);
-  
-  // Gamification state
-  const [gamification, setGamification] = useState<GamificationStats>({
-    level: 1,
-    currentXP: 0,
-    totalXP: 0,
-    dailyTargetXP: 500,
-    todayXP: 0,
-    currentStreak: 0,
-    longestStreak: 0,
-  });
-  
-  // Stats state
-  const [stats, setStats] = useState({
-    totalAttempts: 0,
-    avgScore: 0,
-    totalStudyTimeMin: 0,
-    streak: 0,
-  });
-  
-  // Achievements state
-  const [achievements, setAchievements] = useState<Achievement[]>([]);
-  
-  // Leaderboard state
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [userRank, setUserRank] = useState<number>();
+  const [analytics, setAnalytics] = useState<{
+    totalAttempts: number;
+    totalStudyTimeMin: number;
+    avgScore: number;
+    skillScores?: Record<string, number>;
+  } | null>(null);
+  const [streak, setStreak] = useState(0);
+
+  // New gamification state
+  const [gamification, setGamification] = useState<{
+    currentXP: number;
+    dailyTarget: number;
+    level: number;
+    activityDays: { date: string; count: number }[];
+  } | null>(null);
+  const [leaderboardUsers, setLeaderboardUsers] = useState<
+    { userId: string; name: string; xp: number; rank: number }[]
+  >([]);
+  const [currentUserRank, setCurrentUserRank] = useState<number | undefined>();
+  const [achievementsList, setAchievementsList] = useState<
+    {
+      id: string;
+      title: string;
+      description?: string;
+      progress: number;
+      unlocked: boolean;
+    }[]
+  >([]);
+  const [loadingGamification, setLoadingGamification] = useState(true);
 
   // Fetch user
   useEffect(() => {
@@ -140,89 +147,64 @@ export default function Home() {
         const data = res?.data?.data ?? res?.data;
         const name = data?.name || "there";
         setUserName(name.split(" ")[0]);
-        setUserId(data?.id || "");
+        if (data?.id) setUserId(String(data.id));
       })
       .catch((err) => {
         console.error("Error fetching user:", err);
       });
   }, []);
 
-  // Fetch attempts and analytics
+  // Fetch attempts and analytics (existing logic preserved)
   useEffect(() => {
     (async () => {
       setLoadingAttempts(true);
       try {
-        const [res, wres, sres, analyticsRes, gamificationRes, achievementsRes, leaderboardRes] = await Promise.all([
-          getAttempt(1, 10).catch(() => null),
-          getWritingHistory().catch(() => null),
-          getSpeakingHistory().catch(() => null),
-          getAnalyticsSummary().catch(() => null),
-          getGamificationStats().catch(() => null),
-          getAchievements().catch(() => null),
-          getLeaderboard(10).catch(() => null),
-        ]);
+        const [res, wres, sres, analyticsRes, gamificationRes] =
+          await Promise.all([
+            getAttempt(1, 10),
+            getWritingHistory(),
+            getSpeakingHistory(),
+            getAnalyticsSummary().catch(() => null),
+            getGamificationStats().catch(() => null),
+          ]);
 
-        // Process attempts
-        const raw = (res as any)?.data?.items ?? (res as any)?.data?.data ?? [];
-        const list: Attempt[] = Array.isArray(raw) ? raw.map(normalizeAttemptItem) : [];
+        const raw =
+          (res as any)?.data?.items ?? (res as any)?.data?.data ?? [];
+        const list: Attempt[] = Array.isArray(raw)
+          ? raw.map(normalizeAttemptItem)
+          : [];
         const wraw = (wres as any)?.data?.data ?? [];
-        const writingList: Attempt[] = Array.isArray(wraw) ? wraw.map(mapWritingHistoryToAttempt) : [];
+        const writingList: Attempt[] = Array.isArray(wraw)
+          ? wraw.map(mapWritingHistoryToAttempt)
+          : [];
         const sraw = (sres as any)?.data?.data ?? [];
-        const speakingList: Attempt[] = Array.isArray(sraw) ? sraw.map(mapSpeakingHistoryToAttempt) : [];
+        const speakingList: Attempt[] = Array.isArray(sraw)
+          ? sraw.map(mapSpeakingHistoryToAttempt)
+          : [];
         const merged = [...list, ...writingList, ...speakingList];
-        merged.sort((a, b) => new Date(b.dateISO).getTime() - new Date(a.dateISO).getTime());
+        merged.sort(
+          (a, b) =>
+            new Date(b.dateISO).getTime() - new Date(a.dateISO).getTime()
+        );
         setAttempts(merged);
 
-        // Process analytics
-        const summaryData = (analyticsRes as any)?.data?.data ?? (analyticsRes as any)?.data;
-        if (summaryData) {
-          setStats({
-            totalAttempts: summaryData.totalAttempts ?? 0,
-            avgScore: summaryData.avgScore ?? 0,
-            totalStudyTimeMin: summaryData.totalStudyTimeMin ?? 0,
-            streak: summaryData.currentStreak ?? 0,
-          });
-        }
+        const summaryData =
+          (analyticsRes as any)?.data?.data ?? (analyticsRes as any)?.data;
+        if (summaryData) setAnalytics(summaryData);
 
-        // Process gamification
-        const gamificationData = (gamificationRes as any)?.data?.data ?? (gamificationRes as any)?.data;
+        const gamificationData =
+          (gamificationRes as any)?.data?.data ??
+          (gamificationRes as any)?.data;
+        if (gamificationData?.currentStreak !== undefined) {
+          setStreak(gamificationData.currentStreak);
+        }
         if (gamificationData) {
           setGamification({
+            currentXP: gamificationData.todayXP ?? gamificationData.xp ?? 0,
+            dailyTarget: gamificationData.dailyTarget ?? 50,
             level: gamificationData.level ?? 1,
-            currentXP: gamificationData.currentXP ?? 0,
-            totalXP: gamificationData.totalXP ?? 0,
-            dailyTargetXP: gamificationData.dailyTargetXP ?? 500,
-            todayXP: gamificationData.todayXP ?? 0,
-            currentStreak: gamificationData.currentStreak ?? 0,
-            longestStreak: gamificationData.longestStreak ?? 0,
+            activityDays: gamificationData.activityDays ?? [],
           });
-        }
-
-        // Process achievements
-        const achievementsData = (achievementsRes as any)?.data?.data ?? (achievementsRes as any)?.data ?? [];
-        if (Array.isArray(achievementsData)) {
-          setAchievements(achievementsData.slice(0, 5).map((a: any) => ({
-            id: a.id,
-            name: a.name ?? "Achievement",
-            description: a.description ?? "",
-            progress: a.progress ?? 0,
-            isUnlocked: a.isUnlocked ?? false,
-            xpReward: a.xpReward ?? 100,
-            iconType: (a.iconType as Achievement["iconType"]) ?? "tests",
-          })));
-        }
-
-        // Process leaderboard
-        const leaderboardData = (leaderboardRes as any)?.data?.data ?? (leaderboardRes as any)?.data ?? [];
-        if (Array.isArray(leaderboardData)) {
-          const entries: LeaderboardEntry[] = leaderboardData.map((u: any, idx: number) => ({
-            rank: idx + 1,
-            userId: u.userId ?? u.id ?? "",
-            name: u.name ?? "User",
-            xp: u.xp ?? 0,
-            avatarUrl: u.avatarUrl,
-          }));
-          setLeaderboard(entries);
         }
       } catch (e) {
         console.error("Error loading data:", e);
@@ -232,21 +214,64 @@ export default function Home() {
     })();
   }, []);
 
-  // Detect current user's rank in leaderboard
-  // Runs when both userId (from getMe) and leaderboard are available,
-  // avoiding the race condition where userId wasn't set yet
+  // Fetch gamification extras (leaderboard, achievements)
   useEffect(() => {
-    if (userId && leaderboard.length > 0) {
-      const rank = leaderboard.findIndex((u) => u.userId === userId);
-      if (rank >= 0) {
-        setUserRank(rank + 1);
-      }
-      // If user not found in top 10, leave userRank as undefined
-      // (don't set to 0, since LeaderboardWidget checks: currentUserRank && currentUserRank > 3)
-    }
-  }, [userId, leaderboard]);
+    (async () => {
+      setLoadingGamification(true);
+      try {
+        const [lbRes, achRes] = await Promise.allSettled([
+          getLeaderboard(3),
+          getAchievements(),
+        ]);
 
-  // Fetch placement status
+        if (lbRes.status === "fulfilled") {
+          const lbData =
+            (lbRes.value as any)?.data?.data ?? (lbRes.value as any)?.data;
+          if (Array.isArray(lbData)) {
+            setLeaderboardUsers(
+              lbData.slice(0, 3).map((u: any, i: number) => ({
+                userId: String(u.userId ?? u.id ?? i),
+                name: String(u.name ?? u.username ?? "User"),
+                xp: Number(u.xp ?? u.totalXP ?? 0),
+                rank: i + 1,
+              }))
+            );
+          }
+          // Try to find current user rank
+          if (Array.isArray(lbData)) {
+            const userEntry = lbData.find(
+              (u: any) => String(u.userId ?? u.id) === userId
+            );
+            if (userEntry) {
+              setCurrentUserRank(userEntry.rank);
+            }
+          }
+        }
+
+        if (achRes.status === "fulfilled") {
+          const achData =
+            (achRes.value as any)?.data?.data ?? (achRes.value as any)?.data;
+          if (Array.isArray(achData)) {
+            setAchievementsList(
+              achData.map((a: any) => ({
+                id: String(a.id ?? a.achievementId ?? ""),
+                title: String(a.title ?? a.name ?? "Achievement"),
+                description: a.description,
+                progress: Number(a.progress ?? 0),
+                unlocked: !!a.unlocked,
+              }))
+            );
+          }
+        }
+      } catch {
+        // Silently fail for gamification extras
+      } finally {
+        setLoadingGamification(false);
+      }
+    })();
+  }, [userId]);
+
+  // Fetch placement status (existing logic preserved)
   useEffect(() => {
     (async () => {
       setLoadingPlacement(true);
@@ -257,15 +282,23 @@ export default function Home() {
         ]);
 
         if (testsRes.status === "fulfilled") {
-          const data = (testsRes.value as any)?.data?.data ?? (testsRes.value as any)?.data ?? [];
+          const data =
+            (testsRes.value as any)?.data?.data ??
+            (testsRes.value as any)?.data ??
+            [];
           const placement = Array.isArray(data)
-            ? data.find((item: any) => String(item.title || "").includes("English Placement"))
+            ? data.find((item: any) =>
+                String(item.title || "").includes("English Placement")
+              )
             : null;
           if (placement?.id) setPlacementTestId(String(placement.id));
         }
 
         if (statusRes.status === "fulfilled") {
-          const raw = (statusRes.value as any)?.data?.data ?? (statusRes.value as any)?.data ?? null;
+          const raw =
+            (statusRes.value as any)?.data?.data ??
+            (statusRes.value as any)?.data ??
+            null;
           if (raw) {
             setPlacementStatus({
               completed: !!raw.completed,
@@ -287,7 +320,8 @@ export default function Home() {
     try {
       setLoading(true);
       const res = await startAttempt(placementTestId);
-      const payload = (res as any)?.data?.data ?? (res as any)?.data ?? res;
+      const payload =
+        (res as any)?.data?.data ?? (res as any)?.data ?? res;
       const attemptId = payload?.attemptId ?? payload?.id;
       if (!attemptId) throw new Error("Missing attemptId");
       setAttempt(payload);
@@ -300,201 +334,283 @@ export default function Home() {
     }
   }
 
-  function handleSkillClick(skill: Skill) {
-    router.push(`/practice?skill=${skill.toLowerCase()}`);
-  }
+  // Compute weakest skill from analytics
+  const weakestSkill = useMemo(() => {
+    if (!analytics?.skillScores) return undefined;
+    const entries = Object.entries(analytics.skillScores);
+    if (entries.length === 0) return undefined;
+    entries.sort((a, b) => a[1] - b[1]);
+    return entries[0][0];
+  }, [analytics]);
 
-  function handleViewAchievements() {
-    router.push("/achievements");
-  }
+  // Skill scores for progress bars
+  const skillScores = useMemo(() => {
+    const defaults = { Reading: 0, Listening: 0, Writing: 0, Speaking: 0 };
+    if (!analytics?.skillScores) return defaults;
+    return { ...defaults, ...analytics.skillScores };
+  }, [analytics]);
 
-  function handleViewLeaderboard() {
-    router.push("/leaderboard");
-  }
+  // Convert attempts for RecentActivityTimeline
+  const recentActivityAttempts = useMemo(
+    () =>
+      attempts.slice(0, 5).map((a) => ({
+        id: a.id,
+        title: a.title,
+        skill: a.skill,
+        dateISO: a.dateISO,
+        score: a.score,
+        href: buildAttemptUrl(a),
+      })),
+    [attempts]
+  );
 
-  function handleViewAttempt(attemptId: string, skill: Skill) {
-    if (skill === "Writing") {
-      router.push(`/attempts/${attemptId}?source=writing`);
-    } else if (skill === "Speaking") {
-      router.push(`/attempts/${attemptId}?source=speaking`);
-    } else {
-      router.push(`/attempts/${attemptId}?source=attempt`);
-    }
-  }
+  const isNewUser = !loadingAttempts && attempts.length === 0;
+  const isLoading = loadingAttempts;
 
-  function handleViewAllAttempts() {
-    router.push("/history");
-  }
-
-  function handleStartPractice() {
-    router.push("/practice");
-  }
-
-  // Computed values
-  const weakestSkill = findWeakestSkill(attempts);
-  const lastAttempt = attempts[0];
-
-  // Convert attempts to ActivityItem for timeline
-  const activityItems: ActivityItem[] = attempts.slice(0, 5).map((a) => ({
-    id: a.id,
-    title: a.title,
-    skill: a.skill,
-    score: a.score,
-    dateISO: a.dateISO,
-    attemptId: a.id,
-  }));
-
-  // Build skill progress data from attempts
-  const skillCounts: Record<Skill, { total: number; count: number }> = {
-    Reading: { total: 0, count: 0 },
-    Listening: { total: 0, count: 0 },
-    Writing: { total: 0, count: 0 },
-    Speaking: { total: 0, count: 0 },
-  };
-  attempts.forEach((a) => {
-    if (a.score !== undefined) {
-      skillCounts[a.skill].total += a.score;
-      skillCounts[a.skill].count += 1;
-    }
-  });
-
-  const skillProgress: SkillProgress[] = (
-    ["Reading", "Listening", "Writing", "Speaking"] as Skill[]
-  ).map((skill) => ({
-    skill,
-    currentScore: skillCounts[skill].count > 0
-      ? Math.round(skillCounts[skill].total / skillCounts[skill].count)
-      : 0,
-    // Target score of 80 represents IELTS passing threshold (Band 6.5-7.0)
-    // This aligns with the app's goal of achieving professional English proficiency
-    targetScore: 80,
-    examCount: skillCounts[skill].count,
-  }));
+  const motionProps = prefersReducedMotion
+    ? {}
+    : { variants: fadeInUp };
 
   return (
-    <div className="min-h-screen w-full bg-[#F8FAFC]">
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <div className="min-h-screen w-full bg-[var(--background)]">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* =============================================
-            SECTION 1: PLACEMENT TEST ALERT
+            COMMAND CENTER GRID
         ============================================= */}
-        {!loadingPlacement && !placementStatus?.completed && placementTestId && (
-          <section className="flex items-center justify-between p-5 bg-blue-50 border-2 border-blue-200 rounded-xl">
-            <div>
-              <p className="font-semibold text-slate-800">Take Your Placement Test</p>
-              <p className="text-sm text-slate-600">
-                Let us assess your level to personalize your learning path.
-              </p>
-            </div>
-            <button
-              onClick={handleStartPlacement}
-              className="px-5 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-full border-b-[4px] active:translate-y-[2px] active:border-b-[2px] transition-all"
-            >
-              Start Now
-            </button>
-          </section>
-        )}
+        <motion.div
+          variants={prefersReducedMotion ? undefined : staggerContainer}
+          initial="hidden"
+          animate="show"
+          className="grid lg:grid-cols-3 gap-8"
+        >
+          {/* =============================================
+              MAIN COLUMN (2 cols)
+          ============================================= */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Welcome Banner */}
+            <motion.div {...motionProps}>
+              <HeroDashboard
+                userName={userName}
+                streak={streak}
+                level={gamification?.level ?? 0}
+                currentXP={gamification?.currentXP ?? 0}
+                dailyTarget={gamification?.dailyTarget ?? 50}
+              />
+            </motion.div>
 
-        {/* Placement Complete Badge */}
-        {!loadingPlacement && placementStatus?.completed && (
-          <section className="flex items-center justify-between p-5 bg-emerald-50 border-2 border-emerald-200 rounded-xl">
-            <div>
-              <p className="font-semibold text-slate-800">Placement Complete</p>
-              <p className="text-sm text-slate-600">
-                Level: <strong>{placementStatus.level || "N/A"}</strong>
-                {placementStatus.band > 0 && (
-                  <span className="ml-2">
-                    • Band <strong>{placementStatus.band.toFixed(1)}</strong>
-                  </span>
+            {/* Placement Test Alert */}
+            {!loadingPlacement &&
+              !placementStatus?.completed &&
+              placementTestId && (
+                <motion.section
+                  {...motionProps}
+                  className="flex items-center justify-between p-5 bg-[var(--primary-light)] border-[3px] border-[var(--border)] rounded-[2rem] shadow-[0_4px_0_rgba(0,0,0,0.08)]"
+                >
+                  <div>
+                    <p className="font-bold text-[var(--foreground)]">
+                      Take Your Placement Test
+                    </p>
+                    <p className="text-sm text-[var(--text-muted)]">
+                      Let us assess your level to personalize your learning
+                      path.
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleStartPlacement}
+                    className="px-6 py-2.5 bg-[var(--primary)] text-white font-bold rounded-full border-b-[4px] border-[var(--primary-dark)] transition-all duration-150 hover:bg-[var(--primary-hover)] hover:-translate-y-0.5 active:translate-y-[2px] active:border-b-[2px] active:duration-[50ms]"
+                  >
+                    Start Now
+                  </button>
+                </motion.section>
+              )}
+
+            {/* Placement Complete Badge */}
+            {!loadingPlacement && placementStatus?.completed && (
+              <motion.section
+                {...motionProps}
+                className="flex items-center justify-between p-5 bg-[var(--skill-speaking-light)] border-[3px] border-[var(--skill-speaking-border)] rounded-[2rem] shadow-[0_4px_0_rgba(0,0,0,0.08)]"
+              >
+                <div>
+                  <p className="font-bold text-[var(--foreground)]">
+                    Placement Complete
+                  </p>
+                  <p className="text-sm text-[var(--text-muted)]">
+                    Level:{" "}
+                    <strong>{placementStatus.level || "N/A"}</strong>
+                    {placementStatus.band > 0 && (
+                      <span className="ml-2">
+                        Band{" "}
+                        <strong>{placementStatus.band.toFixed(1)}</strong>
+                      </span>
+                    )}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={handleStartPlacement}
+                    className="text-sm text-[var(--text-muted)] hover:text-[var(--foreground)] font-bold transition-colors"
+                  >
+                    Retake
+                  </button>
+                  <button
+                    onClick={() =>
+                      router.push(
+                        `/attempts/${placementStatus.attemptId}?source=attempt`
+                      )
+                    }
+                    className="text-sm text-[var(--skill-speaking)] hover:text-[var(--foreground)] font-bold transition-colors"
+                  >
+                    View Report
+                  </button>
+                </div>
+              </motion.section>
+            )}
+
+            {/* Empty state for new users */}
+            {isNewUser && (
+              <motion.div {...motionProps}>
+                <div className="rounded-[2rem] border-[3px] border-[var(--border)] bg-white shadow-[0_4px_0_rgba(0,0,0,0.08)]">
+                  <EmptyState
+                    title="Welcome to Langfens!"
+                    subtitle="Start your IELTS journey by taking your first practice test. We'll track your progress and help you improve."
+                    ctaText="Take your first test"
+                    ctaHref="/practice"
+                  />
+                </div>
+              </motion.div>
+            )}
+
+            {/* Skill Cards Grid */}
+            {!isNewUser && (
+              <motion.div {...motionProps}>
+                {isLoading ? (
+                  <div className="grid grid-cols-2 gap-4">
+                    <SkeletonCard className="h-40" />
+                    <SkeletonCard className="h-40" />
+                    <SkeletonCard className="h-40" />
+                    <SkeletonCard className="h-40" />
+                  </div>
+                ) : (
+                  <SkillProgressGrid scores={skillScores} />
                 )}
-              </p>
-            </div>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={handleStartPlacement}
-                className="text-sm text-slate-500 hover:text-slate-700 font-semibold"
-              >
-                Retake
-              </button>
-              <button
-                onClick={() => router.push(`/attempts/${placementStatus.attemptId}?source=attempt`)}
-                className="text-sm text-emerald-600 hover:text-emerald-700 font-semibold"
-              >
-                View Report
-              </button>
-            </div>
-          </section>
-        )}
+              </motion.div>
+            )}
 
-        {/* =============================================
-            SECTION 2: HERO DASHBOARD
-        ============================================= */}
-        <HeroDashboard
-          userName={userName}
-          streak={gamification.currentStreak}
-          level={gamification.level}
-          currentXP={gamification.currentXP}
-          dailyTargetXP={gamification.dailyTargetXP}
-          todayXP={gamification.todayXP}
-        />
+            {/* Continue Learning CTA */}
+            {!isNewUser && !isLoading && (
+              <motion.div {...motionProps}>
+                <ContinueLearning
+                  weakestSkill={weakestSkill}
+                  lastAttemptTitle={
+                    attempts[0]?.score === undefined
+                      ? attempts[0]?.title
+                      : undefined
+                  }
+                  lastAttemptSkill={
+                    attempts[0]?.score === undefined
+                      ? attempts[0]?.skill
+                      : undefined
+                  }
+                  lastAttemptHref={
+                    attempts[0]?.score === undefined
+                      ? buildAttemptUrl(attempts[0])
+                      : undefined
+                  }
+                />
+              </motion.div>
+            )}
 
-        {/* =============================================
-            SECTION 3: STATS ROW
-        ============================================= */}
-        <StatsRow
-          totalAttempts={stats.totalAttempts}
-          avgScore={stats.avgScore}
-          totalStudyTimeMin={stats.totalStudyTimeMin}
-          streak={stats.streak}
-        />
+            {/* Stats Summary Row */}
+            {analytics && analytics.totalAttempts > 0 && (
+              <motion.div {...motionProps}>
+                <StatsRow
+                  totalAttempts={analytics.totalAttempts}
+                  avgScore={analytics.avgScore}
+                  totalStudyTimeMin={analytics.totalStudyTimeMin}
+                  streak={streak}
+                />
+              </motion.div>
+            )}
 
-        {/* =============================================
-            SECTION 4: TODAY'S GOAL + CONTINUE LEARNING
-        ============================================= */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <TodayGoal
-            todayXP={gamification.todayXP}
-            dailyTargetXP={gamification.dailyTargetXP}
-          />
-          <ContinueLearningCard
-            lastAttempt={lastAttempt}
-            weakestSkill={weakestSkill}
-            onStartPractice={handleStartPractice}
-          />
-        </div>
+            {/* Today Goal */}
+            {!isNewUser && gamification && (
+              <motion.div {...motionProps}>
+                <TodayGoal
+                  currentXP={gamification.currentXP}
+                  dailyTarget={gamification.dailyTarget}
+                />
+              </motion.div>
+            )}
 
-        {/* =============================================
-            SECTION 5: SKILL PROGRESS GRID
-        ============================================= */}
-        <SkillProgressGrid
-          skills={skillProgress}
-          onSkillClick={handleSkillClick}
-        />
+            {/* Recent Activity */}
+            {!isNewUser && !isLoading && (
+              <motion.div {...motionProps}>
+                <RecentActivityTimeline attempts={recentActivityAttempts} />
+              </motion.div>
+            )}
+          </div>
 
-        {/* =============================================
-            SECTION 6: ACHIEVEMENTS + LEADERBOARD
-        ============================================= */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <AchievementsWidget
-            achievements={achievements}
-            onViewAll={handleViewAchievements}
-          />
-          <LeaderboardWidget
-            topUsers={leaderboard}
-            currentUserRank={userRank}
-            currentUserId={userId}
-            onViewAll={handleViewLeaderboard}
-          />
-        </div>
+          {/* =============================================
+              SIDEBAR (1 col)
+          ============================================= */}
+          <div className="space-y-6">
+            {/* Streak Calendar */}
+            <motion.div {...motionProps}>
+              {loadingGamification ? (
+                <SkeletonCard className="h-48" />
+              ) : (
+                <StreakCalendar
+                  days={gamification?.activityDays ?? []}
+                  streak={streak}
+                />
+              )}
+            </motion.div>
 
-        {/* =============================================
-            SECTION 7: RECENT ACTIVITY TIMELINE
-        ============================================= */}
-        <RecentActivityTimeline
-          attempts={activityItems}
-          onViewAttempt={handleViewAttempt}
-          onViewAll={handleViewAllAttempts}
-        />
+            {/* Leaderboard Mini */}
+            <motion.div {...motionProps}>
+              {loadingGamification ? (
+                <SkeletonCard className="h-44" />
+              ) : leaderboardUsers.length > 0 ? (
+                <LeaderboardWidget
+                  topUsers={leaderboardUsers}
+                  currentUserId={userId}
+                  currentUserRank={currentUserRank}
+                />
+              ) : null}
+            </motion.div>
+
+            {/* Achievement Teaser */}
+            <motion.div {...motionProps}>
+              {loadingGamification ? (
+                <SkeletonCard className="h-36" />
+              ) : achievementsList.length > 0 ? (
+                <AchievementsWidget achievements={achievementsList} />
+              ) : null}
+            </motion.div>
+          </div>
+        </motion.div>
       </main>
     </div>
   );
 }
+
+// ====================================
+// HELPER FUNCTIONS
+// ====================================
+function normalizeAttemptItem(item: any): Attempt {
+  return {
+    id: item.attemptId ?? item.id ?? "",
+    title: item.examTitle ?? item.title ?? "Practice Test",
+    skill: item.skill ?? "Reading",
+    dateISO: item.finishedAt ?? item.startedAt ?? new Date().toISOString(),
+    score: item.score ?? item.correctPercent,
+    durationMin: item.durationMin ?? Math.round((item.timeUsedSec ?? 0) / 60),
+  };
+}
+
+function buildAttemptUrl(a: Attempt) {
+  if (a.skill === "Writing") return `/attempts/${a.id}?source=writing`;
+  if (a.skill === "Speaking") return `/attempts/${a.id}?source=speaking`;
+  return `/attempts/${a.id}?source=attempt`;
+}
+

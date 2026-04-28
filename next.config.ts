@@ -41,10 +41,6 @@ const nextConfig: NextConfig = {
         hostname: "res.cloudinary.com",
       },
       {
-        protocol: "https", 
-        hostname: "**",  // Allow all domains - you can restrict this later
-      },
-       {
         protocol: "http",
         hostname: "images.mini-ielts.com",
       },

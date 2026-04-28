@@ -1,26 +1,22 @@
 "use client";
 
 import { getMe, logout } from "@/utils/api";
+import { removeTokenCookie } from "@/utils/cookie";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useUserStore } from "@/app/store/userStore";
 import { NotificationBell } from "./NotificationBell";
 
-// Unified Navigation items with icons
 const NAV_ITEMS = [
-  { label: "Home", href: "/home", icon: "home" },
-  { label: "Practice", href: "/practice", icon: "edit_note" },
-  { label: "Vocabulary", href: "/flashcards", icon: "style" },
-  { label: "Dictionary", href: "/dictionary", icon: "book_2" },
-  { label: "Analytics", href: "/analytics", icon: "bar_chart" },
-  { label: "Bookmarks", href: "/bookmarks", icon: "bookmark" },
-  { label: "Study Plan", href: "/study-plan", icon: "calendar_month" },
+  { label: "Home", href: "/home" },
+  { label: "Practice", href: "/practice" },
+  { label: "Vocabulary", href: "/flashcards" },
+  { label: "Dictionary", href: "/dictionary" },
+  { label: "Analytics", href: "/analytics" },
+  { label: "Bookmarks", href: "/bookmarks" },
+  { label: "Study Plan", href: "/study-plan" },
 ];
-
-function Icon({ name, className = "" }: { name: string; className?: string }) {
-  return <span className={`material-symbols-rounded ${className}`}>{name}</span>;
-}
 
 export default function LangfensHeader() {
   const pathname = usePathname();
@@ -46,7 +42,6 @@ export default function LangfensHeader() {
     })();
   }, [user, setUser]);
 
-  // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
       if (closeTimeoutRef.current) {
@@ -59,7 +54,6 @@ export default function LangfensHeader() {
   const avatarUrl = (user as any)?.avatarUrl || "";
   const email = user?.email || "";
 
-  // Handle mouse enter - clear any pending close timeout and open immediately
   const handleMouseEnter = () => {
     if (closeTimeoutRef.current) {
       clearTimeout(closeTimeoutRef.current);
@@ -68,7 +62,6 @@ export default function LangfensHeader() {
     setUserOpen(true);
   };
 
-  // Handle mouse leave - add delay before closing (300ms instead of instant)
   const handleMouseLeave = () => {
     closeTimeoutRef.current = setTimeout(() => {
       setUserOpen(false);
@@ -85,7 +78,7 @@ export default function LangfensHeader() {
     try {
       setRouteLoading(true);
       await logout();
-      localStorage.removeItem("access_token");
+      removeTokenCookie();
       router.replace("/auth/login");
     } catch {
       setRouteLoading(false);
@@ -97,12 +90,12 @@ export default function LangfensHeader() {
       {/* Loading bar */}
       {routeLoading && (
         <div className="fixed inset-x-0 top-0 z-[60]">
-          <div className="h-0.5 w-full bg-[#3B82F6] animate-pulse" />
+          <div className="h-1 w-full bg-[var(--primary)] animate-pulse rounded-b-full" />
         </div>
       )}
 
       {/* Header */}
-      <header className="fixed inset-x-0 top-0 z-50 bg-white border-b border-slate-100">
+      <header className="fixed inset-x-0 top-0 z-50 bg-white border-b-[3px] border-[var(--border)]">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="h-16 flex items-center justify-between">
             {/* Left: Logo */}
@@ -111,12 +104,15 @@ export default function LangfensHeader() {
               onClick={() => pathname !== "/home" && setRouteLoading(true)}
               className="flex items-center"
             >
-              <span className="font-serif text-xl font-bold tracking-wide text-[#3B82F6]">
+              <span
+                className="text-xl font-bold tracking-wide text-[var(--primary)]"
+                style={{ fontFamily: "var(--font-sans)" }}
+              >
                 LANGFENS
               </span>
             </Link>
 
-            {/* Center: Unified Icon-Rich Navigation */}
+            {/* Center: Text-only Navigation */}
             <nav className="hidden md:flex items-center gap-1">
               {NAV_ITEMS.map((item) => {
                 const isActive = pathname.startsWith(item.href);
@@ -125,14 +121,13 @@ export default function LangfensHeader() {
                     key={item.href}
                     href={item.href}
                     onClick={() => !isActive && setRouteLoading(true)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors duration-200 ${
+                    className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-150 ${
                       isActive
-                        ? "bg-[#EFF6FF] text-[#3B82F6]"
-                        : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
+                        ? "bg-[var(--primary)] text-white shadow-[0_3px_0_var(--primary-dark)]"
+                        : "text-[var(--text-muted)] hover:text-[var(--foreground)] hover:bg-[var(--border-light)]"
                     }`}
                   >
-                    <Icon name={item.icon} className="text-xl" />
-                    <span>{item.label}</span>
+                    {item.label}
                   </Link>
                 );
               })}
@@ -147,11 +142,14 @@ export default function LangfensHeader() {
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
               >
-                <button className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-colors">
+                <button className="inline-flex items-center justify-center w-10 h-10 rounded-full border-[2px] border-[var(--border)] bg-[var(--primary-light)] hover:border-[var(--primary)] transition-all duration-150 shadow-[0_2px_0_var(--border)]">
                   {avatarUrl ? (
-                    <img src={avatarUrl} className="w-9 h-9 rounded-full object-cover" alt="Avatar" />
+                    <img src={avatarUrl} className="w-10 h-10 rounded-full object-cover" alt="Avatar" />
                   ) : (
-                    <span className="text-sm font-semibold text-slate-600">
+                    <span
+                      className="text-sm font-bold text-[var(--primary)]"
+                      style={{ fontFamily: "var(--font-sans)" }}
+                    >
                       {initialsFromName(displayName)}
                     </span>
                   )}
@@ -159,56 +157,51 @@ export default function LangfensHeader() {
 
                 {/* Dropdown Menu */}
                 {userOpen && (
-                  <div 
-                    className="absolute right-0 top-full mt-2 w-56 rounded-xl bg-white border border-slate-100 shadow-lg shadow-slate-200/50"
+                  <div
+                    className="absolute right-0 top-full mt-2 w-60 rounded-[1.5rem] bg-white border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] overflow-hidden"
                     onMouseEnter={handleMouseEnter}
                     onMouseLeave={handleMouseLeave}
                   >
-                    <div className="p-4 border-b border-slate-100">
-                      <p className="font-semibold text-slate-800 truncate">{displayName}</p>
-                      <p className="text-sm text-slate-500 truncate">{email}</p>
+                    <div className="p-4 border-b-[2px] border-[var(--border)]">
+                      <p className="font-bold text-[var(--foreground)] truncate">{displayName}</p>
+                      <p className="text-sm text-[var(--text-muted)] truncate">{email}</p>
                     </div>
 
                     <div className="py-2">
                       <button
                         onClick={handleProfile}
-                        className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
+                        className="w-full text-left px-5 py-3 text-sm font-semibold text-[var(--text-body)] hover:bg-[var(--primary-light)] transition-colors"
                       >
-                        <Icon name="person" className="text-lg text-[#3B82F6]" />
                         My Profile
                       </button>
                       <Link
                         href="/achievements"
                         onClick={() => setUserOpen(false)}
-                        className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
+                        className="block w-full text-left px-5 py-3 text-sm font-semibold text-[var(--text-body)] hover:bg-[var(--primary-light)] transition-colors"
                       >
-                        <Icon name="emoji_events" className="text-lg text-[#3B82F6]" />
                         Achievements
                       </Link>
                       <Link
                         href="/leaderboard"
                         onClick={() => setUserOpen(false)}
-                        className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
+                        className="block w-full text-left px-5 py-3 text-sm font-semibold text-[var(--text-body)] hover:bg-[var(--primary-light)] transition-colors"
                       >
-                        <Icon name="leaderboard" className="text-lg text-[#3B82F6]" />
                         Leaderboard
                       </Link>
                       <Link
                         href="/notes"
                         onClick={() => setUserOpen(false)}
-                        className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
+                        className="block w-full text-left px-5 py-3 text-sm font-semibold text-[var(--text-body)] hover:bg-[var(--primary-light)] transition-colors"
                       >
-                        <Icon name="sticky_note_2" className="text-lg text-[#3B82F6]" />
                         My Notes
                       </Link>
                     </div>
 
-                    <div className="border-t border-slate-100 py-2">
+                    <div className="border-t-[2px] border-[var(--border)] py-2">
                       <button
                         onClick={handleLogout}
-                        className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
+                        className="w-full text-left px-5 py-3 text-sm font-semibold text-[var(--destructive)] hover:bg-red-50 transition-colors"
                       >
-                        <Icon name="logout" className="text-lg" />
                         Sign Out
                       </button>
                     </div>

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiFileText, FiTrash2, FiEdit2, FiX, FiCheck, FiClock } from "react-icons/fi";
 import { getNotes, updateNote, deleteNote } from "@/utils/api";
 
 type Note = {
@@ -56,11 +55,11 @@ export default function NotesPanel({ attemptId, className = "" }: NotesPanelProp
 
   const handleSaveEdit = async (noteId: string) => {
     if (!editContent.trim()) return;
-    
+
     try {
       setSaving(true);
       await updateNote(noteId, editContent.trim());
-      setNotes(notes.map(n => 
+      setNotes(notes.map(n =>
         n.id === noteId ? { ...n, content: editContent.trim(), updatedAt: new Date().toISOString() } : n
       ));
       setEditingId(null);
@@ -74,7 +73,7 @@ export default function NotesPanel({ attemptId, className = "" }: NotesPanelProp
 
   const handleDelete = async (noteId: string) => {
     if (!confirm("Bạn có chắc muốn xóa ghi chú này?")) return;
-    
+
     try {
       await deleteNote(noteId);
       setNotes(notes.filter(n => n.id !== noteId));
@@ -97,7 +96,7 @@ export default function NotesPanel({ attemptId, className = "" }: NotesPanelProp
   if (loading) {
     return (
       <div className={`flex items-center justify-center py-8 ${className}`}>
-        <div className="w-6 h-6 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+        <div className="w-6 h-6 border-2 rounded-full animate-spin" style={{ borderColor: "var(--primary-light)", borderTopColor: "var(--primary)" }} />
       </div>
     );
   }
@@ -105,8 +104,8 @@ export default function NotesPanel({ attemptId, className = "" }: NotesPanelProp
   if (notes.length === 0) {
     return (
       <div className={`text-center py-8 ${className}`}>
-        <FiFileText className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-        <p className="text-sm text-slate-500">Chưa có ghi chú nào</p>
+        <span className="text-4xl block mx-auto mb-3 font-bold" style={{ color: "var(--border)" }}>Notes</span>
+        <p className="text-sm" style={{ color: "var(--text-muted)" }}>Chưa có ghi chú nào</p>
       </div>
     );
   }
@@ -114,8 +113,7 @@ export default function NotesPanel({ attemptId, className = "" }: NotesPanelProp
   return (
     <div className={`space-y-3 ${className}`}>
       <div className="flex items-center gap-2 mb-4">
-        <FiFileText className="w-5 h-5 text-blue-500" />
-        <h3 className="font-semibold text-slate-800">Ghi chú ({notes.length})</h3>
+        <h3 className="font-semibold" style={{ color: "var(--foreground)" }}>Ghi chú ({notes.length})</h3>
       </div>
 
       <AnimatePresence mode="popLayout">
@@ -126,12 +124,16 @@ export default function NotesPanel({ attemptId, className = "" }: NotesPanelProp
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden"
+            className="border rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] overflow-hidden"
+            style={{
+              backgroundColor: "var(--background)",
+              borderColor: "var(--border)",
+            }}
           >
             {/* Selected text preview */}
             {note.selectedText && (
-              <div className="px-4 py-2 bg-blue-50 border-b border-blue-100">
-                <p className="text-xs text-blue-700 italic line-clamp-2">
+              <div className="px-4 py-2 border-b" style={{ backgroundColor: "var(--primary-light)", borderColor: "var(--border)" }}>
+                <p className="text-xs italic line-clamp-2" style={{ color: "var(--primary)" }}>
                   "{note.selectedText}"
                 </p>
               </div>
@@ -144,54 +146,66 @@ export default function NotesPanel({ attemptId, className = "" }: NotesPanelProp
                   <textarea
                     value={editContent}
                     onChange={(e) => setEditContent(e.target.value)}
-                    className="w-full h-24 p-2 text-sm text-slate-800 border border-slate-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full h-24 p-2 text-sm border rounded-lg resize-none focus:outline-none focus:ring-2"
+                    style={{
+                      color: "var(--foreground)",
+                      borderColor: "var(--border)",
+                      // @ts-ignore
+                      "--tw-ring-color": "var(--primary)",
+                    } as React.CSSProperties}
                     autoFocus
                   />
                   <div className="flex gap-2 justify-end">
                     <button
                       onClick={handleCancelEdit}
-                      className="px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-100 rounded hover:bg-slate-200 transition"
+                      className="px-3 py-1.5 text-xs font-medium rounded-full transition"
+                      style={{
+                        color: "var(--foreground)",
+                        backgroundColor: "var(--primary-light)",
+                      }}
                     >
-                      <FiX className="w-3.5 h-3.5" />
+                      Hủy
                     </button>
                     <button
                       onClick={() => handleSaveEdit(note.id)}
                       disabled={saving || !editContent.trim()}
-                      className="px-3 py-1.5 text-xs font-medium text-white bg-blue-500 rounded hover:bg-blue-600 transition disabled:opacity-50 flex items-center gap-1"
+                      className="px-3 py-1.5 text-xs font-medium text-white rounded-full transition disabled:opacity-50 flex items-center gap-1"
+                      style={{ backgroundColor: "var(--primary)" }}
                     >
                       {saving ? (
                         <div className="w-3.5 h-3.5 border border-white/30 border-t-white rounded-full animate-spin" />
                       ) : (
-                        <FiCheck className="w-3.5 h-3.5" />
+                        "Lưu"
                       )}
                     </button>
                   </div>
                 </div>
               ) : (
                 <>
-                  <p className="text-sm text-slate-700 whitespace-pre-wrap">{note.content}</p>
-                  
+                  <p className="text-sm whitespace-pre-wrap" style={{ color: "var(--foreground)" }}>{note.content}</p>
+
                   {/* Footer */}
-                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100">
-                    <div className="flex items-center gap-1 text-xs text-slate-400">
-                      <FiClock className="w-3.5 h-3.5" />
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t" style={{ borderColor: "var(--border)" }}>
+                    <div className="flex items-center gap-1 text-xs" style={{ color: "var(--text-muted)" }}>
                       {formatDate(note.createdAt)}
                     </div>
-                    
+
                     <div className="flex gap-1">
                       <button
                         onClick={() => handleEdit(note)}
-                        className="p-1.5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded transition"
+                        className="px-2 py-1 text-xs rounded-full transition"
+                        style={{ color: "var(--primary)" }}
                         title="Sửa"
                       >
-                        <FiEdit2 className="w-3.5 h-3.5" />
+                        Sửa
                       </button>
                       <button
                         onClick={() => handleDelete(note.id)}
-                        className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded transition"
+                        className="px-2 py-1 text-xs rounded-full transition"
+                        style={{ color: "var(--destructive)" }}
                         title="Xóa"
                       >
-                        <FiTrash2 className="w-3.5 h-3.5" />
+                        Xóa
                       </button>
                     </div>
                   </div>

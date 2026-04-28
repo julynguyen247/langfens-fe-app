@@ -77,8 +77,8 @@ const MultiCheckboxCard = memo(function MultiCheckboxCard({
   }, []);
 
   return (
-    <div className="border border-slate-200 rounded-lg p-4 space-y-3 bg-white">
-      <div className="text-slate-900 leading-relaxed font-bold">
+    <div className="border border-[var(--border)] rounded-lg p-4 space-y-3 bg-white">
+      <div className="text-[var(--foreground)] leading-relaxed font-bold">
         <ReactMarkdown components={markdownComponents}>
           {text}
         </ReactMarkdown>
@@ -92,24 +92,24 @@ const MultiCheckboxCard = memo(function MultiCheckboxCard({
               key={choice.value}
               className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors
                 ${isChecked 
-                  ? "bg-blue-50 border-blue-300" 
-                  : "bg-white border-slate-200 hover:bg-slate-50"
+                  ? "bg-[var(--skill-reading-light)] border-[var(--skill-reading-border)]"
+                  : "bg-white border-[var(--border)] hover:bg-[var(--background)]"
                 }`}
             >
               <input
                 type="checkbox"
                 checked={isChecked}
                 onChange={() => handleToggle(choice.value)}
-                className="w-5 h-5 text-blue-600 rounded border-slate-300 
-                          focus:ring-blue-500 focus:ring-2"
+                className="w-5 h-5 text-[var(--skill-reading)] rounded border-[var(--border)]
+                          focus:ring-[var(--skill-reading)] focus:ring-2"
               />
-              <span className="text-sm text-slate-700">{choice.label}</span>
+              <span className="text-sm text-[var(--text-body)]">{choice.label}</span>
             </label>
           );
         })}
       </div>
       
-      <span className="text-xs text-slate-500">
+      <span className="text-xs text-[var(--text-muted)]">
         {selected.length > 0 
           ? `Selected: ${selected.length}` 
           : "Select the correct options. Order doesn't matter."}

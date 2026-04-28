@@ -24,8 +24,8 @@ const FillInBlankCard = memo(function FillInBlankCard({ stem, value, onChange }:
   );
 
   return (
-    <div className="border border-slate-200 rounded-lg p-4 space-y-3 bg-white">
-      <div className="text-slate-900 leading-relaxed font-bold">
+    <div className="border border-[var(--border)] rounded-lg p-4 space-y-3 bg-white">
+      <div className="text-[var(--foreground)] leading-relaxed font-bold">
         <ReactMarkdown components={markdownComponents}>
           {text}
         </ReactMarkdown>
@@ -35,7 +35,7 @@ const FillInBlankCard = memo(function FillInBlankCard({ stem, value, onChange }:
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="Write your answer here"
-        className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm
+        className="mt-1 w-full rounded-md border border-[var(--border)] px-3 py-2 text-sm
                    focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black"
       />
     </div>

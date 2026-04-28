@@ -34,12 +34,12 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning className={`${fredoka.variable} ${jetbrainsMono.variable}`}>
       <head />
       <body
-        className="antialiased font-sans text-gray-900 bg-[#F8FAFC]"
+        className="antialiased font-sans text-[var(--foreground)] bg-[var(--background)]"
         suppressHydrationWarning
       >
         <Suspense
           fallback={
-            <div className="fixed inset-0 flex items-center justify-center bg-white text-gray-500">
+            <div className="fixed inset-0 flex items-center justify-center bg-[var(--surface)] text-[var(--text-muted)]">
               Loading Langfens...
             </div>
           }

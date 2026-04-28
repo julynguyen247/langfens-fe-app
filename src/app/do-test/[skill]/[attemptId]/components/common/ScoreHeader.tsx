@@ -11,29 +11,23 @@ type ScoreHeaderProps = {
   skill?: "writing" | "speaking";
 };
 
-function Icon({ name, className = "" }: { name: string; className?: string }) {
-  return <span className={`material-symbols-rounded ${className}`}>{name}</span>;
-}
-
 export function ScoreHeader({ band, criteria, skill = "writing" }: ScoreHeaderProps) {
-  const skillIcon = skill === "writing" ? "edit_note" : "mic";
   const skillLabel = skill === "writing" ? "Writing Assessment" : "Speaking Assessment";
 
   return (
-    <div className="bg-white border-b border-slate-200 p-8">
+    <div className="bg-white border-b border-[var(--border)] p-8">
       <div className="flex flex-col md:flex-row items-center justify-between gap-8">
         {/* Left: The Big Score */}
         <div className="text-center md:text-left">
           <div className="flex items-center gap-2 mb-2">
-            <Icon name={skillIcon} className="text-xl text-slate-400" />
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+            <span className="text-[10px] font-bold tracking-[0.2em]" style={{ color: 'var(--text-muted)' }}>
               {skillLabel}
             </span>
           </div>
-          <div className="text-8xl font-serif font-bold text-[#3B82F6] leading-none">
+          <div className="text-8xl font-sans font-bold leading-none" style={{ color: 'var(--primary)' }}>
             {band.toFixed(1)}
           </div>
-          <p className="mt-2 text-[10px] uppercase tracking-[0.25em] text-slate-400">
+          <p className="mt-2 text-[10px] tracking-[0.25em] text-[var(--text-muted)]">
             Overall Band Score
           </p>
         </div>
@@ -43,12 +37,12 @@ export function ScoreHeader({ band, criteria, skill = "writing" }: ScoreHeaderPr
           {criteria.map((item) => (
             <div
               key={item.name}
-              className="bg-slate-50 border border-slate-100 p-4 rounded-lg text-center min-w-[100px]"
+              className="bg-[var(--background)] border-[3px] border-[var(--border)] p-4 rounded-[1.5rem] text-center min-w-[100px] shadow-[0_4px_0_rgba(0,0,0,0.08)]"
             >
-              <p className="text-[10px] font-bold uppercase text-slate-500 mb-1 leading-tight">
+              <p className="text-[10px] font-bold text-[var(--text-muted)] mb-1 leading-tight">
                 {item.name}
               </p>
-              <p className="text-2xl font-bold text-slate-800">{item.score.toFixed(1)}</p>
+              <p className="text-2xl font-bold text-[var(--foreground)]">{item.score.toFixed(1)}</p>
             </div>
           ))}
         </div>

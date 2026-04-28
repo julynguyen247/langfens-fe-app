@@ -1,197 +1,106 @@
-"use client";
+'use client';
 
-import { motion } from "framer-motion";
-import type { RecentActivityTimelineProps, Skill } from "../types";
+import { useRouter } from 'next/navigation';
+import { SkillBadge } from '@/components/ui/SkillBadge';
 
-const skillConfig: Record<Skill, { bg: string; text: string }> = {
-  Reading: {
-    bg: "bg-blue-100 text-blue-700",
-    text: "text-blue-700",
-  },
-  Listening: {
-    bg: "bg-purple-100 text-purple-700",
-    text: "text-purple-700",
-  },
-  Writing: {
-    bg: "bg-amber-100 text-amber-700",
-    text: "text-amber-700",
-  },
-  Speaking: {
-    bg: "bg-emerald-100 text-emerald-700",
-    text: "text-emerald-700",
-  },
-};
-
-function formatTimeAgo(dateISO: string): string {
-  const date = new Date(dateISO);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / (1000 * 60));
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-  if (diffMins < 60) {
-    return `${diffMins}m ago`;
-  }
-  if (diffHours < 24) {
-    return `${diffHours}h ago`;
-  }
-  if (diffDays === 1) {
-    return "Yesterday";
-  }
-  if (diffDays < 7) {
-    return `${diffDays} days ago`;
-  }
-  
-  return date.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-  });
+interface RecentAttempt {
+  id: string;
+  title: string;
+  skill: string;
+  dateISO: string;
+  score?: number;
+  href: string;
 }
 
-function formatDate(dateISO: string): { day: string; date: string; month: string } {
-  const date = new Date(dateISO);
-  return {
-    day: date.toLocaleDateString("en-US", { weekday: "short" }),
-    date: date.getDate().toString(),
-    month: date.toLocaleDateString("en-US", { month: "short" }),
-  };
+interface RecentActivityTimelineProps {
+  attempts: RecentAttempt[];
 }
 
-function TimelineItem({
-  attempt,
-  onView,
-  index,
-}: {
-  attempt: {
-    id: string;
-    title: string;
-    skill: Skill;
-    score?: number;
-    dateISO: string;
-    attemptId: string;
-  };
-  onView: () => void;
-  index: number;
-}) {
-  const config = skillConfig[attempt.skill];
-  const { day, date, month } = formatDate(attempt.dateISO);
-  const timeAgo = formatTimeAgo(attempt.dateISO);
+function timeAgo(dateISO: string): string {
+  const now = Date.now();
+  const then = new Date(dateISO).getTime();
+  const diffMs = now - then;
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return 'Just now';
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHrs = Math.floor(diffMin / 60);
+  if (diffHrs < 24) return `${diffHrs}h ago`;
+  const diffDays = Math.floor(diffHrs / 24);
+  if (diffDays < 7) return `${diffDays}d ago`;
+  const diffWeeks = Math.floor(diffDays / 7);
+  return `${diffWeeks}w ago`;
+}
+
+export function RecentActivityTimeline({ attempts }: RecentActivityTimelineProps) {
+  const router = useRouter();
+  const displayAttempts = attempts;
+
+  if (displayAttempts.length === 0) {
+    return (
+      <div className="rounded-[2rem] border-[3px] border-[var(--border)] bg-white p-6 shadow-[0_4px_0_rgba(0,0,0,0.08)]">
+        <h3 className="text-sm font-bold text-[var(--foreground)] mb-4">Recent Activity</h3>
+        <p className="text-sm text-[var(--text-muted)] text-center py-8">
+          No activity yet. Start your first test to see your progress here!
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <motion.div
-      className="relative flex gap-4"
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: 0.8 + index * 0.1, duration: 0.4 }}
-    >
-      {/* Date Badge */}
-      <div className="flex flex-col items-center">
-        <div className="w-10 h-10 rounded-full bg-slate-100 flex flex-col items-center justify-center">
-          <span className="text-[10px] text-slate-500 font-medium leading-none">{day}</span>
-          <span
-            className="text-sm font-bold text-slate-700 leading-none"
-            style={{ fontFamily: "var(--font-mono)" }}
-          >
-            {date}
-          </span>
-        </div>
-      </div>
-
-      {/* Timeline connector */}
-      <div className="absolute left-[4.5rem] top-10 bottom-0 w-0.5 bg-slate-200" />
-
-      {/* Content Card */}
-      <div className="flex-1 pb-6">
-        <div
-          className={`relative bg-white border-[2px] border-slate-100 rounded-xl p-4 hover:border-slate-300 transition-colors cursor-pointer`}
-          onClick={onView}
+    <div className="rounded-[2rem] border-[3px] border-[var(--border)] bg-white p-6 shadow-[0_4px_0_rgba(0,0,0,0.08)]">
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-sm font-bold text-[var(--foreground)]">Recent Activity</h3>
+        <button
+          onClick={() => router.push('/history')}
+          className="text-xs font-bold text-[var(--primary)] hover:text-[var(--primary-hover)] transition-colors"
         >
-          <div className="flex items-start justify-between gap-2 mb-2">
-            <div className="flex-1 min-w-0">
-              <h4 className="text-sm font-semibold text-slate-800 truncate">
-                {attempt.title}
-              </h4>
-              <p className="text-xs text-slate-500 mt-0.5">{timeAgo}</p>
-            </div>
-            
-            {/* Skill badge */}
-            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
-              {attempt.skill}
-            </span>
-          </div>
+          View All
+        </button>
+      </div>
 
-          {/* Score */}
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-500">Score</span>
-            {attempt.score !== undefined ? (
-              <span
-                className="text-sm font-bold text-slate-700"
-                style={{ fontFamily: "var(--font-mono)" }}
+      {/* Timeline */}
+      <div className="relative">
+        {/* Vertical connector line */}
+        <div className="absolute left-[19px] top-2 bottom-2 w-[2px] bg-[var(--border)]" />
+
+        <div className="space-y-4">
+          {displayAttempts.map((attempt) => {
+            return (
+              <div
+                key={attempt.id}
+                className="relative flex items-start gap-4 flex-row"
               >
-                {attempt.score}%
-              </span>
-            ) : (
-              <span className="text-sm text-slate-400">—</span>
-            )}
-          </div>
+                {/* Timeline dot */}
+                <div className="relative z-10 shrink-0 w-10 h-10 rounded-full bg-white border-[3px] border-[var(--primary)] flex items-center justify-center">
+                  <div className="w-3 h-3 rounded-full bg-[var(--primary)]" />
+                </div>
+
+                {/* Content card */}
+                <button
+                  onClick={() => router.push(attempt.href)}
+                  className="flex-1 flex items-center gap-3 p-4 rounded-[2rem] border-[3px] border-[var(--border)] bg-white shadow-[0_4px_0_rgba(0,0,0,0.08)] text-left transition-all duration-150 hover:-translate-y-[2px] hover:shadow-[0_6px_0_rgba(0,0,0,0.08)]"
+                >
+                  <SkillBadge skill={attempt.skill} size="sm" />
+                  <span className="flex-1 text-sm font-semibold text-[var(--foreground)] truncate">
+                    {attempt.title}
+                  </span>
+                  {attempt.score !== undefined && (
+                    <span
+                      className="text-sm font-bold text-[var(--primary)] shrink-0"
+                      style={{ fontFamily: 'var(--font-mono)' }}
+                    >
+                      {attempt.score}%
+                    </span>
+                  )}
+                  <span className="text-xs text-[var(--text-muted)] shrink-0">
+                    {timeAgo(attempt.dateISO)}
+                  </span>
+                </button>
+              </div>
+            );
+          })}
         </div>
       </div>
-    </motion.div>
-  );
-}
-
-export default function RecentActivityTimeline({
-  attempts,
-  onViewAttempt,
-  onViewAll,
-}: RecentActivityTimelineProps) {
-  const displayAttempts = attempts.slice(0, 5);
-
-  return (
-    <motion.section
-      className="space-y-5"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.8, duration: 0.4 }}
-    >
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-slate-800">Recent Activity</h2>
-        {attempts.length > 5 && (
-          <button
-            onClick={onViewAll}
-            className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-          >
-            View all
-          </button>
-        )}
-      </div>
-
-      {displayAttempts.length > 0 ? (
-        <div className="relative pl-2">
-          {displayAttempts.map((attempt, index) => (
-            <TimelineItem
-              key={attempt.id}
-              attempt={attempt}
-              index={index}
-              onView={() => onViewAttempt(attempt.attemptId, attempt.skill)}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="bg-white border-[3px] border-slate-100 rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-8 text-center">
-          <p className="text-slate-600 font-medium">No activity yet</p>
-          <p className="text-sm text-slate-500 mt-1">
-            Start your first practice to see your progress here!
-          </p>
-          <button
-            onClick={onViewAll}
-            className="mt-4 px-6 py-2 bg-blue-500 text-white font-semibold rounded-full"
-          >
-            Start Practice
-          </button>
-        </div>
-      )}
-    </motion.section>
+    </div>
   );
 }

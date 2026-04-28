@@ -1,49 +1,39 @@
-"use client";
+'use client';
 
-import { motion } from "framer-motion";
-import SkillCard from "./SkillCard";
-import type { SkillProgressGridProps } from "../types";
+import { motion, useReducedMotion } from 'framer-motion';
+import { SkillProgressCard } from './SkillProgressCard';
 
-const skillRouteMap: Record<string, string> = {
-  Reading: "/practice?skill=reading",
-  Listening: "/practice?skill=listening",
-  Writing: "/practice?skill=writing",
-  Speaking: "/practice?skill=speaking",
-};
+interface SkillProgressGridProps {
+  scores: Record<string, number>; // { Reading: 6.5, Listening: 5.5, ... }
+  targetScore?: number; // default 7.5
+}
 
-export default function SkillProgressGrid({
-  skills,
-  onSkillClick,
-}: SkillProgressGridProps) {
+const SKILLS: Array<'Reading' | 'Listening' | 'Writing' | 'Speaking'> = [
+  'Reading',
+  'Listening',
+  'Writing',
+  'Speaking',
+];
+
+export function SkillProgressGrid({ scores, targetScore = 7.5 }: SkillProgressGridProps) {
+  const prefersReducedMotion = useReducedMotion();
+
   return (
-    <section className="space-y-5">
-      <motion.h2
-        className="text-xl font-bold text-slate-800"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5, duration: 0.4 }}
-      >
-        Skill Progress
-      </motion.h2>
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {skills.map((skillData, index) => (
-          <motion.div
-            key={skillData.skill}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 + index * 0.1, duration: 0.4 }}
-          >
-            <SkillCard
-              skill={skillData.skill}
-              currentScore={skillData.currentScore}
-              targetScore={skillData.targetScore}
-              examCount={skillData.examCount}
-              onClick={() => onSkillClick(skillData.skill)}
-            />
-          </motion.div>
-        ))}
-      </div>
-    </section>
+    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4">
+      {SKILLS.map((skill, index) => (
+        <motion.div
+          key={skill}
+          initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: index * 0.1, ease: 'easeOut' }}
+        >
+          <SkillProgressCard
+            skill={skill}
+            currentScore={scores[skill] ?? 0}
+            targetScore={targetScore}
+          />
+        </motion.div>
+      ))}
+    </div>
   );
 }

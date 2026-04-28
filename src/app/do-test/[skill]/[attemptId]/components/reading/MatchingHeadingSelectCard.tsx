@@ -20,13 +20,13 @@ export default function MatchingHeadingSelectCard({
 }) {
   return (
     <div className="flex items-center gap-4 py-3 border-b last:border-b-0">
-      <div className="flex-1 text-sm text-slate-800">{prompt}</div>
+      <div className="flex-1 text-sm text-[var(--foreground)]">{prompt}</div>
 
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="h-10 px-3 rounded-lg border border-slate-300 bg-white
-        text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#317EFF]"
+        className="h-10 px-3 rounded-lg border border-[var(--border)] bg-white
+        text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
       >
         <option value="">—</option>
         {options.map((opt) => (

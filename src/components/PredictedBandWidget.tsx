@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FiTrendingUp, FiAlertCircle, FiChevronDown, FiChevronUp, FiTarget, FiZap } from "react-icons/fi";
 import { getPredictedBand, getAiInsights } from "@/utils/api";
 
 type PredictedBand = {
@@ -44,7 +43,7 @@ export default function PredictedBandWidget() {
         setLoading(true);
         const res = await getPredictedBand();
         const result = (res as any).data;
-        
+
         if (result.isSuccess) {
           setData(result.data);
           setError(null);
@@ -65,12 +64,12 @@ export default function PredictedBandWidget() {
 
   const fetchAiInsights = async () => {
     if (insights || insightsLoading) return;
-    
+
     try {
       setInsightsLoading(true);
       const res = await getAiInsights();
       const result = (res as any).data;
-      
+
       if (result.isSuccess && result.data) {
         setInsights(result.data);
       }
@@ -97,7 +96,7 @@ export default function PredictedBandWidget() {
       case "Low":
         return "bg-orange-100 text-orange-700";
       default:
-        return "bg-slate-100 text-slate-700";
+        return "";
     }
   };
 
@@ -109,9 +108,9 @@ export default function PredictedBandWidget() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-xl border border-slate-200 p-6">
+      <div className="rounded-[1.5rem] border-[3px] p-6 shadow-[0_4px_0_rgba(0,0,0,0.08)]" style={{ backgroundColor: "var(--background)", borderColor: "var(--border)" }}>
         <div className="flex items-center justify-center py-8">
-          <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" />
+          <div className="animate-spin h-8 w-8 border-4 rounded-full" style={{ borderColor: "var(--primary-light)", borderTopColor: "var(--primary)" }} />
         </div>
       </div>
     );
@@ -119,20 +118,19 @@ export default function PredictedBandWidget() {
 
   if (error || !data) {
     return (
-      <div className="bg-white rounded-xl border border-slate-200 p-6">
+      <div className="rounded-[1.5rem] border-[3px] p-6 shadow-[0_4px_0_rgba(0,0,0,0.08)]" style={{ backgroundColor: "var(--background)", borderColor: "var(--border)" }}>
         <div className="flex items-center gap-3 mb-2">
-          <FiTrendingUp className="h-5 w-5 text-slate-400" />
-          <h3 className="text-lg font-semibold text-slate-700">
+          <h3 className="text-lg font-semibold" style={{ color: "var(--foreground)" }}>
             Predicted Band Score
           </h3>
         </div>
-        <div className="flex items-start gap-2 mt-4 p-4 bg-blue-50 rounded-lg">
-          <FiAlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+        <div className="flex items-start gap-2 mt-4 p-4 rounded-lg" style={{ backgroundColor: "var(--primary-light)" }}>
+          <span className="font-bold mt-0.5" style={{ color: "var(--primary)" }}>i</span>
           <div>
-            <p className="text-sm text-blue-900 font-medium">
+            <p className="text-sm font-medium" style={{ color: "var(--primary-dark)" }}>
               {error || "Need more data"}
             </p>
-            <p className="text-xs text-blue-700 mt-1">
+            <p className="text-xs mt-1" style={{ color: "var(--primary)" }}>
               Complete at least 1 placement test to see your predicted band score.
             </p>
           </div>
@@ -142,19 +140,19 @@ export default function PredictedBandWidget() {
   }
 
   return (
-    <div className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl border border-blue-200 overflow-hidden">
+    <div className="rounded-[1.5rem] border-[3px] overflow-hidden shadow-[0_4px_0_rgba(0,0,0,0.08)]" style={{ backgroundColor: "var(--primary-light)", borderColor: "var(--border)" }}>
       {/* Main Band Display */}
       <div className="p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-              <FiTrendingUp className="h-5 w-5 text-white" />
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold" style={{ backgroundColor: "var(--primary)" }}>
+              B
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-blue-900">
+              <h3 className="text-lg font-semibold" style={{ color: "var(--primary-dark)" }}>
                 Predicted Band Score
               </h3>
-              <p className="text-xs text-blue-700">
+              <p className="text-xs" style={{ color: "var(--primary)" }}>
                 Based on {data.sampleSize} recent tests
               </p>
             </div>
@@ -169,9 +167,9 @@ export default function PredictedBandWidget() {
         </div>
 
         {/* Overall Band */}
-        <div className="bg-white rounded-lg p-6 mb-4 text-center">
-          <p className="text-sm text-slate-600 mb-2">Overall Predicted Band</p>
-          <p className="text-5xl font-bold text-blue-600">
+        <div className="rounded-lg p-6 mb-4 text-center" style={{ backgroundColor: "var(--background)" }}>
+          <p className="text-sm mb-2" style={{ color: "var(--text-muted)" }}>Overall Predicted Band</p>
+          <p className="text-5xl font-bold" style={{ color: "var(--primary)" }}>
             {data.overallBand.toFixed(1)}
           </p>
         </div>
@@ -179,33 +177,33 @@ export default function PredictedBandWidget() {
         {/* Per-skill breakdown */}
         <div className="grid grid-cols-2 gap-3">
           {data.readingBand !== null && (
-            <div className="bg-white/80 rounded-lg p-3">
-              <p className="text-xs text-slate-600 mb-1">Reading</p>
-              <p className="text-2xl font-bold text-blue-700">
+            <div className="rounded-lg p-3" style={{ backgroundColor: "var(--background)" }}>
+              <p className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>Reading</p>
+              <p className="text-2xl font-bold" style={{ color: "var(--primary)" }}>
                 {data.readingBand.toFixed(1)}
               </p>
             </div>
           )}
           {data.listeningBand !== null && (
-            <div className="bg-white/80 rounded-lg p-3">
-              <p className="text-xs text-slate-600 mb-1">Listening</p>
-              <p className="text-2xl font-bold text-blue-700">
+            <div className="rounded-lg p-3" style={{ backgroundColor: "var(--background)" }}>
+              <p className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>Listening</p>
+              <p className="text-2xl font-bold" style={{ color: "var(--primary)" }}>
                 {data.listeningBand.toFixed(1)}
               </p>
             </div>
           )}
           {data.writingBand !== null && (
-            <div className="bg-white/80 rounded-lg p-3">
-              <p className="text-xs text-slate-600 mb-1">Writing</p>
-              <p className="text-2xl font-bold text-blue-700">
+            <div className="rounded-lg p-3" style={{ backgroundColor: "var(--background)" }}>
+              <p className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>Writing</p>
+              <p className="text-2xl font-bold" style={{ color: "var(--primary)" }}>
                 {data.writingBand.toFixed(1)}
               </p>
             </div>
           )}
           {data.speakingBand !== null && (
-            <div className="bg-white/80 rounded-lg p-3">
-              <p className="text-xs text-slate-600 mb-1">Speaking</p>
-              <p className="text-2xl font-bold text-blue-700">
+            <div className="rounded-lg p-3" style={{ backgroundColor: "var(--background)" }}>
+              <p className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>Speaking</p>
+              <p className="text-2xl font-bold" style={{ color: "var(--primary)" }}>
                 {data.speakingBand.toFixed(1)}
               </p>
             </div>
@@ -213,7 +211,7 @@ export default function PredictedBandWidget() {
         </div>
 
         {data.latestAttemptDate && (
-          <p className="text-xs text-blue-700 mt-4 text-center">
+          <p className="text-xs mt-4 text-center" style={{ color: "var(--primary)" }}>
             Last updated: {new Date(data.latestAttemptDate).toLocaleDateString("vi-VN")}
           </p>
         )}
@@ -222,30 +220,34 @@ export default function PredictedBandWidget() {
       {/* AI Insights Toggle Button */}
       <button
         onClick={handleToggleInsights}
-        className="w-full px-6 py-3 bg-blue-600/10 hover:bg-blue-600/20 transition-colors flex items-center justify-center gap-2 text-blue-700 font-medium text-sm border-t border-blue-200"
+        className="w-full px-6 py-3 transition-colors flex items-center justify-center gap-2 font-medium text-sm border-t"
+        style={{
+          color: "var(--primary)",
+          borderColor: "var(--border)",
+          backgroundColor: "var(--background)",
+        }}
       >
-        <FiZap className="h-4 w-4" />
         AI Insights & Recommendations
-        {showInsights ? <FiChevronUp className="h-4 w-4" /> : <FiChevronDown className="h-4 w-4" />}
+        <span className="text-xs">{showInsights ? "▲" : "▼"}</span>
       </button>
 
       {/* AI Insights Section */}
       {showInsights && (
-        <div className="px-6 pb-6 bg-white border-t border-blue-200">
+        <div className="px-6 pb-6 border-t" style={{ backgroundColor: "var(--background)", borderColor: "var(--border)" }}>
           {insightsLoading ? (
             <div className="flex items-center justify-center py-8">
-              <div className="animate-spin h-6 w-6 border-3 border-blue-500 border-t-transparent rounded-full" />
-              <span className="ml-3 text-sm text-slate-600">Đang phân tích...</span>
+              <div className="animate-spin h-6 w-6 border-3 rounded-full" style={{ borderColor: "var(--primary-light)", borderTopColor: "var(--primary)" }} />
+              <span className="ml-3 text-sm" style={{ color: "var(--text-muted)" }}>Đang phân tích...</span>
             </div>
           ) : insights ? (
             <div className="pt-4 space-y-4">
               {/* Summary */}
-              <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
-                <p className="text-sm text-slate-800 leading-relaxed">
+              <div className="p-4 rounded-lg" style={{ backgroundColor: "var(--primary-light)" }}>
+                <p className="text-sm leading-relaxed" style={{ color: "var(--foreground)" }}>
                   {insights.summary}
                 </p>
                 {insights.trendAnalysis && (
-                  <p className="text-sm text-slate-600 mt-2 italic">
+                  <p className="text-sm mt-2 italic" style={{ color: "var(--text-muted)" }}>
                     {insights.trendAnalysis}
                   </p>
                 )}
@@ -254,17 +256,17 @@ export default function PredictedBandWidget() {
               {/* Recommendations */}
               {insights.recommendations.length > 0 && (
                 <div>
-                  <h4 className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                    <FiTarget className="h-4 w-4 text-blue-600" />
+                  <h4 className="text-sm font-semibold mb-2 flex items-center gap-2" style={{ color: "var(--foreground)" }}>
                     Gợi ý học tập
                   </h4>
                   <ul className="space-y-2">
                     {insights.recommendations.map((rec, i) => (
                       <li
                         key={i}
-                        className="flex items-start gap-2 text-sm text-slate-700 bg-slate-50 p-3 rounded-lg"
+                        className="flex items-start gap-2 text-sm p-3 rounded-lg"
+                        style={{ color: "var(--foreground)", backgroundColor: "var(--primary-light)" }}
                       >
-                        <span className="flex-shrink-0 w-5 h-5 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-medium">
+                        <span className="flex-shrink-0 w-5 h-5 text-white rounded-full flex items-center justify-center text-xs font-medium" style={{ backgroundColor: "var(--primary)" }}>
                           {i + 1}
                         </span>
                         <span>{rec}</span>
@@ -277,31 +279,32 @@ export default function PredictedBandWidget() {
               {/* Focus Areas */}
               {insights.focusAreas.length > 0 && (
                 <div>
-                  <h4 className="text-sm font-semibold text-slate-700 mb-2">
+                  <h4 className="text-sm font-semibold mb-2" style={{ color: "var(--foreground)" }}>
                     Kỹ năng cần tập trung
                   </h4>
                   <div className="flex flex-wrap gap-2">
                     {insights.focusAreas.map((area, i) => (
                       <div
                         key={i}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-full text-xs"
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs"
+                        style={{ backgroundColor: "var(--primary-light)" }}
                         title={area.reason}
                       >
                         <span className={`w-2 h-2 rounded-full ${getPriorityColor(area.priority)}`} />
-                        <span className="font-medium text-slate-700">{area.skill}</span>
-                        <span className="text-slate-500">• {area.area}</span>
+                        <span className="font-medium" style={{ color: "var(--foreground)" }}>{area.skill}</span>
+                        <span style={{ color: "var(--text-muted)" }}>- {area.area}</span>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              <p className="text-xs text-slate-400 text-center pt-2">
+              <p className="text-xs text-center pt-2" style={{ color: "var(--text-muted)" }}>
                 Generated at {new Date(insights.generatedAt).toLocaleString("vi-VN")}
               </p>
             </div>
           ) : (
-            <div className="py-6 text-center text-sm text-slate-500">
+            <div className="py-6 text-center text-sm" style={{ color: "var(--text-muted)" }}>
               Không thể tạo AI insights. Vui lòng thử lại sau.
             </div>
           )}
