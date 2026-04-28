@@ -85,9 +85,12 @@ export default function DeckCardsModal({
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-2xl rounded-2xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-blue-200 px-5 py-3 gap-2">
-          <h3 className="text-base font-semibold flex-1">
+      <div className="w-full max-w-2xl rounded-[2rem] border-[3px] border-[var(--border)] bg-white shadow-lg">
+        <div className="flex items-center justify-between border-b-[3px] border-[var(--border)] px-5 py-3 gap-2">
+          <h3
+            className="text-base font-bold flex-1 text-[var(--foreground)]"
+            style={{ fontFamily: "var(--font-sans)" }}
+          >
             {editingCard
               ? editingCard.id === "__new"
                 ? "Thêm thẻ mới"
@@ -104,14 +107,14 @@ export default function DeckCardsModal({
                 hintMd: "",
               })
             }
-            className="rounded-lg bg-[#317EFF] px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-300"
+            className="rounded-full border-b-[4px] border-[var(--primary-dark)] bg-[var(--primary)] px-3 py-1.5 text-sm font-bold text-white hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px] transition-all"
           >
             + Thêm thẻ
           </button>
 
           <button
             onClick={editingCard ? () => setEditingCard(null) : onClose}
-            className="rounded-lg px-2 py-1 text-slate-600 hover:bg-slate-100"
+            className="rounded-full px-3 py-1.5 text-[var(--text-muted)] font-bold border-[3px] border-[var(--border)] hover:bg-[var(--background)] hover:border-[var(--primary)] transition-all"
           >
             Đóng
           </button>
@@ -131,11 +134,11 @@ export default function DeckCardsModal({
               />
             )
           ) : loading ? (
-            <div className="py-10 text-center text-slate-500">Đang tải...</div>
+            <div className="py-10 text-center text-[var(--text-muted)] font-bold">Đang tải...</div>
           ) : error ? (
-            <div className="py-10 text-center text-red-600">{error}</div>
+            <div className="py-10 text-center text-[var(--destructive)] font-bold">{error}</div>
           ) : cards.length === 0 ? (
-            <div className="py-10 text-center text-slate-600">Chưa có thẻ.</div>
+            <div className="py-10 text-center text-[var(--text-muted)] font-bold">Chưa có thẻ.</div>
           ) : (
             cards.map((c, i) => {
               const front = c.frontMd ?? c.front ?? "";
@@ -144,14 +147,19 @@ export default function DeckCardsModal({
               return (
                 <div
                   key={c.id}
-                  className="rounded-xl border border-blue-200 p-4 flex items-start justify-between gap-3"
+                  className="rounded-[2rem] border-[3px] border-[var(--border)] p-4 flex items-start justify-between gap-3 shadow-[0_4px_0_rgba(0,0,0,0.08)]"
                 >
                   <div className="min-w-0">
-                    <div className="text-xs text-slate-500">#{i + 1}</div>
-                    <div className="mt-1 line-clamp-2 font-medium text-slate-900">
+                    <div
+                      className="text-xs font-bold text-[var(--text-muted)]"
+                      style={{ fontFamily: "var(--font-mono)" }}
+                    >
+                      #{i + 1}
+                    </div>
+                    <div className="mt-1 line-clamp-2 font-bold text-[var(--foreground)]">
                       {front || "(Front trống)"}
                     </div>
-                    <div className="mt-1 line-clamp-2 text-sm text-slate-600">
+                    <div className="mt-1 line-clamp-2 text-sm text-[var(--text-muted)]">
                       {back || "(Back trống)"}
                     </div>
                   </div>
@@ -159,7 +167,7 @@ export default function DeckCardsModal({
                   <div className="flex shrink-0 items-center gap-2">
                     <button
                       onClick={() => setEditingCard(c)}
-                      className="rounded-lg border border-blue-300 px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50"
+                      className="rounded-full border-[3px] border-[var(--border)] border-b-[5px] px-3 py-1.5 text-sm font-bold text-[var(--primary)] hover:border-[var(--primary)] hover:bg-[var(--primary-light)] hover:-translate-y-0.5 active:translate-y-[2px] active:border-b-[3px] transition-all"
                     >
                       Sửa
                     </button>
@@ -167,7 +175,7 @@ export default function DeckCardsModal({
                     <button
                       onClick={() => setConfirmDeleteId(c.id)}
                       disabled={deletingId === c.id}
-                      className="rounded-lg border border-rose-200 px-3 py-1.5 text-sm text-rose-700 hover:bg-rose-50 disabled:opacity-60"
+                      className="rounded-full border-[3px] border-[var(--destructive)]/30 border-b-[5px] px-3 py-1.5 text-sm font-bold text-[var(--destructive)] hover:bg-red-50 hover:-translate-y-0.5 active:translate-y-[2px] active:border-b-[3px] transition-all disabled:opacity-60"
                     >
                       {deletingId === c.id ? "Đang xóa..." : "Xóa"}
                     </button>
@@ -181,18 +189,21 @@ export default function DeckCardsModal({
 
       {confirmDeleteId && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm space-y-4">
-            <h2 className="text-lg font-semibold text-slate-800">
+          <div className="bg-white rounded-[2rem] border-[3px] border-[var(--border)] shadow-lg p-6 w-full max-w-sm space-y-4">
+            <h2
+              className="text-lg font-bold text-[var(--foreground)]"
+              style={{ fontFamily: "var(--font-sans)" }}
+            >
               Xác nhận xoá
             </h2>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-[var(--text-muted)]">
               Bạn có chắc muốn xoá thẻ này không?
             </p>
 
             <div className="flex justify-end gap-3 pt-2">
               <button
                 onClick={() => setConfirmDeleteId(null)}
-                className="px-4 py-2 rounded-lg border text-slate-700 hover:bg-slate-100"
+                className="px-4 py-2 rounded-full border-[3px] border-[var(--border)] border-b-[5px] font-bold text-[var(--foreground)] hover:bg-[var(--background)] hover:-translate-y-0.5 active:translate-y-[2px] active:border-b-[3px] transition-all"
               >
                 Hủy
               </button>
@@ -202,7 +213,7 @@ export default function DeckCardsModal({
                   await handleDelete(confirmDeleteId);
                   setConfirmDeleteId(null);
                 }}
-                className="px-4 py-2 rounded-lg bg-rose-600 text-white hover:bg-rose-700"
+                className="px-4 py-2 rounded-full border-b-[4px] border-red-700 bg-[var(--destructive)] text-white font-bold hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px] transition-all"
               >
                 Xoá
               </button>

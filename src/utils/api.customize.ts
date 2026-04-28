@@ -1,4 +1,5 @@
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from "axios";
+import { getToken as getCookieToken, setTokenCookie } from "./cookie";
 
 type ServiceKey =
   | "auth"
@@ -7,13 +8,12 @@ type ServiceKey =
   | "vocabulary"
   | "speaking"
   | "writing"
-  | "chatbot"
   | "dictionary"
   | "gamification"
   | "analytics"
   | "notification"
   | "studyplan"
-  | "course"
+  | "course";
 
 const GATEWAY_BASE = process.env.NEXT_PUBLIC_GATEWAY_URL || "";
 const buildBase = (suffix: string) =>
@@ -26,7 +26,6 @@ const BASE_URL: Record<ServiceKey, string> = {
   vocabulary: buildBase("/api-vocabulary"),
   speaking: buildBase("/api-speaking"),
   writing: buildBase("/api-writing"),
-  chatbot: buildBase("/api-chatbot"),
   dictionary: buildBase("/api-dictionary"),
   gamification: buildBase("/api-gamification"),
   analytics: buildBase("/api-analytics"),
@@ -35,14 +34,42 @@ const BASE_URL: Record<ServiceKey, string> = {
   course: buildBase("/api-course"),
 };
 
-const getToken = () =>
-  typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
+const getToken = () => getCookieToken();
 
 const setToken = (t: string | null) => {
-  if (typeof window === "undefined") return;
-  if (t) localStorage.setItem("access_token", t);
-  else localStorage.removeItem("access_token");
+  setTokenCookie(t);
 };
+
+// Raw axios instance for refresh — no interceptors, prevents infinite loop
+const rawAuthClient = axios.create({
+  baseURL: BASE_URL.auth,
+  withCredentials: true,
+  headers: { "Content-Type": "application/json" },
+});
+
+// Mutex: only one refresh at a time, others wait for the same promise
+let refreshPromise: Promise<string | null> | null = null;
+
+async function refreshToken(): Promise<string | null> {
+  if (refreshPromise) return refreshPromise;
+
+  refreshPromise = rawAuthClient
+    .post("/auth/refresh")
+    .then((r) => {
+      const newToken: string | null = r.data?.data ?? null;
+      setTokenCookie(newToken);
+      return newToken;
+    })
+    .catch(() => {
+      setToken(null);
+      return null;
+    })
+    .finally(() => {
+      refreshPromise = null;
+    });
+
+  return refreshPromise;
+}
 
 const apis = Object.fromEntries(
   (Object.keys(BASE_URL) as (keyof typeof BASE_URL)[]).map((k) => {
@@ -72,21 +99,12 @@ const apis = Object.fromEntries(
 
         if (err.response?.status === 401 && original && !original._retry) {
           original._retry = true;
-          try {
-            const r = await apisAuth.post("/auth/refresh", undefined, {
-              withCredentials: true,
-            });
-            const newToken = r.data.data;
+          const newToken = await refreshToken();
 
-            if (newToken) {
-              setToken(newToken);
-              original.headers = original.headers ?? {};
-              (original.headers as any).Authorization = `Bearer ${newToken}`;
-            }
-
+          if (newToken) {
+            original.headers = original.headers ?? {};
+            (original.headers as any).Authorization = `Bearer ${newToken}`;
             return api.request(original);
-          } catch {
-            setToken(null);
           }
         }
 
@@ -105,7 +123,6 @@ export const apisAttempt = apis.attempt;
 export const apisVocabulary = apis.vocabulary;
 export const apisSpeaking = apis.speaking;
 export const apisWriting = apis.writing;
-export const apisChatbot = apis.chatbot;
 export const apisDictionary = apis.dictionary;
 export const apisGamification = apis.gamification;
 export const apisAnalytics = apis.analytics;

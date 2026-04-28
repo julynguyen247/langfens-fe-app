@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { FiBookmark } from "react-icons/fi";
 import { createBookmark, deleteBookmark } from "@/utils/api";
 
 type BookmarkButtonProps = {
@@ -58,16 +57,15 @@ export default function BookmarkButton({
     <button
       onClick={handleToggle}
       disabled={loading}
-      className={`inline-flex items-center gap-1 text-sm px-2 py-1 rounded transition-colors ${
-        bookmarked
-          ? "text-yellow-600 hover:text-yellow-700"
-          : "text-slate-400 hover:text-slate-600"
-      } ${loading ? "opacity-50 cursor-not-allowed" : ""} ${className}`}
+      className={`inline-flex items-center gap-1 text-sm px-2 py-1 rounded-full transition-colors ${
+        loading ? "opacity-50 cursor-not-allowed" : ""
+      } ${className}`}
+      style={{
+        color: bookmarked ? "#ca8a04" : "var(--text-muted)",
+      }}
       title={bookmarked ? "Remove bookmark" : "Bookmark this question"}
     >
-      <FiBookmark
-        className={`w-4 h-4 ${bookmarked ? "fill-current" : ""}`}
-      />
+      <span className="text-base font-bold">{bookmarked ? "Saved" : "Save"}</span>
     </button>
   );
 }

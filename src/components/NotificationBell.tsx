@@ -2,8 +2,6 @@
 
 import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiBell, FiCheck, FiCheckCircle, FiAward, FiTrendingUp, FiClock, FiAlertCircle } from "react-icons/fi";
-import { HiOutlineFire } from "react-icons/hi";
 import {
   getNotifications,
   getUnreadNotificationCount,
@@ -98,20 +96,20 @@ export function NotificationBell() {
     }
   }
 
-  function getNotificationIcon(type: string) {
+  function getNotificationLabel(type: string) {
     switch (type) {
       case "ACHIEVEMENT":
-        return <FiAward className="w-4 h-4 text-yellow-500" />;
+        return <span className="w-4 h-4 flex items-center justify-center text-xs font-bold text-yellow-500">A</span>;
       case "STREAK":
-        return <HiOutlineFire className="w-4 h-4 text-orange-500" />;
+        return <span className="w-4 h-4 flex items-center justify-center text-xs font-bold text-orange-500">S</span>;
       case "GOAL_PROGRESS":
-        return <FiTrendingUp className="w-4 h-4 text-green-500" />;
+        return <span className="w-4 h-4 flex items-center justify-center text-xs font-bold text-green-500">G</span>;
       case "STUDY_REMINDER":
-        return <FiClock className="w-4 h-4 text-blue-500" />;
+        return <span className="w-4 h-4 flex items-center justify-center text-xs font-bold text-blue-500">R</span>;
       case "INACTIVITY":
-        return <FiAlertCircle className="w-4 h-4 text-red-500" />;
+        return <span className="w-4 h-4 flex items-center justify-center text-xs font-bold" style={{ color: "var(--destructive)" }}>!</span>;
       default:
-        return <FiBell className="w-4 h-4 text-slate-500" />;
+        return <span className="w-4 h-4 flex items-center justify-center text-xs font-bold" style={{ color: "var(--text-muted)" }}>N</span>;
     }
   }
 
@@ -135,15 +133,17 @@ export function NotificationBell() {
       {/* Bell Button */}
       <button
         onClick={handleToggle}
-        className="relative p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-colors"
+        className="relative p-2 rounded-full transition-colors"
+        style={{ color: "var(--text-muted)" }}
         aria-label="Thông báo"
       >
-        <FiBell className="w-5 h-5" />
+        <span className="w-5 h-5 flex items-center justify-center text-sm font-bold">B</span>
         {unreadCount > 0 && (
           <motion.span
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1"
+            className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1"
+            style={{ backgroundColor: "var(--destructive)" }}
           >
             {unreadCount > 99 ? "99+" : unreadCount}
           </motion.span>
@@ -157,15 +157,20 @@ export function NotificationBell() {
             initial={{ opacity: 0, y: -10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
-            className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden z-50"
+            className="absolute right-0 top-full mt-2 w-80 sm:w-96 rounded-[1.5rem] border-[3px] overflow-hidden z-50 shadow-[0_4px_0_rgba(0,0,0,0.08)]"
+            style={{
+              backgroundColor: "var(--background)",
+              borderColor: "var(--border)",
+            }}
           >
             {/* Header */}
-            <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+            <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: "var(--border)" }}>
               <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-slate-900">Thông báo</h3>
+                <h3 className="font-semibold" style={{ color: "var(--foreground)" }}>Thông báo</h3>
                 <a
                   href="/notifications?tab=settings"
-                  className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
+                  className="p-1 rounded-full transition-colors"
+                  style={{ color: "var(--text-muted)" }}
                   title="Cài đặt thông báo"
                   onClick={(e) => e.stopPropagation()}
                 >
@@ -178,9 +183,9 @@ export function NotificationBell() {
               {unreadCount > 0 && (
                 <button
                   onClick={handleMarkAllAsRead}
-                  className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+                  className="text-xs font-medium flex items-center gap-1"
+                  style={{ color: "var(--primary)" }}
                 >
-                  <FiCheckCircle className="w-3 h-3" />
                   Đánh dấu tất cả đã đọc
                 </button>
               )}
@@ -192,17 +197,17 @@ export function NotificationBell() {
                 <div className="p-4 space-y-3">
                   {[1, 2, 3].map((i) => (
                     <div key={i} className="animate-pulse flex gap-3">
-                      <div className="w-8 h-8 bg-slate-200 rounded-full" />
+                      <div className="w-8 h-8 rounded-full" style={{ backgroundColor: "var(--border)" }} />
                       <div className="flex-1 space-y-2">
-                        <div className="h-4 bg-slate-200 rounded w-3/4" />
-                        <div className="h-3 bg-slate-200 rounded w-1/2" />
+                        <div className="h-4 rounded w-3/4" style={{ backgroundColor: "var(--border)" }} />
+                        <div className="h-3 rounded w-1/2" style={{ backgroundColor: "var(--border)" }} />
                       </div>
                     </div>
                   ))}
                 </div>
               ) : notifications.length === 0 ? (
-                <div className="p-8 text-center text-slate-400">
-                  <FiBell className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                <div className="p-8 text-center" style={{ color: "var(--text-muted)" }}>
+                  <span className="text-3xl block mb-2 opacity-50 font-bold">N</span>
                   <p>Không có thông báo nào</p>
                 </div>
               ) : (
@@ -212,28 +217,29 @@ export function NotificationBell() {
                       key={notification.id}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className={`px-4 py-3 border-b border-slate-50 hover:bg-slate-50 cursor-pointer transition-colors ${
+                      className={`px-4 py-3 border-b cursor-pointer transition-colors ${
                         !notification.isRead ? "bg-blue-50/50" : ""
                       }`}
+                      style={{ borderColor: "var(--border)" }}
                       onClick={() => !notification.isRead && handleMarkAsRead(notification.id)}
                     >
                       <div className="flex gap-3">
-                        <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0">
-                          {getNotificationIcon(notification.type)}
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: "var(--primary-light)" }}>
+                          {getNotificationLabel(notification.type)}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2">
-                            <p className={`text-sm ${!notification.isRead ? "font-semibold text-slate-900" : "text-slate-700"}`}>
+                            <p className={`text-sm ${!notification.isRead ? "font-semibold" : ""}`} style={{ color: !notification.isRead ? "var(--foreground)" : "var(--text-muted)" }}>
                               {notification.title}
                             </p>
                             {!notification.isRead && (
-                              <span className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1.5" />
+                              <span className="w-2 h-2 rounded-full flex-shrink-0 mt-1.5" style={{ backgroundColor: "var(--primary)" }} />
                             )}
                           </div>
-                          <p className="text-xs text-slate-500 line-clamp-2 mt-0.5">
+                          <p className="text-xs line-clamp-2 mt-0.5" style={{ color: "var(--text-muted)" }}>
                             {notification.message}
                           </p>
-                          <p className="text-[10px] text-slate-400 mt-1">
+                          <p className="text-[10px] mt-1" style={{ color: "var(--text-muted)", opacity: 0.7 }}>
                             {formatTime(notification.createdAt)}
                           </p>
                         </div>
@@ -246,10 +252,11 @@ export function NotificationBell() {
 
             {/* Footer */}
             {notifications.length > 0 && (
-              <div className="px-4 py-2 border-t border-slate-100 text-center">
+              <div className="px-4 py-2 border-t text-center" style={{ borderColor: "var(--border)" }}>
                 <a
                   href="/notifications"
-                  className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                  className="text-xs font-medium"
+                  style={{ color: "var(--primary)" }}
                 >
                   Xem tất cả thông báo
                 </a>

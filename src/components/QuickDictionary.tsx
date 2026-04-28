@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiX, FiPlus, FiVolume2, FiBookOpen, FiSearch, FiBook } from "react-icons/fi";
 import { lookupDictionary } from "@/utils/api";
 
 type DictionaryEntry = {
@@ -35,11 +34,11 @@ export default function QuickDictionary({ onAddToFlashcard }: QuickDictionaryPro
   const handleContextMenu = useCallback((e: MouseEvent) => {
     const selection = window.getSelection();
     const text = selection?.toString().trim();
-    
+
     // Only show if text is selected and looks like a word
     if (text && text.length > 1 && text.length < 50 && /^[a-zA-Z\-']+$/.test(text)) {
       e.preventDefault();
-      
+
       setPosition({ x: e.clientX, y: e.clientY });
       setSelectedWord(text.toLowerCase());
       setMenuMode("context");
@@ -68,11 +67,11 @@ export default function QuickDictionary({ onAddToFlashcard }: QuickDictionaryPro
   // Lookup word in dictionary
   const lookupWord = async () => {
     if (!selectedWord) return;
-    
+
     setMenuMode("lookup");
     setLoading(true);
     setError(null);
-    
+
     try {
       const data = await lookupDictionary(selectedWord);
       setEntry(data);
@@ -125,29 +124,34 @@ export default function QuickDictionary({ onAddToFlashcard }: QuickDictionaryPro
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
         transition={{ duration: 0.12 }}
-        className="fixed z-[9999] bg-white rounded-lg border border-slate-200 shadow-xl overflow-hidden"
-        style={{ left: menuX, top: menuY, minWidth: menuMode === "context" ? 200 : 320 }}
+        className="fixed z-[9999] rounded-[1.5rem] border-[3px] shadow-[0_4px_0_rgba(0,0,0,0.08)] overflow-hidden"
+        style={{
+          left: menuX,
+          top: menuY,
+          minWidth: menuMode === "context" ? 200 : 320,
+          backgroundColor: "var(--background)",
+          borderColor: "var(--border)",
+        }}
       >
         {/* Context Menu Mode */}
         {menuMode === "context" && (
           <div className="py-1">
-            <div className="px-3 py-1.5 text-xs font-medium text-slate-400 uppercase tracking-wide">
+            <div className="px-3 py-1.5 text-xs font-medium tracking-wide" style={{ color: "var(--text-muted)" }}>
               "{selectedWord}"
             </div>
             <button
               onClick={lookupWord}
-              className="w-full px-3 py-2 flex items-center gap-3 text-left text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+              className="w-full px-3 py-2 flex items-center gap-3 text-left text-sm transition-colors"
+              style={{ color: "var(--foreground)" }}
             >
-              <FiSearch className="w-4 h-4" />
               <span>Tra từ điển</span>
             </button>
             <button
               onClick={handleQuickAdd}
-              className="w-full px-3 py-2 flex items-center gap-3 text-left text-sm text-slate-700 
-              hover:bg-green-50 hover:text-green-600 transition-colors"
+              className="w-full px-3 py-2 flex items-center gap-3 text-left text-sm transition-colors"
+              style={{ color: "var(--foreground)" }}
             >
-              <FiPlus className="w-4 h-4" />
-              <span>Thêm vào từ vựng</span>
+              <span>+ Thêm vào từ vựng</span>
             </button>
           </div>
         )}
@@ -156,16 +160,16 @@ export default function QuickDictionary({ onAddToFlashcard }: QuickDictionaryPro
         {menuMode === "lookup" && (
           <>
             {/* Header */}
-            <div className="flex items-center justify-between p-3 border-b border-slate-100 bg-gradient-to-r from-blue-50 to-white">
+            <div className="flex items-center justify-between p-3 border-b" style={{ borderColor: "var(--border)" }}>
               <div className="flex items-center gap-2">
-                <FiBookOpen className="w-4 h-4 text-blue-500" />
-                <span className="font-semibold text-slate-900">{selectedWord}</span>
+                <span className="font-semibold" style={{ color: "var(--foreground)" }}>{selectedWord}</span>
               </div>
               <button
                 onClick={handleClose}
-                className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded transition"
+                className="p-1 rounded transition font-bold text-sm"
+                style={{ color: "var(--text-muted)" }}
               >
-                <FiX className="w-4 h-4" />
+                x
               </button>
             </div>
 
@@ -173,12 +177,12 @@ export default function QuickDictionary({ onAddToFlashcard }: QuickDictionaryPro
             <div className="p-3 max-h-64 overflow-y-auto">
               {loading && (
                 <div className="flex items-center justify-center py-6">
-                  <div className="w-6 h-6 border-2 border-slate-200 border-t-blue-500 rounded-full animate-spin" />
+                  <div className="w-6 h-6 border-2 rounded-full animate-spin" style={{ borderColor: "var(--border)", borderTopColor: "var(--primary)" }} />
                 </div>
               )}
 
               {error && (
-                <div className="text-center py-6 text-slate-500 text-sm">
+                <div className="text-center py-6 text-sm" style={{ color: "var(--text-muted)" }}>
                   {error}
                 </div>
               )}
@@ -187,21 +191,21 @@ export default function QuickDictionary({ onAddToFlashcard }: QuickDictionaryPro
                 <div className="space-y-3">
                   {/* Word & POS & IPA */}
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-lg font-bold text-slate-900">{entry.word}</span>
+                    <span className="text-lg font-bold" style={{ color: "var(--foreground)" }}>{entry.word}</span>
                     {entry.pos && (
-                      <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full font-medium">
+                      <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: "var(--primary-light)", color: "var(--primary)" }}>
                         {entry.pos}
                       </span>
                     )}
                     {entry.ipa && (
-                      <button className="p-1 text-slate-400 hover:text-blue-500 transition">
-                        <FiVolume2 className="w-4 h-4" />
+                      <button className="p-1 transition text-xs" style={{ color: "var(--text-muted)" }}>
+                        Sound
                       </button>
                     )}
                   </div>
 
                   {entry.ipa && (
-                    <div className="text-sm text-slate-500 font-mono">/{entry.ipa}/</div>
+                    <div className="text-sm font-mono" style={{ color: "var(--text-muted)" }}>/{entry.ipa}/</div>
                   )}
 
                   {/* Definitions */}
@@ -209,14 +213,14 @@ export default function QuickDictionary({ onAddToFlashcard }: QuickDictionaryPro
                     <div className="space-y-2 pt-1">
                       {entry.senses.slice(0, 3).map((sense, idx) => (
                         <div key={idx} className="text-sm">
-                          <div className="text-slate-700">
-                            <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-medium text-blue-600 bg-blue-50 rounded-full mr-2">
+                          <div style={{ color: "var(--foreground)" }}>
+                            <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-medium rounded-full mr-2" style={{ color: "var(--primary)", backgroundColor: "var(--primary-light)" }}>
                               {idx + 1}
                             </span>
                             {sense.definition}
                           </div>
                           {sense.examples && sense.examples[0] && (
-                            <div className="mt-1.5 text-xs text-slate-500 italic pl-7 border-l-2 border-blue-100 ml-2.5">
+                            <div className="mt-1.5 text-xs italic pl-7 border-l-2 ml-2.5" style={{ color: "var(--text-muted)", borderColor: "var(--primary-light)" }}>
                               "{sense.examples[0]}"
                             </div>
                           )}
@@ -230,14 +234,17 @@ export default function QuickDictionary({ onAddToFlashcard }: QuickDictionaryPro
 
             {/* Footer - Add to Flashcard */}
             {entry && !loading && (
-              <div className="p-3 border-t border-slate-100 bg-slate-50">
+              <div className="p-3 border-t" style={{ borderColor: "var(--border)" }}>
                 <button
                   onClick={handleAddToFlashcard}
-                  className="w-full py-2.5 text-sm font-medium text-white 
-                  rounded-lg transition flex items-center justify-center gap-2 shadow-sm"
+                  className="w-full py-2.5 text-sm font-medium text-white
+                  rounded-full transition flex items-center justify-center gap-2 border-b-[4px]"
+                  style={{
+                    backgroundColor: "var(--primary)",
+                    borderBottomColor: "var(--primary-dark)",
+                  }}
                 >
-                  <FiPlus className="w-4 h-4" />
-                  Thêm vào Flashcard
+                  + Thêm vào Flashcard
                 </button>
               </div>
             )}

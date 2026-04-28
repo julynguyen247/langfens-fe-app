@@ -6,13 +6,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   getGamificationStats,
   getXpHistory,
+  getAchievements,
+  getMe,
+  getAnalyticsSummary,
   dailyCheckin,
 } from "@/utils/api";
-
-// Material Icon Component
-function Icon({ name, className = "" }: { name: string; className?: string }) {
-  return <span className={`material-symbols-rounded ${className}`}>{name}</span>;
-}
+import { SkillProgressBar } from "@/components/ui/SkillProgressBar";
+import { SkillBadge } from "@/components/ui/SkillBadge";
+import { ProgressRing } from "@/components/ui/ProgressRing";
 
 // Types
 type Achievement = {
@@ -48,10 +49,33 @@ type XpHistoryItem = {
   createdAt: string;
 };
 
+type UserProfile = {
+  id: string;
+  email: string;
+  username?: string;
+  displayName?: string;
+  createdAt?: string;
+};
+
+type AnalyticsSummary = {
+  averageBandScore?: number;
+  skillScores?: {
+    reading?: number;
+    listening?: number;
+    writing?: number;
+    speaking?: number;
+  };
+};
+
+type TabKey = "overview" | "achievements" | "settings";
+
 export default function ProfilePage() {
   const router = useRouter();
   const [stats, setStats] = useState<UserStats | null>(null);
   const [xpHistory, setXpHistory] = useState<XpHistoryItem[]>([]);
+  const [allAchievements, setAllAchievements] = useState<Achievement[]>([]);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [analyticsSummary, setAnalyticsSummary] = useState<AnalyticsSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [checkinLoading, setCheckinLoading] = useState(false);
   const [checkinResult, setCheckinResult] = useState<{
@@ -59,6 +83,7 @@ export default function ProfilePage() {
     message: string;
     xpEarned?: number;
   } | null>(null);
+  const [activeTab, setActiveTab] = useState<TabKey>("overview");
 
   useEffect(() => {
     loadData();
@@ -67,16 +92,25 @@ export default function ProfilePage() {
   async function loadData() {
     setLoading(true);
     try {
-      const [statsRes, historyRes] = await Promise.all([
+      const [statsRes, historyRes, achievementsRes, meRes, analyticsRes] = await Promise.all([
         getGamificationStats(),
         getXpHistory(10),
+        getAchievements().catch(() => null),
+        getMe().catch(() => null),
+        getAnalyticsSummary().catch(() => null),
       ]);
 
       const statsData = (statsRes as any)?.data?.data ?? (statsRes as any)?.data;
       const historyData = (historyRes as any)?.data?.data ?? (historyRes as any)?.data ?? [];
+      const achievementsData = (achievementsRes as any)?.data?.data ?? (achievementsRes as any)?.data ?? [];
+      const meData = (meRes as any)?.data?.data ?? (meRes as any)?.data;
+      const analyticsData = (analyticsRes as any)?.data?.data ?? (analyticsRes as any)?.data;
 
       setStats(statsData);
       setXpHistory(Array.isArray(historyData) ? historyData : []);
+      setAllAchievements(Array.isArray(achievementsData) ? achievementsData : []);
+      if (meData) setUserProfile(meData);
+      if (analyticsData) setAnalyticsSummary(analyticsData);
     } catch (error) {
       console.error("Failed to load gamification data:", error);
     } finally {
@@ -90,7 +124,7 @@ export default function ProfilePage() {
     try {
       const res = await dailyCheckin();
       const data = (res as any)?.data?.data ?? (res as any)?.data;
-      
+
       if (data?.success) {
         setCheckinResult({
           success: true,
@@ -122,236 +156,523 @@ export default function ProfilePage() {
     ? (stats.level * stats.xpForNextLevel) + stats.xpForNextLevel
     : 10000;
 
+  // Rank-based ring color
+  const level = stats?.level ?? 1;
+  const ringColor =
+    level >= 20
+      ? "var(--accent-gold)"
+      : level >= 10
+        ? "var(--skill-listening)"
+        : "var(--primary)";
+
+  const displayName = userProfile?.displayName || userProfile?.username || "IELTS Learner";
+  const initials = displayName
+    .split(" ")
+    .map((w) => w.charAt(0))
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  const avgBand = analyticsSummary?.averageBandScore ?? 0;
+
   if (loading) {
     return (
-      <div className="min-h-screen w-full bg-[#F8FAFC]">
-        <main className="max-w-4xl mx-auto px-4 py-10">
+      <div className="min-h-screen w-full bg-[var(--background)]">
+        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
           <SkeletonProfile />
         </main>
       </div>
     );
   }
 
+  const TABS: { key: TabKey; label: string }[] = [
+    { key: "overview", label: "Overview" },
+    { key: "achievements", label: "Achievements" },
+    { key: "settings", label: "Settings" },
+  ];
+
   return (
-    <div className="min-h-screen w-full bg-[#F8FAFC]">
-      <main className="max-w-4xl mx-auto px-4 py-10">
-        
-        {/* =============================================
-            1. HERO & STATS COMBINED (The Portfolio Header)
-        ============================================= */}
+    <div className="min-h-screen w-full bg-[var(--background)]">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+
+        {/* ============================================ */}
+        {/* HERO — Player Card                           */}
+        {/* ============================================ */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white border border-slate-200 rounded-[2rem] shadow-sm overflow-hidden mb-8"
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-white overflow-hidden"
         >
-          {/* Upper Part: Identity */}
-          <div className="relative p-10 flex flex-col md:flex-row items-center gap-8 border-b border-slate-100">
-            {/* Absolute Edit Button (Ghost Style) */}
+          <div className="relative p-8 sm:p-10 flex flex-col items-center text-center">
+            {/* Edit button */}
             <button
               onClick={() => router.push("/settings")}
-              className="absolute top-6 right-6 text-slate-400 hover:text-slate-700 p-2 rounded-full hover:bg-slate-100 transition-colors"
-              title="Edit Profile"
+              className="absolute top-5 right-5 text-[var(--text-muted)] hover:text-[var(--foreground)] px-3 py-1.5 rounded-full border-[2px] border-[var(--border)] hover:border-[var(--primary)] transition-colors font-bold text-sm"
             >
-              <Icon name="edit" className="text-xl" />
+              Edit
             </button>
 
-            {/* Avatar with Level Badge */}
-            <div className="relative shrink-0">
-              <div className="w-28 h-28 rounded-full bg-slate-200 overflow-hidden border-4 border-white shadow-md flex items-center justify-center">
-                <Icon name="person" className="text-5xl text-slate-400" />
-              </div>
-              <div className="absolute bottom-0 right-0 bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded-full border-2 border-white">
-                LVL {stats?.level ?? 1}
-              </div>
-            </div>
-            
-            {/* Info Column */}
-            <div className="text-center md:text-left flex-1">
-              <h1 className="font-serif text-3xl font-bold text-slate-900 mb-2">IELTS Learner</h1>
-              <div className="flex items-center justify-center md:justify-start gap-3 mb-4 flex-wrap">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider bg-slate-50 px-3 py-1 rounded-full border border-slate-100">
-                  IELTS Candidate
+            {/* Avatar circle with colored ring */}
+            <motion.div
+              className="relative mb-4 group"
+              whileHover={{ scale: 1.04 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
+              {/* Rotating ring */}
+              <motion.div
+                className="absolute inset-0 rounded-full"
+                style={{
+                  width: 104,
+                  height: 104,
+                  border: `4px solid ${ringColor}`,
+                  borderTopColor: "transparent",
+                  top: -4,
+                  left: -4,
+                }}
+                animate={{ rotate: 0 }}
+                whileHover={{ rotate: 360 }}
+                transition={{ duration: 2, ease: "linear" }}
+              />
+              <div
+                className="w-24 h-24 rounded-full flex items-center justify-center overflow-hidden"
+                style={{
+                  background: "var(--primary-light)",
+                  border: `4px solid ${ringColor}`,
+                }}
+              >
+                <span
+                  className="text-3xl font-bold"
+                  style={{ color: "var(--primary)", fontFamily: "var(--font-sans)" }}
+                >
+                  {initials}
                 </span>
-                <span className="text-xs text-slate-400 flex items-center gap-1">
-                  <Icon name="calendar_month" className="text-sm" /> Joined Dec 2025
-                </span>
               </div>
-              
-              {/* XP Progress Bar */}
-              <div className="w-full max-w-md">
-                <div className="flex justify-between text-xs font-bold text-slate-500 mb-1">
-                  <span>XP Progress</span>
-                  <span>{stats?.totalXp.toLocaleString() ?? 0} / {totalXpTarget.toLocaleString()}</span>
-                </div>
-                <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${xpProgress}%` }}
-                    transition={{ duration: 0.8, ease: "easeOut" }}
-                    className="h-full bg-[#3B82F6]"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
 
-          {/* Lower Part: Key Metrics (Clean Grid) */}
-          <div className="grid grid-cols-3 divide-x divide-slate-200 border-t border-slate-200 py-6 bg-[#F8FAFC]">
-            <div className="text-center px-4">
-              <div className="text-2xl font-bold text-slate-800">{stats?.currentStreak ?? 0}</div>
-              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 flex items-center justify-center gap-1">
-                <Icon name="local_fire_department" className="text-sm text-orange-500" /> Day Streak
+              {/* Level badge — 3D pill */}
+              <div
+                className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full border-b-[3px] text-white text-xs font-bold whitespace-nowrap"
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  backgroundColor: "var(--primary)",
+                  borderBottomColor: "var(--primary-dark)",
+                }}
+              >
+                Lv. {stats?.level ?? 1}
+              </div>
+            </motion.div>
+
+            {/* Username */}
+            <h1
+              className="text-2xl sm:text-3xl font-bold text-[var(--foreground)] mt-3 mb-2"
+              style={{ fontFamily: "var(--font-sans)" }}
+            >
+              {displayName}
+            </h1>
+
+            {/* Title badge */}
+            <div className="flex items-center justify-center gap-2 mb-5 flex-wrap">
+              <span className="text-xs font-bold text-[var(--primary)] bg-[var(--primary-light)] px-3 py-1 rounded-full border-[2px] border-[var(--border)] border-b-[3px]">
+                {level >= 20 ? "Advanced" : level >= 10 ? "Intermediate" : "Beginner"}
+              </span>
+              <span className="text-xs text-[var(--text-muted)] font-bold">
+                {userProfile?.createdAt
+                  ? `Joined ${new Date(userProfile.createdAt).toLocaleDateString("en-US", { month: "short", year: "numeric" })}`
+                  : "IELTS Candidate"}
+              </span>
+            </div>
+
+            {/* XP bar progress */}
+            <div className="w-full max-w-sm">
+              <div className="flex justify-between text-xs font-bold text-[var(--text-muted)] mb-1.5">
+                <span>XP to next level</span>
+                <span style={{ fontFamily: "var(--font-mono)" }}>
+                  {stats?.totalXp.toLocaleString() ?? 0} / {totalXpTarget.toLocaleString()}
+                </span>
+              </div>
+              <div className="h-3.5 bg-[var(--primary-light)] rounded-full overflow-hidden border-[2px] border-[var(--border)]">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${xpProgress}%` }}
+                  transition={{ duration: 0.8, ease: "easeOut", delay: 0.3 }}
+                  className="h-full rounded-full"
+                  style={{ backgroundColor: "var(--primary)" }}
+                />
               </div>
             </div>
-            <div className="text-center px-4">
-              <div className="text-2xl font-bold text-slate-800">{stats?.totalTestsCompleted ?? 0}</div>
-              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Tests Taken</div>
-            </div>
-            <div className="text-center px-4">
-              <div className="text-2xl font-bold text-slate-800">{stats?.totalXp.toLocaleString() ?? 0}</div>
-              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Total XP</div>
+
+            {/* Daily check-in */}
+            <div className="mt-5 flex items-center gap-3 flex-wrap justify-center">
+              <button
+                onClick={handleCheckin}
+                disabled={checkinLoading}
+                className="rounded-full bg-[var(--primary)] text-white font-bold border-b-[4px] border-[var(--primary-dark)] hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px] px-6 py-2.5 text-sm transition-all disabled:opacity-50"
+              >
+                {checkinLoading ? "Checking in..." : "Daily check-in"}
+              </button>
+              <AnimatePresence>
+                {checkinResult && (
+                  <motion.span
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0 }}
+                    className={`text-xs font-bold px-3 py-1.5 rounded-full border-[2px] ${
+                      checkinResult.success
+                        ? "bg-[var(--skill-speaking-light)] text-[var(--skill-speaking)] border-[var(--skill-speaking-border)]"
+                        : "bg-[var(--skill-writing-light)] text-[var(--skill-writing)] border-[var(--skill-writing-border)]"
+                    }`}
+                  >
+                    {checkinResult.message}
+                    {checkinResult.xpEarned && (
+                      <span className="ml-1" style={{ fontFamily: "var(--font-mono)" }}>
+                        +{checkinResult.xpEarned} XP
+                      </span>
+                    )}
+                  </motion.span>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </motion.div>
 
-        {/* =============================================
-            2. SECONDARY GRID
-        ============================================= */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          
-          {/* Activity Feed */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="md:col-span-2 bg-white border border-slate-200 rounded-2xl p-8"
-          >
-            <h3 className="font-serif font-bold text-lg text-slate-900 mb-6">Recent Activity</h3>
-            
-            {xpHistory.length > 0 ? (
-              <div className="relative pl-8 border-l-2 border-slate-200 ml-1 space-y-0">
-                {xpHistory.slice(0, 8).map((item, idx) => (
-                  <div key={item.id} className="relative">
-                    {/* Timeline Dot */}
-                    <div className="absolute -left-[calc(2rem+5px)] top-4 w-2.5 h-2.5 rounded-full bg-blue-500 ring-4 ring-white" />
-                    {/* Content */}
-                    <div className={`py-4 ${idx < Math.min(xpHistory.length, 8) - 1 ? 'border-b border-slate-50' : ''}`}>
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <p className="text-sm font-bold text-slate-700">{formatXpSource(item.source)}</p>
-                          <p className="text-xs text-slate-400 mt-1 font-mono">{formatDate(item.createdAt)}</p>
-                        </div>
-                        <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded shrink-0">
-                          +{item.amount} XP
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-slate-400">
-                <Icon name="history" className="text-4xl mb-2" />
-                <p className="text-sm">No activity yet. Start learning!</p>
-              </div>
-            )}
-          </motion.div>
-
-          {/* Achievements / Side Widgets */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="space-y-6"
-          >
-            {/* Achievements Widget */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-serif font-bold text-lg text-slate-900">Achievements</h3>
-                <button
-                  onClick={() => router.push("/achievements")}
-                  className="text-xs text-[#3B82F6] hover:text-[#2563EB] font-medium"
-                >
-                  View all
-                </button>
-              </div>
-              <div className="grid grid-cols-4 gap-2">
-                {stats?.recentAchievements && stats.recentAchievements.length > 0 ? (
-                  stats.recentAchievements.slice(0, 4).map((achievement) => (
-                    <div
-                      key={achievement.id}
-                      className="aspect-square bg-amber-50 rounded-full flex items-center justify-center border border-amber-200"
-                      title={achievement.title}
-                    >
-                      <Icon name="emoji_events" className="text-amber-500" />
-                    </div>
-                  ))
-                ) : (
-                  <>
-                    {[1, 2, 3, 4].map((i) => (
-                      <div key={i} className="aspect-square bg-slate-100 rounded-full flex items-center justify-center text-slate-300">
-                        <Icon name="emoji_events" />
-                      </div>
-                    ))}
-                  </>
-                )}
-              </div>
-            </div>
-            
-            {/* Daily Check-in */}
-            <button
-              onClick={handleCheckin}
-              disabled={checkinLoading}
-              className="w-full bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+        {/* ============================================ */}
+        {/* STATS ROW — 4 inline stat cards              */}
+        {/* ============================================ */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.5, ease: "easeOut" }}
+          className="grid grid-cols-2 sm:grid-cols-4 gap-4"
+        >
+          {[
+            { label: "Total XP", value: stats?.totalXp.toLocaleString() ?? "0" },
+            { label: "Streak days", value: String(stats?.currentStreak ?? 0) },
+            { label: "Tests taken", value: String(stats?.totalTestsCompleted ?? 0) },
+            { label: "Avg band", value: avgBand ? avgBand.toFixed(1) : "--" },
+          ].map((stat, idx) => (
+            <motion.div
+              key={stat.label}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 + idx * 0.06, duration: 0.4, ease: "easeOut" }}
+              className="rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-white p-5 text-center"
             >
-              <Icon name="check_circle" className="text-xl" />
-              {checkinLoading ? "Checking in..." : "Check In Today"}
-            </button>
+              <div
+                className="text-2xl font-bold text-[var(--foreground)] mb-1"
+                style={{ fontFamily: "var(--font-mono)" }}
+              >
+                {stat.value}
+              </div>
+              <div className="text-xs font-bold text-[var(--text-muted)]">
+                {stat.label}
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
 
-            {/* Check-in Result */}
-            <AnimatePresence>
-              {checkinResult && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className={`p-3 rounded-xl flex items-center gap-2 text-sm ${
-                    checkinResult.success
-                      ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                      : "bg-amber-50 text-amber-700 border border-amber-200"
-                  }`}
-                >
-                  <Icon name={checkinResult.success ? "check_circle" : "info"} />
-                  {checkinResult.message}
-                  {checkinResult.xpEarned && (
-                    <span className="ml-1 font-bold">+{checkinResult.xpEarned} XP</span>
+        {/* ============================================ */}
+        {/* TABS                                         */}
+        {/* ============================================ */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.5, ease: "easeOut" }}
+        >
+          {/* Tab bar */}
+          <div className="flex gap-2 mb-6">
+            {TABS.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`px-5 py-2 rounded-full font-bold text-sm transition-all border-b-[3px] ${
+                  activeTab === tab.key
+                    ? "bg-[var(--primary)] text-white border-[var(--primary-dark)]"
+                    : "bg-white text-[var(--text-muted)] border-[var(--border)] hover:text-[var(--foreground)] hover:border-[var(--primary-light)]"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Tab content */}
+          <AnimatePresence mode="wait">
+            {activeTab === "overview" && (
+              <motion.div
+                key="overview"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.3 }}
+                className="space-y-6"
+              >
+                {/* Skill Progress Bars */}
+                <div className="rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-white p-6 sm:p-8">
+                  <h3
+                    className="font-bold text-lg text-[var(--foreground)] mb-5"
+                    style={{ fontFamily: "var(--font-sans)" }}
+                  >
+                    Skill breakdown
+                  </h3>
+                  <div className="space-y-4">
+                    {(["Reading", "Listening", "Writing", "Speaking"] as const).map(
+                      (skill, idx) => (
+                        <SkillProgressBar
+                          key={skill}
+                          skill={skill}
+                          score={
+                            analyticsSummary?.skillScores?.[
+                              skill.toLowerCase() as keyof NonNullable<AnalyticsSummary["skillScores"]>
+                            ] ?? 0
+                          }
+                          delay={0.1 * idx}
+                        />
+                      )
+                    )}
+                  </div>
+                  <div className="flex gap-2 mt-5 flex-wrap">
+                    {(["Reading", "Listening", "Writing", "Speaking"] as const).map((s) => (
+                      <SkillBadge key={s} skill={s} size="sm" />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Recent Activity Timeline */}
+                <div className="rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-white p-6 sm:p-8">
+                  <h3
+                    className="font-bold text-lg text-[var(--foreground)] mb-5"
+                    style={{ fontFamily: "var(--font-sans)" }}
+                  >
+                    Recent activity
+                  </h3>
+
+                  {xpHistory.length > 0 ? (
+                    <div className="relative pl-8 border-l-[3px] border-[var(--border)] ml-1 space-y-0">
+                      {xpHistory.slice(0, 8).map((item, idx) => (
+                        <div key={item.id} className="relative">
+                          {/* Timeline Dot */}
+                          <div className="absolute -left-[calc(2rem+6px)] top-4 w-3 h-3 rounded-full bg-[var(--primary)] ring-4 ring-white" />
+                          {/* Content */}
+                          <div
+                            className={`py-4 ${
+                              idx < Math.min(xpHistory.length, 8) - 1
+                                ? "border-b-[2px] border-[var(--border)]"
+                                : ""
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-4">
+                              <div>
+                                <p className="text-sm font-bold text-[var(--text-body)]">
+                                  {formatXpSource(item.source)}
+                                </p>
+                                <p
+                                  className="text-xs text-[var(--text-muted)] mt-1"
+                                  style={{ fontFamily: "var(--font-mono)" }}
+                                >
+                                  {formatDate(item.createdAt)}
+                                </p>
+                              </div>
+                              <span
+                                className="text-xs font-bold text-[var(--skill-speaking)] bg-[var(--skill-speaking-light)] px-2.5 py-1 rounded-full border-[2px] border-[var(--skill-speaking-border)] shrink-0"
+                                style={{ fontFamily: "var(--font-mono)" }}
+                              >
+                                +{item.amount} XP
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-[var(--text-muted)]">
+                      <p className="text-sm font-bold">No activity yet. Start learning!</p>
+                    </div>
                   )}
-                </motion.div>
-              )}
-            </AnimatePresence>
+                </div>
+              </motion.div>
+            )}
 
-            {/* Quick Links */}
-            <div className="bg-white border border-slate-200 rounded-2xl divide-y divide-slate-100 overflow-hidden">
-              <button
-                onClick={() => router.push("/leaderboard")}
-                className="w-full flex items-center gap-3 p-4 hover:bg-slate-50 transition-colors text-left"
+            {activeTab === "achievements" && (
+              <motion.div
+                key="achievements"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.3 }}
               >
-                <Icon name="leaderboard" className="text-slate-400" />
-                <span className="flex-1 text-sm font-medium text-slate-700">Leaderboard</span>
-                <Icon name="chevron_right" className="text-slate-300" />
-              </button>
-              <button
-                onClick={() => router.push("/analytics")}
-                className="w-full flex items-center gap-3 p-4 hover:bg-slate-50 transition-colors text-left"
+                <div className="rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-white p-6 sm:p-8">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3
+                      className="font-bold text-lg text-[var(--foreground)]"
+                      style={{ fontFamily: "var(--font-sans)" }}
+                    >
+                      Achievements
+                    </h3>
+                    <button
+                      onClick={() => router.push("/achievements")}
+                      className="text-xs text-[var(--primary)] hover:text-[var(--primary-hover)] font-bold"
+                    >
+                      View all
+                    </button>
+                  </div>
+
+                  {allAchievements.length > 0 ? (
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
+                      {allAchievements.map((achievement) => (
+                        <motion.div
+                          key={achievement.id}
+                          whileHover={{ y: -3 }}
+                          className="flex flex-col items-center gap-2"
+                        >
+                          <div
+                            className={`w-14 h-14 rounded-full flex items-center justify-center border-[2px] border-b-[3px] ${
+                              achievement.isUnlocked
+                                ? "bg-[var(--accent-gold-bg)] border-[var(--accent-gold-border)]"
+                                : "bg-[var(--background)] border-[var(--border)] opacity-50"
+                            }`}
+                          >
+                            <span
+                              className={`text-lg font-bold ${
+                                achievement.isUnlocked
+                                  ? "text-[var(--accent-gold)]"
+                                  : "text-[var(--text-muted)]"
+                              }`}
+                            >
+                              {achievement.isUnlocked ? "A" : "?"}
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-bold text-[var(--text-muted)] text-center leading-tight max-w-[72px] truncate">
+                            {achievement.title}
+                          </span>
+                        </motion.div>
+                      ))}
+                    </div>
+                  ) : stats?.recentAchievements && stats.recentAchievements.length > 0 ? (
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
+                      {stats.recentAchievements.map((achievement) => (
+                        <motion.div
+                          key={achievement.id}
+                          whileHover={{ y: -3 }}
+                          className="flex flex-col items-center gap-2"
+                        >
+                          <div className="w-14 h-14 rounded-full flex items-center justify-center border-[2px] border-b-[3px] bg-[var(--accent-gold-bg)] border-[var(--accent-gold-border)]">
+                            <span className="text-lg font-bold text-[var(--accent-gold)]">A</span>
+                          </div>
+                          <span className="text-[10px] font-bold text-[var(--text-muted)] text-center leading-tight max-w-[72px] truncate">
+                            {achievement.title}
+                          </span>
+                        </motion.div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-10 text-[var(--text-muted)]">
+                      <p className="text-sm font-bold">No achievements unlocked yet.</p>
+                      <p className="text-xs mt-1">Keep practicing to earn badges!</p>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+
+            {activeTab === "settings" && (
+              <motion.div
+                key="settings"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.3 }}
               >
-                <Icon name="insights" className="text-slate-400" />
-                <span className="flex-1 text-sm font-medium text-slate-700">Analytics</span>
-                <Icon name="chevron_right" className="text-slate-300" />
-              </button>
-            </div>
+                <div className="rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-white p-6 sm:p-8">
+                  <h3
+                    className="font-bold text-lg text-[var(--foreground)] mb-6"
+                    style={{ fontFamily: "var(--font-sans)" }}
+                  >
+                    Settings
+                  </h3>
+                  <div className="space-y-5 max-w-md">
+                    {/* Display name */}
+                    <div>
+                      <label className="block text-sm font-bold text-[var(--text-body)] mb-1.5">
+                        Display name
+                      </label>
+                      <input
+                        type="text"
+                        defaultValue={displayName}
+                        className="w-full rounded-[1rem] border-[3px] border-[var(--border)] shadow-[0_3px_0_rgba(0,0,0,0.06)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--foreground)] focus:outline-none focus:border-[var(--primary)] transition-colors"
+                        style={{ fontFamily: "var(--font-sans)" }}
+                      />
+                    </div>
+                    {/* Email */}
+                    <div>
+                      <label className="block text-sm font-bold text-[var(--text-body)] mb-1.5">
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        defaultValue={userProfile?.email ?? ""}
+                        disabled
+                        className="w-full rounded-[1rem] border-[3px] border-[var(--border)] shadow-[0_3px_0_rgba(0,0,0,0.06)] bg-[var(--background)] px-4 py-2.5 text-sm font-semibold text-[var(--text-muted)] focus:outline-none cursor-not-allowed"
+                        style={{ fontFamily: "var(--font-sans)" }}
+                      />
+                    </div>
+                    {/* Target band */}
+                    <div>
+                      <label className="block text-sm font-bold text-[var(--text-body)] mb-1.5">
+                        Target band score
+                      </label>
+                      <select
+                        defaultValue="7.0"
+                        className="w-full rounded-[1rem] border-[3px] border-[var(--border)] shadow-[0_3px_0_rgba(0,0,0,0.06)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--foreground)] focus:outline-none focus:border-[var(--primary)] transition-colors appearance-none"
+                        style={{ fontFamily: "var(--font-sans)" }}
+                      >
+                        {["5.0", "5.5", "6.0", "6.5", "7.0", "7.5", "8.0", "8.5", "9.0"].map(
+                          (v) => (
+                            <option key={v} value={v}>
+                              {v}
+                            </option>
+                          )
+                        )}
+                      </select>
+                    </div>
+
+                    <button
+                      className="rounded-full bg-[var(--primary)] text-white font-bold border-b-[4px] border-[var(--primary-dark)] hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px] px-6 py-2.5 text-sm transition-all"
+                    >
+                      Save changes
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Quick links below tabs */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35, duration: 0.4, ease: "easeOut" }}
+            className="mt-6 rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-white divide-y-[2px] divide-[var(--border)] overflow-hidden"
+          >
+            <button
+              onClick={() => router.push("/leaderboard")}
+              className="w-full flex items-center gap-3 p-4 hover:bg-[var(--primary-light)] transition-colors text-left"
+            >
+              <span className="flex-1 text-sm font-bold text-[var(--text-body)]">
+                Leaderboard
+              </span>
+              <span className="text-[var(--text-muted)] font-bold text-xs">{">"}</span>
+            </button>
+            <button
+              onClick={() => router.push("/analytics")}
+              className="w-full flex items-center gap-3 p-4 hover:bg-[var(--primary-light)] transition-colors text-left"
+            >
+              <span className="flex-1 text-sm font-bold text-[var(--text-body)]">
+                Analytics
+              </span>
+              <span className="text-[var(--text-muted)] font-bold text-xs">{">"}</span>
+            </button>
           </motion.div>
-        </div>
-
+        </motion.div>
       </main>
     </div>
   );
@@ -363,45 +684,41 @@ export default function ProfilePage() {
 function SkeletonProfile() {
   return (
     <div className="space-y-8 animate-pulse">
-      <div className="bg-white border border-slate-200 rounded-[2rem] overflow-hidden">
-        <div className="p-10 flex flex-col md:flex-row items-center gap-8 border-b border-slate-100">
-          <div className="w-28 h-28 rounded-full bg-slate-200" />
-          <div className="flex-1 space-y-3">
-            <div className="h-8 w-48 bg-slate-200 rounded" />
-            <div className="h-4 w-64 bg-slate-100 rounded" />
-            <div className="h-2 w-full max-w-md bg-slate-100 rounded-full" />
+      {/* Hero skeleton */}
+      <div className="rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-white p-10 flex flex-col items-center">
+        <div className="w-24 h-24 rounded-full bg-[var(--primary-light)] mb-4" />
+        <div className="h-7 w-48 bg-[var(--border)] rounded-full mb-3" />
+        <div className="h-4 w-32 bg-[var(--background)] rounded-full mb-4" />
+        <div className="h-3.5 w-full max-w-sm bg-[var(--background)] rounded-full" />
+      </div>
+
+      {/* Stats row skeleton */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className="rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-white p-5 text-center space-y-2"
+          >
+            <div className="h-8 w-16 bg-[var(--border)] rounded-full mx-auto" />
+            <div className="h-3 w-20 bg-[var(--background)] rounded-full mx-auto" />
           </div>
-          <div className="h-12 w-32 bg-slate-200 rounded-xl" />
-        </div>
-        <div className="grid grid-cols-3 divide-x divide-slate-100 py-6">
+        ))}
+      </div>
+
+      {/* Tab area skeleton */}
+      <div className="space-y-4">
+        <div className="flex gap-2">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="text-center px-4 space-y-2">
-              <div className="h-8 w-16 bg-slate-200 rounded mx-auto" />
-              <div className="h-3 w-20 bg-slate-100 rounded mx-auto" />
-            </div>
+            <div key={i} className="h-9 w-24 bg-[var(--border)] rounded-full" />
           ))}
         </div>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div className="md:col-span-2 bg-white border border-slate-200 rounded-2xl p-8">
-          <div className="h-6 w-40 bg-slate-200 rounded mb-6" />
+        <div className="rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-white p-8">
+          <div className="h-6 w-40 bg-[var(--border)] rounded-full mb-6" />
           <div className="space-y-4">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-12 bg-slate-100 rounded" />
+              <div key={i} className="h-5 bg-[var(--background)] rounded-full" />
             ))}
           </div>
-        </div>
-        <div className="space-y-6">
-          <div className="bg-white border border-slate-200 rounded-2xl p-6">
-            <div className="h-5 w-32 bg-slate-200 rounded mb-4" />
-            <div className="grid grid-cols-4 gap-2">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="aspect-square bg-slate-100 rounded-full" />
-              ))}
-            </div>
-          </div>
-          <div className="h-14 bg-slate-200 rounded-xl" />
         </div>
       </div>
     </div>

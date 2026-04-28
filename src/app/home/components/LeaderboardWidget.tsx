@@ -1,121 +1,150 @@
 "use client";
 
-import { motion } from "framer-motion";
-import type { LeaderboardWidgetProps, LeaderboardEntry } from "../types";
+import Link from "next/link";
 
-function MedalBadge({ rank }: { rank: number }) {
-  const medalColors: Record<number, string> = {
-    1: "bg-amber-400 text-white",
-    2: "bg-slate-300 text-slate-700",
-    3: "bg-amber-600 text-white",
-  };
+interface LeaderboardUser {
+  userId: string;
+  name: string;
+  xp: number;
+  rank: number;
+}
+
+interface LeaderboardWidgetProps {
+  topUsers: LeaderboardUser[];
+  currentUserId?: string;
+  currentUserRank?: number;
+}
+
+export function LeaderboardWidget({
+  topUsers,
+  currentUserId,
+  currentUserRank,
+}: LeaderboardWidgetProps) {
+  // Get top 3 users
+  const topThree = topUsers.slice(0, 3);
+
+  // Check if current user is in top 3
+  const isCurrentUserInTopThree = topUsers.some(
+    (user) => user.userId === currentUserId
+  );
+
+  if (topUsers.length === 0) {
+    return null;
+  }
 
   return (
-    <div
-      className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${medalColors[rank] || "bg-slate-200 text-slate-600"}`}
-      style={{ fontFamily: "var(--font-mono)" }}
-    >
-      {rank}
+    <div className="rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-white p-5">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-[var(--foreground)]">
+          Leaderboard
+        </h3>
+        <Link
+          href="/leaderboard"
+          className="text-sm font-medium text-[var(--primary)] hover:text-[var(--primary-hover)] transition-colors"
+        >
+          See All
+        </Link>
+      </div>
+
+      {/* Top 3 List */}
+      <div className="space-y-2">
+        {topThree.map((user) => (
+          <LeaderboardRow
+            key={user.userId}
+            user={user}
+            isCurrentUser={user.userId === currentUserId}
+            isHighlighted={user.userId === currentUserId}
+          />
+        ))}
+      </div>
+
+      {/* Current User Rank (if not in top 3) */}
+      {currentUserRank && !isCurrentUserInTopThree && (
+        <>
+          <div className="my-3 border-t border-[var(--border)]" />
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-[var(--text-muted)]">Your rank:</span>
+            <span className="font-semibold text-[var(--foreground)]">
+              #{currentUserRank}
+            </span>
+          </div>
+        </>
+      )}
     </div>
   );
 }
 
 function LeaderboardRow({
-  entry,
+  user,
   isCurrentUser,
+  isHighlighted,
 }: {
-  entry: LeaderboardEntry;
+  user: LeaderboardUser;
   isCurrentUser: boolean;
+  isHighlighted: boolean;
 }) {
   return (
     <div
-      className={`flex items-center gap-3 py-2 px-3 rounded-lg ${
-        isCurrentUser
-          ? "bg-blue-50 border-2 border-blue-200"
-          : "hover:bg-slate-50"
+      className={`flex items-center gap-3 p-2 rounded-lg transition-colors ${
+        isHighlighted
+          ? "bg-[var(--primary-light)] border border-[var(--primary)]"
+          : "hover:bg-gray-50"
       }`}
     >
-      <MedalBadge rank={entry.rank} />
-      
-      <div className="flex-1 min-w-0">
-        <p className={`text-sm font-medium truncate ${isCurrentUser ? "text-blue-700" : "text-slate-800"}`}>
-          {entry.name}
-          {isCurrentUser && (
-            <span className="ml-2 text-xs text-blue-500">(You)</span>
-          )}
-        </p>
-      </div>
-      
+      {/* Medal */}
+      <Medal rank={user.rank} />
+
+      {/* Rank Number */}
+      <span className="w-5 text-sm font-medium text-[var(--text-muted)] text-center">
+        {user.rank}.
+      </span>
+
+      {/* Name */}
+      <span className="flex-1 text-sm font-medium text-[var(--foreground)] truncate">
+        {user.name}
+        {isCurrentUser && (
+          <span className="ml-1 text-[var(--text-muted)]">(you)</span>
+        )}
+      </span>
+
+      {/* XP */}
       <span
-        className="text-sm font-semibold text-slate-600"
+        className="text-sm font-medium text-[var(--text-muted)]"
         style={{ fontFamily: "var(--font-mono)" }}
       >
-        {entry.xp} XP
+        {user.xp.toLocaleString()} XP
       </span>
     </div>
   );
 }
 
-export default function LeaderboardWidget({
-  topUsers,
-  currentUserRank,
-  currentUserId,
-  onViewAll,
-}: LeaderboardWidgetProps) {
-  const currentUserInTop = topUsers.some((u) => u.userId === currentUserId);
-
-  return (
-    <motion.section
-      className="relative bg-white border-[3px] border-slate-100 rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-6"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.7, duration: 0.4 }}
-    >
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-slate-800">Leaderboard</h2>
-        <button
-          onClick={onViewAll}
-          className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-        >
-          View all
-        </button>
+function Medal({ rank }: { rank: number }) {
+  if (rank === 1) {
+    return (
+      <div className="w-5 h-5 rounded-full bg-amber-400 flex items-center justify-center text-[10px] font-bold text-white shadow-sm">
+        1
       </div>
-
-      {topUsers.length > 0 ? (
-        <div className="space-y-1">
-          {topUsers.slice(0, 3).map((user) => (
-            <LeaderboardRow
-              key={user.userId}
-              entry={user}
-              isCurrentUser={user.userId === currentUserId}
-            />
-          ))}
-          
-          {/* Show current user rank if not in top 3 */}
-          {currentUserRank && currentUserRank > 3 && !currentUserInTop && (
-            <>
-              <div className="border-t border-slate-200 my-2" />
-              <div className="flex items-center gap-3 py-2 px-3 bg-slate-50 rounded-lg">
-                <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-slate-200 text-slate-600">
-                  {currentUserRank}
-                </div>
-                <span className="flex-1 text-sm text-slate-500">Your rank</span>
-                <span
-                  className="text-sm font-semibold text-slate-600"
-                  style={{ fontFamily: "var(--font-mono)" }}
-                >
-                  #{currentUserRank}
-                </span>
-              </div>
-            </>
-          )}
-        </div>
-      ) : (
-        <div className="text-center py-8 text-slate-500">
-          <p className="text-sm">No leaderboard data</p>
-          <p className="text-xs mt-1">Start practicing to appear on the leaderboard!</p>
-        </div>
-      )}
-    </motion.section>
+    );
+  }
+  if (rank === 2) {
+    return (
+      <div className="w-5 h-5 rounded-full bg-gray-400 flex items-center justify-center text-[10px] font-bold text-white shadow-sm">
+        2
+      </div>
+    );
+  }
+  if (rank === 3) {
+    return (
+      <div className="w-5 h-5 rounded-full bg-orange-600 flex items-center justify-center text-[10px] font-bold text-white shadow-sm">
+        3
+      </div>
+    );
+  }
+  // Fallback for ranks beyond 3
+  return (
+    <div className="w-5 h-5 rounded-full bg-[var(--border)] flex items-center justify-center text-[10px] font-bold text-[var(--text-muted)]">
+      {rank}
+    </div>
   );
 }

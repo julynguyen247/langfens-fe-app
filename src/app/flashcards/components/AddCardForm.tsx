@@ -41,39 +41,39 @@ export default function AddCardForm({
   };
 
   return (
-    <div className="space-y-4  p-5 rounded-xl ">
+    <div className="space-y-4 p-5 rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)]">
       <div>
-        <label className="block text-sm font-medium text-slate-700">
+        <label className="block text-sm font-bold text-[var(--foreground)]">
           Mặt trước (front)
         </label>
         <textarea
           value={front}
           onChange={(e) => setFront(e.target.value)}
-          className="mt-1 w-full rounded-lg border border-blue-300 p-3 text-sm outline-none focus:border-[#317EFF]"
+          className="mt-1 w-full rounded-xl border-[3px] border-b-[5px] border-[var(--border)] p-3 text-sm outline-none focus:border-[var(--primary)] transition-colors"
           rows={3}
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-700">
+        <label className="block text-sm font-bold text-[var(--foreground)]">
           Mặt sau (back)
         </label>
         <textarea
           value={back}
           onChange={(e) => setBack(e.target.value)}
-          className="mt-1 w-full rounded-lg border border-blue-300 p-3 text-sm outline-none focus:border-[#317EFF]"
+          className="mt-1 w-full rounded-xl border-[3px] border-b-[5px] border-[var(--border)] p-3 text-sm outline-none focus:border-[var(--primary)] transition-colors"
           rows={3}
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-700">
+        <label className="block text-sm font-bold text-[var(--foreground)]">
           Gợi ý (hint)
         </label>
         <textarea
           value={hint}
           onChange={(e) => setHint(e.target.value)}
-          className="mt-1 w-full rounded-lg border border-blue-300 p-3 text-sm outline-none focus:border-[#317EFF]"
+          className="mt-1 w-full rounded-xl border-[3px] border-b-[5px] border-[var(--border)] p-3 text-sm outline-none focus:border-[var(--primary)] transition-colors"
           rows={2}
         />
       </div>
@@ -81,12 +81,12 @@ export default function AddCardForm({
       <button
         onClick={handleCreate}
         disabled={loading}
-        className="w-full rounded-lg bg-blue-500 px-4 py-2 text-white font-medium hover:bg-blue-600 disabled:opacity-60"
+        className="w-full rounded-full bg-[var(--primary)] border-b-[4px] border-[var(--primary-dark)] px-4 py-2.5 text-white font-bold hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px] transition-all disabled:opacity-60"
       >
         {loading ? "Đang thêm..." : "Thêm thẻ"}
       </button>
 
-      {msg && <p className="text-center text-sm text-slate-600">{msg}</p>}
+      {msg && <p className="text-center text-sm font-bold text-[var(--text-muted)]">{msg}</p>}
     </div>
   );
 }

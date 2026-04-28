@@ -1,83 +1,119 @@
-"use client";
+'use client';
 
-import { motion } from "framer-motion";
-import { useCountUp } from "../hooks/useCountUp";
-import type { StatsRowProps } from "../types";
+import { motion, useReducedMotion, useSpring, useInView } from 'framer-motion';
+import { useEffect, useRef, useState } from 'react';
 
-interface StatCardProps {
-  label: string;
-  value: number | string;
-  delay: number;
-  highlight?: boolean;
+interface StatsRowProps {
+  totalAttempts: number;
+  avgScore: number;
+  totalStudyTimeMin: number;
+  streak: number;
 }
 
-function StatCard({ label, value, delay, highlight = false }: StatCardProps) {
-  const numericValue = typeof value === "number" ? value : parseInt(value) || 0;
-  const { value: displayValue } = useCountUp(numericValue, {
-    duration: 1000,
-    delay,
-  });
+function formatTime(minutes: number): string {
+  if (minutes < 60) return `${minutes}`;
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+}
+
+const STATS_CONFIG = [
+  { key: 'tests', label: 'Tests Taken', suffix: '', accent: 'var(--primary)' },
+  { key: 'avg', label: 'Avg Score', suffix: '%', accent: 'var(--skill-speaking)' },
+  { key: 'time', label: 'Study Time', suffix: '', accent: 'var(--skill-listening)', isTime: true },
+  { key: 'streak', label: 'Day Streak', suffix: 'd', accent: 'var(--accent-gold)' },
+];
+
+// Animated counter hook
+function useAnimatedValue(value: number, isTime: boolean = false, prefersReducedMotion: boolean | null) {
+  const [displayValue, setDisplayValue] = useState(0);
+  const spring = useSpring(0, { stiffness: 100, damping: 20 });
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, margin: '-50px' });
+
+  useEffect(() => {
+    if (prefersReducedMotion) {
+      setDisplayValue(value);
+      return;
+    }
+
+    if (isInView) {
+      spring.set(value);
+      const unsubscribe = spring.on('change', (v) => {
+        setDisplayValue(isTime ? Math.round(v) : Math.round(v));
+      });
+      return () => unsubscribe();
+    }
+  }, [spring, value, isInView, prefersReducedMotion, isTime]);
+
+  return { displayValue, ref };
+}
+
+function StatCard({
+  label,
+  value,
+  suffix,
+  accent,
+  isTime,
+  prefersReducedMotion,
+  index,
+}: {
+  label: string;
+  value: number;
+  suffix: string;
+  accent: string;
+  isTime: boolean;
+  prefersReducedMotion: boolean | null;
+  index: number;
+}) {
+  const { displayValue, ref } = useAnimatedValue(value, isTime, prefersReducedMotion);
 
   return (
     <motion.div
-      className={`relative bg-white border-[3px] border-slate-100 rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-6 transition-all duration-200 hover:-translate-y-[2px] hover:shadow-[0_6px_0_rgba(0,0,0,0.1)] ${
-        highlight ? "border-blue-200" : ""
-      }`}
-      initial={{ opacity: 0, y: 20 }}
+      ref={ref}
+      initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.1 + delay, duration: 0.4 }}
+      transition={{ duration: 0.4, delay: index * 0.08, ease: 'easeOut' }}
+      whileHover={{ y: -2, transition: { duration: 0.15 } }}
+      className="flex flex-col items-center p-5 rounded-[2rem] bg-white/80 backdrop-blur-sm border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] hover:shadow-[0_6px_0_rgba(0,0,0,0.1)] cursor-default"
     >
-      <p className="text-sm text-slate-500 mb-2">{label}</p>
-      <p
-        className={`text-3xl font-bold ${highlight ? "text-blue-600" : "text-slate-800"}`}
-        style={{ fontFamily: "var(--font-mono)" }}
+      <span
+        className="text-2xl sm:text-3xl font-bold"
+        style={{ fontFamily: 'var(--font-mono)', color: accent }}
       >
-        {displayValue}
-        {typeof value === "string" && value.includes("%") && "%"}
-      </p>
+        {isTime ? formatTime(displayValue) : displayValue}
+        {suffix && <span className="text-base">{suffix}</span>}
+      </span>
+      <span className="text-xs font-semibold text-[var(--text-muted)] mt-2 text-center">
+        {label}
+      </span>
     </motion.div>
   );
 }
 
-function formatTime(minutes: number): string {
-  if (minutes < 60) {
-    return `${minutes}m`;
-  }
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  if (mins === 0) return `${hours}h`;
-  return `${hours}h ${mins}m`;
-}
+export function StatsRow({ totalAttempts, avgScore, totalStudyTimeMin, streak }: StatsRowProps) {
+  const prefersReducedMotion = useReducedMotion();
+  const values = [
+    totalAttempts,
+    Math.round(avgScore),
+    totalStudyTimeMin,
+    streak,
+  ];
 
-export default function StatsRow({
-  totalAttempts,
-  avgScore,
-  totalStudyTimeMin,
-  streak,
-}: StatsRowProps) {
   return (
-    <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      <StatCard
-        label="Tests taken"
-        value={totalAttempts}
-        delay={0}
-      />
-      <StatCard
-        label="Average"
-        value={`${avgScore.toFixed(0)}%`}
-        delay={0.1}
-        highlight
-      />
-      <StatCard
-        label="Study time"
-        value={formatTime(totalStudyTimeMin)}
-        delay={0.2}
-      />
-      <StatCard
-        label="Day streak"
-        value={`${streak}`}
-        delay={0.3}
-      />
-    </section>
+    <div className="grid grid-cols-4 gap-3">
+      {STATS_CONFIG.map((stat, i) => (
+        <StatCard
+          key={stat.key}
+          label={stat.label}
+          value={values[i]}
+          suffix={stat.suffix}
+          accent={stat.accent}
+          isTime={stat.isTime ?? false}
+          prefersReducedMotion={prefersReducedMotion}
+          index={i}
+        />
+      ))}
+    </div>
   );
 }

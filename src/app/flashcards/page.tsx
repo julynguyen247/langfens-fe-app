@@ -5,12 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useUserStore } from "@/app/store/userStore";
 import { getOwnDecks, getUserSubscriptions } from "@/utils/api";
+import { ProgressRing } from "@/components/ui/ProgressRing";
 import PenguinLottie from "@/components/PenguinLottie";
-
-// Material Icon Component
-function Icon({ name, className = "" }: { name: string; className?: string }) {
-  return <span className={`material-symbols-rounded ${className}`}>{name}</span>;
-}
 
 type ApiDeck = {
   id: string;
@@ -23,6 +19,8 @@ type ApiDeck = {
   cardCount?: number;
   createdAt?: string;
   updatedAt?: string;
+  mastery?: number;
+  lastStudied?: string;
 };
 
 type Subscription = {
@@ -33,6 +31,8 @@ type Subscription = {
   category?: string;
   cardCount?: number;
   subscribeAt?: string;
+  mastery?: number;
+  lastStudied?: string;
 };
 
 function pickArray<T = unknown>(res: any): T[] {
@@ -95,75 +95,62 @@ export default function FlashcardsPage() {
   const isLoading = loadingTab === activeTab;
 
   return (
-    <main className="min-h-screen w-full bg-[#F8FAFC]">
+    <main className="min-h-screen w-full bg-[var(--background)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* =============================================
-            PAGE HEADER
-        ============================================= */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        {/* PAGE HEADER */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
-            <h1 className="font-serif text-3xl font-bold text-slate-900">
+            <h1
+              className="text-3xl sm:text-4xl font-extrabold text-[var(--foreground)]"
+              style={{ fontFamily: "var(--font-sans)" }}
+            >
               Vocabulary Decks
             </h1>
-            <p className="text-slate-500 mt-1">
+            <p className="text-[var(--text-muted)] mt-1">
               Manage your collections or discover new topics.
             </p>
           </div>
           <div className="flex items-center gap-3">
             <Link
               href="/flashcards/create"
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#3B82F6] hover:bg-[#2563EB] text-white font-medium rounded-lg shadow-sm transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[var(--primary)] text-white font-bold border-b-[4px] border-[var(--primary-dark)] hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px] transition-all"
             >
-              <Icon name="add" className="text-xl" />
               Create Deck
             </Link>
             <Link
               href="/flashcards/explore"
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white text-[var(--foreground)] font-bold border-[3px] border-[var(--border)] hover:-translate-y-0.5 hover:border-[var(--primary)] active:translate-y-[2px] transition-all"
             >
-              <Icon name="explore" className="text-xl" />
               Explore Store
             </Link>
           </div>
         </div>
 
-        {/* =============================================
-            TABS (Underline Style)
-        ============================================= */}
-        <div className="border-b border-slate-200 mb-8">
-          <div className="flex items-center gap-8">
-            <button
-              onClick={() => setActiveTab("own")}
-              className={`pb-3 text-sm font-medium transition-colors relative ${
-                activeTab === "own"
-                  ? "text-[#2563EB]"
-                  : "text-slate-500 hover:text-slate-700"
-              }`}
-            >
-              My Decks
-              {activeTab === "own" && (
-                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#2563EB] rounded-full" />
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab("subs")}
-              className={`pb-3 text-sm font-medium transition-colors relative ${
-                activeTab === "subs"
-                  ? "text-[#2563EB]"
-                  : "text-slate-500 hover:text-slate-700"
-              }`}
-            >
-              Subscribed
-              {activeTab === "subs" && (
-                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#2563EB] rounded-full" />
-              )}
-            </button>
-          </div>
+        {/* TABS (Pill Style) */}
+        <div className="flex items-center gap-2 mb-8">
+          <button
+            onClick={() => setActiveTab("own")}
+            className={`px-5 py-2.5 rounded-full font-bold text-sm transition-all ${
+              activeTab === "own"
+                ? "bg-[var(--primary)] text-white border-b-[3px] border-[var(--primary-dark)]"
+                : "bg-white text-[var(--text-muted)] border-[2px] border-[var(--border)] hover:border-[var(--primary)] hover:text-[var(--primary)]"
+            }`}
+          >
+            My Decks
+          </button>
+          <button
+            onClick={() => setActiveTab("subs")}
+            className={`px-5 py-2.5 rounded-full font-bold text-sm transition-all ${
+              activeTab === "subs"
+                ? "bg-[var(--primary)] text-white border-b-[3px] border-[var(--primary-dark)]"
+                : "bg-white text-[var(--text-muted)] border-[2px] border-[var(--border)] hover:border-[var(--primary)] hover:text-[var(--primary)]"
+            }`}
+          >
+            Subscribed
+          </button>
         </div>
 
-        {/* =============================================
-            DECK CARDS GRID
-        ============================================= */}
+        {/* DECK CARDS GRID */}
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -175,6 +162,21 @@ export default function FlashcardsPage() {
             {/* Own Decks */}
             {activeTab === "own" && ownDecks.length > 0 && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {/* Create Deck Card */}
+                <Link
+                  href="/flashcards/create"
+                  className="group flex flex-col items-center justify-center gap-3 rounded-[2rem] border-[3px] border-dashed border-[var(--border)] bg-white shadow-[0_4px_0_rgba(0,0,0,0.08)] hover:bg-[var(--primary-light)] hover:border-[var(--primary)] hover:-translate-y-[3px] hover:shadow-[0_6px_0_rgba(0,0,0,0.08)] transition-all duration-200 min-h-[220px]"
+                >
+                  <span
+                    className="text-4xl font-bold text-[var(--text-muted)] group-hover:text-[var(--primary)] transition-colors"
+                    style={{ fontFamily: "var(--font-sans)" }}
+                  >
+                    +
+                  </span>
+                  <span className="text-sm font-bold text-[var(--text-muted)] group-hover:text-[var(--primary)] transition-colors">
+                    Create Deck
+                  </span>
+                </Link>
                 {ownDecks.map((deck) => (
                   <DeckCard key={deck.id} deck={deck} type="own" />
                 ))}
@@ -192,6 +194,8 @@ export default function FlashcardsPage() {
                       title: s.title,
                       category: s.category,
                       cardCount: s.cardCount,
+                      mastery: s.mastery,
+                      lastStudied: s.lastStudied,
                     }}
                     type="subscribed"
                   />
@@ -226,6 +230,15 @@ export default function FlashcardsPage() {
 }
 
 // ====================================
+// MASTERY RING COLOR HELPER
+// ====================================
+function getMasteryColor(mastery: number): string {
+  if (mastery < 30) return "var(--destructive)";
+  if (mastery <= 70) return "var(--accent-gold)";
+  return "var(--skill-speaking)";
+}
+
+// ====================================
 // DECK CARD COMPONENT
 // ====================================
 function DeckCard({
@@ -238,62 +251,91 @@ function DeckCard({
     descriptionMd?: string;
     category?: string;
     cardCount?: number;
+    mastery?: number;
+    lastStudied?: string;
   };
   type: "own" | "subscribed";
 }) {
   const router = useRouter();
+  const mastery = deck.mastery ?? 0;
 
   return (
-    <div className="group relative bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 overflow-hidden h-full flex flex-col">
-      {/* Top Decoration - Gradient accent */}
-      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#3B82F6] to-[#60A5FA] rounded-t-xl" />
-
+    <div className="group bg-white border-[3px] border-[var(--border)] rounded-[2rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] hover:-translate-y-[3px] hover:border-[var(--primary)] hover:shadow-[0_6px_0_rgba(0,0,0,0.08)] transition-all duration-200 h-full flex flex-col overflow-hidden">
       {/* Content */}
       <div className="p-6 flex flex-col flex-1">
-        {/* Title - Serif */}
-        <h3 className="font-serif font-bold text-lg text-slate-900 line-clamp-2 group-hover:text-[#2563EB] transition-colors">
-          {deck.title}
-        </h3>
+        {/* Top row: Title + Mastery Ring */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            {/* Title */}
+            <h3
+              className="font-bold text-lg text-[var(--foreground)] line-clamp-2 group-hover:text-[var(--primary)] transition-colors"
+              style={{ fontFamily: "var(--font-sans)" }}
+            >
+              {deck.title}
+            </h3>
 
-        {/* Description */}
-        {deck.descriptionMd && (
-          <p className="text-slate-500 text-sm line-clamp-2 mt-2">
-            {deck.descriptionMd}
-          </p>
-        )}
+            {/* Description */}
+            {deck.descriptionMd && (
+              <p className="text-[var(--text-muted)] text-sm line-clamp-2 mt-1">
+                {deck.descriptionMd}
+              </p>
+            )}
+          </div>
+
+          {/* Mastery Ring */}
+          <ProgressRing
+            progress={mastery}
+            size={52}
+            strokeWidth={5}
+            color={getMasteryColor(mastery)}
+          >
+            <span
+              className="text-xs font-bold text-[var(--foreground)]"
+              style={{ fontFamily: "var(--font-mono)" }}
+            >
+              {mastery}%
+            </span>
+          </ProgressRing>
+        </div>
 
         {/* Meta Tags */}
-        <div className="flex flex-wrap gap-2 mt-4">
+        <div className="flex flex-wrap items-center gap-2 mt-4">
           {deck.category && (
-            <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 bg-[#EFF6FF] text-[#2563EB] rounded-md font-medium">
-              <Icon name="folder" className="text-sm" />
+            <span className="inline-flex items-center text-xs px-3 py-1 bg-[var(--primary-light)] text-[var(--primary)] rounded-full border-[2px] border-[var(--primary)]/20 font-bold">
               {deck.category}
             </span>
           )}
-          <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md font-medium">
-            <Icon name="style" className="text-sm" />
+          <span
+            className="inline-flex items-center text-xs px-3 py-1 bg-[var(--background)] text-[var(--text-body)] rounded-full border-[2px] border-[var(--border)] font-bold"
+            style={{ fontFamily: "var(--font-mono)" }}
+          >
             {deck.cardCount || 0} words
           </span>
+          {deck.lastStudied && (
+            <span className="text-xs text-[var(--text-muted)]">
+              Last studied:{" "}
+              {new Date(deck.lastStudied).toLocaleDateString("vi-VN")}
+            </span>
+          )}
         </div>
 
         {/* Action Row */}
         <div className="mt-auto pt-5 flex items-center gap-2">
           <button
             onClick={() => router.push(`/flashcards/${deck.id}`)}
-            className="flex-1 h-9 bg-[#3B82F6] hover:bg-[#2563EB] text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-1"
+            className="flex-1 h-10 rounded-full bg-[var(--primary)] text-white text-sm font-bold border-b-[4px] border-[var(--primary-dark)] hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px] transition-all flex items-center justify-center"
           >
-            <Icon name="play_arrow" className="text-lg" />
             Study Now
           </button>
           <button
             onClick={() => router.push(`/flashcards/${deck.id}?view=cards`)}
-            className="h-9 w-9 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors flex items-center justify-center"
+            className="h-10 px-4 rounded-full bg-white text-[var(--text-body)] text-sm font-bold border-[2px] border-[var(--border)] hover:border-[var(--primary)] hover:text-[var(--primary)] active:translate-y-[1px] transition-all flex items-center justify-center"
           >
-            <Icon name="visibility" className="text-lg text-slate-500" />
+            View
           </button>
           {type === "subscribed" && (
-            <button className="h-9 w-9 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors flex items-center justify-center">
-              <Icon name="bookmark_remove" className="text-lg text-slate-500" />
+            <button className="h-10 px-4 rounded-full bg-white text-[var(--destructive)] text-sm font-bold border-[2px] border-[var(--border)] hover:border-[var(--destructive)] active:translate-y-[1px] transition-all flex items-center justify-center">
+              Remove
             </button>
           )}
         </div>
@@ -307,16 +349,19 @@ function DeckCard({
 // ====================================
 function SkeletonCard() {
   return (
-    <div className="animate-pulse bg-white border border-slate-200 rounded-xl p-6">
-      <div className="h-1 bg-slate-200 rounded-full mb-4" />
-      <div className="h-5 bg-slate-200 rounded w-3/4 mb-3" />
-      <div className="h-4 bg-slate-100 rounded w-full mb-2" />
-      <div className="h-4 bg-slate-100 rounded w-2/3 mb-4" />
-      <div className="flex gap-2 mb-5">
-        <div className="h-6 bg-slate-100 rounded-md w-20" />
-        <div className="h-6 bg-slate-100 rounded-md w-16" />
+    <div className="animate-pulse bg-white border-[3px] border-[var(--border)] rounded-[2rem] p-6 shadow-[0_4px_0_rgba(0,0,0,0.08)]">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1">
+          <div className="h-5 bg-[var(--border)] rounded-full w-3/4 mb-3" />
+          <div className="h-4 bg-[var(--background)] rounded-full w-full mb-2" />
+        </div>
+        <div className="w-[52px] h-[52px] rounded-full bg-[var(--background)]" />
       </div>
-      <div className="h-9 bg-slate-200 rounded-lg" />
+      <div className="flex gap-2 mt-4 mb-5">
+        <div className="h-6 bg-[var(--background)] rounded-full w-20" />
+        <div className="h-6 bg-[var(--background)] rounded-full w-16" />
+      </div>
+      <div className="h-10 bg-[var(--border)] rounded-full" />
     </div>
   );
 }
@@ -342,14 +387,18 @@ function EmptyState({
         <PenguinLottie />
       </div>
 
-      <p className="text-lg font-medium text-slate-700 mb-2">{title}</p>
-      <p className="text-sm text-slate-500 mb-6">{subtitle}</p>
+      <p
+        className="text-lg font-bold text-[var(--foreground)] mb-2"
+        style={{ fontFamily: "var(--font-sans)" }}
+      >
+        {title}
+      </p>
+      <p className="text-sm text-[var(--text-muted)] mb-6">{subtitle}</p>
 
       <Link
         href={actionHref}
-        className="inline-flex items-center gap-2 px-6 py-3 bg-[#3B82F6] hover:bg-[#2563EB] text-white font-medium rounded-lg shadow-sm transition-colors"
+        className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[var(--primary)] text-white font-bold border-b-[4px] border-[var(--primary-dark)] hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px] transition-all"
       >
-        <Icon name="add" className="text-xl" />
         {actionLabel}
       </Link>
     </div>

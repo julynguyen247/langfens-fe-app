@@ -11,11 +11,6 @@ import {
   markAllNotificationsAsRead,
 } from "@/utils/api";
 
-// Material Icon Component
-function Icon({ name, className = "" }: { name: string; className?: string }) {
-  return <span className={`material-symbols-rounded ${className}`}>{name}</span>;
-}
-
 type NotificationItem = {
   id: string;
   type: string;
@@ -34,50 +29,40 @@ type NotificationSettings = {
   enableInactivity: boolean;
 };
 
-// Settings configuration with Material icons
 const SETTINGS_CONFIG = [
   {
     key: "enableAchievement" as const,
-    icon: "emoji_events",
-    iconBg: "bg-amber-50",
-    iconColor: "text-amber-600",
     label: "Achievement Unlocked",
     description: "Get notified when you earn a new badge.",
+    badgeColor: "bg-[var(--skill-writing-light)] text-[var(--skill-writing)] border-[var(--skill-writing-border)]",
   },
   {
     key: "enableStreak" as const,
-    icon: "local_fire_department",
-    iconBg: "bg-orange-50",
-    iconColor: "text-orange-600",
     label: "Streak Reminders",
     description: "Don't lose your learning streak.",
+    badgeColor: "bg-orange-50 text-orange-700 border-orange-200",
   },
   {
     key: "enableGoalProgress" as const,
-    icon: "insights",
-    iconBg: "bg-purple-50",
-    iconColor: "text-purple-600",
     label: "Study Progress",
     description: "Weekly reports on your performance.",
+    badgeColor: "bg-[var(--skill-listening-light)] text-[var(--skill-listening)] border-[var(--skill-listening-border)]",
   },
   {
     key: "enableInactivity" as const,
-    icon: "notifications_paused",
-    iconBg: "bg-slate-50",
-    iconColor: "text-slate-600",
     label: "Inactivity Alerts",
     description: "Gentle reminders when you've been away.",
+    badgeColor: "bg-[var(--background)] text-[var(--text-body)] border-[var(--border)]",
   },
 ];
 
-// Notification type icons
-const NOTIFICATION_ICONS: Record<string, { icon: string; bg: string; color: string }> = {
-  ACHIEVEMENT: { icon: "emoji_events", bg: "bg-amber-50", color: "text-amber-600" },
-  STREAK: { icon: "local_fire_department", bg: "bg-orange-50", color: "text-orange-600" },
-  GOAL_PROGRESS: { icon: "insights", bg: "bg-purple-50", color: "text-purple-600" },
-  STUDY_REMINDER: { icon: "schedule", bg: "bg-blue-50", color: "text-blue-600" },
-  INACTIVITY: { icon: "notifications_paused", bg: "bg-slate-100", color: "text-slate-600" },
-  default: { icon: "notifications", bg: "bg-blue-50", color: "text-blue-600" },
+const NOTIFICATION_TYPE_STYLES: Record<string, string> = {
+  ACHIEVEMENT: "bg-[var(--skill-writing-light)] text-[var(--skill-writing)] border-[var(--skill-writing-border)]",
+  STREAK: "bg-orange-50 text-orange-700 border-orange-200",
+  GOAL_PROGRESS: "bg-[var(--skill-listening-light)] text-[var(--skill-listening)] border-[var(--skill-listening-border)]",
+  STUDY_REMINDER: "bg-[var(--skill-reading-light)] text-[var(--skill-reading)] border-[var(--skill-reading-border)]",
+  INACTIVITY: "bg-[var(--background)] text-[var(--text-body)] border-[var(--border)]",
+  default: "bg-[var(--primary-light)] text-[var(--primary)] border-[var(--skill-reading-border)]",
 };
 
 export default function NotificationsPage() {
@@ -130,7 +115,6 @@ export default function NotificationsPage() {
     }
   }
 
-  // Auto-save settings with debounce
   const saveSettings = useCallback(async (newSettings: NotificationSettings) => {
     try {
       await updateNotificationSettings(newSettings);
@@ -188,16 +172,16 @@ export default function NotificationsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC]">
-        <main className="mx-auto max-w-2xl px-4 py-10">
+      <div className="min-h-screen bg-[var(--background)]">
+        <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
           <div className="animate-pulse space-y-6">
-            <div className="h-8 w-48 bg-slate-200 rounded mx-auto" />
-            <div className="h-4 w-64 bg-slate-100 rounded mx-auto" />
-            <div className="h-12 bg-slate-200 rounded-lg w-64 mx-auto" />
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
-              <div className="h-16 bg-slate-100 rounded-lg" />
-              <div className="h-16 bg-slate-100 rounded-lg" />
-              <div className="h-16 bg-slate-100 rounded-lg" />
+            <div className="h-10 w-48 bg-[var(--border)] rounded-full" />
+            <div className="h-4 w-64 bg-[var(--background)] rounded-full" />
+            <div className="h-12 bg-[var(--border)] rounded-full w-64" />
+            <div className="bg-white border-[3px] border-[var(--border)] rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-6 space-y-4">
+              <div className="h-16 bg-[var(--background)] rounded-[1rem]" />
+              <div className="h-16 bg-[var(--background)] rounded-[1rem]" />
+              <div className="h-16 bg-[var(--background)] rounded-[1rem]" />
             </div>
           </div>
         </main>
@@ -206,7 +190,7 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
+    <div className="min-h-screen bg-[var(--background)]">
       {/* Toast Notification */}
       <AnimatePresence>
         {toast && (
@@ -214,63 +198,63 @@ export default function NotificationsPage() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="fixed top-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2 bg-slate-900 text-white text-sm rounded-lg shadow-lg flex items-center gap-2"
+            className="fixed top-20 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 bg-[var(--foreground)] text-white text-sm font-bold rounded-full shadow-[0_4px_0_rgba(0,0,0,0.2)]"
           >
-            <Icon name="check_circle" className="text-lg text-emerald-400" />
             {toast}
           </motion.div>
         )}
       </AnimatePresence>
 
-      <main className="mx-auto max-w-2xl px-4 py-10">
+      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-8"
+          className="mb-8"
         >
-          <h1 className="font-serif text-3xl font-bold text-slate-900 mb-2">
+          <h1
+            className="text-3xl sm:text-4xl font-extrabold text-[var(--foreground)] mb-2"
+            style={{ fontFamily: "var(--font-sans)" }}
+          >
             Notifications
           </h1>
-          <p className="text-slate-500">
+          <p className="text-[var(--text-muted)]">
             Customize your learning updates.
           </p>
         </motion.div>
 
-        {/* Clean Tabs */}
+        {/* Tabs */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="flex justify-center mb-8"
+          className="flex gap-2 mb-8"
         >
-          <div className="bg-slate-100 p-1 rounded-lg flex items-center">
-            <button
-              onClick={() => setTab("all")}
-              className={`px-6 py-2 text-sm font-medium rounded-md transition-all ${
-                tab === "all"
-                  ? "bg-white text-slate-900 shadow-sm"
-                  : "text-slate-500 hover:text-slate-700"
-              }`}
-            >
-              All Notifications
-              {unreadCount > 0 && tab !== "all" && (
-                <span className="ml-2 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">
-                  {unreadCount}
-                </span>
-              )}
-            </button>
-            <button
-              onClick={() => setTab("settings")}
-              className={`px-6 py-2 text-sm font-medium rounded-md transition-all ${
-                tab === "settings"
-                  ? "bg-white text-slate-900 shadow-sm"
-                  : "text-slate-500 hover:text-slate-700"
-              }`}
-            >
-              Settings
-            </button>
-          </div>
+          <button
+            onClick={() => setTab("all")}
+            className={`px-6 py-2.5 text-sm font-bold rounded-full transition-all ${
+              tab === "all"
+                ? "bg-[var(--primary)] text-white border-b-[4px] border-[var(--primary-dark)]"
+                : "bg-white text-[var(--text-body)] border-[2px] border-[var(--border)] hover:border-[var(--primary)] hover:-translate-y-0.5"
+            }`}
+          >
+            All Notifications
+            {unreadCount > 0 && tab !== "all" && (
+              <span className="ml-2 bg-[var(--destructive)] text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                {unreadCount}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setTab("settings")}
+            className={`px-6 py-2.5 text-sm font-bold rounded-full transition-all ${
+              tab === "settings"
+                ? "bg-[var(--primary)] text-white border-b-[4px] border-[var(--primary-dark)]"
+                : "bg-white text-[var(--text-body)] border-[2px] border-[var(--border)] hover:border-[var(--primary)] hover:-translate-y-0.5"
+            }`}
+          >
+            Settings
+          </button>
         </motion.div>
 
         {/* Tab Content */}
@@ -288,9 +272,8 @@ export default function NotificationsPage() {
                 <div className="flex justify-end">
                   <button
                     onClick={handleMarkAllAsRead}
-                    className="text-sm text-[#3B82F6] hover:text-blue-700 font-medium flex items-center gap-1.5 px-3 py-1.5 hover:bg-blue-50 rounded-lg transition"
+                    className="text-sm font-bold text-[var(--primary)] bg-[var(--primary-light)] px-4 py-2 rounded-full border-[2px] border-[var(--skill-reading-border)] hover:bg-[var(--primary)] hover:text-white hover:border-[var(--primary-dark)] transition-all"
                   >
-                    <Icon name="done_all" className="text-lg" />
                     Mark all as read
                   </button>
                 </div>
@@ -298,45 +281,55 @@ export default function NotificationsPage() {
 
               {/* Notification List */}
               {notifications.length === 0 ? (
-                <div className="bg-white rounded-2xl border border-slate-200 p-16 text-center">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-slate-100 rounded-full flex items-center justify-center">
-                    <Icon name="notifications_off" className="text-3xl text-slate-400" />
+                <div className="bg-white border-[3px] border-[var(--border)] rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-16 text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-[var(--primary-light)] rounded-full flex items-center justify-center">
+                    <span
+                      className="text-2xl font-extrabold text-[var(--primary)]"
+                      style={{ fontFamily: "var(--font-sans)" }}
+                    >
+                      0
+                    </span>
                   </div>
-                  <p className="text-slate-500">No notifications yet</p>
-                  <p className="text-slate-400 text-sm mt-1">We'll let you know when something happens.</p>
+                  <p className="font-bold text-[var(--foreground)]">No notifications yet</p>
+                  <p className="text-[var(--text-muted)] text-sm mt-1">We will let you know when something happens.</p>
                 </div>
               ) : (
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm divide-y divide-slate-100">
+                <div className="bg-white border-[3px] border-[var(--border)] rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] overflow-hidden divide-y-[2px] divide-[var(--border)]">
                   {notifications.map((notification, index) => {
-                    const config = NOTIFICATION_ICONS[notification.type] || NOTIFICATION_ICONS.default;
-                    
+                    const badgeStyle = NOTIFICATION_TYPE_STYLES[notification.type] || NOTIFICATION_TYPE_STYLES.default;
+
                     return (
                       <motion.div
                         key={notification.id}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.02 }}
-                        className={`p-4 flex gap-4 cursor-pointer transition-colors ${
+                        className={`p-5 flex gap-4 cursor-pointer transition-all ${
                           !notification.isRead
-                            ? "bg-blue-50/50 hover:bg-blue-50"
-                            : "hover:bg-slate-50"
+                            ? "bg-[var(--primary-light)] hover:bg-[var(--skill-reading-light)]"
+                            : "hover:bg-[var(--background)]"
                         }`}
                         onClick={() => !notification.isRead && handleMarkAsRead(notification.id)}
                       >
-                        <div className={`w-10 h-10 rounded-full ${config.bg} flex items-center justify-center shrink-0`}>
-                          <Icon name={config.icon} className={`text-xl ${config.color}`} />
+                        <div className={`px-3 py-1 h-fit text-xs font-bold rounded-full border-[2px] shrink-0 ${badgeStyle}`}>
+                          {notification.type.replace(/_/g, " ")}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2">
-                            <p className={`text-sm ${!notification.isRead ? "font-semibold text-slate-900" : "text-slate-700"}`}>
+                            <p className={`text-sm ${!notification.isRead ? "font-bold text-[var(--foreground)]" : "text-[var(--text-body)]"}`}>
                               {notification.title}
                             </p>
                             {!notification.isRead && (
-                              <span className="w-2 h-2 bg-[#3B82F6] rounded-full shrink-0 mt-1.5" />
+                              <span className="w-3 h-3 bg-[var(--primary)] rounded-full shrink-0 mt-1" />
                             )}
                           </div>
-                          <p className="text-sm text-slate-500 mt-0.5 line-clamp-2">{notification.message}</p>
-                          <p className="text-xs text-slate-400 mt-1.5">{formatTime(notification.createdAt)}</p>
+                          <p className="text-sm text-[var(--text-muted)] mt-0.5 line-clamp-2">{notification.message}</p>
+                          <p
+                            className="text-xs font-bold text-[var(--text-muted)] mt-2"
+                            style={{ fontFamily: "var(--font-mono)" }}
+                          >
+                            {formatTime(notification.createdAt)}
+                          </p>
                         </div>
                       </motion.div>
                     );
@@ -352,30 +345,37 @@ export default function NotificationsPage() {
               exit={{ opacity: 0, x: -20 }}
             >
               {/* Settings Card */}
-              <div className="bg-white border border-slate-200 rounded-2xl shadow-sm divide-y divide-slate-100">
+              <div className="bg-white border-[3px] border-[var(--border)] rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] overflow-hidden divide-y-[2px] divide-[var(--border)]">
                 {SETTINGS_CONFIG.map((setting) => (
                   <div
                     key={setting.key}
-                    className="p-5 flex items-center justify-between group hover:bg-slate-50 transition-colors"
+                    className="p-5 flex items-center justify-between group hover:bg-[var(--background)] transition-all"
                   >
                     <div className="flex items-center gap-4">
-                      <div className={`w-10 h-10 rounded-full ${setting.iconBg} flex items-center justify-center`}>
-                        <Icon name={setting.icon} className={`text-xl ${setting.iconColor}`} />
-                      </div>
+                      <span className={`px-3 py-1 text-xs font-bold rounded-full border-[2px] ${setting.badgeColor}`}>
+                        {setting.label.split(" ")[0]}
+                      </span>
                       <div>
-                        <h3 className="text-sm font-bold text-slate-800">{setting.label}</h3>
-                        <p className="text-xs text-slate-500 mt-0.5">{setting.description}</p>
+                        <h3
+                          className="text-sm font-bold text-[var(--foreground)]"
+                          style={{ fontFamily: "var(--font-sans)" }}
+                        >
+                          {setting.label}
+                        </h3>
+                        <p className="text-xs text-[var(--text-muted)] mt-0.5">{setting.description}</p>
                       </div>
                     </div>
                     {/* Toggle Switch */}
                     <button
                       onClick={() => handleToggle(setting.key)}
-                      className={`relative w-11 h-6 rounded-full transition-colors ${
-                        settings[setting.key] ? "bg-[#3B82F6]" : "bg-slate-200"
+                      className={`relative w-12 h-7 rounded-full transition-all border-[2px] ${
+                        settings[setting.key]
+                          ? "bg-[var(--primary)] border-[var(--primary-dark)]"
+                          : "bg-[var(--border)] border-[var(--border)]"
                       }`}
                     >
                       <span
-                        className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${
+                        className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-[0_2px_0_rgba(0,0,0,0.1)] transition-transform ${
                           settings[setting.key] ? "translate-x-5" : ""
                         }`}
                       />
@@ -385,7 +385,7 @@ export default function NotificationsPage() {
               </div>
 
               {/* Footer Note */}
-              <p className="text-center text-xs text-slate-400 mt-6">
+              <p className="text-center text-xs font-bold text-[var(--text-muted)] mt-6">
                 Changes are saved automatically.
               </p>
             </motion.div>

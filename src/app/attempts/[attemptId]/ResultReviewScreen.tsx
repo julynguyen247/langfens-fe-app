@@ -96,18 +96,23 @@ export default function ResultReviewScreen({
   return (
     <div className="flex flex-col h-full">
       {/* Stats bar */}
-      <div className="bg-white border-b px-6 py-4 flex items-center justify-between">
+      <div className="bg-white border-b-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-6">
-          <h2 className="text-lg font-semibold text-slate-900">{skill} Review</h2>
+          <h2
+            className="text-lg font-semibold text-[var(--foreground)]"
+            style={{ fontFamily: "var(--font-sans)" }}
+          >
+            {skill.charAt(0) + skill.slice(1).toLowerCase()} Review
+          </h2>
           <div className="flex items-center gap-4 text-sm">
-            <span className="text-green-600 font-medium">
-              ✓ Đúng: {correctCount}
+            <span className="px-3 py-1 rounded-full border-[2px] border-[var(--skill-speaking-border)] bg-[var(--skill-speaking-light)] text-[var(--skill-speaking)] font-bold">
+              Correct: {correctCount}
             </span>
-            <span className="text-red-600 font-medium">
-              ✗ Sai: {totalCount - correctCount}
+            <span className="px-3 py-1 rounded-full border-[2px] border-red-300 bg-red-50 text-red-600 font-bold">
+              Wrong: {totalCount - correctCount}
             </span>
-            <span className="text-slate-600">
-              Tổng: {totalCount}
+            <span className="text-[var(--text-body)] font-medium">
+              Total: {totalCount}
             </span>
           </div>
         </div>
@@ -117,7 +122,7 @@ export default function ResultReviewScreen({
       <div className="flex-1 overflow-hidden">
         <Group orientation="horizontal">
           <Panel defaultSize={65} minSize={40} className="overflow-hidden">
-            <div className="h-full overflow-hidden border-r bg-gray-50">
+            <div className="h-full overflow-hidden border-r bg-[var(--background)]">
               <PassageView
                 passage={{
                   title: section?.title || paper?.title || `${skill} Passage`,
@@ -131,8 +136,13 @@ export default function ResultReviewScreen({
           </Panel>
           <Panel defaultSize={35} minSize={25} className="overflow-hidden">
             <div className="h-full flex flex-col overflow-hidden border-l bg-white shadow-xl z-20">
-              <div className="border-b px-5 py-4 bg-white sticky top-0 z-10">
-                <h2 className="text-lg font-semibold text-black">Questions (Review Mode)</h2>
+              <div className="border-b-[3px] border-[var(--border)] px-5 py-4 bg-white sticky top-0 z-10">
+                <h2
+                  className="text-lg font-semibold text-[var(--foreground)]"
+                  style={{ fontFamily: "var(--font-sans)" }}
+                >
+                  Questions (Review Mode)
+                </h2>
               </div>
               <div className="flex-1 overflow-auto p-4">
                 <QuestionPanel

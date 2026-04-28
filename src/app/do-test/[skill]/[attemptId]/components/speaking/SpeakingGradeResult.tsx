@@ -28,10 +28,6 @@ export type SpeakingGradeRes = {
   rawLlmJson?: any;
 };
 
-function Icon({ name, className = "" }: { name: string; className?: string }) {
-  return <span className={`material-symbols-rounded ${className}`}>{name}</span>;
-}
-
 export function SpeakingGradeResult({ data }: { data: SpeakingGradeRes }) {
   const [showModel, setShowModel] = useState(false);
 
@@ -69,40 +65,37 @@ export function SpeakingGradeResult({ data }: { data: SpeakingGradeRes }) {
   return (
     <div className="max-w-5xl mx-auto py-8 px-4 space-y-8">
       {/* Score Header */}
-      <div className="rounded-2xl overflow-hidden shadow-sm border border-slate-200">
+      <div className="rounded-[1.5rem] overflow-hidden shadow-[0_4px_0_rgba(0,0,0,0.08)] border-[3px] border-[var(--border)]">
         <ScoreHeader band={data.overallBand} criteria={criteria} skill="speaking" />
       </div>
 
       {/* Task Prompt (Subtle) */}
-      <div className="bg-slate-50 border border-slate-100 rounded-xl p-5">
+      <div className="bg-[var(--background)] border-[3px] border-[var(--border)] rounded-[1.5rem] p-5 shadow-[0_4px_0_rgba(0,0,0,0.08)]">
         <div className="flex items-center gap-2 mb-2">
-          <Icon name="record_voice_over" className="text-slate-400" />
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+          <h3 className="text-xs font-bold tracking-wider" style={{ color: 'var(--text-muted)' }}>
             Speaking Prompt
           </h3>
         </div>
-        <p className="text-sm text-slate-700 leading-relaxed">{data.taskText}</p>
+        <p className="text-sm text-[var(--text-body)] leading-relaxed">{data.taskText}</p>
       </div>
 
       {/* Feedback Body */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* LEFT: The Transcript (Paper View) */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-8">
-            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">
+          <div className="bg-white border-[3px] border-[var(--border)] rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-8">
+            <h3 className="text-sm font-bold text-[var(--text-muted)] tracking-wider mb-4">
               Your Response
             </h3>
-            <div className="prose prose-slate font-serif text-lg leading-loose text-slate-800 whitespace-pre-line">
+            <div className="prose prose-neutral font-sans text-lg leading-loose text-[var(--foreground)] whitespace-pre-line">
               {data.transcriptRaw || data.transcriptNormalized || "No transcript available"}
             </div>
-            <div className="mt-6 pt-6 border-t border-slate-100 flex justify-between text-sm text-slate-500">
-              <span className="flex items-center gap-1">
-                <Icon name="notes" className="text-base" />
+            <div className="mt-6 pt-6 border-t border-[var(--border-light)] flex justify-between text-sm text-[var(--text-muted)]">
+              <span className="flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
                 {data.wordCount} words
               </span>
               {timeMinutes && (
-                <span className="flex items-center gap-1">
-                  <Icon name="schedule" className="text-base" />
+                <span className="flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
                   {timeMinutes}m
                 </span>
               )}
@@ -113,19 +106,18 @@ export function SpeakingGradeResult({ data }: { data: SpeakingGradeRes }) {
         {/* RIGHT: Examiner's Notes (Sidebar) */}
         <div className="space-y-6">
           {/* Examiner's Critique */}
-          <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-6">
-            <h3 className="flex items-center gap-2 font-bold text-blue-700 mb-4">
-              <Icon name="psychology" className="text-xl" />
+          <div className="bg-[var(--primary-light)] border-[3px] border-[var(--border)] rounded-[1.5rem] p-6 shadow-[0_4px_0_rgba(0,0,0,0.08)]">
+            <h3 className="font-bold mb-4" style={{ color: 'var(--primary-dark)' }}>
               Examiner's Critique
             </h3>
-            <div className="space-y-4 text-sm text-slate-700 leading-relaxed">
+            <div className="space-y-4 text-sm text-[var(--text-body)] leading-relaxed">
               {strengths.length > 0 && (
                 <div>
-                  <p className="font-semibold text-emerald-700 mb-1 flex items-center gap-1">
-                    <Icon name="check_circle" className="text-base" />
+                  <p className="font-semibold text-[var(--skill-speaking)] mb-1 flex items-center gap-1">
+                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[var(--skill-speaking)] text-white text-[10px] font-bold flex-shrink-0">+</span>
                     Strengths
                   </p>
-                  <ul className="list-disc list-inside space-y-1 text-slate-600">
+                  <ul className="list-disc list-inside space-y-1 text-[var(--text-body)]">
                     {strengths.slice(0, 2).map((s, i) => (
                       <li key={i} className="text-xs">{s.split(":")[0]}</li>
                     ))}
@@ -134,11 +126,11 @@ export function SpeakingGradeResult({ data }: { data: SpeakingGradeRes }) {
               )}
               {weaknesses.length > 0 && (
                 <div>
-                  <p className="font-semibold text-amber-700 mb-1 flex items-center gap-1">
-                    <Icon name="error" className="text-base" />
+                  <p className="font-semibold text-[var(--skill-writing)] mb-1 flex items-center gap-1">
+                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[var(--skill-writing)] text-white text-[10px] font-bold flex-shrink-0">!</span>
                     Areas to Improve
                   </p>
-                  <ul className="list-disc list-inside space-y-1 text-slate-600">
+                  <ul className="list-disc list-inside space-y-1 text-[var(--text-body)]">
                     {weaknesses.slice(0, 2).map((w, i) => (
                       <li key={i} className="text-xs">{w.split(":")[0]}</li>
                     ))}
@@ -150,15 +142,14 @@ export function SpeakingGradeResult({ data }: { data: SpeakingGradeRes }) {
 
           {/* Suggestions */}
           {data.suggestions?.length > 0 && (
-            <div className="bg-white border border-slate-200 rounded-xl p-6">
-              <h3 className="flex items-center gap-2 font-bold text-slate-800 mb-3">
-                <Icon name="lightbulb" className="text-amber-500" />
+            <div className="bg-white border-[3px] border-[var(--border)] rounded-[1.5rem] p-6 shadow-[0_4px_0_rgba(0,0,0,0.08)]">
+              <h3 className="font-bold text-[var(--foreground)] mb-3">
                 Tips
               </h3>
-              <ul className="text-xs text-slate-600 space-y-2">
+              <ul className="text-xs text-[var(--text-body)] space-y-2">
                 {data.suggestions.slice(0, 3).map((s, i) => (
                   <li key={i} className="flex gap-2">
-                    <span className="text-slate-400">{i + 1}.</span>
+                    <span className="text-[var(--text-muted)]">{i + 1}.</span>
                     <span>{s}</span>
                   </li>
                 ))}
@@ -168,16 +159,15 @@ export function SpeakingGradeResult({ data }: { data: SpeakingGradeRes }) {
 
           {/* Model Answer Toggle */}
           {data.improvedAnswer && (
-            <div className="bg-white border border-slate-200 rounded-xl p-6">
-              <h3 className="font-bold text-slate-800 mb-2">Better Version?</h3>
-              <p className="text-xs text-slate-500 mb-4">
+            <div className="bg-white border-[3px] border-[var(--border)] rounded-[1.5rem] p-6 shadow-[0_4px_0_rgba(0,0,0,0.08)]">
+              <h3 className="font-bold text-[var(--foreground)] mb-2">Better Version?</h3>
+              <p className="text-xs text-[var(--text-muted)] mb-4">
                 See how an improved answer would sound.
               </p>
               <button
                 onClick={() => setShowModel(!showModel)}
-                className="w-full bg-slate-800 text-white py-2.5 rounded-lg font-medium text-sm hover:bg-black transition-colors flex items-center justify-center gap-2"
+                className="w-full bg-[var(--foreground)] text-white py-2.5 rounded-full font-medium text-sm hover:bg-black transition-colors border-b-[4px] border-black active:translate-y-[2px] active:border-b-[2px] flex items-center justify-center gap-2"
               >
-                <Icon name={showModel ? "visibility_off" : "visibility"} className="text-base" />
                 {showModel ? "Hide Model Answer" : "View Model Answer"}
               </button>
             </div>
@@ -187,26 +177,25 @@ export function SpeakingGradeResult({ data }: { data: SpeakingGradeRes }) {
 
       {/* Model Answer (Expandable) */}
       {showModel && data.improvedAnswer && (
-        <div className="bg-gradient-to-br from-slate-800 to-slate-900 text-white rounded-xl p-8 shadow-lg">
+        <div className="bg-[var(--foreground)] text-white rounded-[1.5rem] p-8 shadow-[0_4px_0_rgba(0,0,0,0.08)] border-[3px] border-black">
           <div className="flex items-center gap-2 mb-4">
-            <Icon name="auto_awesome" className="text-amber-400" />
             <h3 className="font-bold">Improved Response</h3>
           </div>
-          <p className="font-serif text-lg leading-loose opacity-90 whitespace-pre-line">
+          <p className="font-sans text-lg leading-loose opacity-90 whitespace-pre-line">
             {data.improvedAnswer}
           </p>
         </div>
       )}
 
       {/* Footer Meta */}
-      <div className="text-center text-xs text-slate-400 pt-4 border-t border-slate-100">
+      <div className="text-center text-xs text-[var(--text-muted)] pt-4 border-t border-[var(--border-light)]">
         <p>
           Graded on {new Date(data.gradedAt).toLocaleDateString("en-US", {
             year: "numeric",
             month: "long",
             day: "numeric",
           })}{" "}
-          • Model: {data.model} ({data.modelProvider})
+          - Model: {data.model} ({data.modelProvider})
         </p>
       </div>
     </div>

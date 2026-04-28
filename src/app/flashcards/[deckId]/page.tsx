@@ -117,7 +117,7 @@ export default function StudyPage() {
           } catch {}
         }
       } catch (e: any) {
-        if (mounted) setError(e?.message || "Không tải được danh sách thẻ.");
+        if (mounted) setError(e?.message || "Failed to load cards.");
       } finally {
         if (mounted) setLoading(false);
       }
@@ -321,158 +321,206 @@ export default function StudyPage() {
 
   if (loading) {
     return (
-      <main className="mx-auto max-w-4xl px-4 py-6 text-center text-slate-600">
-        Đang tải thẻ...
+      <main className="min-h-screen w-full bg-[var(--background)]">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center">
+          <div className="bg-white border-[3px] border-[var(--border)] rounded-[2rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-8">
+            <p className="text-[var(--text-muted)] font-bold">Loading cards...</p>
+          </div>
+        </div>
       </main>
     );
   }
 
   if (error) {
     return (
-      <main className="mx-auto max-w-4xl px-4 py-6 text-center text-red-600">
-        {error}
+      <main className="min-h-screen w-full bg-[var(--background)]">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center">
+          <div className="bg-white border-[3px] border-[var(--destructive)]/30 rounded-[2rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-8">
+            <p className="text-[var(--destructive)] font-bold">{error}</p>
+          </div>
+        </div>
       </main>
     );
   }
 
   if (!cards.length && !finished) {
     return (
-      <main className="mx-auto max-w-4xl px-4 py-6 text-center text-slate-600">
-        Không có thẻ đến hạn ôn (hoặc bộ này chưa có thẻ).
+      <main className="min-h-screen w-full bg-[var(--background)]">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center">
+          <div className="bg-white border-[3px] border-[var(--border)] rounded-[2rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-8">
+            <p className="text-[var(--text-muted)] font-bold">
+              No cards due for review (or this deck has no cards yet).
+            </p>
+          </div>
+        </div>
       </main>
     );
   }
 
   return (
-    <main className="mx-auto w-full max-w-4xl px-4 py-6">
-      <StudyHeader
-        deckTitle={``}
-        current={currentCardNumber}
-        total={totalForProgress}
-        onExit={study.handleExit}
-      />
-
-      <div className="mt-4">
-        <div className="flex items-center justify-between text-xs text-slate-500">
-          <span>Tiến độ</span>
-          <span>{Math.min(progressPct, 100)}%</span>
-        </div>
-        <ProgressBar value={Math.min(progressPct, 100)} />
-      </div>
-
-      <section className="mt-6">
-        {finished ? (
-          <div className="rounded-2xl border bg-white p-8 text-center shadow-sm">
-            <div className="text-xl font-semibold text-slate-900">
-              Đã hết thẻ 🎉
-            </div>
-            <div className="mt-2 text-sm text-slate-600">
-              Bạn đã ôn xong toàn bộ thẻ trong lượt này.
-            </div>
-            {lastReview && (
-              <div className="mt-6 rounded-xl bg-slate-50 p-4 text-left text-slate-700">
-                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Lịch nhắc lại (SM-2)
-                </div>
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-lg bg-white px-3 py-2 ring-1 ring-slate-200">
-                    <div className="text-xs text-slate-500">Lặp lại</div>
-                    <div className="text-base font-semibold text-slate-900">
-                      {lastReview.repetition ?? 0}
-                    </div>
-                  </div>
-                  <div className="rounded-lg bg-white px-3 py-2 ring-1 ring-slate-200">
-                    <div className="text-xs text-slate-500">Hệ số dễ</div>
-                    <div className="text-base font-semibold text-slate-900">
-                      {formatEaseFactor(lastReview.easeFactor)}
-                    </div>
-                  </div>
-                  <div className="rounded-lg bg-white px-3 py-2 ring-1 ring-slate-200">
-                    <div className="text-xs text-slate-500">Khoảng cách</div>
-                    <div className="text-base font-semibold text-slate-900">
-                      {lastReview.intervalDays ?? 0} ngày
-                    </div>
-                  </div>
-                  <div className="rounded-lg bg-white px-3 py-2 ring-1 ring-slate-200">
-                    <div className="text-xs text-slate-500">Mã thẻ</div>
-                    <div className="text-base font-semibold text-slate-900">
-                      {lastReview.cardId ?? "--"}
-                    </div>
-                  </div>
-                </div>
-                {formatNextDue(lastReview.nextDue) && (
-                  <div className="mt-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800">
-                    Thẻ sẽ đến hạn vào{" "}
-                    <span className="font-semibold">
-                      {formatNextDue(lastReview.nextDue)}
-                    </span>
-                  </div>
-                )}
-              </div>
-            )}
-            <div className="mt-5 flex items-center justify-center gap-2">
-              <button
-                onClick={() => window.location.reload()}
-                className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-slate-800 hover:bg-gray-50"
-              >
-                Tải lại
-              </button>
-              <button
-                onClick={study.handleExit}
-                className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:opacity-95"
-              >
-                Thoát
-              </button>
-            </div>
-          </div>
-        ) : booting ? (
-          <div className="rounded-2xl border bg-white p-6 shadow-sm">
-            <div className="h-5 w-28 animate-pulse rounded bg-gray-200" />
-            <div className="mt-4 h-8 w-3/5 animate-pulse rounded bg-gray-200" />
-            <div className="mt-2 h-8 w-2/5 animate-pulse rounded bg-gray-200" />
-            <div className="mt-6 h-24 w-full animate-pulse rounded bg-gray-100" />
-            <div className="mt-6 flex gap-3">
-              <div className="h-9 w-24 animate-pulse rounded bg-gray-200" />
-              <div className="h-9 w-24 animate-pulse rounded bg-gray-200" />
-              <div className="h-9 w-24 animate-pulse rounded bg-gray-200" />
-            </div>
-          </div>
-        ) : hasCard ? (
-          <div className="relative">
-            {!study.flipped && (
-              <div className="absolute inset-x-0 -top-6 mx-auto w-max rounded-full bg-slate-50 px-3 py-1 text-[11px] text-slate-500 ring-1 ring-slate-200">
-                Nhấn{" "}
-                <kbd className="rounded border px-1 text-[10px]">Space</kbd> để
-                lật
-              </div>
-            )}
-            <Flashcard
-              key={study.card!.id}
-              card={study.card!}
-              flipped={study.flipped}
-              onFlip={study.flip}
-            />
-          </div>
-        ) : (
-          <div className="rounded-lg border bg-white p-6 text-center text-slate-600">
-            Không tìm thấy thẻ hợp lệ.
-          </div>
-        )}
-      </section>
-
-      {hasCard && !finished && (
-        <SRFooter
-          flipped={study.flipped}
-          onFlip={study.flip}
-          onGrade={handleGrade}
-          onPrev={study.prev}
-          onNext={study.next}
-          index={currentCardNumber ? currentCardNumber - 1 : study.index}
+    <main className="min-h-screen w-full bg-[var(--background)]">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <StudyHeader
+          deckTitle={``}
+          current={currentCardNumber}
           total={totalForProgress}
-          shuffle={study.shuffle}
-          onToggleShuffle={study.toggleShuffle}
+          onExit={study.handleExit}
         />
-      )}
+
+        <div className="mt-4">
+          <div className="flex items-center justify-between text-xs font-bold text-[var(--text-muted)] mb-1">
+            <span>Progress</span>
+            <span style={{ fontFamily: "var(--font-mono)" }}>
+              {currentCardNumber} / {totalForProgress}
+            </span>
+          </div>
+          <ProgressBar value={Math.min(progressPct, 100)} />
+        </div>
+
+        <section className="mt-6">
+          {finished ? (
+            <div className="bg-white border-[3px] border-[var(--border)] rounded-[2rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-8 text-center">
+              <div
+                className="text-2xl font-bold text-[var(--foreground)]"
+                style={{ fontFamily: "var(--font-sans)" }}
+              >
+                Session Complete
+              </div>
+              <div className="mt-2 text-sm text-[var(--text-muted)] font-medium">
+                You have reviewed all cards in this session.
+              </div>
+              {lastReview && (
+                <div className="mt-6 bg-[var(--background)] border-[3px] border-[var(--border)] rounded-[2rem] p-4 text-left">
+                  <div className="text-xs font-bold text-[var(--text-muted)] tracking-wide mb-3">
+                    SM-2 Review Schedule
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="bg-white border-[3px] border-[var(--border)] rounded-[2rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] px-4 py-3">
+                      <div className="text-xs font-bold text-[var(--text-muted)]">
+                        Repetition
+                      </div>
+                      <div
+                        className="text-lg font-bold text-[var(--foreground)]"
+                        style={{ fontFamily: "var(--font-mono)" }}
+                      >
+                        {lastReview.repetition ?? 0}
+                      </div>
+                    </div>
+                    <div className="bg-white border-[3px] border-[var(--border)] rounded-[2rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] px-4 py-3">
+                      <div className="text-xs font-bold text-[var(--text-muted)]">
+                        Ease Factor
+                      </div>
+                      <div
+                        className="text-lg font-bold text-[var(--foreground)]"
+                        style={{ fontFamily: "var(--font-mono)" }}
+                      >
+                        {formatEaseFactor(lastReview.easeFactor)}
+                      </div>
+                    </div>
+                    <div className="bg-white border-[3px] border-[var(--border)] rounded-[2rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] px-4 py-3">
+                      <div className="text-xs font-bold text-[var(--text-muted)]">
+                        Interval
+                      </div>
+                      <div
+                        className="text-lg font-bold text-[var(--foreground)]"
+                        style={{ fontFamily: "var(--font-mono)" }}
+                      >
+                        {lastReview.intervalDays ?? 0} days
+                      </div>
+                    </div>
+                    <div className="bg-white border-[3px] border-[var(--border)] rounded-[2rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] px-4 py-3">
+                      <div className="text-xs font-bold text-[var(--text-muted)]">
+                        Card ID
+                      </div>
+                      <div
+                        className="text-lg font-bold text-[var(--foreground)] truncate"
+                        style={{ fontFamily: "var(--font-mono)" }}
+                      >
+                        {lastReview.cardId ?? "--"}
+                      </div>
+                    </div>
+                  </div>
+                  {formatNextDue(lastReview.nextDue) && (
+                    <div className="mt-3 bg-white border-[3px] border-[var(--border)] rounded-[2rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] px-4 py-3 text-sm text-[var(--text-body)]">
+                      Next due:{" "}
+                      <span
+                        className="font-bold"
+                        style={{ fontFamily: "var(--font-mono)" }}
+                      >
+                        {formatNextDue(lastReview.nextDue)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+              <div className="mt-6 flex items-center justify-center gap-3">
+                <button
+                  onClick={() => window.location.reload()}
+                  className="px-6 py-2.5 rounded-full bg-white text-[var(--foreground)] font-bold border-[3px] border-[var(--border)] hover:-translate-y-0.5 hover:border-[var(--primary)] active:translate-y-[2px] transition-all"
+                >
+                  Reload
+                </button>
+                <button
+                  onClick={study.handleExit}
+                  className="px-6 py-2.5 rounded-full bg-[var(--primary)] text-white font-bold border-b-[4px] border-[var(--primary-dark)] hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px] transition-all"
+                >
+                  Exit
+                </button>
+              </div>
+            </div>
+          ) : booting ? (
+            <div className="bg-white border-[3px] border-[var(--border)] rounded-[2rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-6">
+              <div className="h-5 w-28 animate-pulse rounded-full bg-[var(--border)]" />
+              <div className="mt-4 h-8 w-3/5 animate-pulse rounded-full bg-[var(--border)]" />
+              <div className="mt-2 h-8 w-2/5 animate-pulse rounded-full bg-[var(--border)]" />
+              <div className="mt-6 h-24 w-full animate-pulse rounded-xl bg-[var(--background)]" />
+              <div className="mt-6 flex gap-3">
+                <div className="h-10 w-24 animate-pulse rounded-full bg-[var(--border)]" />
+                <div className="h-10 w-24 animate-pulse rounded-full bg-[var(--border)]" />
+                <div className="h-10 w-24 animate-pulse rounded-full bg-[var(--border)]" />
+              </div>
+            </div>
+          ) : hasCard ? (
+            <div className="relative">
+              {!study.flipped && (
+                <div className="absolute inset-x-0 -top-6 mx-auto w-max rounded-full bg-white px-4 py-1.5 text-xs font-bold text-[var(--text-muted)] border-[2px] border-[var(--border)] shadow-[0_2px_0_rgba(0,0,0,0.05)]">
+                  Press{" "}
+                  <kbd className="rounded-md border-[2px] border-[var(--border)] px-1.5 py-0.5 text-[10px] font-bold bg-[var(--background)]">
+                    Space
+                  </kbd>{" "}
+                  to flip
+                </div>
+              )}
+              <Flashcard
+                key={study.card!.id}
+                card={study.card!}
+                flipped={study.flipped}
+                onFlip={study.flip}
+              />
+            </div>
+          ) : (
+            <div className="bg-white border-[3px] border-[var(--border)] rounded-[2rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-6 text-center">
+              <p className="text-[var(--text-muted)] font-bold">
+                No valid cards found.
+              </p>
+            </div>
+          )}
+        </section>
+
+        {hasCard && !finished && (
+          <SRFooter
+            flipped={study.flipped}
+            onFlip={study.flip}
+            onGrade={handleGrade}
+            onPrev={study.prev}
+            onNext={study.next}
+            index={currentCardNumber ? currentCardNumber - 1 : study.index}
+            total={totalForProgress}
+            shuffle={study.shuffle}
+            onToggleShuffle={study.toggleShuffle}
+          />
+        )}
+      </div>
     </main>
   );
 }

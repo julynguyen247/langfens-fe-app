@@ -57,7 +57,6 @@ export default function GoogleLoginButton({
             (response.data &&
               (response.data.accessToken || response.data.token)) ??
             response.data;
-          localStorage.setItem("access_token", token);
           if (response.data?.user) {
             localStorage.setItem("user", JSON.stringify(response.data.user));
           }

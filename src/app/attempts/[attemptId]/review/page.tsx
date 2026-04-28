@@ -5,12 +5,13 @@ import { useParams, useRouter } from "next/navigation";
 import { getAttemptResult } from "@/utils/api";
 import { useAttemptStore } from "@/app/store/useAttemptStore";
 import { ReadingScreen } from "../../../do-test/[skill]/[attemptId]/page";
+import { motion } from "framer-motion";
 
 export default function ReviewPage() {
   const { attemptId } = useParams() as { attemptId: string };
   const router = useRouter();
   const setAttempt = useAttemptStore((s) => s.setAttempt);
-  
+
   const [loading, setLoading] = useState(true);
   const [reviewData, setReviewData] = useState<Array<{
     questionId: string;
@@ -30,8 +31,7 @@ export default function ReviewPage() {
         const res = await getAttemptResult(attemptId as any);
         const raw = (res as any)?.data?.data ?? (res as any)?.data ?? res;
         const paper = (raw as any).paperWithAnswers ?? (raw as any).paper ?? null;
-        
-        // Build question metadata and answer mapping
+
         const questionMetaById: Record<string, any> = {};
         if (paper?.sections) {
           for (const sec of paper.sections) {
@@ -46,24 +46,22 @@ export default function ReviewPage() {
           }
         }
 
-        // Get answers and build review data
         const answers: any[] = (raw as any).answers ?? (raw as any).items ?? (raw as any).questions ?? [];
-        
+
         const review: typeof reviewData = [];
         const initAnswers: Record<string, string> = {};
-        
+
         for (const a of answers) {
           const qid = String(a.questionId ?? a.id);
           const meta = questionMetaById[qid];
-          
+
           review.push({
             questionId: qid,
             isCorrect: a.isCorrect ?? null,
             correctAnswer: a.correctAnswerText ?? "",
             explanation: a.explanationMd ?? meta?.explanationMd ?? "",
           });
-          
-          // For choice questions, use selectedOptionIds; for text, use selectedAnswerText
+
           const qType = (meta?.questionType ?? "").toUpperCase();
           if (qType.includes("MCQ") || qType.includes("TRUE_FALSE") || qType.includes("YES_NO")) {
             const optionIds = a.selectedOptionIds ?? [];
@@ -73,19 +71,16 @@ export default function ReviewPage() {
           }
         }
 
-        // Detect skill
-        const firstSkill = paper?.sections?.[0]?.skill ?? 
-          answers[0]?.skill ?? 
-          (raw as any).skill ?? 
+        const firstSkill = paper?.sections?.[0]?.skill ??
+          answers[0]?.skill ??
+          (raw as any).skill ??
           "READING";
         setSkill(firstSkill.toUpperCase() as "READING" | "LISTENING");
-        
-        // Count correct/wrong
+
         const correct = answers.filter((a: any) => a.isCorrect === true).length;
         setCorrectCount(correct);
         setWrongCount(answers.length - correct);
 
-        // Populate attempt store so ReadingScreen can access data
         setAttempt({
           attemptId,
           paper,
@@ -106,52 +101,65 @@ export default function ReviewPage() {
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-lg text-slate-600">Đang tải kết quả...</div>
+      <div className="h-screen flex flex-col items-center justify-center bg-[var(--background)] gap-4">
+        <div className="h-10 w-10 animate-spin rounded-full border-[4px] border-[var(--border)] border-t-[var(--primary)]" />
+        <p
+          className="text-base font-bold text-[var(--text-muted)]"
+          style={{ fontFamily: "var(--font-sans)" }}
+        >
+          Loading results...
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="h-screen flex flex-col bg-[#F3F4F6] overflow-hidden">
+    <div className="h-screen flex flex-col bg-[var(--background)] overflow-hidden">
       {/* TopBar */}
-      <header className="flex-shrink-0 h-14 bg-white border-b flex items-center justify-between px-4 shadow-sm">
+      <motion.header
+        className="flex-shrink-0 h-16 bg-white border-b-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] flex items-center justify-between px-4 sm:px-6"
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+      >
         <div className="flex items-center gap-4">
           <button
             onClick={() => router.push(`/attempts/${attemptId}`)}
-            className="p-2 hover:bg-gray-100 rounded-lg transition"
-            title="Đóng"
+            className="px-4 py-2 rounded-full bg-[var(--background)] border-[2px] border-[var(--border)] text-[var(--text-body)] font-bold text-sm hover:-translate-y-0.5 hover:border-[var(--primary)] transition-all duration-150"
+            style={{ fontFamily: "var(--font-sans)" }}
           >
-            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            Back
           </button>
           <div>
-            <h1 className="text-base font-semibold text-slate-900 uppercase">
-              {skill} REVIEW
+            <h1
+              className="text-base font-bold text-[var(--foreground)]"
+              style={{ fontFamily: "var(--font-sans)" }}
+            >
+              {skill.charAt(0) + skill.slice(1).toLowerCase()} Review
             </h1>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-[var(--text-muted)]">
               Attempt {attemptId.slice(0, 8)}...
             </p>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <span className="px-3 py-1.5 rounded-full bg-green-100 text-green-700 text-sm font-medium">
-            ✓ {correctCount} đúng
+          <span className="px-4 py-1.5 rounded-full border-[2px] border-[var(--skill-speaking-border)] bg-[var(--skill-speaking-light)] text-[var(--skill-speaking)] text-sm font-bold">
+            {correctCount} correct
           </span>
-          <span className="px-3 py-1.5 rounded-full bg-red-100 text-red-700 text-sm font-medium">
-            ✗ {wrongCount} sai
+          <span className="px-4 py-1.5 rounded-full border-[2px] border-red-300 bg-red-50 text-red-600 text-sm font-bold">
+            {wrongCount} wrong
           </span>
           <button
             onClick={() => router.push(`/attempts/${attemptId}`)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition"
+            className="px-5 py-2 rounded-full bg-[var(--primary)] text-white font-bold text-sm border-b-[4px] border-[var(--primary-dark)] hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px] transition-all duration-150"
+            style={{ fontFamily: "var(--font-sans)" }}
           >
-            Xem chi tiết
+            View Details
           </button>
         </div>
-      </header>
+      </motion.header>
 
-      {/* Main content - render the actual ReadingScreen */}
+      {/* Main content */}
       <main className="flex-1 min-h-0 overflow-hidden">
         <ReadingScreen
           attemptId={attemptId}

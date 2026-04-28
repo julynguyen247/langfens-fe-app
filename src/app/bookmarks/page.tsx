@@ -5,11 +5,6 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { getBookmarks, deleteBookmark } from "@/utils/api";
 
-// Material Icon Component
-function Icon({ name, className = "" }: { name: string; className?: string }) {
-  return <span className={`material-symbols-rounded ${className}`}>{name}</span>;
-}
-
 type Bookmark = {
   id: string;
   questionId: string;
@@ -37,7 +32,6 @@ export default function BookmarksPage() {
     try {
       const opts = filter !== "all" ? { skill: filter } : undefined;
       const res = await getBookmarks(opts);
-      // API returns { data: { items, total, page, pageSize } }
       const responseData = (res as any)?.data?.data ?? (res as any)?.data;
       const items = responseData?.items ?? responseData ?? [];
       setBookmarks(Array.isArray(items) ? items : []);
@@ -61,14 +55,14 @@ export default function BookmarksPage() {
     }
   }
 
-  function getTypeIcon(type: string) {
-    const icons: Record<string, string> = {
-      reading: "auto_stories",
-      listening: "headphones",
-      writing: "edit_note",
-      speaking: "mic",
+  function getSkillBadgeStyle(skill: string) {
+    const styles: Record<string, string> = {
+      reading: "bg-[var(--skill-reading-light)] text-[var(--skill-reading)] border-[var(--skill-reading-border)]",
+      listening: "bg-[var(--skill-listening-light)] text-[var(--skill-listening)] border-[var(--skill-listening-border)]",
+      writing: "bg-[var(--skill-writing-light)] text-[var(--skill-writing)] border-[var(--skill-writing-border)]",
+      speaking: "bg-[var(--skill-speaking-light)] text-[var(--skill-speaking)] border-[var(--skill-speaking-border)]",
     };
-    return icons[type?.toLowerCase()] || "bookmark";
+    return styles[skill?.toLowerCase()] || "bg-[var(--primary-light)] text-[var(--primary)] border-[var(--skill-reading-border)]";
   }
 
   function formatDate(iso: string) {
@@ -93,13 +87,20 @@ export default function BookmarksPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
-      <main className="max-w-4xl mx-auto px-4 py-10">
-        
+    <div className="min-h-screen bg-[var(--background)]">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+
         {/* Header */}
         <div className="mb-8">
-          <h1 className="font-serif text-3xl font-bold text-slate-900">Saved Items</h1>
-          <p className="text-slate-500 mt-1">Questions you've bookmarked for review</p>
+          <h1
+            className="text-3xl sm:text-4xl font-extrabold text-[var(--foreground)]"
+            style={{ fontFamily: "var(--font-sans)" }}
+          >
+            Saved Items
+          </h1>
+          <p className="text-[var(--text-muted)] mt-2">
+            Questions you have bookmarked for review
+          </p>
         </div>
 
         {/* Filter Tabs */}
@@ -108,10 +109,10 @@ export default function BookmarksPage() {
             <button
               key={f.id}
               onClick={() => setFilter(f.id)}
-              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
+              className={`px-5 py-2.5 text-sm font-bold rounded-full transition-all whitespace-nowrap ${
                 filter === f.id
-                  ? "bg-slate-900 text-white"
-                  : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+                  ? "bg-[var(--primary)] text-white border-b-[4px] border-[var(--primary-dark)]"
+                  : "bg-white text-[var(--text-body)] border-[2px] border-[var(--border)] hover:border-[var(--primary)] hover:-translate-y-0.5"
               }`}
             >
               {f.label}
@@ -123,12 +124,15 @@ export default function BookmarksPage() {
         {loading ? (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-white border border-slate-200 rounded-xl p-6 animate-pulse">
+              <div
+                key={i}
+                className="bg-white border-[3px] border-[var(--border)] rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-6 animate-pulse"
+              >
                 <div className="flex gap-4">
-                  <div className="w-10 h-10 bg-slate-200 rounded-lg" />
+                  <div className="w-10 h-10 bg-[var(--border)] rounded-full" />
                   <div className="flex-1 space-y-2">
-                    <div className="h-5 w-3/4 bg-slate-200 rounded" />
-                    <div className="h-4 w-1/2 bg-slate-100 rounded" />
+                    <div className="h-5 w-3/4 bg-[var(--border)] rounded-full" />
+                    <div className="h-4 w-1/2 bg-[var(--background)] rounded-full" />
                   </div>
                 </div>
               </div>
@@ -136,28 +140,36 @@ export default function BookmarksPage() {
           </div>
         ) : bookmarks.length === 0 ? (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="bg-white border border-slate-200 rounded-2xl p-12 text-center"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white border-[3px] border-[var(--border)] rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-12 text-center"
           >
-            <div className="w-16 h-16 mx-auto bg-slate-100 rounded-full flex items-center justify-center mb-4">
-              <Icon name="bookmark_border" className="text-3xl text-slate-400" />
+            <div className="w-16 h-16 mx-auto bg-[var(--primary-light)] rounded-full flex items-center justify-center mb-4">
+              <span
+                className="text-2xl font-extrabold text-[var(--primary)]"
+                style={{ fontFamily: "var(--font-sans)" }}
+              >
+                ?
+              </span>
             </div>
-            <h3 className="font-serif text-xl font-semibold text-slate-900 mb-2">
+            <h3
+              className="text-xl font-bold text-[var(--foreground)] mb-2"
+              style={{ fontFamily: "var(--font-sans)" }}
+            >
               No saved items yet
             </h3>
-            <p className="text-slate-500 mb-6">
+            <p className="text-[var(--text-muted)] mb-6">
               Bookmark questions during practice to review them later
             </p>
             <button
               onClick={() => router.push("/practice")}
-              className="bg-slate-900 text-white px-6 py-3 rounded-xl font-medium hover:bg-black transition-colors"
+              className="rounded-full bg-[var(--primary)] text-white font-bold px-8 py-3 border-b-[4px] border-[var(--primary-dark)] hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px] transition-all"
             >
               Start Practicing
             </button>
           </motion.div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             <AnimatePresence>
               {bookmarks.map((bookmark) => (
                 <motion.div
@@ -165,28 +177,27 @@ export default function BookmarksPage() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, x: -20 }}
-                  className="bg-white border border-slate-200 rounded-xl p-5 hover:border-slate-300 transition-colors group"
+                  className="bg-white border-[3px] border-[var(--border)] rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-5 transition-all hover:-translate-y-[3px] hover:border-[var(--primary)] hover:shadow-[0_6px_0_rgba(0,0,0,0.08)] group"
                 >
                   <div className="flex items-start gap-4">
-                    {/* Icon */}
-                    <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center shrink-0">
-                      <Icon name={getTypeIcon(bookmark.skill)} className="text-xl text-slate-600" />
-                    </div>
-
                     {/* Content */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-800 line-clamp-2">
+                      <p className="text-sm font-bold text-[var(--foreground)] line-clamp-2">
                         {bookmark.questionContent || "Bookmarked Question"}
                       </p>
-                      <div className="flex items-center gap-3 mt-2 text-xs text-slate-400">
-                        <span className="capitalize">{bookmark.skill}</span>
-                        <span>•</span>
-                        <span>{bookmark.questionType?.replace(/_/g, " ")}</span>
-                        <span>•</span>
-                        <span>{formatDate(bookmark.createdAt)}</span>
+                      <div className="flex items-center gap-2 mt-3 flex-wrap">
+                        <span className={`px-3 py-1 text-xs font-bold rounded-full border-[2px] capitalize ${getSkillBadgeStyle(bookmark.skill)}`}>
+                          {bookmark.skill}
+                        </span>
+                        <span className="px-3 py-1 text-xs font-bold rounded-full border-[2px] bg-[var(--background)] text-[var(--text-muted)] border-[var(--border)]">
+                          {bookmark.questionType?.replace(/_/g, " ")}
+                        </span>
+                        <span className="text-xs text-[var(--text-muted)]">
+                          {formatDate(bookmark.createdAt)}
+                        </span>
                       </div>
                       {bookmark.note && (
-                        <p className="mt-2 text-xs text-slate-500 italic bg-slate-50 px-3 py-2 rounded">
+                        <p className="mt-3 text-xs text-[var(--text-body)] bg-[var(--primary-light)] px-4 py-2 rounded-[1rem] border-[2px] border-[var(--skill-reading-border)]">
                           Note: {bookmark.note}
                         </p>
                       )}
@@ -196,17 +207,16 @@ export default function BookmarksPage() {
                     <div className="flex items-center gap-2 shrink-0">
                       <button
                         onClick={() => router.push(`/attempts/${bookmark.attemptId}`)}
-                        className="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+                        className="px-4 py-2 text-sm font-bold text-[var(--primary)] bg-[var(--primary-light)] rounded-full border-[2px] border-[var(--skill-reading-border)] hover:bg-[var(--primary)] hover:text-white hover:border-[var(--primary-dark)] transition-all"
                       >
-                        View in Context
+                        View
                       </button>
                       <button
                         onClick={() => handleDelete(bookmark.questionId)}
                         disabled={deletingId === bookmark.questionId}
-                        className="p-2 text-slate-400 hover:text-red-500 transition-colors disabled:opacity-50"
-                        title="Remove bookmark"
+                        className="px-4 py-2 text-sm font-bold text-[var(--destructive)] bg-red-50 rounded-full border-[2px] border-red-200 hover:bg-[var(--destructive)] hover:text-white hover:border-red-700 transition-all disabled:opacity-50"
                       >
-                        <Icon name={deletingId === bookmark.questionId ? "hourglass_empty" : "delete_outline"} className="text-xl" />
+                        {deletingId === bookmark.questionId ? "..." : "Remove"}
                       </button>
                     </div>
                   </div>
@@ -218,8 +228,13 @@ export default function BookmarksPage() {
 
         {/* Stats Footer */}
         {bookmarks.length > 0 && (
-          <div className="mt-8 text-center text-sm text-slate-400">
-            {bookmarks.length} item{bookmarks.length !== 1 ? "s" : ""} saved
+          <div className="mt-8 text-center">
+            <span
+              className="text-sm font-bold text-[var(--text-muted)] bg-white px-4 py-2 rounded-full border-[2px] border-[var(--border)]"
+              style={{ fontFamily: "var(--font-mono)" }}
+            >
+              {bookmarks.length} item{bookmarks.length !== 1 ? "s" : ""} saved
+            </span>
           </div>
         )}
 

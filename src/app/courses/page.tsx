@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { FiSearch, FiBook, FiClock } from "react-icons/fi";
 import { getCourses } from "@/utils/api";
 
 type Course = {
@@ -45,12 +44,12 @@ export default function CoursesPage() {
 
   const filtered = useMemo(() => {
     let list = courses;
-    
+
     // Filter by category
     if (categoryFilter !== "ALL") {
       list = list.filter((c) => c.category === categoryFilter);
     }
-    
+
     // Filter by search query
     const q = query.trim().toLowerCase();
     if (q) {
@@ -60,7 +59,7 @@ export default function CoursesPage() {
           (c.descriptionMd?.toLowerCase().includes(q))
       );
     }
-    
+
     return list;
   }, [courses, categoryFilter, query]);
 
@@ -74,38 +73,42 @@ export default function CoursesPage() {
 
   if (loading) {
     return (
-      <main className="mx-auto w-full max-w-6xl px-4 py-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center justify-center py-20">
-          <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" />
-          <span className="ml-3 text-slate-600">Đang tải khóa học...</span>
+          <div className="animate-spin h-8 w-8 border-4 border-[var(--primary)] border-t-transparent rounded-full" />
+          <span className="ml-3 text-[var(--text-muted)] font-bold">Loading courses...</span>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 py-6">
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
-      <div className="rounded-2xl border border-slate-300 bg-gradient-to-br from-indigo-50 to-blue-100 p-5">
+      <div className="bg-white border-[3px] border-[var(--border)] rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-[#3B82F6]">Khóa học</h1>
-            <p className="text-sm text-[#3B82F6]">
-              Xem qua các khóa học Grammar, IELTS, và tiếng Anh giao tiếp.
+            <h1
+              className="text-2xl font-bold text-[var(--foreground)]"
+              style={{ fontFamily: "var(--font-sans)" }}
+            >
+              Courses
+            </h1>
+            <p className="text-sm text-[var(--text-muted)] font-bold mt-1">
+              Browse Grammar, IELTS, and General English courses.
             </p>
           </div>
 
           {/* Search */}
           <div className="relative">
-            <FiSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
             <input
               value={query}
               onChange={(e) => {
                 setPage(1);
                 setQuery(e.target.value);
               }}
-              placeholder="Tìm khóa học..."
-              className="w-72 rounded-xl border border-indigo-200 bg-white pl-9 pr-3 py-2 text-sm outline-none focus:border-[#3B82F6] text-slate-800"
+              placeholder="Search courses..."
+              className="w-72 rounded-full border-[2px] border-[var(--border)] bg-[var(--background)] pl-4 pr-3 py-2.5 text-sm outline-none focus:border-[var(--primary)] text-[var(--foreground)] font-bold placeholder:text-[var(--text-muted)] transition-colors"
             />
           </div>
         </div>
@@ -114,7 +117,7 @@ export default function CoursesPage() {
         <div className="mt-4 flex flex-wrap gap-2">
           {categories.map((cat) => {
             const active = categoryFilter === cat;
-            const label = cat === "ALL" ? "Tất cả" : cat.replace(/_/g, " ");
+            const label = cat === "ALL" ? "All" : cat.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
             return (
               <button
                 key={cat}
@@ -122,10 +125,10 @@ export default function CoursesPage() {
                   setCategoryFilter(cat);
                   setPage(1);
                 }}
-                className={`rounded-full px-3 py-1 text-sm ${
+                className={`rounded-full px-4 py-1.5 text-sm font-bold transition-all ${
                   active
-                    ? "bg-[#3B82F6] text-white"
-                    : "border border-indigo-200 bg-white text-[#3B82F6] hover:bg-indigo-50"
+                    ? "bg-[var(--primary)] text-white border-b-[3px] border-[var(--primary-dark)]"
+                    : "border-[2px] border-[var(--border)] bg-white text-[var(--text-body)] hover:border-[var(--primary)] hover:text-[var(--primary)]"
                 }`}
               >
                 {label}
@@ -140,28 +143,32 @@ export default function CoursesPage() {
         {pageItems.map((c) => (
           <article
             key={c.id}
-            className="group overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md"
+            className="group overflow-hidden bg-white border-[3px] border-[var(--border)] rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] transition-all duration-150 hover:-translate-y-[3px] hover:border-[var(--primary)] hover:shadow-[0_6px_0_rgba(0,0,0,0.08)]"
           >
             <Link href={`/courses/${c.slug}`} className="block">
-              <div className="h-32 bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
-                <FiBook className="h-12 w-12 text-white/80" />
+              <div className="h-32 bg-[var(--primary)] flex items-center justify-center">
+                <span className="text-4xl font-bold text-white/80" style={{ fontFamily: "var(--font-sans)" }}>
+                  {c.title.charAt(0)}
+                </span>
               </div>
               <div className="p-4">
-                <span className="inline-block rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 mb-2">
+                <span className="inline-block rounded-full bg-[var(--primary-light)] px-2.5 py-0.5 text-xs font-bold text-[var(--primary)] mb-2 border-[2px] border-blue-200">
                   {c.category?.replace(/_/g, " ") || "Course"}
                 </span>
-                <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">
+                <h3
+                  className="line-clamp-2 text-sm font-bold text-[var(--foreground)]"
+                  style={{ fontFamily: "var(--font-sans)" }}
+                >
                   {c.title}
                 </h3>
                 {c.descriptionMd && (
-                  <p className="mt-1 line-clamp-2 text-xs text-slate-600">
+                  <p className="mt-1 line-clamp-2 text-xs text-[var(--text-muted)]">
                     {c.descriptionMd.slice(0, 100)}...
                   </p>
                 )}
-                <div className="mt-3 flex items-center gap-3 text-xs text-slate-500">
-                  <span className="flex items-center gap-1">
-                    <FiBook className="h-3 w-3" />
-                    {c.lessons?.length ?? 0} bài học
+                <div className="mt-3 flex items-center gap-3 text-xs text-[var(--text-muted)] font-bold">
+                  <span style={{ fontFamily: "var(--font-mono)" }}>
+                    {c.lessons?.length ?? 0} lessons
                   </span>
                   {c.level && (
                     <span className="capitalize">{c.level}</span>
@@ -175,10 +182,10 @@ export default function CoursesPage() {
 
       {/* Empty state */}
       {total === 0 && (
-        <div className="mt-10 rounded-xl border border-slate-200 bg-white p-6 text-center text-slate-600">
-          {courses.length === 0 
-            ? "Chưa có khóa học nào. Hãy thêm khóa học từ admin panel."
-            : "Không tìm thấy khóa học phù hợp."
+        <div className="mt-10 bg-white border-[3px] border-[var(--border)] rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-6 text-center text-[var(--text-muted)] font-bold">
+          {courses.length === 0
+            ? "No courses available yet."
+            : "No matching courses found."
           }
         </div>
       )}
@@ -189,20 +196,25 @@ export default function CoursesPage() {
           <button
             onClick={() => go(current - 1)}
             disabled={current === 1}
-            className="rounded-md px-3 py-1.5 text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:text-slate-400"
+            className="rounded-full px-4 py-2 font-bold text-[var(--text-body)] border-[2px] border-[var(--border)] hover:border-[var(--primary)] hover:text-[var(--primary)] disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
           >
-            ‹
+            Prev
           </button>
-          <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-md bg-slate-900 px-2 text-white">
+          <span
+            className="inline-flex h-9 min-w-9 items-center justify-center rounded-full bg-[var(--primary)] px-3 text-white font-bold border-b-[3px] border-[var(--primary-dark)]"
+            style={{ fontFamily: "var(--font-mono)" }}
+          >
             {current}
           </span>
-          <span className="text-slate-500">/ {maxPage}</span>
+          <span className="text-[var(--text-muted)] font-bold" style={{ fontFamily: "var(--font-mono)" }}>
+            / {maxPage}
+          </span>
           <button
             onClick={() => go(current + 1)}
             disabled={current === maxPage}
-            className="rounded-md px-3 py-1.5 text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:text-slate-400"
+            className="rounded-full px-4 py-2 font-bold text-[var(--text-body)] border-[2px] border-[var(--border)] hover:border-[var(--primary)] hover:text-[var(--primary)] disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
           >
-            ›
+            Next
           </button>
         </div>
       )}

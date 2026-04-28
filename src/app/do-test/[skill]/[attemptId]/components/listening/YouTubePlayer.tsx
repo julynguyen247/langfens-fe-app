@@ -30,8 +30,8 @@ function getYouTubeId(url: string) {
 export default function YouTubePlayer({ src }: YouTubePlayerProps) {
   if (!src) {
     return (
-      <div className="flex flex-col items-center justify-center bg-slate-50">
-        <div className="text-center text-slate-500">
+      <div className="flex flex-col items-center justify-center bg-[var(--background)]">
+        <div className="text-center text-[var(--text-muted)]">
           <div className="text-4xl mb-2">🎧</div>
           <div className="text-sm">Chưa có audio</div>
         </div>
@@ -43,7 +43,7 @@ export default function YouTubePlayer({ src }: YouTubePlayerProps) {
     const id = getYouTubeId(src);
     if (!id) {
       return (
-        <div className="h-full flex items-center justify-center bg-slate-50">
+        <div className="h-full flex items-center justify-center bg-[var(--background)]">
           <div className="text-red-500 text-sm">YouTube URL không hợp lệ</div>
         </div>
       );
@@ -68,11 +68,11 @@ export default function YouTubePlayer({ src }: YouTubePlayerProps) {
 
   // Regular audio file
   return (
-    <div className="h-full flex flex-col bg-slate-50 p-5">
+    <div className="h-full flex flex-col bg-[var(--background)] p-5">
       <audio className="w-full" controls preload="metadata">
         <source src={src} />
       </audio>
-      <div className="mt-4 text-sm text-slate-600">
+      <div className="mt-4 text-sm text-[var(--text-body)]">
         <p>Nhấn Play để bắt đầu nghe</p>
       </div>
     </div>

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { motion } from "framer-motion";
 import { useAttemptStore } from "@/app/store/useAttemptStore";
 import { useUserStore } from "@/app/store/userStore";
 import { autoSaveAttempt, submitAttempt, uploadFile } from "@/utils/api";
@@ -28,6 +29,16 @@ type QuestionMeta = {
   skill: string;
 };
 type SpeakingSource = "none" | "record" | "upload";
+
+const LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"] as const;
+const LEVEL_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  A1: { bg: "bg-[var(--skill-speaking-light)]", text: "text-[var(--skill-speaking)]", border: "border-[var(--skill-speaking-border)]" },
+  A2: { bg: "bg-[var(--skill-speaking-light)]", text: "text-[var(--skill-speaking)]", border: "border-[var(--skill-speaking-border)]" },
+  B1: { bg: "bg-[var(--skill-reading-light)]", text: "text-[var(--skill-reading)]", border: "border-[var(--skill-reading-border)]" },
+  B2: { bg: "bg-[var(--primary-light)]", text: "text-[var(--primary)]", border: "border-[var(--border)]" },
+  C1: { bg: "bg-[var(--skill-listening-light)]", text: "text-[var(--skill-listening)]", border: "border-[var(--skill-listening-border)]" },
+  C2: { bg: "bg-[var(--skill-writing-light)]", text: "text-[var(--skill-writing)]", border: "border-[var(--skill-writing-border)]" },
+};
 
 function formatTime(totalSeconds: number) {
   const m = Math.floor(totalSeconds / 60);
@@ -205,6 +216,17 @@ export default function MultiSkillAttemptPage() {
     return m;
   }, [readingUiQuestions, listeningUiQuestions]);
 
+  // Estimate level based on answered questions
+  const totalQuestions = readingUiQuestions.length + listeningUiQuestions.length + (writingQuestion ? 1 : 0) + (speakingQuestion ? 1 : 0);
+  const answeredCount = Object.keys(answers).filter(k => answers[k] && answers[k].trim()).length;
+  const estimatedLevelIdx = useMemo(() => {
+    if (totalQuestions === 0) return 0;
+    const ratio = answeredCount / totalQuestions;
+    return Math.min(LEVELS.length - 1, Math.floor(ratio * LEVELS.length));
+  }, [answeredCount, totalQuestions]);
+  const estimatedLevel = LEVELS[estimatedLevelIdx];
+  const levelStyle = LEVEL_COLORS[estimatedLevel] ?? LEVEL_COLORS.A1;
+
   const { run: debouncedSave, cancel: cancelAutoSave } = useDebouncedAutoSave(
     user?.id,
     attemptId
@@ -317,7 +339,7 @@ export default function MultiSkillAttemptPage() {
 
   const handleGrade = async () => {
     if (!mediaBlobUrl) {
-      alert("Chưa có đoạn ghi âm để tải lên.");
+      alert("No recording available to upload.");
       return;
     }
 
@@ -330,12 +352,12 @@ export default function MultiSkillAttemptPage() {
       const serializedAnswer = res.data?.serializedResponse;
 
       if (!serializedAnswer) {
-        alert("Không nhận được serializedAnswer từ server.");
+        alert("No serialized answer received from server.");
         return;
       }
 
       handleSpeakingChange(serializedAnswer);
-      alert("Đã tải và lưu câu trả lời speaking.");
+      alert("Audio uploaded and speaking answer saved.");
     } catch (e) {
       alert("Audio upload failed.");
     } finally {
@@ -354,12 +376,12 @@ export default function MultiSkillAttemptPage() {
       const serializedAnswer = res.data?.serializedResponse;
 
       if (!serializedAnswer) {
-        alert("Không nhận được serializedAnswer từ server.");
+        alert("No serialized answer received from server.");
         return;
       }
 
       handleSpeakingChange(serializedAnswer);
-      alert("Đã upload và lưu câu trả lời speaking.");
+      alert("Audio uploaded and speaking answer saved.");
     } catch (e) {
       alert("Audio upload failed.");
       setSpeakingSource("none");
@@ -379,39 +401,54 @@ export default function MultiSkillAttemptPage() {
 
   const examTitle = "English Placement Test";
 
+  const TAB_ITEMS: { id: Tab; label: string }[] = [
+    { id: "reading", label: "Reading" },
+    { id: "listening", label: "Listening" },
+    { id: "writing", label: "Writing" },
+    { id: "speaking", label: "Speaking" },
+  ];
+
   return (
-    <div className="flex flex-col h-screen bg-[#F8FAFC] overflow-hidden">
-      
-      {/* EXAM HEADER - Sticky Top */}
-      <header className="shrink-0 h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shadow-sm z-50">
-        
-        {/* Left: Title */}
-        <div className="font-bold text-slate-800 flex items-center gap-2">
-          <span className="material-symbols-rounded text-[#3B82F6]">school</span>
-          <span>English Placement</span>
+    <div className="flex flex-col h-screen bg-[var(--background)] overflow-hidden">
+
+      {/* EXAM HEADER */}
+      <header className="shrink-0 h-16 bg-white border-b-[3px] border-[var(--border)] flex items-center justify-between px-6 shadow-[0_4px_0_rgba(0,0,0,0.08)] z-50">
+
+        {/* Left: Title + Level badge */}
+        <div className="flex items-center gap-3">
+          <div
+            className="font-bold text-[var(--foreground)] flex items-center gap-2"
+            style={{ fontFamily: "var(--font-sans)" }}
+          >
+            <span className="text-[var(--primary)] font-extrabold">EP</span>
+            <span>English Placement</span>
+          </div>
+          {/* Level indicator badge */}
+          <motion.div
+            key={estimatedLevel}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className={`px-4 py-1.5 rounded-full font-extrabold text-sm border-[2px] ${levelStyle.bg} ${levelStyle.text} ${levelStyle.border}`}
+            style={{ fontFamily: "var(--font-mono)" }}
+          >
+            {estimatedLevel}
+          </motion.div>
         </div>
 
         {/* Center: Section Pills */}
-        <nav className="flex bg-slate-100 p-1 rounded-lg">
-          {[
-            { id: "reading", label: "Reading", icon: "menu_book" },
-            { id: "listening", label: "Listening", icon: "headphones" },
-            { id: "writing", label: "Writing", icon: "edit_note" },
-            { id: "speaking", label: "Speaking", icon: "mic" },
-          ].map((t) => {
-            const id = t.id as Tab;
-            const active = activeTab === id;
+        <nav className="flex gap-1.5">
+          {TAB_ITEMS.map((t) => {
+            const active = activeTab === t.id;
             return (
               <button
-                key={id}
-                onClick={() => setActiveTab(id)}
-                className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all flex items-center gap-1.5 ${
+                key={t.id}
+                onClick={() => setActiveTab(t.id)}
+                className={`px-5 py-2 text-xs font-bold rounded-full transition-all ${
                   active
-                    ? "bg-white text-[#3B82F6] shadow-sm"
-                    : "text-slate-500 hover:text-slate-700"
+                    ? "bg-[var(--primary)] text-white border-b-[3px] border-[var(--primary-dark)]"
+                    : "text-[var(--text-muted)] bg-white border-[2px] border-[var(--border)] hover:border-[var(--primary)] hover:-translate-y-0.5"
                 }`}
               >
-                <span className="material-symbols-rounded text-sm">{t.icon}</span>
                 {t.label}
               </button>
             );
@@ -420,17 +457,19 @@ export default function MultiSkillAttemptPage() {
 
         {/* Right: Timer & Submit */}
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 font-mono font-bold text-slate-700 bg-slate-50 px-3 py-1.5 rounded border border-slate-200">
-            <span className="material-symbols-rounded text-base text-slate-400">timer</span>
+          <div
+            className="font-extrabold text-[var(--foreground)] bg-[var(--primary-light)] px-4 py-2 rounded-full border-[2px] border-[var(--border)]"
+            style={{ fontFamily: "var(--font-mono)" }}
+          >
             {formatTime(secondsLeft)}
           </div>
           <button
             onClick={() => handleSubmit(false)}
             disabled={submitting}
-            className={`px-6 py-2 rounded-lg text-sm font-bold transition ${
+            className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${
               submitting
-                ? "bg-slate-300 text-slate-500 cursor-not-allowed"
-                : "bg-slate-900 hover:bg-black text-white"
+                ? "bg-[var(--border)] text-[var(--text-muted)] cursor-not-allowed border-b-[4px] border-[var(--border)]"
+                : "bg-[var(--primary)] text-white border-b-[4px] border-[var(--primary-dark)] hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px]"
             }`}
           >
             {submitting ? "Submitting..." : "Finish Test"}
@@ -440,14 +479,13 @@ export default function MultiSkillAttemptPage() {
 
       {/* MAIN CONTENT VIEWPORT */}
       <main className="flex-1 min-h-0 overflow-hidden relative">
-        
-        {/* READING SECTION - Matching ReadingScreen layout */}
+
+        {/* READING SECTION */}
         {activeTab === "reading" && (
           <div className="h-full flex overflow-hidden">
             <Group orientation="horizontal">
-              {/* Left Panel: Passage */}
               <Panel defaultSize={55} minSize={35} className="overflow-hidden">
-                <div className="h-full border-r border-slate-200">
+                <div className="h-full border-r-[2px] border-[var(--border)]">
                   <div className="h-full overflow-hidden bg-white">
                     <PassageView
                       passage={{
@@ -462,25 +500,30 @@ export default function MultiSkillAttemptPage() {
                 </div>
               </Panel>
 
-              {/* Right Panel: Questions */}
               <Panel defaultSize={45} minSize={30} className="overflow-hidden">
-                <div className="h-full flex flex-col overflow-hidden bg-[#F8FAFC]">
-                  {/* Questions Header */}
-                  <div className="px-6 py-4 bg-white border-b border-slate-200 flex-shrink-0">
+                <div className="h-full flex flex-col overflow-hidden bg-[var(--background)]">
+                  <div className="px-6 py-4 bg-white border-b-[2px] border-[var(--border)] flex-shrink-0">
                     <div className="flex items-center justify-between">
-                      <h2 className="font-semibold text-slate-900">Questions</h2>
-                      <span className="text-sm text-slate-500">
+                      <h2
+                        className="font-bold text-[var(--foreground)]"
+                        style={{ fontFamily: "var(--font-sans)" }}
+                      >
+                        Questions
+                      </h2>
+                      <span
+                        className="text-sm font-bold text-[var(--text-muted)] bg-[var(--primary-light)] px-3 py-1 rounded-full border-[2px] border-[var(--border)]"
+                        style={{ fontFamily: "var(--font-mono)" }}
+                      >
                         {readingUiQuestions.length} questions
                       </span>
                     </div>
                   </div>
 
-                  {/* Questions List */}
                   <div className="flex-1 overflow-auto p-4 lg:p-6
-                    [scrollbar-width:thin] [scrollbar-color:theme(colors.slate.300)_transparent]
+                    [scrollbar-width:thin] [scrollbar-color:var(--border)_transparent]
                     [&::-webkit-scrollbar]:w-2
                     [&::-webkit-scrollbar-track]:bg-transparent
-                    [&::-webkit-scrollbar-thumb]:bg-slate-300
+                    [&::-webkit-scrollbar-thumb]:bg-[var(--border)]
                     [&::-webkit-scrollbar-thumb]:rounded-full
                   ">
                     <QuestionPanel
@@ -503,40 +546,37 @@ export default function MultiSkillAttemptPage() {
           </div>
         )}
 
-        {/* LISTENING SECTION - 2-Column Split Layout (like ListeningScreen) */}
+        {/* LISTENING SECTION */}
         {activeTab === "listening" && (
           <div className="flex h-full w-full max-h-full bg-white overflow-hidden">
             <Group orientation="horizontal">
-              {/* LEFT: Video + Passage */}
               <Panel>
                 <div className="h-full flex flex-col overflow-hidden bg-white">
-                  {/* Video Player */}
-                  <div className="shrink-0 h-[280px] overflow-hidden border-b bg-black relative">
+                  <div className="shrink-0 h-[280px] overflow-hidden border-b-[2px] border-[var(--border)] bg-black relative">
                     {listeningAudioUrl.includes("youtube.com") || listeningAudioUrl.includes("youtu.be") ? (
                       <YouTubePlayer src={listeningAudioUrl} />
                     ) : listeningAudioUrl ? (
-                      <div className="h-full flex items-center justify-center bg-slate-900">
+                      <div className="h-full flex items-center justify-center bg-[var(--foreground)]">
                         <audio controls className="w-4/5">
                           <source src={listeningAudioUrl} />
                         </audio>
                       </div>
                     ) : (
-                      <div className="h-full flex items-center justify-center text-slate-400">
-                        <span className="material-symbols-rounded text-4xl">headphones</span>
+                      <div className="h-full flex items-center justify-center text-[var(--text-muted)] bg-[var(--foreground)]">
+                        <span className="text-lg font-bold">Audio Player</span>
                       </div>
                     )}
                   </div>
-                  {/* Passage/Instructions */}
                   <div className="flex-1 min-h-0 overflow-y-auto p-5">
                     {listeningSection?.passageMd && (
-                      <div className="p-5 bg-white border border-slate-200 rounded-lg shadow-sm">
-                        <div className="prose prose-sm max-w-none 
-                          [&_h1]:text-gray-900 [&_h1]:font-bold [&_h1]:text-xl [&_h1]:mb-4
-                          [&_h2]:text-gray-900 [&_h2]:font-bold [&_h2]:text-lg [&_h2]:mt-5 [&_h2]:mb-3
-                          [&_h3]:text-gray-900 [&_h3]:font-semibold [&_h3]:text-base
-                          [&_p]:text-gray-900 [&_p]:leading-relaxed
-                          [&_strong]:text-gray-900 [&_strong]:font-semibold
-                          [&_li]:text-gray-900 [&_li]:my-1
+                      <div className="p-5 bg-white rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)]">
+                        <div className="prose prose-sm max-w-none
+                          [&_h1]:text-[var(--foreground)] [&_h1]:font-bold [&_h1]:text-xl [&_h1]:mb-4
+                          [&_h2]:text-[var(--foreground)] [&_h2]:font-bold [&_h2]:text-lg [&_h2]:mt-5 [&_h2]:mb-3
+                          [&_h3]:text-[var(--foreground)] [&_h3]:font-semibold [&_h3]:text-base
+                          [&_p]:text-[var(--foreground)] [&_p]:leading-relaxed
+                          [&_strong]:text-[var(--foreground)] [&_strong]:font-semibold
+                          [&_li]:text-[var(--foreground)] [&_li]:my-1
                           [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5">
                           <ReactMarkdown>{listeningSection.passageMd}</ReactMarkdown>
                         </div>
@@ -545,21 +585,26 @@ export default function MultiSkillAttemptPage() {
                   </div>
                 </div>
               </Panel>
-              
-              {/* RIGHT: Questions */}
+
               <Panel>
-                <div className="h-full flex flex-col overflow-hidden border-l bg-white shadow-xl z-20">
-                  {/* Header */}
-                  <div className="border-b px-5 py-4 bg-white sticky top-0 z-10 flex justify-between items-center shadow-sm">
+                <div className="h-full flex flex-col overflow-hidden border-l-[2px] border-[var(--border)] bg-white z-20">
+                  <div className="border-b-[2px] border-[var(--border)] px-5 py-4 bg-white sticky top-0 z-10 flex justify-between items-center">
                     <div>
-                      <h2 className="text-lg font-bold text-slate-800">Listening</h2>
-                      <p className="text-xs text-slate-500">
+                      <h2
+                        className="text-lg font-bold text-[var(--foreground)]"
+                        style={{ fontFamily: "var(--font-sans)" }}
+                      >
+                        Listening
+                      </h2>
+                      <p
+                        className="text-xs font-bold text-[var(--text-muted)]"
+                        style={{ fontFamily: "var(--font-mono)" }}
+                      >
                         {listeningUiQuestions.length} questions
                       </p>
                     </div>
                   </div>
-                  {/* Questions */}
-                  <div className="flex-1 overflow-auto p-5 scroll-smooth bg-[#F8FAFC]">
+                  <div className="flex-1 overflow-auto p-5 scroll-smooth bg-[var(--background)]">
                     <QuestionPanel
                       attemptId={attemptId}
                       questions={listeningUiQuestions}
@@ -577,108 +622,102 @@ export default function MultiSkillAttemptPage() {
           </div>
         )}
 
-        {/* WRITING SECTION - Split View (Optional) */}
+        {/* WRITING SECTION */}
         {activeTab === "writing" && (
           <div className="flex h-full overflow-hidden">
-            {/* Left: Prompt (Paper Style) */}
-            <div className="w-1/2 h-full overflow-y-auto bg-slate-100 border-r border-slate-300 p-6">
-              <div className="bg-white border border-slate-200 shadow-sm p-8 min-h-full">
+            <div className="w-1/2 h-full overflow-y-auto bg-[var(--background)] border-r-[2px] border-[var(--border)] p-6">
+              <div className="bg-white rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-8 min-h-full">
                 <div className="flex items-center justify-between mb-6">
-                  <span className="inline-block bg-slate-800 text-white text-[10px] font-bold px-3 py-1 uppercase tracking-[0.2em]">
+                  <span className="font-bold text-xs text-white bg-[var(--foreground)] px-4 py-1.5 rounded-full">
                     Writing Task
                   </span>
-                  <span className="text-xs text-amber-600 font-medium bg-amber-50 px-2 py-1 rounded">
+                  <span className="text-xs font-bold text-[var(--skill-writing)] bg-[var(--skill-writing-light)] px-3 py-1 rounded-full border-[2px] border-[var(--skill-writing-border)]">
                     Optional
                   </span>
                 </div>
-                
+
                 {writingSection?.instructionsMd && (
-                  <div className="mb-6 pb-6 border-b border-slate-100">
-                    <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold mb-2">
+                  <div className="mb-6 pb-6 border-b-[2px] border-[var(--border)]">
+                    <p className="text-xs font-bold text-[var(--text-muted)] mb-2">
                       Instructions
                     </p>
-                    <div className="prose prose-sm max-w-none text-slate-700">
+                    <div className="prose prose-sm max-w-none text-[var(--text-body)]">
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>
                         {writingSection.instructionsMd}
                       </ReactMarkdown>
                     </div>
                   </div>
                 )}
-                
+
                 {writingQuestion && (
-                  <div className="prose prose-lg max-w-none font-serif text-slate-800 leading-loose">
+                  <div className="prose prose-lg max-w-none text-[var(--foreground)] leading-loose">
                     <ReactMarkdown>{writingQuestion.promptMd}</ReactMarkdown>
                   </div>
                 )}
 
                 {!writingQuestion && (
-                  <p className="text-sm text-slate-500">No writing task found.</p>
+                  <p className="text-sm text-[var(--text-muted)]">No writing task found.</p>
                 )}
               </div>
             </div>
 
-            {/* Right: Editor */}
             <div className="w-1/2 flex flex-col bg-white relative">
-              {/* Toolbar */}
-              <div className="shrink-0 h-10 border-b border-slate-200 bg-[#F1F5F9] flex items-center px-3 gap-1">
-                {['undo', 'redo', 'content_cut', 'content_copy'].map(icon => (
-                  <button key={icon} className="p-1.5 hover:bg-slate-200 rounded text-slate-400 cursor-default" disabled>
-                    <span className="material-symbols-rounded text-lg">{icon}</span>
-                  </button>
-                ))}
-                <div className="w-px h-4 bg-slate-300 mx-2"></div>
-                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Word Processor</span>
+              <div className="shrink-0 h-10 border-b-[2px] border-[var(--border)] bg-[var(--background)] flex items-center px-4 gap-2">
+                <span className="text-xs font-bold text-[var(--text-muted)]">Word Processor</span>
               </div>
 
-              {/* Textarea */}
               <textarea
                 value={writingValue}
                 onChange={(e) => handleWritingChange(e.target.value)}
                 placeholder="Start typing your essay here..."
-                className="flex-1 w-full p-8 resize-none outline-none text-lg text-slate-800 font-sans leading-8 selection:bg-blue-100"
+                className="flex-1 w-full p-8 resize-none outline-none text-lg text-[var(--foreground)] leading-8 selection:bg-[var(--primary-light)]"
+                style={{ fontFamily: "var(--font-sans)" }}
                 spellCheck={false}
               />
 
-              {/* Status Bar */}
-              <div className="shrink-0 h-14 border-t border-slate-200 bg-white px-6 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="flex flex-col">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Word Count</span>
-                    <span className={`text-lg font-bold ${writingValue.trim().split(/\s+/).filter(Boolean).length >= 150 ? 'text-emerald-600' : 'text-slate-800'}`}>
-                      {writingValue.trim().split(/\s+/).filter(Boolean).length}
-                    </span>
-                  </div>
+              <div className="shrink-0 h-14 border-t-[2px] border-[var(--border)] bg-white px-6 flex items-center justify-between">
+                <div className="flex flex-col">
+                  <span className="text-xs font-bold text-[var(--text-muted)]">Word Count</span>
+                  <span
+                    className={`text-lg font-extrabold ${writingValue.trim().split(/\s+/).filter(Boolean).length >= 150 ? 'text-[var(--skill-speaking)]' : 'text-[var(--foreground)]'}`}
+                    style={{ fontFamily: "var(--font-mono)" }}
+                  >
+                    {writingValue.trim().split(/\s+/).filter(Boolean).length}
+                  </span>
                 </div>
                 <button
                   onClick={() => setActiveTab("speaking")}
-                  className="text-slate-500 hover:text-slate-700 text-sm font-medium flex items-center gap-1"
+                  className="text-sm font-bold text-[var(--primary)] bg-[var(--primary-light)] px-4 py-2 rounded-full border-[2px] border-[var(--border)] hover:bg-[var(--primary)] hover:text-white hover:border-[var(--primary-dark)] transition-all"
                 >
                   Skip this section
-                  <span className="material-symbols-rounded text-base">arrow_forward</span>
                 </button>
               </div>
             </div>
           </div>
         )}
 
-        {/* SPEAKING SECTION - Modern Recorder (Optional) */}
+        {/* SPEAKING SECTION */}
         {activeTab === "speaking" && (
-          <div className="h-full overflow-y-auto bg-[#F8FAFC] p-8">
+          <div className="h-full overflow-y-auto bg-[var(--background)] p-8">
             <div className="max-w-3xl mx-auto space-y-8">
-              
+
               {/* Topic Card */}
-              <div className="bg-white border border-slate-200 p-8 rounded-xl text-center shadow-sm">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-white rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-8 text-center"
+              >
                 <div className="flex items-center justify-center gap-2 mb-6">
-                  <span className="inline-block bg-slate-800 text-white text-[10px] font-bold px-3 py-1 uppercase tracking-[0.2em]">
+                  <span className="font-bold text-xs text-white bg-[var(--foreground)] px-4 py-1.5 rounded-full">
                     Speaking Task
                   </span>
-                  <span className="text-xs text-amber-600 font-medium bg-amber-50 px-2 py-1 rounded">
+                  <span className="text-xs font-bold text-[var(--skill-writing)] bg-[var(--skill-writing-light)] px-3 py-1 rounded-full border-[2px] border-[var(--skill-writing-border)]">
                     Optional
                   </span>
                 </div>
 
                 {speakingSection?.instructionsMd && (
-                  <div className="text-sm text-slate-600 mb-6">
+                  <div className="text-sm text-[var(--text-body)] mb-6">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
                       {speakingSection.instructionsMd}
                     </ReactMarkdown>
@@ -686,7 +725,7 @@ export default function MultiSkillAttemptPage() {
                 )}
 
                 {speakingQuestion && (
-                  <div className="font-serif text-xl text-slate-800 leading-relaxed">
+                  <div className="text-xl font-bold text-[var(--foreground)] leading-relaxed">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
                       {speakingQuestion.promptMd}
                     </ReactMarkdown>
@@ -694,34 +733,43 @@ export default function MultiSkillAttemptPage() {
                 )}
 
                 {!speakingQuestion && (
-                  <p className="text-sm text-slate-500">No speaking task found.</p>
+                  <p className="text-sm text-[var(--text-muted)]">No speaking task found.</p>
                 )}
-              </div>
+              </motion.div>
 
               {/* Recorder Panel */}
-              <div className="bg-white border border-slate-200 p-8 rounded-xl shadow-sm">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="bg-white rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-8"
+              >
                 {/* Timer & Status */}
                 <div className="flex items-center justify-center gap-6 mb-8">
-                  <div className="text-center">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Duration</span>
-                    <span className="font-mono font-bold text-2xl text-slate-800">{formatTime(seconds)}</span>
+                  <div className="bg-[var(--primary-light)] rounded-[2rem] px-6 py-3 border-[2px] border-[var(--border)] text-center">
+                    <span className="text-xs font-bold text-[var(--text-muted)] block mb-1">Duration</span>
+                    <span
+                      className="font-extrabold text-2xl text-[var(--foreground)]"
+                      style={{ fontFamily: "var(--font-mono)" }}
+                    >
+                      {formatTime(seconds)}
+                    </span>
                   </div>
-                  <div className="w-px h-10 bg-slate-200"></div>
                   <div className="text-center">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Status</span>
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
+                    <span className="text-xs font-bold text-[var(--text-muted)] block mb-1">Status</span>
+                    <span className={`inline-flex items-center px-4 py-1.5 rounded-full text-xs font-bold border-[2px] ${
                       status === "recording"
-                        ? "bg-red-100 text-red-700"
+                        ? "bg-red-50 text-red-700 border-red-200"
                         : status === "stopped"
-                        ? "bg-emerald-100 text-emerald-700"
-                        : "bg-slate-100 text-slate-600"
+                        ? "bg-[var(--skill-speaking-light)] text-[var(--skill-speaking)] border-[var(--skill-speaking-border)]"
+                        : "bg-[var(--background)] text-[var(--text-muted)] border-[var(--border)]"
                     }`}>
-                      <span className={`mr-2 h-2 w-2 rounded-full ${
+                      <span className={`mr-2 h-2.5 w-2.5 rounded-full ${
                         status === "recording"
-                          ? "bg-red-500 animate-pulse"
+                          ? "bg-[var(--destructive)] animate-pulse"
                           : status === "stopped"
-                          ? "bg-emerald-500"
-                          : "bg-slate-400"
+                          ? "bg-[var(--skill-speaking)]"
+                          : "bg-[var(--text-muted)]"
                       }`} />
                       {status === "idle" && "Ready"}
                       {status === "recording" && "Recording..."}
@@ -730,22 +778,20 @@ export default function MultiSkillAttemptPage() {
                   </div>
                 </div>
 
-                {/* Large Microphone Button */}
+                {/* Microphone Button */}
                 <div className="flex justify-center mb-8">
                   <button
                     onClick={isRecording ? handleStopRecording : handleStartRecording}
                     disabled={uploading || speakingSource === "upload"}
-                    className={`w-32 h-32 rounded-full flex items-center justify-center transition-all shadow-lg ${
+                    className={`w-32 h-32 rounded-full flex items-center justify-center transition-all font-extrabold text-3xl text-white ${
                       isRecording
-                        ? "bg-red-500 hover:bg-red-600 animate-pulse"
+                        ? "bg-[var(--destructive)] border-b-[6px] border-red-700 animate-pulse"
                         : uploading || speakingSource === "upload"
-                        ? "bg-slate-200 cursor-not-allowed"
-                        : "bg-[#3B82F6] hover:bg-blue-600"
+                        ? "bg-[var(--border)] cursor-not-allowed border-b-[6px] border-[var(--border)] text-[var(--text-muted)]"
+                        : "bg-[var(--primary)] border-b-[6px] border-[var(--primary-dark)] hover:-translate-y-1 hover:border-b-[8px] active:translate-y-[3px] active:border-b-[3px]"
                     }`}
                   >
-                    <span className="material-symbols-rounded text-5xl text-white">
-                      {isRecording ? "stop" : "mic"}
-                    </span>
+                    {isRecording ? "STOP" : "REC"}
                   </button>
                 </div>
 
@@ -763,31 +809,27 @@ export default function MultiSkillAttemptPage() {
                     }}
                   />
 
-                  {/* Upload Button */}
                   <label
                     htmlFor="speaking-upload"
-                    className={`w-full px-4 py-3 rounded-lg font-semibold text-sm text-center transition flex items-center justify-center gap-2 ${
+                    className={`w-full px-4 py-3 rounded-full font-bold text-sm text-center transition-all flex items-center justify-center gap-2 ${
                       speakingSource === "record" || uploading
-                        ? "bg-slate-100 text-slate-400 cursor-not-allowed"
-                        : "bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 cursor-pointer"
+                        ? "bg-[var(--background)] text-[var(--text-muted)] cursor-not-allowed border-[2px] border-[var(--border)]"
+                        : "bg-white text-[var(--text-body)] border-[2px] border-[var(--border)] hover:border-[var(--primary)] hover:-translate-y-0.5 cursor-pointer"
                     }`}
                   >
-                    <span className="material-symbols-rounded text-base">upload_file</span>
                     Upload mp3 / wav
                   </label>
 
-                  {/* Save Button */}
                   <button
                     type="button"
                     onClick={handleGrade}
                     disabled={!mediaBlobUrl || uploading}
-                    className={`w-full px-4 py-3 rounded-lg font-bold text-sm transition flex items-center justify-center gap-2 ${
+                    className={`w-full px-4 py-3 rounded-full font-bold text-sm transition-all flex items-center justify-center gap-2 ${
                       mediaBlobUrl && !uploading
-                        ? "bg-emerald-500 text-white hover:bg-emerald-600"
-                        : "bg-slate-100 text-slate-400 cursor-not-allowed"
+                        ? "bg-[var(--skill-speaking)] text-white border-b-[4px] border-[var(--skill-speaking)] hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px]"
+                        : "bg-[var(--background)] text-[var(--text-muted)] cursor-not-allowed border-[2px] border-[var(--border)]"
                     }`}
                   >
-                    <span className="material-symbols-rounded text-base">cloud_upload</span>
                     {uploading
                       ? "Uploading..."
                       : mediaBlobUrl
@@ -795,18 +837,17 @@ export default function MultiSkillAttemptPage() {
                       : "Record first to save"}
                   </button>
 
-                  {/* Reset Button */}
                   {(mediaBlobUrl || speakingSource === "upload") && (
                     <button
                       type="button"
                       onClick={resetSpeaking}
-                      className="text-xs text-slate-500 hover:text-red-600 underline"
+                      className="text-xs font-bold text-[var(--destructive)] hover:underline text-center"
                     >
                       Clear audio & start over
                     </button>
                   )}
                 </div>
-              </div>
+              </motion.div>
 
             </div>
           </div>

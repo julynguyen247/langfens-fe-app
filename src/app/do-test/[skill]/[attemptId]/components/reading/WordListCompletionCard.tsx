@@ -92,8 +92,8 @@ const MatchingInformation = memo(function MatchingInformation({
   );
 
   return (
-    <div className="rounded-xl border bg-white p-4">
-      <div className="text-sm leading-relaxed text-slate-800">
+    <div className="rounded-[1.5rem] border-[3px] border-[var(--border)] bg-white p-4 shadow-[0_4px_0_rgba(0,0,0,0.08)]">
+      <div className="text-sm leading-relaxed text-[var(--foreground)]">
         {split?.parts.map((p, i) => {
           if (p.kind === "text") {
             return (
@@ -105,12 +105,12 @@ const MatchingInformation = memo(function MatchingInformation({
 
           return (
             <span key={`b-${i}`} className="inline-flex items-center gap-2">
-              <span className="text-slate-500 font-semibold">{p.text}</span>
+              <span className="text-[var(--text-muted)] font-semibold">{p.text}</span>
               <select
                 value={values[p.blankIndex!] ?? ""}
                 onChange={(e) => handleChange(p.blankIndex!, e.target.value)}
-                className="h-9 rounded-lg border border-slate-300 bg-white px-2 text-sm font-semibold
-                           focus:outline-none focus:ring-2 focus:ring-[#317EFF]"
+                className="h-9 rounded-lg border border-[var(--border)] bg-white px-2 text-sm font-semibold
+                           focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
               >
                 <option value="">—</option>
                 {parsed.choices.map((c) => (
@@ -125,19 +125,19 @@ const MatchingInformation = memo(function MatchingInformation({
       </div>
 
       <div className="mt-3">
-        <div className="text-xs font-semibold text-slate-600 mb-2">
+        <div className="text-xs font-semibold text-[var(--text-body)] mb-2">
           Word List
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {parsed.choices.map((c) => (
             <div
               key={`wl-${c.value}`}
-              className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1"
+              className="flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--background)] px-2 py-1"
             >
-              <span className="w-6 text-center font-bold text-slate-700">
+              <span className="w-6 text-center font-bold text-[var(--text-body)]">
                 {c.value}.
               </span>
-              <span className="text-sm text-slate-800">{c.label}</span>
+              <span className="text-sm text-[var(--foreground)]">{c.label}</span>
             </div>
           ))}
         </div>

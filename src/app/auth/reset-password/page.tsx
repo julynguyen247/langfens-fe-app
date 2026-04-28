@@ -2,11 +2,10 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import Image from "next/image";
 import Link from "next/link";
-import { FiArrowRight } from "react-icons/fi";
 import { forgotPassword } from "@/utils/api";
+import PenguinLottie from "@/components/PenguinLottie";
+import { motion } from "framer-motion";
 
 export default function ResetPassword() {
   const router = useRouter();
@@ -33,9 +32,7 @@ export default function ResetPassword() {
     try {
       setLoading(true);
       await forgotPassword(emailTrim);
-      router.push(
-        `/auth/verify-forgot-password?email=${encodeURIComponent(emailTrim)}`
-      );
+      router.push(`/auth/verify-forgot-password?email=${encodeURIComponent(emailTrim)}`);
     } catch (e: any) {
       const msg =
         e?.response?.data?.message ||
@@ -48,70 +45,105 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 px-4">
-      <div className="w-full max-w-md bg-white shadow-md rounded-2xl p-8 flex flex-col gap-6">
-        <div className="flex flex-col items-center gap-2">
-          <Image
-            src="/langfens.svg"
-            alt="Logo"
-            width={48}
-            height={48}
-            className="mb-1"
-          />
-          <h1 className="text-2xl font-bold text-gray-900">Reset Password</h1>
-          <p className="text-sm text-gray-500 text-center">
-            Nhập email của bạn, chúng tôi sẽ gửi mã OTP để đặt lại mật khẩu.
-          </p>
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <label htmlFor="email" className="text-sm font-medium text-gray-700">
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            placeholder="name@email.com"
-            value={email}
-            onChange={(e) => {
-              setError("");
-              setEmail(e.target.value);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") submit();
-            }}
-            className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-[#FACC15] focus:ring-2 focus:ring-[#FACC15]/40 outline-none text-gray-800 placeholder:text-gray-400 transition"
-          />
-          {error ? <p className="text-sm text-red-600">{error}</p> : null}
-        </div>
-
-        <Button
-          className="w-full mt-2"
-          onClick={submit}
-          disabled={!canSubmit}
+    <div className="min-h-screen flex flex-col lg:flex-row">
+      {/* Left Panel - Branding */}
+      <div className="lg:w-[40%] bg-[var(--primary-light)] flex flex-col items-center justify-center py-8 px-6 lg:py-0 lg:min-h-screen">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="flex flex-col items-center"
         >
-          {loading ? "Đang gửi..." : "Gửi mã OTP"}
-        </Button>
-
-        <div className="relative flex items-center justify-center">
-          <div className="w-full border-t border-gray-200"></div>
-          <span className="absolute bg-white px-2 text-xs text-gray-400">
-            hoặc
-          </span>
-        </div>
-
-        <div className="text-center">
-          <p className="text-sm text-gray-600">
-            Nhớ mật khẩu rồi?{" "}
-            <Link
-              href="/auth/login"
-              className="inline-flex items-center gap-1 text-[#1E40AF] font-medium hover:underline transition"
-            >
-              Quay lại đăng nhập
-              <FiArrowRight className="w-4 h-4" />
-            </Link>
+          <div className="w-20 h-20 lg:w-32 lg:h-32">
+            <PenguinLottie />
+          </div>
+          <h2
+            className="text-2xl lg:text-3xl font-bold text-[var(--primary-dark)] mt-4 text-center"
+            style={{ fontFamily: "var(--font-heading)" }}
+          >
+            Langfens
+          </h2>
+          <p className="text-sm lg:text-base text-[var(--text-body)] mt-2 text-center max-w-xs">
+            Đừng lo, chúng tôi sẽ giúp bạn lấy lại mật khẩu
           </p>
-        </div>
+        </motion.div>
+      </div>
+
+      {/* Right Panel - Form */}
+      <div className="lg:w-[60%] bg-white flex items-center justify-center px-4 py-10 lg:py-0 lg:min-h-screen">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="w-full max-w-md rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-8 flex flex-col gap-6"
+        >
+          <div className="flex flex-col items-center gap-2">
+            <h1
+              className="text-2xl font-bold text-[var(--primary)]"
+              style={{ fontFamily: "var(--font-sans)" }}
+            >
+              Reset Password
+            </h1>
+            <p className="text-sm text-[var(--text-muted)] text-center">
+              Nhập email của bạn, chúng tôi sẽ gửi mã OTP để đặt lại mật khẩu.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label
+              htmlFor="email"
+              className="text-sm font-medium text-[var(--text-body)] mb-1 block"
+            >
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              placeholder="name@email.com"
+              value={email}
+              onChange={(e) => {
+                setError("");
+                setEmail(e.target.value);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") submit();
+              }}
+              className="w-full px-4 py-3 rounded-xl border-[3px] border-[var(--border)] border-b-[5px] focus:border-[var(--primary)] focus:outline-none transition-colors bg-[var(--surface)] text-[var(--text-heading)]"
+            />
+            {error && (
+              <div className="text-[var(--destructive)] text-sm font-medium mt-2 bg-[var(--destructive)]/10 border-[2px] border-[var(--destructive)]/20 rounded-xl px-4 py-2.5">
+                {error}
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={submit}
+            disabled={!canSubmit}
+            className="w-full py-3 rounded-full font-semibold text-white bg-[var(--primary)] border-b-[4px] border-[var(--primary-dark)] hover:bg-[var(--primary-hover)] hover:-translate-y-0.5 active:translate-y-[2px] active:border-b-[2px] transition-all focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none"
+          >
+            {loading ? "Đang gửi..." : "Gửi mã OTP"}
+          </button>
+
+          <div className="relative flex items-center justify-center">
+            <div className="w-full border-t-[2px] border-[var(--border)]"></div>
+            <span className="absolute bg-white px-3 text-xs text-[var(--text-muted)] font-medium">
+              hoặc
+            </span>
+          </div>
+
+          <div className="text-center">
+            <p className="text-sm text-[var(--text-body)]">
+              Nhớ mật khẩu rồi?{" "}
+              <Link
+                href="/auth/login"
+                className="text-[var(--primary)] font-bold hover:underline transition-colors"
+              >
+                Quay lại đăng nhập
+              </Link>
+            </p>
+          </div>
+        </motion.div>
       </div>
     </div>
   );

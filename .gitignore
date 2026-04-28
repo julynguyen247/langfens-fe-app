@@ -40,7 +40,7 @@ Thumbs.db
 # testing
 coverage/
 .playwright-mcp/
-
+.mcp**
 # misc
 *.png
 *.jpg
@@ -48,3 +48,6 @@ coverage/
 !public/**/*.png
 !public/**/*.jpg
 !public/**/*.jpeg
+playwright-report/
+test-results/
+tests/e2e/screenshots/
