@@ -9,6 +9,7 @@ import { ConfettiTrigger } from "./ConfettiTrigger";
 import { CriterionCard } from "./CriterionCard";
 import { WritingComparativeTab } from './writing/WritingComparativeTab';
 import { GrammarBatchView } from './grammar/GrammarBatchView';
+import { useGrammarAnalysis } from '@/hooks/useGrammarAnalysis';
 import type { AttemptResult, WritingDetail } from "../types";
 
 type Props = {
@@ -24,7 +25,11 @@ export function WritingResultView({
 }: Props) {
   const router = useRouter();
   const [showModel, setShowModel] = useState(false);
-  const [writingTab, setWritingTab] = useState<'grading' | 'comparative' | 'grammar'>('grading');
+  const [writingTab, setWritingTab] = useState<'comparative' | 'grammar'>('comparative');
+  const grammarAnalysis = useGrammarAnalysis(
+    writingDetail.essayRaw,
+    writingTab === 'grammar'
+  );
 
   const strengths: string[] = [];
   const weaknesses: string[] = [];
@@ -380,7 +385,7 @@ export function WritingResultView({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 1.0, ease: 'easeOut' }}
         >
-          {(['grading', 'comparative', 'grammar'] as const).map((tab) => (
+          {(['comparative', 'grammar'] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setWritingTab(tab)}
@@ -391,7 +396,7 @@ export function WritingResultView({
               }`}
               style={{ fontFamily: 'var(--font-sans)' }}
             >
-              {tab === 'grading' ? 'Grading' : tab === 'comparative' ? 'Comparative' : 'Grammar'}
+              {tab === 'comparative' ? 'Comparative Analysis' : 'Grammar Analysis'}
             </button>
           ))}
         </motion.div>
@@ -402,13 +407,13 @@ export function WritingResultView({
         )}
         {writingTab === 'grammar' && (
           <GrammarBatchView
-            results={[]}
-            errorTexts={[]}
-            isLoading={false}
-            isError={false}
-            failedCount={0}
-            totalCount={0}
-            onRetry={() => {}}
+            results={grammarAnalysis.results}
+            errorTexts={grammarAnalysis.errorTexts}
+            isLoading={grammarAnalysis.isLoading}
+            isError={grammarAnalysis.isError}
+            failedCount={grammarAnalysis.failedCount}
+            totalCount={grammarAnalysis.totalCount}
+            onRetry={grammarAnalysis.refetch}
           />
         )}
 

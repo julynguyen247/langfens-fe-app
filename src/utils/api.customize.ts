@@ -13,7 +13,8 @@ type ServiceKey =
   | "analytics"
   | "notification"
   | "studyplan"
-  | "course";
+  | "course"
+  | "ai";
 
 const GATEWAY_BASE = process.env.NEXT_PUBLIC_GATEWAY_URL || "";
 const buildBase = (suffix: string) =>
@@ -32,6 +33,7 @@ const BASE_URL: Record<ServiceKey, string> = {
   notification: buildBase("/api-notification"),
   studyplan: buildBase("/api-study-plan"),
   course: buildBase("/api-course"),
+  ai: buildBase("/api-ai"),
 };
 
 const getToken = () => getCookieToken();
@@ -129,6 +131,7 @@ export const apisAnalytics = apis.analytics;
 export const apisNotification = apis.notification;
 export const apisStudyplan = apis.studyplan;
 export const apisCourse = apis.course;
+export const apisAi = apis.ai;
 const api = apisAuth;
 export default api;
 
