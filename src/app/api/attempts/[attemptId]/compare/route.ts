@@ -20,6 +20,14 @@ export async function GET(
     );
   }
 
+  const authHeader = request.headers.get('authorization');
+  if (!authHeader) {
+    return NextResponse.json(
+      { error: 'Authentication required' },
+      { status: 401 }
+    );
+  }
+
   const gatewayUrl = process.env.NEXT_PUBLIC_GATEWAY_URL || 'http://localhost:5000';
   const backendUrl = `${gatewayUrl}/api-writing/writing/${attemptId}/comparison`;
 
@@ -28,8 +36,20 @@ export async function GET(
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        Authorization: authHeader,
       },
     });
+
+    if (response.status === 204) {
+      return new NextResponse(null, { status: 204 });
+    }
+
+    if (response.status === 401 || response.status === 403) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: response.status }
+      );
+    }
 
     if (response.status === 404) {
       return NextResponse.json(
@@ -54,7 +74,6 @@ export async function GET(
 
     const data: AiCompareResponse = await response.json();
 
-    // Validate the response structure
     if (!data || typeof data !== 'object') {
       return NextResponse.json(
         { error: 'Invalid response format from backend' },
@@ -62,7 +81,6 @@ export async function GET(
       );
     }
 
-    // Ensure required fields exist with defaults
     const validatedData: AiCompareResponse = {
       overall_analysis: data.overall_analysis || '',
       vocabulary_feedback: data.vocabulary_feedback || '',
