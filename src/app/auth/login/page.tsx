@@ -4,6 +4,7 @@ import GoogleLoginButton from "@/app/components/GoogleButton";
 import { useLoadingStore } from "@/app/store/loading";
 import PenguinLottie from "@/components/PenguinLottie";
 import { login } from "@/utils/api";
+import { setTokenCookie } from "@/utils/cookie";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -42,7 +43,10 @@ export default function Login() {
 
     try {
       const res = await login(email, password);
-      if (res && res.data) {
+      const token = res?.data?.data;
+      if (typeof token === "string" && token.length > 0) {
+        localStorage.setItem("access_token", token);
+        setTokenCookie(token);
         router.replace("/home");
         return;
       }

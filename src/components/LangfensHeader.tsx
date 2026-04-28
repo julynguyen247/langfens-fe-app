@@ -78,6 +78,7 @@ export default function LangfensHeader() {
     try {
       setRouteLoading(true);
       await logout();
+      localStorage.removeItem("access_token");
       removeTokenCookie();
       router.replace("/auth/login");
     } catch {
