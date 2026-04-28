@@ -1,4 +1,6 @@
+import axios from 'axios';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { apisWriting } from '@/utils/api.customize';
 import type { AiCompareResponse } from '@/types/writing';
 
 const POLL_INTERVAL_MS = 2000;
@@ -11,11 +13,6 @@ interface UseWritingCompareResult {
   isError: boolean;
   isTimeout: boolean;
   refetch: () => void;
-}
-
-function readAuthToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return window.localStorage.getItem('accessToken');
 }
 
 export function useWritingCompare(attemptId: string): UseWritingCompareResult {
@@ -37,20 +34,22 @@ export function useWritingCompare(attemptId: string): UseWritingCompareResult {
 
   const fetchOnce = useCallback(async (): Promise<'ready' | 'pending' | 'error'> => {
     if (!attemptId) return 'error';
-    const token = readAuthToken();
-    const headers: Record<string, string> = {};
-    if (token) headers.Authorization = `Bearer ${token}`;
     try {
-      const response = await fetch(`/api/attempts/${attemptId}/compare`, {
-        credentials: 'include',
-        headers,
-      });
+      const response = await apisWriting.get<AiCompareResponse>(
+        `/writing/${attemptId}/comparison`,
+        {
+          // Allow both 200 (ready) and 204 (still grading) without throwing.
+          validateStatus: (s) => s === 200 || s === 204,
+        }
+      );
       if (response.status === 204) return 'pending';
-      if (!response.ok) return 'error';
-      const result: AiCompareResponse = await response.json();
-      setData(result);
+      setData(response.data);
       return 'ready';
-    } catch {
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        // 401 should be auto-retried by the interceptor; reaching here means refresh failed.
+        return 'error';
+      }
       return 'error';
     }
   }, [attemptId]);
