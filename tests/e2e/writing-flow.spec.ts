@@ -35,6 +35,11 @@ test.describe("Writing E2E — golden path", () => {
     // Land on /attempts/{attemptId}
     await page.waitForURL(/\/attempts\/[a-f0-9-]+/, { timeout: 30_000 });
 
+    // After our refactor: only Comparative + Grammar tabs remain (no Grading).
+    await expect(
+      page.getByRole('button', { name: /^grading$/i })
+    ).toHaveCount(0);
+
     // Wait for band score to appear.
     await expect(page.getByText(/band\s*\d/i).first()).toBeVisible({ timeout: 60_000 });
 
