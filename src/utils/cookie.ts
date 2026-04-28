@@ -19,7 +19,8 @@ export function setTokenCookie(token: string | null): void {
   if (typeof document === "undefined") return;
   if (token) {
     // Note: HttpOnly must be set by server; Secure and SameSite can be set here
-    document.cookie = `${TOKEN_NAME}=${encodeURIComponent(token)}; path=/; SameSite=Strict; secure`;
+    const secure = window.location.protocol === "https:" ? "; secure" : "";
+    document.cookie = `${TOKEN_NAME}=${encodeURIComponent(token)}; path=/; SameSite=Strict${secure}`;
   } else {
     removeTokenCookie();
   }
@@ -30,5 +31,6 @@ export function setTokenCookie(token: string | null): void {
  */
 export function removeTokenCookie(): void {
   if (typeof document === "undefined") return;
-  document.cookie = `${TOKEN_NAME}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict; secure`;
+  const secure = window.location.protocol === "https:" ? "; secure" : "";
+  document.cookie = `${TOKEN_NAME}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict${secure}`;
 }
