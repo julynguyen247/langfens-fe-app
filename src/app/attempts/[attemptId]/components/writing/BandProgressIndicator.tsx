@@ -32,7 +32,7 @@ export function BandProgressIndicator({ currentBand, targetBand }: Props) {
           >
             {currentBand.toFixed(1)}
           </span>
-          <span className="text-sm text-[var(--text-muted)]">\u2192</span>
+          <span className="text-sm text-[var(--text-muted)]">→</span>
           <span
             className="text-2xl font-bold text-emerald-600"
             style={{ fontFamily: 'var(--font-mono)' }}
