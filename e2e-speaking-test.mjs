@@ -81,42 +81,72 @@ async function run() {
   // Also try direct /do-test/speaking path
   if (!speakingExamUrl) {
     console.log('\n3. Checking if /do-test/speaking route exists...');
-    const page2 = await ctx.newPage();
-    await page2.goto(`${BASE}/auth/login`, { waitUntil: 'networkidle' });
-    await page2.fill('#email', USER);
-    await page2.fill('#password', PASS);
-    await page2.locator('button', { hasText: 'Đăng nhập' }).click();
-    await page2.waitForURL(url => !url.pathname.includes('/auth/login'), { timeout: 15000 }).catch(() => {});
 
-    // Try direct speaking exam list endpoint
-    const apiResp = await page2.request.get(`${BASE}/api/speaking/exams`).catch(e => null);
-    if (apiResp) {
-      console.log('   /api/speaking/exams status:', apiResp.status());
-      if (apiResp.ok()) {
-        const json = await apiResp.json().catch(() => null);
+    // Use evaluate/fetch to make API calls through browser context (cookies are sent)
+    const examsResp = await page.evaluate(async (gatewayUrl) => {
+      const r = await fetch(gatewayUrl);
+      return { status: r.status, body: await r.text() };
+    }, 'http://localhost:5000/api-speaking/exams').catch(e => ({ status: 'error', body: e.message }));
+    if (examsResp) {
+      console.log('   /api-speaking/exams status:', examsResp.status);
+      if (examsResp.status === 200) {
+        const json = JSON.parse(examsResp.body);
         console.log('   Exams:', JSON.stringify(json, null, 2)?.substring(0, 500));
+
+        // Pick first exam and construct do-test URL
+        if (json?.data?.length > 0) {
+          const examId = json.data[0].id;
+          speakingExamUrl = `/do-test/speaking/${examId}`;
+          console.log('   Found speaking exam ID:', examId);
+        }
       }
     }
 
     // Try to get a speaking attempt from history
-    const histResp = await page2.request.get(`${BASE}/api/speaking/history`).catch(e => null);
-    if (histResp && histResp.ok()) {
-      const histJson = await histResp.json().catch(() => null);
-      console.log('   Speaking history:', JSON.stringify(histJson, null, 2)?.substring(0, 500));
+    const histResp = await page.evaluate(async (gatewayUrl) => {
+      const r = await fetch(gatewayUrl);
+      return { status: r.status, body: await r.text() };
+    }, 'http://localhost:5000/api-speaking/history').catch(e => ({ status: 'error', body: e.message }));
+    if (histResp && histResp.status === 200) {
+      console.log('   Speaking history:', JSON.stringify(JSON.parse(histResp.body), null, 2)?.substring(0, 500));
     }
-
-    await page2.close();
   }
 
   if (speakingExamUrl) {
-    console.log('\n4. Navigating to speaking exam:', speakingExamUrl);
-    await page.goto(`${BASE}${speakingExamUrl}`, { waitUntil: 'networkidle' });
+    console.log('\n4. Navigating to speaking exam start page:', speakingExamUrl);
+    // Navigate to /start page first, which calls startSpeakingExam and sets attempt in store
+    const startPageUrl = speakingExamUrl.replace('/do-test/speaking/', '/do-test/speaking/start/');
+    console.log('   Start page URL:', startPageUrl);
+    await page.goto(`${BASE}${startPageUrl}`, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(2000);
+    console.log('   Start page URL:', page.url());
+
+    // Click Begin Test to trigger startSpeakingExam API call + store update + redirect
+    const beginBtn = page.locator('button', { hasText: 'Begin Test' }).first();
+    const beginBtnCount = await beginBtn.count();
+    console.log('   Begin Test button present:', beginBtnCount > 0);
+
+    if (beginBtnCount > 0) {
+      console.log('   Clicking Begin Test...');
+      await beginBtn.click();
+      // Wait for redirect to exam page (not /start/)
+      try {
+        await page.waitForURL(url => !url.pathname.includes('/start/'), { timeout: 15000 });
+      } catch {
+        console.log('   Redirect timeout, current URL:', page.url());
+      }
+      console.log('   After Begin Test URL:', page.url());
+    }
+
+    // Hard reload to ensure fresh JS with all fixes
+    console.log('   Hard reloading to ensure fresh JS...');
+    await page.reload({ waitUntil: 'networkidle' });
     await page.waitForTimeout(3000);
 
+    // Now check if we're at the exam page with proper UI
+    console.log('\n5. At speaking exam page:', page.url());
     const body = await page.textContent('body');
     const url = page.url();
-    console.log('   At URL:', url);
-
     const isSpeaking = url.includes('speaking') ||
       body.includes('Recording') ||
       body.includes('IELTS Speaking') ||
@@ -132,30 +162,32 @@ async function run() {
   } else {
     console.log('\n4. No speaking exam found. Testing API directly...');
 
-    // Use API directly to create/start a speaking exam
-    const page2 = await ctx.newPage();
-    await page2.goto(`${BASE}/auth/login`, { waitUntil: 'networkidle' });
-    await page2.fill('#email', USER);
-    await page2.fill('#password', PASS);
-    await page2.locator('button', { hasText: 'Đăng nhập' }).click();
-    await page2.waitForURL(url => !url.pathname.includes('/auth/login'), { timeout: 15000 }).catch(() => {});
-
-    // Get exams list
-    const examsResp = await page2.request.get(`${BASE}/api/speaking/exams`).catch(() => null);
-    if (examsResp && examsResp.ok()) {
-      const examsData = await examsResp.json().catch(() => null);
+    // Use page.evaluate to call API with browser cookies
+    const examsResp = await page.evaluate(async (gatewayUrl) => {
+      const r = await fetch(gatewayUrl);
+      return { status: r.status, body: await r.text() };
+    }, 'http://localhost:5000/api-speaking/exams').catch(() => null);
+    if (examsResp && examsResp.status === 200) {
+      const examsData = JSON.parse(examsResp.body);
       console.log('   Available speaking exams:', JSON.stringify(examsData, null, 2)?.substring(0, 800));
-    }
 
-    // Try to start an exam directly via POST
-    const startResp = await page2.request.post(`${BASE}/api/speaking/start`, {
-      data: { examId: 'some-exam-id' }
-    }).catch(() => null);
-    if (startResp) {
-      console.log('   Start exam response status:', startResp.status());
+      // Pick first exam and start it
+      if (examsData?.data?.length > 0) {
+        const examId = examsData.data[0].id;
+        const startResp = await page.evaluate(async (url) => {
+          const r = await fetch(url, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ examId })
+          });
+          return { status: r.status, body: await r.text() };
+        }, `${BASE}/api-speaking/start/${examId}`).catch(() => null);
+        if (startResp) {
+          console.log('   Start exam response status:', startResp.status);
+        }
+      }
     }
-
-    await page2.close();
   }
 
   console.log('\n=== Console errors (first 10) ===');
@@ -203,9 +235,18 @@ async function testSpeakingRecordingFlow(page) {
     console.log('   Stop button visible after Start:', stopNowVisible);
 
     if (stopNowVisible) {
-      console.log('6. Clicking Stop...');
-      await page.locator('button', { hasText: 'Stop' }).first().click();
-      await page.waitForTimeout(1000);
+      // Check if Stop button is enabled (headless may not have mic access)
+      const stopEnabled = await page.locator('button', { hasText: 'Stop' }).isEnabled().catch(() => false);
+      console.log('   Stop button enabled:', stopEnabled);
+
+      if (stopEnabled) {
+        console.log('6. Clicking Stop...');
+        await page.locator('button', { hasText: 'Stop' }).first().click();
+        await page.waitForTimeout(1000);
+      } else {
+        console.log('6. Skipping Stop click - headless has no microphone access');
+        console.log('   (In a real browser with mic permission, Stop would be clickable)');
+      }
     }
 
     // Check if Grade button is now enabled

@@ -284,7 +284,7 @@ export async function audioSubmitFromUrl(mediaBlobUrl: string) {
   const form = new FormData();
   form.append("request", file);
 
-  const resp = await apisSpeaking.post("/speaking/transcript", form, {
+  const resp = await apisSpeaking.post("/transcript", form, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
@@ -332,7 +332,7 @@ export async function getWritingExamById(examId: string) {
   return res;
 }
 export async function getSpeakingExams() {
-  const res = await apisSpeaking.get("/speaking/exams");
+  const res = await apisSpeaking.get("/exams");
   return res;
 }
 export async function startWritingExam(examId: string) {
@@ -341,7 +341,7 @@ export async function startWritingExam(examId: string) {
   return res;
 }
 export async function startSpeakingExam(examId: string) {
-  const res = await apisSpeaking.post(`/speaking/start/${examId}`);
+  const res = await apisSpeaking.post(`/start/${examId}`);
   return res;
 }
 export async function getWritingExam(examId: string) {
@@ -349,7 +349,7 @@ export async function getWritingExam(examId: string) {
   return res;
 }
 export async function getSpeakingExamsById(examId: string) {
-  const res = await apisSpeaking.get(`/speaking/exams/${examId}`);
+  const res = await apisSpeaking.get(`/exams/${examId}`);
   return res;
 }
 export async function gradeSpeaking(params: {
@@ -368,7 +368,7 @@ export async function gradeSpeaking(params: {
 
   formData.append("speech", speech, filename);
 
-  const res = await apisSpeaking.post("/speaking/grade", formData, {
+  const res = await apisSpeaking.post("/grade", formData, {
     headers: {
       "Content-Type": undefined,
     },
@@ -399,7 +399,7 @@ export async function getWritingHistory() {
   return res;
 }
 export async function getSpeakingHistory() {
-  const res = await apisSpeaking.get("/speaking/history");
+  const res = await apisSpeaking.get("/history");
   return res;
 }
 
@@ -408,7 +408,7 @@ export async function getWritingHistoryById(submissionId: string) {
   return res;
 }
 export async function getSpeakingHistoryById(submissionId: string) {
-  const res = await apisSpeaking.get(`/speaking/history/${submissionId}`);
+  const res = await apisSpeaking.get(`/history/${submissionId}`);
   return res;
 }
 export async function suggestDictionary(word: string, pos?: string) {

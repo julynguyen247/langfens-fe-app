@@ -91,7 +91,9 @@ export default function StartAttemptPage() {
       }
 
       if (skill === "speaking") {
-        await startSpeakingExam(examId);
+        const res = await startSpeakingExam(examId);
+        const payload = res?.data?.data ?? res?.data;
+        setAttempt({ ...payload, attemptId: examId });
         router.replace(`/do-test/${skill}/${examId}`);
         return;
       }
