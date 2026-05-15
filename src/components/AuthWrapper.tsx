@@ -12,7 +12,7 @@ export default function AuthWrapper({ children }: AuthWrapperProps) {
   const [checked, setChecked] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem("access_token");
+    const token = document.cookie.match(/(^| )access_token=([^;]+)/)?.[2];
 
     if (!token) {
       router.replace("/auth/login");
