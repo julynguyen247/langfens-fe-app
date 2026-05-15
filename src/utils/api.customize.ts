@@ -64,6 +64,10 @@ async function refreshToken(): Promise<string | null> {
     })
     .catch(() => {
       setToken(null);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('access_token');
+        window.location.href = '/auth/login';
+      }
       return null;
     })
     .finally(() => {

@@ -88,7 +88,7 @@ export function useWritingCompare(attemptId: string): UseWritingCompareResult {
   }, [attemptId, fetchOnce, stopPolling]);
 
   useEffect(() => {
-    if (data) return; // already loaded — skip refetch on remount
+    setData(null);
     start();
     return stopPolling;
     // eslint-disable-next-line react-hooks/exhaustive-deps

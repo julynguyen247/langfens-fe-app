@@ -668,6 +668,7 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
   const [grading, setGrading] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const gradingRef = useRef(false);
   const [audioSource, setAudioSource] = useState<AudioSource>("none");
 
   const isRecording = status === "recording";
@@ -742,6 +743,8 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
       return;
     }
 
+    if (gradingRef.current) return;
+    gradingRef.current = true;
     try {
       setGrading(true);
       setLoading(true);
@@ -766,6 +769,7 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
     } finally {
       setGrading(false);
       setLoading(false);
+      gradingRef.current = false;
     }
   };
 
@@ -1090,6 +1094,7 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
   const [wordCount, setWordCount] = useState(0);
   const [seconds, setSeconds] = useState(0);
   const [grading, setGrading] = useState(false);
+  const submittingRef = useRef(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
@@ -1148,6 +1153,8 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
       return;
     }
 
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     try {
       setGrading(true);
       setLoading(true);
@@ -1165,6 +1172,7 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
     } finally {
       setGrading(false);
       setLoading(false);
+      submittingRef.current = false;
     }
   };
 

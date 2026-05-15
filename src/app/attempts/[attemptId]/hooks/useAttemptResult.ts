@@ -27,6 +27,7 @@ export function useAttemptResult(attemptId: string, source: PageSource) {
     null
   );
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [activeSkill, setActiveSkill] = useState<
     "READING" | "LISTENING" | "WRITING" | "SPEAKING"
@@ -251,11 +252,12 @@ export function useAttemptResult(attemptId: string, source: PageSource) {
         }
       } catch (e) {
         console.error("error:", e);
+        setError("Failed to load results. Please try again.");
       } finally {
         setLoading(false);
       }
     })();
   }, [attemptId, source]);
 
-  return { attemptData, writingDetail, speakingDetail, loading, activeSkill, setActiveSkill };
+  return { attemptData, writingDetail, speakingDetail, loading, activeSkill, setActiveSkill, error };
 }

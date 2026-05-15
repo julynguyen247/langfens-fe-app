@@ -45,7 +45,6 @@ export default function Login() {
       const res = await login(email, password);
       const token = res?.data?.data;
       if (typeof token === "string" && token.length > 0) {
-        localStorage.setItem("access_token", token);
         setTokenCookie(token);
         router.replace("/home");
         return;

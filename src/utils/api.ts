@@ -78,9 +78,7 @@ export async function verifyEmailForgot(
   otp: string,
   newPassword: string
 ) {
-  return apisAuth.post("/auth/confirm-otp-reset-password", null, {
-    params: { email, otp, newPassword },
-  });
+  return apisAuth.post("/auth/confirm-otp-reset-password", { email, otp, newPassword });
 }
 
 export async function startAttempt(examId: string) {
