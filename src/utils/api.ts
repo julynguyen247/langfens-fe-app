@@ -313,7 +313,7 @@ export async function gradeWriting(
   answer: string,
   timeSpentSeconds: number
 ) {
-  const res = await apisWriting.post(`/writing/grade`, {
+  const res = await apisWriting.post(`/grade`, {
     examId,
     answer,
     timeSpentSeconds,
@@ -322,11 +322,11 @@ export async function gradeWriting(
   return res;
 }
 export async function getWritingExams() {
-  const res = await apisWriting.get("/writing/exams");
+  const res = await apisWriting.get("/exams");
   return res;
 }
 export async function getWritingExamById(examId: string) {
-  const res = await apisWriting.get(`/writing/exams/${examId}`);
+  const res = await apisWriting.get(`/exams/${examId}`);
   return res;
 }
 export async function getSpeakingExams() {
@@ -334,7 +334,7 @@ export async function getSpeakingExams() {
   return res;
 }
 export async function startWritingExam(examId: string) {
-  const res = await apisWriting.post(`/writing/start/${examId}`, {});
+  const res = await apisWriting.post(`/start/${examId}`, {});
 
   return res;
 }
@@ -343,7 +343,7 @@ export async function startSpeakingExam(examId: string) {
   return res;
 }
 export async function getWritingExam(examId: string) {
-  const res = await apisWriting.get(`/writing/exams/${examId}`);
+  const res = await apisWriting.get(`/exams/${examId}`);
   return res;
 }
 export async function getSpeakingExamsById(examId: string) {
@@ -393,7 +393,7 @@ export async function getPlacementStatus() {
   return res;
 }
 export async function getWritingHistory() {
-  const res = await apisWriting.get("/writing/history");
+  const res = await apisWriting.get("/history");
   return res;
 }
 export async function getSpeakingHistory() {
@@ -402,7 +402,7 @@ export async function getSpeakingHistory() {
 }
 
 export async function getWritingHistoryById(submissionId: string) {
-  const res = await apisWriting.get(`/writing/history/${submissionId}`);
+  const res = await apisWriting.get(`/history/${submissionId}`);
   return res;
 }
 export async function getSpeakingHistoryById(submissionId: string) {
