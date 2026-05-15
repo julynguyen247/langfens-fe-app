@@ -150,7 +150,7 @@ export default function GroupPage() {
     return items.filter((it: any) => detectSkillFromSlug(it.slug) === groupId);
   }, [items, groupId, itemParam]);
 
-  if (!user?.id) {
+  if (!user?.id && !loading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="bg-white border-[3px] border-[var(--border)] rounded-[2rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-8 text-center max-w-sm">
@@ -206,7 +206,7 @@ export default function GroupPage() {
       <PracticeBank
         items={filtered}
         pageSize={12}
-        userId={user.id}
+        userId={user?.id ?? ""}
         skill={groupId}
         onQuestionTypesChange={handleQuestionTypesChange}
         loading={loading}
