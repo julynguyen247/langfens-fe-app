@@ -100,7 +100,7 @@ export default function ResultReviewScreen({
         <div className="flex items-center gap-6">
           <h2
             className="text-lg font-semibold text-[var(--foreground)]"
-            style={{ fontFamily: "var(--font-sans)" }}
+            style={{ fontFamily: "var(--font-heading)" }}
           >
             {skill.charAt(0) + skill.slice(1).toLowerCase()} Review
           </h2>
@@ -139,7 +139,7 @@ export default function ResultReviewScreen({
               <div className="border-b-[3px] border-[var(--border)] px-5 py-4 bg-white sticky top-0 z-10">
                 <h2
                   className="text-lg font-semibold text-[var(--foreground)]"
-                  style={{ fontFamily: "var(--font-sans)" }}
+                  style={{ fontFamily: "var(--font-heading)" }}
                 >
                   Questions (Review Mode)
                 </h2>

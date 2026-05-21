@@ -69,7 +69,7 @@ export default function LeaderboardPage() {
           <div>
             <h1
               className="text-2xl font-bold text-[var(--foreground)]"
-              style={{ fontFamily: "var(--font-sans)" }}
+              style={{ fontFamily: "var(--font-heading)" }}
             >
               Leaderboard
             </h1>
@@ -106,7 +106,7 @@ export default function LeaderboardPage() {
           <div className="p-5 border-b-[2px] border-[var(--border)]">
             <h2
               className="font-bold text-[var(--foreground)]"
-              style={{ fontFamily: "var(--font-sans)" }}
+              style={{ fontFamily: "var(--font-heading)" }}
             >
               Full rankings
             </h2>
@@ -148,22 +148,22 @@ function PodiumItem({
   const podiumConfig = {
     1: {
       height: "h-32",
-      bg: "bg-amber-400",
-      borderColor: "border-amber-500",
+      bg: "bg-[var(--podium-gold)]",
+      borderColor: "border-[var(--podium-gold-border)]",
       size: "w-20 h-20",
       label: "1st",
     },
     2: {
       height: "h-24",
-      bg: "bg-[var(--text-muted)]",
-      borderColor: "border-[var(--text-body)]",
+      bg: "bg-[var(--podium-silver)]",
+      borderColor: "border-[var(--podium-silver-border)]",
       size: "w-16 h-16",
       label: "2nd",
     },
     3: {
       height: "h-20",
-      bg: "bg-orange-400",
-      borderColor: "border-orange-500",
+      bg: "bg-[var(--podium-bronze)]",
+      borderColor: "border-[var(--podium-bronze-border)]",
       size: "w-16 h-16",
       label: "3rd",
     },
@@ -179,7 +179,7 @@ function PodiumItem({
           isCurrentUser ? "ring-4 ring-[var(--primary)]" : ""
         }`}
       >
-        <span className="text-lg font-bold" style={{ fontFamily: "var(--font-sans)" }}>
+        <span className="text-lg font-bold" style={{ fontFamily: "var(--font-heading)" }}>
           {config.label}
         </span>
       </div>
@@ -219,9 +219,9 @@ function LeaderboardRow({
   isCurrentUser: boolean;
 }) {
   const rankColors: Record<number, string> = {
-    0: "bg-amber-100 text-amber-700 border-amber-200",
+    0: "bg-[var(--accent-gold-bg)] text-[var(--accent-gold)] border-[var(--accent-gold-border)]",
     1: "bg-[var(--background)] text-[var(--text-body)] border-[var(--border)]",
-    2: "bg-orange-100 text-orange-700 border-orange-200",
+    2: "bg-[var(--accent-bronze-light)] text-[var(--accent-bronze)] border-[var(--accent-bronze-border)]",
   };
 
   return (
@@ -263,11 +263,11 @@ function LeaderboardRow({
 
       {/* Streak */}
       {entry.currentStreak > 0 && (
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-orange-50 border-[2px] border-orange-200">
-          <span className="text-sm font-bold text-orange-600" style={{ fontFamily: "var(--font-mono)" }}>
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--accent-bronze-light)] border-[2px] border-[var(--accent-bronze-border)]">
+          <span className="text-sm font-bold text-[var(--accent-bronze)]" style={{ fontFamily: "var(--font-mono)" }}>
             {entry.currentStreak}
           </span>
-          <span className="text-xs font-bold text-orange-500">streak</span>
+          <span className="text-xs font-bold text-[var(--accent-bronze)]">streak</span>
         </div>
       )}
 

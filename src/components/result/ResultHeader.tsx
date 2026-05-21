@@ -61,7 +61,7 @@ export function ResultHeader({
       <div className="flex flex-col items-center">
         <p
           className="text-sm font-bold text-[var(--text-muted)] mb-2"
-          style={{ fontFamily: "var(--font-sans)" }}
+          style={{ fontFamily: "var(--font-heading)" }}
         >
           {skill} Assessment
         </p>
@@ -82,7 +82,7 @@ export function ResultHeader({
         )}
         <p
           className="text-sm font-semibold text-[var(--text-muted)] mt-3"
-          style={{ fontFamily: "var(--font-sans)" }}
+          style={{ fontFamily: "var(--font-heading)" }}
         >
           Overall Band Score
         </p>

@@ -90,25 +90,25 @@ export default function PredictedBandWidget() {
   const getConfidenceColor = (confidence: string) => {
     switch (confidence) {
       case "High":
-        return "bg-green-100 text-green-700";
+        return "text-[var(--skill-speaking)] border border-[var(--skill-speaking-border)]";
       case "Medium":
-        return "bg-yellow-100 text-yellow-700";
+        return "text-[var(--accent-gold)] border border-[var(--accent-gold-border)]";
       case "Low":
-        return "bg-orange-100 text-orange-700";
+        return "text-[var(--skill-writing)] border border-[var(--skill-writing-border)]";
       default:
         return "";
     }
   };
 
   const getPriorityColor = (priority: number) => {
-    if (priority === 1) return "bg-red-500";
-    if (priority === 2) return "bg-orange-500";
-    return "bg-yellow-500";
+    if (priority === 1) return "bg-[var(--destructive)]";
+    if (priority === 2) return "bg-[var(--accent-gold)]";
+    return "bg-[var(--accent-gold-light)]";
   };
 
   if (loading) {
     return (
-      <div className="rounded-[1.5rem] border-[3px] p-6 shadow-[0_4px_0_rgba(0,0,0,0.08)]" style={{ backgroundColor: "var(--background)", borderColor: "var(--border)" }}>
+      <div className="rounded-[2rem] border-[3px] p-6 shadow-[0_4px_0_rgba(0,0,0,0.08)]" style={{ backgroundColor: "var(--background)", borderColor: "var(--border)" }}>
         <div className="flex items-center justify-center py-8">
           <div className="animate-spin h-8 w-8 border-4 rounded-full" style={{ borderColor: "var(--primary-light)", borderTopColor: "var(--primary)" }} />
         </div>
@@ -118,7 +118,7 @@ export default function PredictedBandWidget() {
 
   if (error || !data) {
     return (
-      <div className="rounded-[1.5rem] border-[3px] p-6 shadow-[0_4px_0_rgba(0,0,0,0.08)]" style={{ backgroundColor: "var(--background)", borderColor: "var(--border)" }}>
+      <div className="rounded-[2rem] border-[3px] p-6 shadow-[0_4px_0_rgba(0,0,0,0.08)]" style={{ backgroundColor: "var(--background)", borderColor: "var(--border)" }}>
         <div className="flex items-center gap-3 mb-2">
           <h3 className="text-lg font-semibold" style={{ color: "var(--foreground)" }}>
             Predicted Band Score
@@ -140,7 +140,7 @@ export default function PredictedBandWidget() {
   }
 
   return (
-    <div className="rounded-[1.5rem] border-[3px] overflow-hidden shadow-[0_4px_0_rgba(0,0,0,0.08)]" style={{ backgroundColor: "var(--primary-light)", borderColor: "var(--border)" }}>
+    <div className="rounded-[2rem] border-[3px] overflow-hidden shadow-[0_4px_0_rgba(0,0,0,0.08)]" style={{ backgroundColor: "var(--primary-light)", borderColor: "var(--border)" }}>
       {/* Main Band Display */}
       <div className="p-6">
         <div className="flex items-center justify-between mb-4">
@@ -158,7 +158,7 @@ export default function PredictedBandWidget() {
             </div>
           </div>
           <span
-            className={`px-3 py-1 rounded-full text-xs font-semibold ${getConfidenceColor(
+            className={`px-3 py-1 rounded-full text-xs font-semibold border ${getConfidenceColor(
               data.confidence
             )}`}
           >

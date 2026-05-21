@@ -7,6 +7,8 @@ import { register } from "@/utils/api";
 import { useLoadingStore } from "@/app/store/loading";
 import PenguinLottie from "@/components/PenguinLottie";
 import { motion } from "framer-motion";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 export default function Register() {
   const router = useRouter();
@@ -114,7 +116,7 @@ export default function Register() {
       </div>
 
       {/* Right Panel - Form */}
-      <div className="lg:w-[60%] bg-white flex items-center justify-center px-4 py-10 lg:py-0 lg:min-h-screen">
+      <div className="lg:w-[60%] bg-[var(--background)] flex items-center justify-center px-4 py-10 lg:py-0 lg:min-h-screen">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -123,7 +125,7 @@ export default function Register() {
         >
           <h1
             className="text-2xl xl:text-3xl font-bold text-[var(--primary)] text-center"
-            style={{ fontFamily: "var(--font-sans)" }}
+            style={{ fontFamily: "var(--font-heading)" }}
           >
             Tạo tài khoản của bạn
           </h1>
@@ -145,13 +147,12 @@ export default function Register() {
               >
                 Email
               </label>
-              <input
+              <Input
                 id="email"
                 value={email}
                 onChange={emailChangeHandler}
                 placeholder="name@email.com"
                 type="email"
-                className="w-full px-4 py-3 rounded-xl border-[3px] border-[var(--border)] border-b-[5px] focus:border-[var(--primary)] focus:outline-none transition-colors bg-[var(--surface)] text-[var(--text-heading)]"
               />
             </div>
             <p className="mt-1.5 text-xs text-[var(--text-muted)]">
@@ -166,13 +167,13 @@ export default function Register() {
                 Mật khẩu
               </label>
               <div className="relative">
-                <input
+                <Input
                   id="password"
                   value={password}
                   onChange={passwordChangeHandler}
                   placeholder="Mật khẩu"
                   type={showPassword ? "text" : "password"}
-                  className="w-full px-4 py-3 rounded-xl border-[3px] border-[var(--border)] border-b-[5px] focus:border-[var(--primary)] focus:outline-none transition-colors bg-[var(--surface)] text-[var(--text-heading)]"
+                  className="pr-12"
                 />
                 <button
                   type="button"
@@ -221,7 +222,7 @@ export default function Register() {
             <button
               disabled={!isFormValid}
               type="submit"
-              className="w-full mt-6 py-3 rounded-full font-semibold text-white bg-[var(--primary)] border-b-[4px] border-[var(--primary-dark)] hover:bg-[var(--primary-hover)] hover:-translate-y-0.5 active:translate-y-[2px] active:border-b-[2px] transition-all focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none"
+              className="w-full mt-6 py-3 rounded-full font-bold text-base text-white bg-[var(--primary)] border-b-[4px] border-[var(--primary-dark)] hover:-translate-y-0.5 hover:bg-[var(--primary-hover)] hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px] active:duration-[50ms] transition-all disabled:opacity-50 disabled:pointer-events-none"
             >
               Tiếp tục
             </button>

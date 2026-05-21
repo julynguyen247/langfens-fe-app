@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getAttempt, getWritingHistory, getSpeakingHistory } from "@/utils/api";
+import { Spinner } from "@/components/ui/spinner";
 
 type TabType = "reading" | "writing" | "speaking";
 
@@ -70,18 +71,18 @@ export default function HistoryPage() {
         getSpeakingHistory().catch(() => null),
       ]);
 
-      const readingData = readingRes?.data?.data || readingRes?.data || [];
+      const readingData = readingRes?.data?.data?.items ?? readingRes?.data?.items ?? readingRes?.data?.data ?? [];
       setReadingAttempts(
         Array.isArray(readingData)
           ? readingData.map((a: any) => ({
-              id: a.id || a.attemptId,
-              examTitle: a.examTitle || a.title || "Untitled Exam",
+              id: a.attemptId ?? a.id,
+              examTitle: a.title ?? a.examTitle ?? "Untitled Exam",
               skill: a.skill || "READING",
               status: a.status || "GRADED",
-              bandScore: a.bandScore || a.ieltsBand,
+              bandScore: a.scorePct ?? a.bandScore ?? a.ieltsBand,
               correctCount: a.correctCount || a.correct,
               totalQuestions: a.totalQuestions || a.totalPoints,
-              finishedAt: a.finishedAt || a.submittedAt || a.gradedAt,
+              finishedAt: a.submittedAt ?? a.finishedAt ?? a.gradedAt,
             }))
           : []
       );
@@ -90,12 +91,12 @@ export default function HistoryPage() {
       setWritingAttempts(
         Array.isArray(writingData)
           ? writingData.map((w: any) => ({
-              id: w.submissionId || w.id,
-              examTitle: w.examTitle || w.title || "Writing Task",
+              id: w.submissionId ?? w.id,
+              examTitle: w.title ?? w.examTitle ?? "Writing Task",
               skill: "WRITING",
               status: w.status || "GRADED",
               overallBand: w.overallBand,
-              finishedAt: w.gradedAt || w.submittedAt,
+              finishedAt: w.submittedAt ?? w.gradedAt,
             }))
           : []
       );
@@ -104,12 +105,12 @@ export default function HistoryPage() {
       setSpeakingAttempts(
         Array.isArray(speakingData)
           ? speakingData.map((s: any) => ({
-              id: s.submissionId || s.id,
-              examTitle: s.examTitle || s.title || "Speaking Task",
+              id: s.submissionId ?? s.id,
+              examTitle: s.title ?? s.examTitle ?? "Speaking Task",
               skill: "SPEAKING",
               status: s.status || "GRADED",
               overallBand: s.overallBand,
-              finishedAt: s.gradedAt || s.submittedAt,
+              finishedAt: s.submittedAt ?? s.gradedAt,
             }))
           : []
       );
@@ -138,14 +139,14 @@ export default function HistoryPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-[var(--background)]">
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-slate-900 mb-1">
+          <h1 className="text-2xl font-bold text-[var(--foreground)] mb-1" style={{ fontFamily: "var(--font-heading)" }}>
             Lịch sử luyện tập
           </h1>
-          <p className="text-slate-500 text-sm">
+          <p className="text-[var(--text-muted)] text-sm">
             Xem lại các bài thi bạn đã làm
           </p>
         </div>
@@ -160,10 +161,10 @@ export default function HistoryPage() {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key as TabType)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+              className={`px-4 py-2 rounded-full text-sm font-medium transition ${
                 activeTab === tab.key
-                  ? "bg-blue-600 text-white"
-                  : "bg-white text-slate-600 hover:bg-slate-100"
+                  ? "border-b-[4px] border-[var(--primary-dark)] hover:-translate-y-0.5 bg-[var(--primary)] text-white"
+                  : "border-b-[4px] border-[var(--border)] hover:-translate-y-0.5 bg-[var(--card)] text-[var(--foreground)]"
               }`}
             >
               {tab.label} ({tab.count})
@@ -173,16 +174,16 @@ export default function HistoryPage() {
 
         {/* Content */}
         {loading ? (
-          <div className="bg-white rounded-xl p-12 text-center">
-            <div className="animate-spin w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-            <p className="text-slate-500">Đang tải...</p>
+          <div className="bg-[var(--card)] rounded-[2rem] p-12 text-center">
+            <Spinner className="mx-auto mb-4" />
+            <p className="text-[var(--text-muted)]">Đang tải...</p>
           </div>
         ) : currentList.length === 0 ? (
-          <div className="bg-white rounded-xl p-12 text-center">
-            <p className="text-slate-500 mb-4">Chưa có bài thi nào</p>
+          <div className="bg-[var(--card)] rounded-[2rem] p-12 text-center">
+            <p className="text-[var(--text-muted)] mb-4">Chưa có bài thi nào</p>
             <button
               onClick={() => router.push("/practice")}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+              className="px-4 py-2 bg-[var(--primary)] text-white rounded-full border-b-[4px] border-[var(--primary-dark)] hover:-translate-y-0.5 transition"
             >
               Bắt đầu luyện tập
             </button>
@@ -192,31 +193,31 @@ export default function HistoryPage() {
             {currentList.map((item) => (
               <div
                 key={item.id}
-                className="bg-white rounded-xl p-4 hover:shadow-md transition cursor-pointer"
+                className="bg-[var(--card)] rounded-[2rem] p-4 hover:shadow-md transition cursor-pointer"
                 onClick={() => handleViewResult(item)}
               >
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-medium text-slate-900">
+                      <h3 className="font-medium text-[var(--foreground)]" style={{ fontFamily: "var(--font-heading)" }}>
                         {item.examTitle}
                       </h3>
                       {getStatusBadge(item.status)}
                     </div>
-                    <p className="text-sm text-slate-500">
+                    <p className="text-sm text-[var(--text-muted)]">
                       {formatDate(item.finishedAt)}
                     </p>
                   </div>
                   <div className="flex items-center gap-4">
                     {(item.bandScore || item.overallBand) && (
                       <div className="text-center">
-                        <div className="text-xl font-bold text-blue-600">
+                        <div className="text-xl font-bold text-[var(--primary)]" style={{ fontFamily: "var(--font-code)" }}>
                           {(item.overallBand ?? item.bandScore)?.toFixed(1)}
                         </div>
-                        <div className="text-xs text-slate-400">Band</div>
+                        <div className="text-xs text-[var(--text-muted)]">Band</div>
                       </div>
                     )}
-                    <span className="text-slate-400">→</span>
+                    <span className="text-[var(--text-muted)]">→</span>
                   </div>
                 </div>
               </div>

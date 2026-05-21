@@ -194,7 +194,7 @@ const PassageView = memo(function PassageView({
   };
 
   return (
-    <div className="flex h-full bg-white overflow-hidden">
+    <div className="flex h-full bg-[var(--card)] overflow-hidden">
       {/* Reading Toolbar - Left sidebar */}
       <ReadingToolbar
         onAddToFlashcard={handleAddToFlashcard}
@@ -207,7 +207,7 @@ const PassageView = memo(function PassageView({
       {/* Main content area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
         {/* Sticky Toolbar - Focus Mode Tools */}
-        <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-[var(--border-light)] px-6 py-3 flex items-center justify-between">
+        <div className="sticky top-0 z-10 bg-[var(--card)]/95 backdrop-blur-sm border-b border-[var(--border-light)] px-6 py-3 flex items-center justify-between">
           {/* Title */}
           <div className="flex-1 min-w-0">
             <div className="font-sans text-xl font-bold text-[var(--foreground)] truncate">

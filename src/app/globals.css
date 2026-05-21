@@ -24,12 +24,41 @@
   --primary-light: #DBEAFE;
   --primary-foreground: #FFFFFF;
 
-  /* Secondary Accent - Muted Gold */
+  /* Accent colors - Gold */
   --accent-gold: #B45309;
   --accent-gold-bg: #FEF3C7;
   --accent-gold-border: #FCD34D;
+  --accent-gold-light: #FEF3C7;
+  --accent-silver: #6B7280;
+  --accent-silver-light: #F3F4F6;
+  --accent-silver-border: #D1D5DB;
+  --accent-bronze: #D97706;
+  --accent-bronze-light: #FEF3C7;
+  --accent-bronze-border: #FDE68A;
 
-  /* Text Colors */
+  /* Podium colors */
+  --podium-gold: #FBBF24;
+  --podium-gold-border: #F59E0B;
+  --podium-silver: #9CA3AF;
+  --podium-silver-border: #6B7280;
+  --podium-bronze: #D97706;
+  --podium-bronze-border: #B45309;
+
+  /* Tier colors */
+  --tier-common: #2563EB;
+  --tier-common-light: #DBEAFE;
+  --tier-common-border: #BFDBFE;
+  --tier-rare: #EA580C;
+  --tier-rare-light: #FFF7ED;
+  --tier-rare-border: #FED7AA;
+  --tier-epic: #7C3AED;
+  --tier-epic-light: #EDE9FE;
+  --tier-epic-border: #DDD6FE;
+  --tier-legendary: #D97706;
+  --tier-legendary-light: #FFFBEB;
+  --tier-legendary-border: #FDE68A;
+
+  /* Skill colors */
   --text-heading: #111827;
   --text-body: #374151;
   --text-muted: #6B7280;
@@ -56,6 +85,9 @@
   --font-sans: var(--font-fredoka), "Fredoka", ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--font-fredoka), "Fredoka", ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-jetbrains-mono), "JetBrains Mono", ui-monospace, monospace;
+  --font-heading: var(--font-sans);
+  --font-body: var(--font-sans);
+  --font-code: var(--font-mono);
 
   /* shadcn tokens */
   --card: #FFFFFF;
@@ -69,6 +101,8 @@
   --accent: #F1F5F9;
   --accent-foreground: #1E293B;
   --destructive: #EF4444;
+  --destructive-light: #FEE2E2;
+  --destructive-border: #FECACA;
   --input: #E5E7EB;
   --ring: #2563EB;
   --chart-1: #2563EB;
@@ -141,6 +175,30 @@
   --color-skill-speaking: var(--skill-speaking);
   --color-skill-speaking-light: var(--skill-speaking-light);
   --color-skill-speaking-border: var(--skill-speaking-border);
+  --color-tier-common: var(--tier-common);
+  --color-tier-common-light: var(--tier-common-light);
+  --color-tier-common-border: var(--tier-common-border);
+  --color-tier-rare: var(--tier-rare);
+  --color-tier-rare-light: var(--tier-rare-light);
+  --color-tier-rare-border: var(--tier-rare-border);
+  --color-tier-epic: var(--tier-epic);
+  --color-tier-epic-light: var(--tier-epic-light);
+  --color-tier-epic-border: var(--tier-epic-border);
+  --color-tier-legendary: var(--tier-legendary);
+  --color-tier-legendary-light: var(--tier-legendary-light);
+  --color-tier-legendary-border: var(--tier-legendary-border);
+  --color-podium-gold: var(--podium-gold);
+  --color-podium-gold-border: var(--podium-gold-border);
+  --color-podium-silver: var(--podium-silver);
+  --color-podium-silver-border: var(--podium-silver-border);
+  --color-podium-bronze: var(--podium-bronze);
+  --color-podium-bronze-border: var(--podium-bronze-border);
+  --color-accent-silver: var(--accent-silver);
+  --color-accent-silver-light: var(--accent-silver-light);
+  --color-accent-silver-border: var(--accent-silver-border);
+  --color-accent-bronze: var(--accent-bronze);
+  --color-accent-bronze-light: var(--accent-bronze-light);
+  --color-accent-bronze-border: var(--accent-bronze-border);
 }
 
 /* Font utilities - all use Fredoka */
@@ -169,13 +227,13 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: var(--scrollbar-color, var(--text-muted));
   border-radius: 4px;
   border: 2px solid var(--background);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(0, 0, 0, 0.3);
+  background-color: var(--scrollbar-color-hover, var(--text-muted));
 }
 
 /* Material Icons sizing */
@@ -226,9 +284,6 @@ body {
   --ocean-border: rgba(255, 255, 255, 0.10);
   --ocean-border-glow: rgba(37, 99, 235, 0.35);
   --ocean-shadow-glow: 0 0 30px var(--ocean-primary-glow);
-  --font-heading: var(--font-sans);
-  --font-body: var(--font-sans);
-  --font-code: var(--font-mono);
 }
 
 /* Pseudo-elements (require ::before/::after — cannot be inlined) */

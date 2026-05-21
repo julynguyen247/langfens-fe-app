@@ -21,7 +21,7 @@ export function BandProgressIndicator({ currentBand, targetBand }: Props) {
       <div className="flex items-center justify-between mb-3">
         <p
           className="text-xs font-bold text-[var(--text-muted)]"
-          style={{ fontFamily: 'var(--font-sans)' }}
+          style={{ fontFamily: 'var(--font-heading)' }}
         >
           Band Progress
         </p>

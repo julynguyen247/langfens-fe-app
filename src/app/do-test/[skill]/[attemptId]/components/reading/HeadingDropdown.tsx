@@ -37,7 +37,7 @@ const HeadingDropdown = memo(function HeadingDropdown({
   const text = useMemo(() => stem.replace(/\\n/g, "\n"), [stem]);
 
   return (
-    <div className="border border-[var(--border)] rounded-lg p-4 space-y-3 bg-white">
+    <div className="border border-[var(--border)] rounded-[2rem] p-4 space-y-3 bg-[var(--card)]">
       <div className="text-[var(--foreground)] leading-relaxed font-bold">
         <ReactMarkdown components={markdownComponents}>
           {text}
@@ -48,9 +48,9 @@ const HeadingDropdown = memo(function HeadingDropdown({
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="min-w-[200px] rounded-md border border-[var(--border)] px-3 py-2 text-sm
-                     focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
-                     text-black bg-white"
+          className="min-w-[200px] rounded-[2rem] border border-[var(--border)] px-3 py-2 text-sm
+                     focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)]
+                     text-[var(--foreground)] bg-[var(--card)]"
         >
           <option value="">Select a heading...</option>
           {options.map((opt, idx) => (

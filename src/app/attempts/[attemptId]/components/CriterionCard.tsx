@@ -18,7 +18,7 @@ export function CriterionCard({
       <div className="flex items-baseline justify-between mb-2">
         <h3
           className="text-sm font-bold text-[var(--foreground)]"
-          style={{ fontFamily: "var(--font-sans)" }}
+          style={{ fontFamily: "var(--font-heading)" }}
         >
           {title}
         </h3>
@@ -29,7 +29,7 @@ export function CriterionCard({
           Band {criterion.band.toFixed(1)}
         </span>
       </div>
-      <p className="text-sm text-[var(--text-body)] whitespace-pre-wrap">
+      <p className="text-sm text-[var(--text-body)] whitespace-pre-wrap break-all">
         {criterion.comment}
       </p>
     </motion.div>

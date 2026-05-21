@@ -215,7 +215,7 @@ export default function CourseLearnPage() {
               <div>
                 <h1
                   className="text-xl font-bold text-[var(--foreground)]"
-                  style={{ fontFamily: "var(--font-sans)" }}
+                  style={{ fontFamily: "var(--font-heading)" }}
                 >
                   {current.title}
                 </h1>
@@ -268,7 +268,7 @@ export default function CourseLearnPage() {
                 <div className="flex items-center justify-between">
                   <h3
                     className="font-bold text-[var(--foreground)] text-sm"
-                    style={{ fontFamily: "var(--font-sans)" }}
+                    style={{ fontFamily: "var(--font-heading)" }}
                   >
                     Your notes
                   </h3>
@@ -293,7 +293,7 @@ export default function CourseLearnPage() {
                 <div className="rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-5">
                   <h3
                     className="font-bold text-[var(--foreground)] text-sm"
-                    style={{ fontFamily: "var(--font-sans)" }}
+                    style={{ fontFamily: "var(--font-heading)" }}
                   >
                     Attached resources
                   </h3>
@@ -347,7 +347,7 @@ export default function CourseLearnPage() {
             <button
               onClick={() => setShowList((v) => !v)}
               className="flex w-full items-center justify-between p-5 font-bold text-[var(--foreground)] bg-[var(--background)] hover:bg-[var(--primary-light)] transition-colors"
-              style={{ fontFamily: "var(--font-sans)" }}
+              style={{ fontFamily: "var(--font-heading)" }}
             >
               <span>Course content</span>
               <span className="text-xs text-[var(--text-muted)] font-bold">

@@ -137,7 +137,7 @@ export function NotificationBell() {
         style={{ color: "var(--text-muted)" }}
         aria-label="Thông báo"
       >
-        <span className="w-5 h-5 flex items-center justify-center text-sm font-bold">B</span>
+        <span className="material-symbols-rounded text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>notifications</span>
         {unreadCount > 0 && (
           <motion.span
             initial={{ scale: 0 }}
@@ -157,7 +157,7 @@ export function NotificationBell() {
             initial={{ opacity: 0, y: -10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
-            className="absolute right-0 top-full mt-2 w-80 sm:w-96 rounded-[1.5rem] border-[3px] overflow-hidden z-50 shadow-[0_4px_0_rgba(0,0,0,0.08)]"
+            className="absolute right-0 top-full mt-2 w-80 sm:w-96 rounded-[2rem] border-[3px] overflow-hidden z-50 shadow-[0_4px_0_rgba(0,0,0,0.08)]"
             style={{
               backgroundColor: "var(--background)",
               borderColor: "var(--border)",
@@ -218,7 +218,7 @@ export function NotificationBell() {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       className={`px-4 py-3 border-b cursor-pointer transition-colors ${
-                        !notification.isRead ? "bg-blue-50/50" : ""
+                        !notification.isRead ? "bg-[var(--primary-light)]" : ""
                       }`}
                       style={{ borderColor: "var(--border)" }}
                       onClick={() => !notification.isRead && handleMarkAsRead(notification.id)}

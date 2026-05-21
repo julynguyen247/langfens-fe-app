@@ -243,7 +243,7 @@ export default function ProfilePage() {
               >
                 <span
                   className="text-3xl font-bold"
-                  style={{ color: "var(--primary)", fontFamily: "var(--font-sans)" }}
+                  style={{ color: "var(--primary)", fontFamily: "var(--font-heading)" }}
                 >
                   {initials}
                 </span>
@@ -265,7 +265,7 @@ export default function ProfilePage() {
             {/* Username */}
             <h1
               className="text-2xl sm:text-3xl font-bold text-[var(--foreground)] mt-3 mb-2"
-              style={{ fontFamily: "var(--font-sans)" }}
+              style={{ fontFamily: "var(--font-heading)" }}
             >
               {displayName}
             </h1>
@@ -410,7 +410,7 @@ export default function ProfilePage() {
                 <div className="rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-white p-6 sm:p-8">
                   <h3
                     className="font-bold text-lg text-[var(--foreground)] mb-5"
-                    style={{ fontFamily: "var(--font-sans)" }}
+                    style={{ fontFamily: "var(--font-heading)" }}
                   >
                     Skill breakdown
                   </h3>
@@ -441,7 +441,7 @@ export default function ProfilePage() {
                 <div className="rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-white p-6 sm:p-8">
                   <h3
                     className="font-bold text-lg text-[var(--foreground)] mb-5"
-                    style={{ fontFamily: "var(--font-sans)" }}
+                    style={{ fontFamily: "var(--font-heading)" }}
                   >
                     Recent activity
                   </h3>
@@ -504,7 +504,7 @@ export default function ProfilePage() {
                   <div className="flex items-center justify-between mb-6">
                     <h3
                       className="font-bold text-lg text-[var(--foreground)]"
-                      style={{ fontFamily: "var(--font-sans)" }}
+                      style={{ fontFamily: "var(--font-heading)" }}
                     >
                       Achievements
                     </h3>
@@ -585,7 +585,7 @@ export default function ProfilePage() {
                 <div className="rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-white p-6 sm:p-8">
                   <h3
                     className="font-bold text-lg text-[var(--foreground)] mb-6"
-                    style={{ fontFamily: "var(--font-sans)" }}
+                    style={{ fontFamily: "var(--font-heading)" }}
                   >
                     Settings
                   </h3>
@@ -599,7 +599,7 @@ export default function ProfilePage() {
                         type="text"
                         defaultValue={displayName}
                         className="w-full rounded-[1rem] border-[3px] border-[var(--border)] shadow-[0_3px_0_rgba(0,0,0,0.06)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--foreground)] focus:outline-none focus:border-[var(--primary)] transition-colors"
-                        style={{ fontFamily: "var(--font-sans)" }}
+                        style={{ fontFamily: "var(--font-heading)" }}
                       />
                     </div>
                     {/* Email */}
@@ -612,7 +612,7 @@ export default function ProfilePage() {
                         defaultValue={userProfile?.email ?? ""}
                         disabled
                         className="w-full rounded-[1rem] border-[3px] border-[var(--border)] shadow-[0_3px_0_rgba(0,0,0,0.06)] bg-[var(--background)] px-4 py-2.5 text-sm font-semibold text-[var(--text-muted)] focus:outline-none cursor-not-allowed"
-                        style={{ fontFamily: "var(--font-sans)" }}
+                        style={{ fontFamily: "var(--font-heading)" }}
                       />
                     </div>
                     {/* Target band */}
@@ -623,7 +623,7 @@ export default function ProfilePage() {
                       <select
                         defaultValue="7.0"
                         className="w-full rounded-[1rem] border-[3px] border-[var(--border)] shadow-[0_3px_0_rgba(0,0,0,0.06)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--foreground)] focus:outline-none focus:border-[var(--primary)] transition-colors appearance-none"
-                        style={{ fontFamily: "var(--font-sans)" }}
+                        style={{ fontFamily: "var(--font-heading)" }}
                       >
                         {["5.0", "5.5", "6.0", "6.5", "7.0", "7.5", "8.0", "8.5", "9.0"].map(
                           (v) => (

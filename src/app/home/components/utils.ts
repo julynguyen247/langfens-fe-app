@@ -49,7 +49,7 @@ export function mapWritingHistoryToAttempt(item: any): Attempt {
 export function mapSpeakingHistoryToAttempt(item: any): Attempt {
   return {
     id: String(item.submissionId ?? item.id ?? cryptoRandom()),
-    title: String(item.taskName ?? "Speaking Test"),
+    title: String(item.title ?? item.taskName ?? "Speaking Test"),
     skill: "Speaking",
     dateISO: String(item.submittedAt ?? new Date().toISOString()),
     score:
@@ -66,10 +66,10 @@ export function mapSpeakingHistoryToAttempt(item: any): Attempt {
 export function normalizeAttemptItem(item: any): Attempt {
   return {
     id: item.attemptId ?? item.id ?? cryptoRandom(),
-    title: item.examTitle ?? item.title ?? "Practice Test",
+    title: item.title ?? item.examTitle ?? "Practice Test",
     skill: item.skill ?? "Reading",
-    dateISO: item.finishedAt ?? item.startedAt ?? new Date().toISOString(),
-    score: item.score ?? item.correctPercent,
+    dateISO: item.submittedAt ?? item.finishedAt ?? item.startedAt ?? new Date().toISOString(),
+    score: item.scorePct ?? item.score ?? item.correctPercent,
     durationMin: item.durationMin ?? Math.round((item.timeUsedSec ?? 0) / 60),
   };
 }

@@ -36,18 +36,18 @@ export function ActivityCalendar({ days, compact = true }: ActivityCalendarProps
   };
 
   return (
-    <div>
+    <div className="overflow-x-auto -mx-2 px-2">
       <div
-        className="grid gap-1"
+        className="grid gap-1 w-full"
         style={{
-          gridTemplateColumns: 'repeat(7, 1fr)',
+          gridTemplateColumns: 'repeat(7, minmax(14px, 1fr))',
         }}
       >
         {cells.map((cell) => (
           <div
             key={cell.date}
             title={`${cell.date}: ${cell.count} activities`}
-            className={`w-3 h-3 rounded-full transition-colors ${
+            className={`min-w-[14px] w-full aspect-square rounded-full transition-colors ${
               cell.isToday ? 'ring-2 ring-[var(--primary)] ring-offset-1' : ''
             }`}
             style={{

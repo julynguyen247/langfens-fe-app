@@ -113,7 +113,7 @@ export default function QuickAddVocab({ isOpen, onClose, initialWord = "", onAdd
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ duration: 0.2 }}
-          className="relative w-full max-w-md mx-4 rounded-[1.5rem] border-[3px] shadow-[0_4px_0_rgba(0,0,0,0.08)]"
+          className="relative w-full max-w-md mx-4 rounded-[2rem] border-[3px] shadow-[0_4px_0_rgba(0,0,0,0.08)]"
           style={{
             backgroundColor: "var(--background)",
             borderColor: "var(--border)",

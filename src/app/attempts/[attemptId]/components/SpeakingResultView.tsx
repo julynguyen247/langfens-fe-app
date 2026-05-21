@@ -60,7 +60,7 @@ export function SpeakingResultView({
         >
           <h2
             className="text-sm font-bold text-[var(--text-muted)] mb-1"
-            style={{ fontFamily: "var(--font-sans)" }}
+            style={{ fontFamily: "var(--font-heading)" }}
           >
             {headerTitle}
           </h2>
@@ -87,7 +87,7 @@ export function SpeakingResultView({
           )}
           <p
             className="text-sm font-semibold text-[var(--text-muted)] mt-3"
-            style={{ fontFamily: "var(--font-sans)" }}
+            style={{ fontFamily: "var(--font-heading)" }}
           >
             Overall Band Score
           </p>
@@ -158,7 +158,7 @@ export function SpeakingResultView({
             <div className="bg-[var(--background)] px-6 py-4 border-b-[2px] border-[var(--border)]">
               <h2
                 className="text-sm font-bold text-[var(--text-muted)]"
-                style={{ fontFamily: "var(--font-sans)" }}
+                style={{ fontFamily: "var(--font-heading)" }}
               >
                 Interview Transcript
               </h2>
@@ -227,7 +227,7 @@ export function SpeakingResultView({
               <div className="bg-[var(--background)] px-6 py-4 border-b-[2px] border-[var(--border)]">
                 <h2
                   className="text-sm font-bold text-[var(--text-muted)]"
-                  style={{ fontFamily: "var(--font-sans)" }}
+                  style={{ fontFamily: "var(--font-heading)" }}
                 >
                   Improvement Suggestions
                 </h2>
@@ -261,7 +261,7 @@ export function SpeakingResultView({
             <div className="bg-[var(--background)] px-6 py-4 border-b-[2px] border-[var(--border)]">
               <h2
                 className="text-sm font-bold text-[var(--text-muted)]"
-                style={{ fontFamily: "var(--font-sans)" }}
+                style={{ fontFamily: "var(--font-heading)" }}
               >
                 Model Answer
               </h2>
@@ -278,7 +278,7 @@ export function SpeakingResultView({
           <button
             onClick={() => router.push("/home")}
             className="px-8 py-3 rounded-full bg-[var(--primary)] text-white font-bold border-b-[4px] border-[var(--primary-dark)] hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px] transition-all duration-150"
-            style={{ fontFamily: "var(--font-sans)" }}
+            style={{ fontFamily: "var(--font-heading)" }}
           >
             Back to Home
           </button>

@@ -8,7 +8,7 @@ export default function PageHeader() {
           <div className="flex h-10 w-10 items-center justify-center rounded-[1rem] bg-white shadow-[0_2px_0_rgba(0,0,0,0.08)] border-[2px] border-[var(--border)]">
             <span
               className="text-lg font-bold text-[var(--primary-dark)]"
-              style={{ fontFamily: "var(--font-sans)" }}
+              style={{ fontFamily: "var(--font-heading)" }}
             >
               F
             </span>
@@ -16,7 +16,7 @@ export default function PageHeader() {
           <div>
             <h1
               className="text-2xl font-bold text-[var(--primary-dark)]"
-              style={{ fontFamily: "var(--font-sans)" }}
+              style={{ fontFamily: "var(--font-heading)" }}
             >
               Langfens Flashcards
             </h1>

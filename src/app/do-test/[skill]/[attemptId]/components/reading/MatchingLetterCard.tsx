@@ -32,7 +32,7 @@ const MatchingLetterCard = memo(function MatchingLetterCard({ stem, value, onCha
   const text = useMemo(() => stem.replace(/\\n/g, "\n"), [stem]);
 
   return (
-    <div className="border border-[var(--border)] rounded-lg p-4 space-y-3 bg-white">
+    <div className="border border-[var(--border)] rounded-lg p-4 space-y-3 bg-[var(--card)]">
       <div className="text-[var(--foreground)] leading-relaxed font-bold">
         <ReactMarkdown components={markdownComponents}>
           {text}
@@ -46,7 +46,7 @@ const MatchingLetterCard = memo(function MatchingLetterCard({ stem, value, onCha
           maxLength={1}
           placeholder="A–J"
           className="w-16 text-center rounded-md border border-[var(--border)] px-3 py-2 text-sm
-                     focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black"
+                     focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] text-[var(--foreground)]"
         />
         <span className="text-xs text-[var(--text-muted)]">
           Enter a single letter (A–J).

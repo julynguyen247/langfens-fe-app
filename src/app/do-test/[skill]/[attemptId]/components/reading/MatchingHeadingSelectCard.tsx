@@ -25,7 +25,7 @@ export default function MatchingHeadingSelectCard({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="h-10 px-3 rounded-lg border border-[var(--border)] bg-white
+        className="h-10 px-3 rounded-lg border border-[var(--border)] bg-[var(--card)]
         text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
       >
         <option value="">—</option>

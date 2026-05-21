@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useUserStore } from "@/app/store/userStore";
-import { getOwnDecks, getUserSubscriptions } from "@/utils/api";
+import { getOwnDecks, getUserSubscriptions, unsubscribeDeck } from "@/utils/api";
 import { ProgressRing } from "@/components/ui/ProgressRing";
 import PenguinLottie from "@/components/PenguinLottie";
 
@@ -51,6 +51,7 @@ export default function FlashcardsPage() {
   const [subs, setSubs] = useState<Subscription[]>([]);
   const [loadingTab, setLoadingTab] = useState<TabKey | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [removingId, setRemovingId] = useState<string | null>(null);
 
   const loadOwn = async () => {
     if (!user?.id) return;
@@ -92,6 +93,19 @@ export default function FlashcardsPage() {
     if (activeTab === "subs" && subs.length === 0) loadSubs();
   }, [activeTab, user?.id]);
 
+  const handleUnsubscribe = async (deckId: string) => {
+    if (!user?.id || removingId) return;
+    setRemovingId(deckId);
+    try {
+      await unsubscribeDeck(user.id, deckId);
+      setSubs((prev) => prev.filter((s) => s.deckId !== deckId));
+    } catch (e: any) {
+      console.error("Failed to unsubscribe:", e);
+    } finally {
+      setRemovingId(null);
+    }
+  };
+
   const isLoading = loadingTab === activeTab;
 
   return (
@@ -102,7 +116,7 @@ export default function FlashcardsPage() {
           <div>
             <h1
               className="text-3xl sm:text-4xl font-extrabold text-[var(--foreground)]"
-              style={{ fontFamily: "var(--font-sans)" }}
+              style={{ fontFamily: "var(--font-heading)" }}
             >
               Vocabulary Decks
             </h1>
@@ -169,7 +183,7 @@ export default function FlashcardsPage() {
                 >
                   <span
                     className="text-4xl font-bold text-[var(--text-muted)] group-hover:text-[var(--primary)] transition-colors"
-                    style={{ fontFamily: "var(--font-sans)" }}
+                    style={{ fontFamily: "var(--font-heading)" }}
                   >
                     +
                   </span>
@@ -198,6 +212,8 @@ export default function FlashcardsPage() {
                       lastStudied: s.lastStudied,
                     }}
                     type="subscribed"
+                    onRemove={handleUnsubscribe}
+                    removingId={removingId}
                   />
                 ))}
               </div>
@@ -244,6 +260,8 @@ function getMasteryColor(mastery: number): string {
 function DeckCard({
   deck,
   type,
+  onRemove,
+  removingId,
 }: {
   deck: {
     id: string;
@@ -255,9 +273,12 @@ function DeckCard({
     lastStudied?: string;
   };
   type: "own" | "subscribed";
+  onRemove?: (deckId: string) => void;
+  removingId?: string | null;
 }) {
   const router = useRouter();
   const mastery = deck.mastery ?? 0;
+  const isRemoving = removingId != null && removingId === deck.id;
 
   return (
     <div className="group bg-white border-[3px] border-[var(--border)] rounded-[2rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] hover:-translate-y-[3px] hover:border-[var(--primary)] hover:shadow-[0_6px_0_rgba(0,0,0,0.08)] transition-all duration-200 h-full flex flex-col overflow-hidden">
@@ -269,7 +290,7 @@ function DeckCard({
             {/* Title */}
             <h3
               className="font-bold text-lg text-[var(--foreground)] line-clamp-2 group-hover:text-[var(--primary)] transition-colors"
-              style={{ fontFamily: "var(--font-sans)" }}
+              style={{ fontFamily: "var(--font-heading)" }}
             >
               {deck.title}
             </h3>
@@ -333,9 +354,13 @@ function DeckCard({
           >
             View
           </button>
-          {type === "subscribed" && (
-            <button className="h-10 px-4 rounded-full bg-white text-[var(--destructive)] text-sm font-bold border-[2px] border-[var(--border)] hover:border-[var(--destructive)] active:translate-y-[1px] transition-all flex items-center justify-center">
-              Remove
+          {type === "subscribed" && onRemove && (
+            <button
+              onClick={() => onRemove(deck.id)}
+              disabled={isRemoving}
+              className="h-10 px-4 rounded-full bg-white text-[var(--destructive)] text-sm font-bold border-[2px] border-[var(--border)] hover:border-[var(--destructive)] active:translate-y-[1px] transition-all flex items-center justify-center disabled:opacity-60"
+            >
+              {isRemoving ? "..." : "Remove"}
             </button>
           )}
         </div>
@@ -389,7 +414,7 @@ function EmptyState({
 
       <p
         className="text-lg font-bold text-[var(--foreground)] mb-2"
-        style={{ fontFamily: "var(--font-sans)" }}
+        style={{ fontFamily: "var(--font-heading)" }}
       >
         {title}
       </p>

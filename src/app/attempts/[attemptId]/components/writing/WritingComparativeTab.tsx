@@ -28,7 +28,7 @@ function LoadingSkeleton({ caption }: { caption?: string }) {
       {caption && (
         <p
           className="text-sm text-[var(--text-muted)] text-center"
-          style={{ fontFamily: 'var(--font-sans)' }}
+          style={{ fontFamily: 'var(--font-heading)' }}
           data-testid="writing-comparative-polling-caption"
         >
           {caption}
@@ -55,7 +55,7 @@ export function WritingComparativeTab({ submissionId }: Props) {
         <button
           onClick={refetch}
           className="px-6 py-2.5 rounded-full bg-[var(--primary)] text-white font-bold text-sm border-b-[4px] border-[var(--primary-dark)] hover:-translate-y-0.5 active:translate-y-[2px] active:border-b-[2px] transition-all duration-150"
-          style={{ fontFamily: 'var(--font-sans)' }}
+          style={{ fontFamily: 'var(--font-heading)' }}
         >
           Thử lại
         </button>
@@ -70,7 +70,7 @@ export function WritingComparativeTab({ submissionId }: Props) {
         <button
           onClick={refetch}
           className="px-6 py-2.5 rounded-full bg-[var(--primary)] text-white font-bold text-sm border-b-[4px] border-[var(--primary-dark)] hover:-translate-y-0.5 active:translate-y-[2px] active:border-b-[2px] transition-all duration-150"
-          style={{ fontFamily: 'var(--font-sans)' }}
+          style={{ fontFamily: 'var(--font-heading)' }}
         >
           Retry
         </button>
@@ -106,7 +106,7 @@ export function WritingComparativeTab({ submissionId }: Props) {
         >
           <p
             className="text-xs font-bold text-[var(--primary-dark)] mb-2"
-            style={{ fontFamily: 'var(--font-sans)' }}
+            style={{ fontFamily: 'var(--font-heading)' }}
           >
             Overall Analysis
           </p>
@@ -126,7 +126,7 @@ export function WritingComparativeTab({ submissionId }: Props) {
         <div className="space-y-4">
           <h3
             className="text-lg font-bold text-[var(--foreground)]"
-            style={{ fontFamily: 'var(--font-sans)' }}
+            style={{ fontFamily: 'var(--font-heading)' }}
           >
             Reference essays
           </h3>

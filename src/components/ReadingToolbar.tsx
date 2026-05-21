@@ -251,7 +251,7 @@ export default function ReadingToolbar({
               <button
                 key={tool.id}
                 onClick={() => handleToolClick(tool.id)}
-                className={`w-full flex flex-col items-center gap-1 px-2 py-3 rounded-lg transition-all border ${
+                className={`w-full flex flex-col items-center gap-1 px-2 py-3 rounded-[2rem] transition-all border ${
                   isActive
                     ? "text-white border-transparent shadow-md"
                     : "border hover:opacity-80"
@@ -304,7 +304,7 @@ export default function ReadingToolbar({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
             transition={{ duration: 0.15 }}
-            className="fixed z-[9999] w-80 rounded-[1.5rem] border-[3px] shadow-[0_4px_0_rgba(0,0,0,0.08)]"
+            className="fixed z-[9999] w-80 rounded-[2rem] border-[3px] shadow-[0_4px_0_rgba(0,0,0,0.08)]"
             style={{
               left: Math.min(Math.max(notePopup.position.x - 160, 10), window.innerWidth - 340),
               top: Math.min(notePopup.position.y, window.innerHeight - 280),
@@ -393,7 +393,7 @@ export default function ReadingToolbar({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
             transition={{ duration: 0.15 }}
-            className="fixed z-[9999] w-80 rounded-[1.5rem] border-[3px] shadow-[0_4px_0_rgba(0,0,0,0.08)]"
+            className="fixed z-[9999] w-80 rounded-[2rem] border-[3px] shadow-[0_4px_0_rgba(0,0,0,0.08)]"
             style={{
               left: Math.min(wordPosition.x - 160, window.innerWidth - 340),
               top: Math.min(wordPosition.y, window.innerHeight - 300),
@@ -451,8 +451,8 @@ export default function ReadingToolbar({
 
                   {/* Vietnamese meanings from entry level */}
                   {entry.vietnameseTerms && entry.vietnameseTerms.length > 0 && (
-                    <div className="px-2 py-1.5 bg-amber-50 rounded-lg border border-amber-100">
-                      <span className="text-sm font-medium text-amber-800">
+                    <div className="px-2 py-1.5 rounded-[2rem] border" style={{ backgroundColor: "var(--accent-gold-bg)", borderColor: "var(--accent-gold-border)" }}>
+                      <span className="text-sm font-medium" style={{ color: "var(--accent-gold)" }}>
                         {entry.vietnameseTerms.slice(0, 3).join(", ")}
                       </span>
                     </div>
@@ -470,7 +470,7 @@ export default function ReadingToolbar({
                           </div>
                           {/* Vietnamese translation */}
                           {(sense.definitionVi || (sense.vietnameseTerms && sense.vietnameseTerms.length > 0)) && (
-                            <div className="mt-1 pl-7 text-sm text-amber-700">
+                            <div className="mt-1 pl-7 text-sm" style={{ color: "var(--accent-gold)" }}>
                               → {sense.definitionVi || sense.vietnameseTerms?.join(", ")}
                             </div>
                           )}

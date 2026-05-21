@@ -105,7 +105,7 @@ export default function ReviewPage() {
         <div className="h-10 w-10 animate-spin rounded-full border-[4px] border-[var(--border)] border-t-[var(--primary)]" />
         <p
           className="text-base font-bold text-[var(--text-muted)]"
-          style={{ fontFamily: "var(--font-sans)" }}
+          style={{ fontFamily: "var(--font-heading)" }}
         >
           Loading results...
         </p>
@@ -126,14 +126,14 @@ export default function ReviewPage() {
           <button
             onClick={() => router.push(`/attempts/${attemptId}`)}
             className="px-4 py-2 rounded-full bg-[var(--background)] border-[2px] border-[var(--border)] text-[var(--text-body)] font-bold text-sm hover:-translate-y-0.5 hover:border-[var(--primary)] transition-all duration-150"
-            style={{ fontFamily: "var(--font-sans)" }}
+            style={{ fontFamily: "var(--font-heading)" }}
           >
             Back
           </button>
           <div>
             <h1
               className="text-base font-bold text-[var(--foreground)]"
-              style={{ fontFamily: "var(--font-sans)" }}
+              style={{ fontFamily: "var(--font-heading)" }}
             >
               {skill.charAt(0) + skill.slice(1).toLowerCase()} Review
             </h1>
@@ -152,7 +152,7 @@ export default function ReviewPage() {
           <button
             onClick={() => router.push(`/attempts/${attemptId}`)}
             className="px-5 py-2 rounded-full bg-[var(--primary)] text-white font-bold text-sm border-b-[4px] border-[var(--primary-dark)] hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px] transition-all duration-150"
-            style={{ fontFamily: "var(--font-sans)" }}
+            style={{ fontFamily: "var(--font-heading)" }}
           >
             View Details
           </button>

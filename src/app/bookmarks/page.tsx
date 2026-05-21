@@ -94,7 +94,7 @@ export default function BookmarksPage() {
         <div className="mb-8">
           <h1
             className="text-3xl sm:text-4xl font-extrabold text-[var(--foreground)]"
-            style={{ fontFamily: "var(--font-sans)" }}
+            style={{ fontFamily: "var(--font-heading)" }}
           >
             Saved Items
           </h1>
@@ -126,7 +126,7 @@ export default function BookmarksPage() {
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="bg-white border-[3px] border-[var(--border)] rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-6 animate-pulse"
+                className="bg-white border-[3px] border-[var(--border)] rounded-[2rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-6 animate-pulse"
               >
                 <div className="flex gap-4">
                   <div className="w-10 h-10 bg-[var(--border)] rounded-full" />
@@ -142,19 +142,19 @@ export default function BookmarksPage() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white border-[3px] border-[var(--border)] rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-12 text-center"
+            className="bg-white border-[3px] border-[var(--border)] rounded-[2rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-12 text-center"
           >
             <div className="w-16 h-16 mx-auto bg-[var(--primary-light)] rounded-full flex items-center justify-center mb-4">
               <span
                 className="text-2xl font-extrabold text-[var(--primary)]"
-                style={{ fontFamily: "var(--font-sans)" }}
+                style={{ fontFamily: "var(--font-heading)" }}
               >
                 ?
               </span>
             </div>
             <h3
               className="text-xl font-bold text-[var(--foreground)] mb-2"
-              style={{ fontFamily: "var(--font-sans)" }}
+              style={{ fontFamily: "var(--font-heading)" }}
             >
               No saved items yet
             </h3>
@@ -177,7 +177,7 @@ export default function BookmarksPage() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, x: -20 }}
-                  className="bg-white border-[3px] border-[var(--border)] rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-5 transition-all hover:-translate-y-[3px] hover:border-[var(--primary)] hover:shadow-[0_6px_0_rgba(0,0,0,0.08)] group"
+                  className="bg-white border-[3px] border-[var(--border)] rounded-[2rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-5 transition-all hover:-translate-y-[3px] hover:border-[var(--primary)] hover:shadow-[0_6px_0_rgba(0,0,0,0.08)] group"
                 >
                   <div className="flex items-start gap-4">
                     {/* Content */}

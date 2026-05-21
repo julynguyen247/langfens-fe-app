@@ -60,7 +60,7 @@ export function GrammarBatchView({
         <button
           onClick={onRetry}
           className="px-6 py-2.5 rounded-full bg-[var(--primary)] text-white font-bold text-sm border-b-[4px] border-[var(--primary-dark)] hover:-translate-y-0.5 active:translate-y-[2px] active:border-b-[2px] transition-all duration-150"
-          style={{ fontFamily: 'var(--font-sans)' }}
+          style={{ fontFamily: 'var(--font-heading)' }}
         >
           Retry
         </button>
@@ -87,7 +87,7 @@ export function GrammarBatchView({
       >
         <h3
           className="text-lg font-bold text-[var(--foreground)]"
-          style={{ fontFamily: 'var(--font-sans)' }}
+          style={{ fontFamily: 'var(--font-heading)' }}
         >
           {results.length} grammar {results.length === 1 ? 'issue' : 'issues'} found
         </h3>

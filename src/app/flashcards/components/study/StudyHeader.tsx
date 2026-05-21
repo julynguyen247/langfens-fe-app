@@ -14,7 +14,7 @@ export default function StudyHeader({
       <div>
         <h2
           className="text-lg font-bold text-[var(--foreground)]"
-          style={{ fontFamily: "var(--font-sans)" }}
+          style={{ fontFamily: "var(--font-heading)" }}
         >
           {deckTitle}
         </h2>

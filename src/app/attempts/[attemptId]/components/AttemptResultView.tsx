@@ -13,6 +13,7 @@ type Props = {
   activeSkill: "READING" | "LISTENING" | "WRITING" | "SPEAKING";
   setActiveSkill: (skill: "READING" | "LISTENING" | "WRITING" | "SPEAKING") => void;
   overallBand: number | undefined;
+  source: "attempt" | "writing" | "speaking";
 };
 
 export function AttemptResultView({
@@ -20,6 +21,7 @@ export function AttemptResultView({
   activeSkill,
   setActiveSkill,
   overallBand,
+  source,
 }: Props) {
   const router = useRouter();
 
@@ -33,11 +35,12 @@ export function AttemptResultView({
 
   const blankCount = skillFiltered.length - answeredCount;
 
+  // Fix: count correct answers per skill, not total
+  const skillCorrectCount = skillFiltered.filter((q) => q.isCorrect === true).length;
+
   const accuracy =
     skillFiltered.length > 0
-      ? Math.round(
-          (attemptData.correctCount / skillFiltered.length) * 100
-        )
+      ? Math.round((skillCorrectCount / skillFiltered.length) * 100)
       : 0;
 
   const isProductiveSkill =
@@ -110,7 +113,7 @@ export function AttemptResultView({
     : [
         {
           label: "Correct",
-          value: `${attemptData.correctCount}/${skillFiltered.length}`,
+          value: `${skillCorrectCount}/${skillFiltered.length}`,
         },
         { label: "Skipped", value: String(blankCount) },
         { label: "Time", value: attemptData.totalTime },
@@ -178,7 +181,7 @@ export function AttemptResultView({
                   ? "text-[var(--primary)] border-b-[3px] border-[var(--primary)] bg-[var(--primary-light)]"
                   : "text-[var(--text-muted)] hover:text-[var(--foreground)] border-b-[3px] border-transparent"
               }`}
-              style={{ fontFamily: "var(--font-sans)" }}
+              style={{ fontFamily: "var(--font-heading)" }}
             >
               {sk.charAt(0) + sk.slice(1).toLowerCase()}
             </button>
@@ -232,9 +235,13 @@ export function AttemptResultView({
           <button
             onClick={() => router.push("/home")}
             className="px-8 py-3 rounded-full bg-[var(--primary)] text-white font-bold text-sm border-b-[4px] border-[var(--primary-dark)] hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px] transition-all duration-150"
-            style={{ fontFamily: "var(--font-sans)" }}
+            style={{ fontFamily: "var(--font-heading)" }}
           >
-            Take New Placement Test
+            {source === "writing"
+              ? "Try Another Question"
+              : source === "speaking"
+              ? "Try Another Question"
+              : "Take New Placement Test"}
           </button>
 
           <div className="flex justify-center gap-4">
@@ -243,7 +250,7 @@ export function AttemptResultView({
                 router.push(`/attempts/${attemptData.attemptId}/review`)
               }
               className="text-[var(--text-muted)] font-bold text-sm hover:text-[var(--primary)] transition-colors"
-              style={{ fontFamily: "var(--font-sans)" }}
+              style={{ fontFamily: "var(--font-heading)" }}
             >
               Review All Answers
             </button>
@@ -251,7 +258,7 @@ export function AttemptResultView({
             <button
               onClick={() => router.push("/practice")}
               className="text-[var(--text-muted)] font-bold text-sm hover:text-[var(--primary)] transition-colors"
-              style={{ fontFamily: "var(--font-sans)" }}
+              style={{ fontFamily: "var(--font-heading)" }}
             >
               Back to Library
             </button>

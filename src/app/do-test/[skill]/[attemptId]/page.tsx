@@ -102,7 +102,7 @@ export default function DoTestAttemptPage() {
     return (
       <div className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center gap-4">
         <div className="h-10 w-10 animate-spin rounded-full border-[4px] border-[var(--border)] border-t-[var(--primary)]" />
-        <p className="text-sm text-[var(--text-muted)] font-bold" style={{ fontFamily: "var(--font-sans)" }}>
+        <p className="text-sm text-[var(--text-muted)] font-bold" style={{ fontFamily: "var(--font-heading)" }}>
           Loading test... If you refreshed, please go back and re-enter.
         </p>
       </div>
@@ -260,7 +260,7 @@ export function ReadingScreen({
         <div className="flex items-center justify-between">
           <h2
             className="font-bold text-[var(--foreground)]"
-            style={{ fontFamily: "var(--font-sans)" }}
+            style={{ fontFamily: "var(--font-heading)" }}
           >
             {isReviewMode ? "Questions - Review Mode" : "Questions"}
           </h2>
@@ -313,7 +313,7 @@ export function ReadingScreen({
               ? "text-[var(--primary)]"
               : "text-[var(--text-muted)] hover:text-[var(--foreground)]"
           }`}
-          style={{ fontFamily: "var(--font-sans)" }}
+          style={{ fontFamily: "var(--font-heading)" }}
         >
           Passage
           {mobileTab === "passage" && (
@@ -327,7 +327,7 @@ export function ReadingScreen({
               ? "text-[var(--primary)]"
               : "text-[var(--text-muted)] hover:text-[var(--foreground)]"
           }`}
-          style={{ fontFamily: "var(--font-sans)" }}
+          style={{ fontFamily: "var(--font-heading)" }}
         >
           Questions ({totalQuestions})
           {mobileTab === "questions" && (
@@ -490,7 +490,7 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
               </div>
               <div className="flex-1 min-h-0 overflow-y-auto p-5">
                 {listeningSection?.passageMd && (
-                  <div className="mb-6 p-5 bg-white border-[3px] border-[var(--border)] rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)]">
+                  <div className="mb-6 p-5 bg-white border-[3px] border-[var(--border)] rounded-[2rem] shadow-[0_4px_0_rgba(0,0,0,0.08)]">
                     <div
                       className="prose prose-sm max-w-none
                   [&_h1]:text-[var(--foreground)] [&_h1]:font-bold [&_h1]:text-xl [&_h1]:mb-4
@@ -521,7 +521,7 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
                   <div>
                     <h2
                       className="text-lg font-bold text-[var(--foreground)]"
-                      style={{ fontFamily: "var(--font-sans)" }}
+                      style={{ fontFamily: "var(--font-heading)" }}
                     >
                       Listening
                     </h2>
@@ -545,7 +545,7 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
                       ? "bg-[var(--border)] text-[var(--text-muted)] cursor-not-allowed"
                       : "bg-[var(--primary)] text-white border-b-[4px] border-[var(--primary-dark)] hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px]"
                   }`}
-                  style={{ fontFamily: "var(--font-sans)" }}
+                  style={{ fontFamily: "var(--font-heading)" }}
                 >
                   {isSubmitting ? (
                     <span className="flex items-center gap-2">
@@ -615,7 +615,7 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
             <button
               onClick={() => setConfirmOpen(false)}
               className="px-5 py-2.5 rounded-full border-[2px] border-[var(--border)] text-[var(--text-body)] font-bold text-sm hover:-translate-y-0.5 hover:border-[var(--primary)] transition-all duration-150"
-              style={{ fontFamily: "var(--font-sans)" }}
+              style={{ fontFamily: "var(--font-heading)" }}
             >
               Cancel
             </button>
@@ -625,7 +625,7 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
                 doSubmit();
               }}
               className="px-5 py-2.5 rounded-full bg-[var(--primary)] text-white font-bold text-sm border-b-[4px] border-[var(--primary-dark)] hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px] transition-all duration-150"
-              style={{ fontFamily: "var(--font-sans)" }}
+              style={{ fontFamily: "var(--font-heading)" }}
             >
               Submit
             </button>
@@ -846,14 +846,14 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
         <div className="flex flex-1 max-w-7xl mx-auto my-8 gap-8 w-full px-4 sm:px-6 lg:px-8">
           <main className="flex-1 flex flex-col gap-5 min-h-0">
             {/* Header Card */}
-            <div className="bg-white border-[3px] border-[var(--border)] rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] px-8 py-5 flex items-center justify-between">
+            <div className="bg-white border-[3px] border-[var(--border)] rounded-[2rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] px-8 py-5 flex items-center justify-between">
               <div>
                 <p className="text-xs text-[var(--text-muted)] font-bold">
                   IELTS Speaking
                 </p>
                 <h2
                   className="text-xl font-bold text-[var(--foreground)] mt-1"
-                  style={{ fontFamily: "var(--font-sans)" }}
+                  style={{ fontFamily: "var(--font-heading)" }}
                 >
                   {title}
                 </h2>
@@ -896,11 +896,11 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
 
             <div className="flex flex-1 gap-5 min-h-0">
               {/* Task question card */}
-              <section className="flex-1 bg-white border-[3px] border-[var(--border)] rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-7 flex flex-col min-h-0">
+              <section className="flex-1 bg-white border-[3px] border-[var(--border)] rounded-[2rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-7 flex flex-col min-h-0">
                 <div>
                   <h3
                     className="text-base font-bold text-[var(--foreground)]"
-                    style={{ fontFamily: "var(--font-sans)" }}
+                    style={{ fontFamily: "var(--font-heading)" }}
                   >
                     Task question
                   </h3>
@@ -929,10 +929,10 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
 
               {/* Recording panel */}
               <section className="w-full max-w-md flex flex-col gap-4">
-                <div className="bg-white border-[3px] border-[var(--border)] rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-6 flex flex-col gap-4">
+                <div className="bg-white border-[3px] border-[var(--border)] rounded-[2rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-6 flex flex-col gap-4">
                   <h3
                     className="text-sm font-bold text-[var(--foreground)]"
-                    style={{ fontFamily: "var(--font-sans)" }}
+                    style={{ fontFamily: "var(--font-heading)" }}
                   >
                     Recording panel
                   </h3>
@@ -945,7 +945,7 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
                             ? "bg-[var(--destructive)] text-white"
                             : "bg-[var(--background)] text-[var(--text-body)]"
                         }`}
-                        style={{ fontFamily: "var(--font-sans)" }}
+                        style={{ fontFamily: "var(--font-heading)" }}
                       >
                         {isRecording ? "Recording..." : "Tap Start to record"}
                       </div>
@@ -966,7 +966,7 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
                           ? "bg-[var(--background)] text-[var(--text-muted)] cursor-not-allowed pointer-events-none border-[2px] border-[var(--border)]"
                           : "bg-white text-[var(--primary)] border-[2px] border-[var(--primary)] cursor-pointer hover:-translate-y-0.5 hover:bg-[var(--primary-light)]"
                       }`}
-                      style={{ fontFamily: "var(--font-sans)" }}
+                      style={{ fontFamily: "var(--font-heading)" }}
                     >
                       Upload mp3 / wav
                     </label>
@@ -988,7 +988,7 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
                           ? "bg-[var(--background)] text-[var(--text-muted)] cursor-not-allowed border-[2px] border-[var(--border)]"
                           : "bg-[var(--primary)] text-white border-b-[4px] border-[var(--primary-dark)] hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px]"
                       }`}
-                      style={{ fontFamily: "var(--font-sans)" }}
+                      style={{ fontFamily: "var(--font-heading)" }}
                     >
                       Start
                     </button>
@@ -1002,7 +1002,7 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
                           ? "bg-[var(--background)] text-[var(--text-muted)] cursor-not-allowed border-[2px] border-[var(--border)]"
                           : "bg-[var(--destructive)] text-white border-b-[4px] border-red-700 hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px]"
                       }`}
-                      style={{ fontFamily: "var(--font-sans)" }}
+                      style={{ fontFamily: "var(--font-heading)" }}
                     >
                       Stop
                     </button>
@@ -1017,7 +1017,7 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
                         ? "bg-[var(--skill-speaking-light)] text-[var(--skill-speaking)] border-[2px] border-[var(--skill-speaking-border)] hover:-translate-y-0.5 hover:border-[var(--skill-speaking)]"
                         : "bg-[var(--background)] text-[var(--text-muted)] cursor-not-allowed border-[2px] border-[var(--border)]"
                     }`}
-                    style={{ fontFamily: "var(--font-sans)" }}
+                    style={{ fontFamily: "var(--font-heading)" }}
                   >
                     {grading
                       ? "Grading..."
@@ -1031,7 +1031,7 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
                       type="button"
                       onClick={resetAudio}
                       className="w-full text-xs text-[var(--text-muted)] hover:text-[var(--destructive)] font-bold underline mt-2"
-                      style={{ fontFamily: "var(--font-sans)" }}
+                      style={{ fontFamily: "var(--font-heading)" }}
                     >
                       Reset audio & try again
                     </button>
@@ -1053,7 +1053,7 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
               type="button"
               onClick={() => setConfirmOpen(false)}
               className="px-5 py-2.5 rounded-full border-[2px] border-[var(--border)] text-[var(--text-body)] font-bold text-sm hover:-translate-y-0.5 hover:border-[var(--primary)] transition-all duration-150"
-              style={{ fontFamily: "var(--font-sans)" }}
+              style={{ fontFamily: "var(--font-heading)" }}
             >
               Cancel
             </button>
@@ -1061,7 +1061,7 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
               type="button"
               onClick={handleConfirmGrade}
               className="px-5 py-2.5 rounded-full bg-[var(--primary)] text-white font-bold text-sm border-b-[4px] border-[var(--primary-dark)] hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px] transition-all duration-150"
-              style={{ fontFamily: "var(--font-sans)" }}
+              style={{ fontFamily: "var(--font-heading)" }}
             >
               Submit
             </button>
@@ -1226,7 +1226,7 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
 
         {/* Left Panel: The Prompt */}
         <div className="w-1/2 bg-[var(--background)] border-r-[3px] border-[var(--border)] overflow-y-auto p-6">
-          <div className="bg-white border-[3px] border-[var(--border)] rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-8 min-h-[90%]">
+          <div className="bg-white border-[3px] border-[var(--border)] rounded-[2rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-8 min-h-[90%]">
             {/* Task Type Badge */}
             <span className="inline-block rounded-full bg-[var(--foreground)] text-white text-xs font-bold px-4 py-1.5 mb-6 border-b-[3px] border-black">
               {examTitle}
@@ -1255,7 +1255,7 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
             <div className="mt-8 pt-6 border-t-[2px] border-[var(--border)]">
               <p
                 className="text-sm font-bold text-[var(--text-muted)] mb-2"
-                style={{ fontFamily: "var(--font-sans)" }}
+                style={{ fontFamily: "var(--font-heading)" }}
               >
                 Instructions
               </p>
@@ -1275,7 +1275,7 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
           <div className="shrink-0 h-12 border-b-[2px] border-[var(--border)] bg-[var(--background)] flex items-center px-4 gap-2">
             <span
               className="text-xs text-[var(--text-muted)] font-bold"
-              style={{ fontFamily: "var(--font-sans)" }}
+              style={{ fontFamily: "var(--font-heading)" }}
             >
               Word Processor
             </span>
@@ -1326,7 +1326,7 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
                   ? 'bg-[var(--border)] text-[var(--text-muted)] cursor-not-allowed'
                   : 'bg-[var(--primary)] text-white border-b-[4px] border-[var(--primary-dark)] hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px]'
               }`}
-              style={{ fontFamily: "var(--font-sans)" }}
+              style={{ fontFamily: "var(--font-heading)" }}
             >
               {grading ? 'Grading...' : 'Submit Answer'}
             </button>
@@ -1347,7 +1347,7 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
               type="button"
               onClick={() => setConfirmOpen(false)}
               className="px-5 py-2.5 rounded-full border-[2px] border-[var(--border)] text-[var(--text-body)] font-bold text-sm hover:-translate-y-0.5 hover:border-[var(--primary)] transition-all duration-150"
-              style={{ fontFamily: "var(--font-sans)" }}
+              style={{ fontFamily: "var(--font-heading)" }}
             >
               Cancel
             </button>
@@ -1355,7 +1355,7 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
               type="button"
               onClick={handleConfirmSubmit}
               className="px-5 py-2.5 rounded-full bg-[var(--primary)] text-white font-bold text-sm border-b-[4px] border-[var(--primary-dark)] hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px] transition-all duration-150"
-              style={{ fontFamily: "var(--font-sans)" }}
+              style={{ fontFamily: "var(--font-heading)" }}
             >
               Submit
             </button>

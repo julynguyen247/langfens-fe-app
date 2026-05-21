@@ -171,7 +171,7 @@ export default function ErrorReviewPage() {
             <div>
               <h1
                 className="text-3xl sm:text-4xl font-extrabold text-[var(--foreground)]"
-                style={{ fontFamily: "var(--font-sans)" }}
+                style={{ fontFamily: "var(--font-heading)" }}
               >
                 Error Review
               </h1>
@@ -179,7 +179,7 @@ export default function ErrorReviewPage() {
                 Review wrong answers to avoid repeating mistakes
               </p>
             </div>
-            <div className="bg-red-50 border-[3px] border-red-200 rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] px-5 py-3 text-center">
+            <div className="bg-red-50 border-[3px] border-red-200 rounded-[2rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] px-5 py-3 text-center">
               <div
                 className="text-2xl font-extrabold text-[var(--destructive)]"
                 style={{ fontFamily: "var(--font-mono)" }}
@@ -197,7 +197,7 @@ export default function ErrorReviewPage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
-            className="bg-white border-[3px] border-[var(--border)] rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-5 mb-6"
+            className="bg-white border-[3px] border-[var(--border)] rounded-[2rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-5 mb-6"
           >
             <span className="text-sm font-bold text-[var(--text-body)] mb-3 block">Errors by Type</span>
             <div className="flex flex-wrap gap-2">
@@ -224,7 +224,7 @@ export default function ErrorReviewPage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-white border-[3px] border-[var(--border)] rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-5 mb-6"
+          className="bg-white border-[3px] border-[var(--border)] rounded-[2rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-5 mb-6"
         >
           <div className="flex flex-wrap items-center gap-4">
             <span className="text-sm font-bold text-[var(--text-muted)]">Filters:</span>
@@ -284,14 +284,14 @@ export default function ErrorReviewPage() {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white border-[3px] border-[var(--border)] rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-12 text-center"
+            className="bg-white border-[3px] border-[var(--border)] rounded-[2rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-12 text-center"
           >
             <div className="w-32 h-32 mx-auto mb-6">
               <PenguinLottie />
             </div>
             <h3
               className="text-xl font-bold text-[var(--foreground)] mb-2"
-              style={{ fontFamily: "var(--font-sans)" }}
+              style={{ fontFamily: "var(--font-heading)" }}
             >
               {skillFilter || typeFilter ? "No errors match your filters" : "Great job!"}
             </h3>
@@ -315,7 +315,7 @@ export default function ErrorReviewPage() {
                     exit={{ opacity: 0, x: -50 }}
                     transition={{ delay: index * 0.03 }}
                     onClick={() => setSelectedAnswer(item)}
-                    className="bg-white border-[3px] border-[var(--border)] rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-5 cursor-pointer transition-all hover:-translate-y-[3px] hover:border-[var(--destructive)] hover:shadow-[0_6px_0_rgba(0,0,0,0.08)]"
+                    className="bg-white border-[3px] border-[var(--border)] rounded-[2rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-5 cursor-pointer transition-all hover:-translate-y-[3px] hover:border-[var(--destructive)] hover:shadow-[0_6px_0_rgba(0,0,0,0.08)]"
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
@@ -427,14 +427,14 @@ export default function ErrorReviewPage() {
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
-                className="bg-white border-[3px] border-[var(--border)] rounded-[1.5rem] shadow-lg max-w-2xl w-full max-h-[85vh] overflow-hidden"
+                className="bg-white border-[3px] border-[var(--border)] rounded-[2rem] shadow-lg max-w-2xl w-full max-h-[85vh] overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Modal Header */}
                 <div className="sticky top-0 bg-white border-b-[2px] border-[var(--border)] p-5 flex items-center justify-between">
                   <h3
                     className="text-lg font-bold text-[var(--foreground)]"
-                    style={{ fontFamily: "var(--font-sans)" }}
+                    style={{ fontFamily: "var(--font-heading)" }}
                   >
                     Question Details
                   </h3>
@@ -473,7 +473,7 @@ export default function ErrorReviewPage() {
 
                   {/* Answer Comparison */}
                   <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div className="bg-red-50 rounded-[1.5rem] p-4 border-[3px] border-red-200">
+                    <div className="bg-red-50 rounded-[2rem] p-4 border-[3px] border-red-200">
                       <div className="text-xs font-bold text-[var(--destructive)] mb-2">
                         Your Answer
                       </div>
@@ -481,7 +481,7 @@ export default function ErrorReviewPage() {
                         {selectedAnswer.userAnswer || "(Empty)"}
                       </div>
                     </div>
-                    <div className="bg-[var(--skill-speaking-light)] rounded-[1.5rem] p-4 border-[3px] border-[var(--skill-speaking-border)]">
+                    <div className="bg-[var(--skill-speaking-light)] rounded-[2rem] p-4 border-[3px] border-[var(--skill-speaking-border)]">
                       <div className="text-xs font-bold text-[var(--skill-speaking)] mb-2">
                         Correct Answer
                       </div>
@@ -493,7 +493,7 @@ export default function ErrorReviewPage() {
 
                   {/* Explanation */}
                   {selectedAnswer.explanation && (
-                    <div className="bg-[var(--primary-light)] rounded-[1.5rem] p-4 border-[3px] border-[var(--skill-reading-border)]">
+                    <div className="bg-[var(--primary-light)] rounded-[2rem] p-4 border-[3px] border-[var(--skill-reading-border)]">
                       <div className="text-xs font-bold text-[var(--primary)] mb-2">
                         Explanation
                       </div>

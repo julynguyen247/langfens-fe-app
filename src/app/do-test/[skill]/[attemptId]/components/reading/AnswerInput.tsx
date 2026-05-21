@@ -51,8 +51,8 @@ const AnswerInput = memo(function AnswerInput({
     if (!isReviewMode || correctAnswer === undefined) return '';
     
     const isCorrect = value.trim().toUpperCase() === correctAnswer.trim().toUpperCase();
-    if (isCorrect) return 'border-green-500 bg-green-50';
-    return 'border-red-500 bg-red-50';
+    if (isCorrect) return 'border-green-500 bg-green-50/50';
+    return 'border-red-500 bg-red-50/50';
   };
 
   return (
@@ -82,7 +82,7 @@ const AnswerInput = memo(function AnswerInput({
           focus:outline-none focus:border-[var(--primary)]
         `}
         style={{
-          fontFamily: 'var(--font-sans)',
+          fontFamily: 'var(--font-heading)',
         }}
         aria-label={`Answer for question ${id}`}
         aria-describedby={isReviewMode ? `${id}-review` : undefined}
@@ -107,9 +107,9 @@ const AnswerInput = memo(function AnswerInput({
           className="mt-2 text-sm"
         >
           {value.trim().toUpperCase() === correctAnswer.trim().toUpperCase() ? (
-            <span className="text-green-600 font-semibold">Correct!</span>
+            <span className="text-[var(--primary)] font-semibold">Correct!</span>
           ) : (
-            <span className="text-red-600 font-semibold">
+            <span className="text-[var(--destructive)] font-semibold">
               Correct answer: {correctAnswer}
             </span>
           )}

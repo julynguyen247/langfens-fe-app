@@ -3,7 +3,7 @@
 export function ScrollIndicator() {
   return (
     <div className="flex flex-col items-center gap-2 opacity-60">
-      <span className="text-[10px] tracking-wide text-[var(--ocean-text-muted)]" style={{ fontFamily: 'var(--font-code)' }}>
+      <span className="text-[10px] tracking-wide text-[var(--ocean-text-muted)]" style={{ fontFamily: 'var(--font-body)' }}>
         Scroll to dive deeper
       </span>
       <div

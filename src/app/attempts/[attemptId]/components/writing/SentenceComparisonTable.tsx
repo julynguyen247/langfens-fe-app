@@ -41,20 +41,20 @@ function ComparisonRow({ sc, index }: { sc: SentenceComparison; index: number })
         <div>
           <p
             className="text-xs font-bold text-[var(--destructive)] mb-1"
-            style={{ fontFamily: 'var(--font-sans)' }}
+            style={{ fontFamily: 'var(--font-heading)' }}
           >
             Original
           </p>
-          <p className="text-sm text-[var(--text-body)]">{sc.original}</p>
+          <p className="text-sm text-[var(--text-body)] break-all">{sc.original}</p>
         </div>
         <div>
           <p
             className="text-xs font-bold text-emerald-600 mb-1"
-            style={{ fontFamily: 'var(--font-sans)' }}
+            style={{ fontFamily: 'var(--font-heading)' }}
           >
             Improved
           </p>
-          <p className="text-sm text-[var(--text-body)]">{sc.improved}</p>
+          <p className="text-sm text-[var(--text-body)] break-all">{sc.improved}</p>
         </div>
       </div>
 
@@ -81,7 +81,7 @@ function ComparisonRow({ sc, index }: { sc: SentenceComparison; index: number })
           <button
             onClick={handleExplain}
             className="ml-auto px-4 py-1.5 rounded-full text-xs font-bold bg-[var(--foreground)] text-white border-b-[3px] border-black hover:-translate-y-0.5 active:translate-y-[1px] active:border-b-[1px] transition-all duration-150"
-            style={{ fontFamily: 'var(--font-sans)' }}
+            style={{ fontFamily: 'var(--font-heading)' }}
           >
             {showExplain ? 'Hide explanation' : 'Explain this error'}
           </button>
@@ -129,7 +129,7 @@ export function SentenceComparisonTable({ comparisons }: Props) {
     <div className="space-y-4" data-testid="sentence-comparison-table">
       <h3
         className="text-lg font-bold text-[var(--foreground)]"
-        style={{ fontFamily: 'var(--font-sans)' }}
+        style={{ fontFamily: 'var(--font-heading)' }}
       >
         Sentence-by-sentence improvements
       </h3>

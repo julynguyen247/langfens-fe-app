@@ -214,7 +214,7 @@ export default function NotificationsPage() {
         >
           <h1
             className="text-3xl sm:text-4xl font-extrabold text-[var(--foreground)] mb-2"
-            style={{ fontFamily: "var(--font-sans)" }}
+            style={{ fontFamily: "var(--font-heading)" }}
           >
             Notifications
           </h1>
@@ -285,7 +285,7 @@ export default function NotificationsPage() {
                   <div className="w-16 h-16 mx-auto mb-4 bg-[var(--primary-light)] rounded-full flex items-center justify-center">
                     <span
                       className="text-2xl font-extrabold text-[var(--primary)]"
-                      style={{ fontFamily: "var(--font-sans)" }}
+                      style={{ fontFamily: "var(--font-heading)" }}
                     >
                       0
                     </span>
@@ -358,7 +358,7 @@ export default function NotificationsPage() {
                       <div>
                         <h3
                           className="text-sm font-bold text-[var(--foreground)]"
-                          style={{ fontFamily: "var(--font-sans)" }}
+                          style={{ fontFamily: "var(--font-heading)" }}
                         >
                           {setting.label}
                         </h3>

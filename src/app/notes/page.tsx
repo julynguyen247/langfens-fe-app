@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { getNotes, updateNote, deleteNote } from "@/utils/api";
 import { useUserStore } from "@/app/store/userStore";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { Spinner } from "@/components/ui/spinner";
 
 type Note = {
   id: string;
@@ -129,7 +130,7 @@ export default function NotesPage() {
         >
           <h1
             className="text-3xl sm:text-4xl font-extrabold text-[var(--foreground)]"
-            style={{ fontFamily: "var(--font-sans)" }}
+            style={{ fontFamily: "var(--font-heading)" }}
           >
             My Notes
           </h1>
@@ -157,7 +158,7 @@ export default function NotesPage() {
         {/* Notes Grid */}
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <div className="w-10 h-10 border-[3px] border-[var(--primary-light)] border-t-[var(--primary)] rounded-full animate-spin" />
+            <Spinner className="mx-auto" />
           </div>
         ) : filteredNotes.length === 0 ? (
           <motion.div

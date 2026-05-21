@@ -51,7 +51,7 @@ export function QuestionReview({ details }: { details: AttemptQuestionResult[] }
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
         <h3
           className="font-bold text-[var(--foreground)] text-lg"
-          style={{ fontFamily: "var(--font-sans)" }}
+          style={{ fontFamily: "var(--font-heading)" }}
         >
           Detailed Review
         </h3>
@@ -340,7 +340,7 @@ function FilterBtn({
           ? "bg-[var(--primary)] text-white border-[var(--primary-dark)] border-b-[4px] shadow-[0_2px_0_rgba(0,0,0,0.1)]"
           : "bg-white text-[var(--text-body)] border-[var(--border)] hover:border-[var(--primary)] hover:-translate-y-0.5"
       }`}
-      style={{ fontFamily: "var(--font-sans)" }}
+      style={{ fontFamily: "var(--font-heading)" }}
     >
       {children}
     </button>

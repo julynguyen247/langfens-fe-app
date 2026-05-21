@@ -33,7 +33,7 @@ export function SpeakingRecorderBar() {
             ${
               isRecording
                 ? "bg-red-500 text-white hover:bg-red-600"
-                : "bg-[var(--primary)] text-white hover:bg-[#74a4f6]"
+                : "bg-[var(--primary)] text-white hover:bg-[var(--primary-hover)]"
             }`}
         >
           {isRecording ? "Stop" : "Start recording"}

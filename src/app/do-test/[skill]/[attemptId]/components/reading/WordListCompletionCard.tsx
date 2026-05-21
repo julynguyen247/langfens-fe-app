@@ -92,7 +92,7 @@ const MatchingInformation = memo(function MatchingInformation({
   );
 
   return (
-    <div className="rounded-[1.5rem] border-[3px] border-[var(--border)] bg-white p-4 shadow-[0_4px_0_rgba(0,0,0,0.08)]">
+    <div className="rounded-[2rem] border-[3px] border-[var(--border)] bg-[var(--card)] p-4 shadow-[0_4px_0_rgba(0,0,0,0.08)]">
       <div className="text-sm leading-relaxed text-[var(--foreground)]">
         {split?.parts.map((p, i) => {
           if (p.kind === "text") {
@@ -109,7 +109,7 @@ const MatchingInformation = memo(function MatchingInformation({
               <select
                 value={values[p.blankIndex!] ?? ""}
                 onChange={(e) => handleChange(p.blankIndex!, e.target.value)}
-                className="h-9 rounded-lg border border-[var(--border)] bg-white px-2 text-sm font-semibold
+                className="h-9 rounded-lg border border-[var(--border)] bg-[var(--card)] px-2 text-sm font-semibold
                            focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
               >
                 <option value="">—</option>

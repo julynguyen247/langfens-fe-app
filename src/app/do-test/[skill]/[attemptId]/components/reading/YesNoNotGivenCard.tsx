@@ -52,19 +52,19 @@ const YesNoNotGivenCard = memo(function YesNoNotGivenCard({
     if (isSelected) {
       switch (optionValue) {
         case "YES":
-          return "bg-emerald-500 text-white border-emerald-600 ring-2 ring-emerald-500/30";
+          return "bg-emerald-500 text-[var(--card)] border-emerald-600 ring-2 ring-emerald-500/30";
         case "NO":
-          return "bg-red-500 text-white border-red-600 ring-2 ring-red-500/30";
+          return "bg-[var(--destructive)] text-[var(--card)] border-[var(--destructive-dark)] ring-2 ring-[var(--destructive)]/30";
         case "NOT_GIVEN":
-          return "bg-[var(--primary)] text-white border-[var(--primary-dark)] ring-2 ring-[var(--primary)]/30";
+          return "bg-[var(--primary)] text-[var(--card)] border-[var(--primary-dark)] ring-2 ring-[var(--primary)]/30";
       }
     }
 
-    return "bg-white text-[var(--text-body)] border-[var(--border)] hover:border-[var(--primary)] hover:bg-[var(--primary-light)]/30";
+    return "bg-[var(--card)] text-[var(--text-body)] border-[var(--border)] hover:border-[var(--primary)] hover:bg-[var(--primary-light)]/30";
   };
 
   return (
-    <div className="rounded-[1.5rem] bg-white border-[3px] border-[var(--border)] p-5 shadow-[0_4px_0_rgba(0,0,0,0.08)]">
+    <div className="rounded-[2rem] bg-[var(--card)] border-[3px] border-[var(--border)] p-5 shadow-[0_4px_0_rgba(0,0,0,0.08)]">
       {/* Question Stem */}
       <div className="font-medium text-[var(--foreground)] mb-5 leading-relaxed">
         <ReactMarkdown components={markdownComponents}>

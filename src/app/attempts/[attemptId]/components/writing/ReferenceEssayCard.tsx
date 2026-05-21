@@ -24,7 +24,7 @@ export function ReferenceEssayCard({ essay }: Props) {
       <div className="flex items-center justify-between mb-3">
         <p
           className="text-xs font-bold text-[var(--text-muted)]"
-          style={{ fontFamily: 'var(--font-sans)' }}
+          style={{ fontFamily: 'var(--font-heading)' }}
         >
           Reference Essay
         </p>
@@ -44,7 +44,7 @@ export function ReferenceEssayCard({ essay }: Props) {
         </div>
       </div>
 
-      <p className="text-sm text-[var(--text-body)] leading-relaxed whitespace-pre-wrap">
+      <p className="text-sm text-[var(--text-body)] leading-relaxed whitespace-pre-wrap break-all">
         {expanded || !needsTruncation
           ? essay.text
           : essay.text.slice(0, previewLength) + '...'}
@@ -54,7 +54,7 @@ export function ReferenceEssayCard({ essay }: Props) {
         <button
           onClick={() => setExpanded(!expanded)}
           className="mt-3 text-xs font-bold text-[var(--primary)] hover:underline"
-          style={{ fontFamily: 'var(--font-sans)' }}
+          style={{ fontFamily: 'var(--font-heading)' }}
         >
           {expanded ? 'Show less' : 'Read full essay'}
         </button>

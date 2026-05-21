@@ -224,7 +224,7 @@ export default function DictionaryPage() {
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-12 text-center">
         <h1
           className="text-3xl sm:text-4xl font-extrabold text-[var(--text-heading)] mb-2"
-          style={{ fontFamily: "var(--font-sans)" }}
+          style={{ fontFamily: "var(--font-heading)" }}
         >
           Word Explorer
         </h1>
@@ -234,7 +234,7 @@ export default function DictionaryPage() {
           <input
             ref={inputRef}
             className="w-full text-xl rounded-[2rem] border-[3px] border-[var(--border)] border-b-[5px] focus:border-[var(--primary)] px-6 py-4 bg-white text-[var(--foreground)] placeholder:text-[var(--text-muted)] outline-none font-bold transition-colors"
-            style={{ fontFamily: "var(--font-sans)" }}
+            style={{ fontFamily: "var(--font-heading)" }}
             placeholder="Type a word (e.g., 'mitigate')..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -257,7 +257,7 @@ export default function DictionaryPage() {
                     i === selectedIdx ? 'bg-[var(--primary-light)]' : 'hover:bg-[var(--background)]'
                   }`}
                 >
-                  <span className="font-bold text-[var(--foreground)]" style={{ fontFamily: "var(--font-sans)" }}>
+                  <span className="font-bold text-[var(--foreground)]" style={{ fontFamily: "var(--font-heading)" }}>
                     {s.word}
                   </span>
                   <span className="text-xs font-bold text-[var(--text-muted)] bg-[var(--background)] px-2 py-1 rounded-full border-[2px] border-[var(--border)]">
@@ -299,7 +299,7 @@ export default function DictionaryPage() {
           <div className="rounded-[2rem] border-[3px] border-[var(--destructive)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-white p-12 text-center">
             <h3
               className="text-xl font-bold text-[var(--foreground)] mb-2"
-              style={{ fontFamily: "var(--font-sans)" }}
+              style={{ fontFamily: "var(--font-heading)" }}
             >
               Word Not Found
             </h3>
@@ -322,7 +322,7 @@ export default function DictionaryPage() {
             </div>
             <h2
               className="text-5xl font-bold text-[var(--text-heading)] mb-4"
-              style={{ fontFamily: "var(--font-sans)" }}
+              style={{ fontFamily: "var(--font-heading)" }}
             >
               Serendipity
             </h2>
@@ -348,7 +348,7 @@ export default function DictionaryPage() {
                 <div className="flex items-baseline gap-4 mb-3">
                   <h2
                     className="text-3xl font-bold text-[var(--text-heading)]"
-                    style={{ fontFamily: "var(--font-sans)" }}
+                    style={{ fontFamily: "var(--font-heading)" }}
                   >
                     {result.word}
                   </h2>
@@ -482,7 +482,7 @@ export default function DictionaryPage() {
               <div className="rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-white p-6">
                 <h3
                   className="font-bold text-[var(--text-body)] mb-4 text-sm"
-                  style={{ fontFamily: "var(--font-sans)" }}
+                  style={{ fontFamily: "var(--font-heading)" }}
                 >
                   Recent Searches
                 </h3>
@@ -504,7 +504,7 @@ export default function DictionaryPage() {
               <div className="rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-white p-6">
                 <h3
                   className="font-bold text-[var(--text-body)] mb-4 flex items-center gap-2 text-sm"
-                  style={{ fontFamily: "var(--font-sans)" }}
+                  style={{ fontFamily: "var(--font-heading)" }}
                 >
                   Saved Words
                   <span

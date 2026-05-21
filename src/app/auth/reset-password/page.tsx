@@ -70,7 +70,7 @@ export default function ResetPassword() {
       </div>
 
       {/* Right Panel - Form */}
-      <div className="lg:w-[60%] bg-white flex items-center justify-center px-4 py-10 lg:py-0 lg:min-h-screen">
+      <div className="lg:w-[60%] bg-[var(--background)] flex items-center justify-center px-4 py-10 lg:py-0 lg:min-h-screen">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -80,7 +80,7 @@ export default function ResetPassword() {
           <div className="flex flex-col items-center gap-2">
             <h1
               className="text-2xl font-bold text-[var(--primary)]"
-              style={{ fontFamily: "var(--font-sans)" }}
+              style={{ fontFamily: "var(--font-heading)" }}
             >
               Reset Password
             </h1>
@@ -127,7 +127,7 @@ export default function ResetPassword() {
 
           <div className="relative flex items-center justify-center">
             <div className="w-full border-t-[2px] border-[var(--border)]"></div>
-            <span className="absolute bg-white px-3 text-xs text-[var(--text-muted)] font-medium">
+            <span className="absolute bg-[var(--background)] px-3 text-xs text-[var(--text-muted)] font-medium">
               hoặc
             </span>
           </div>

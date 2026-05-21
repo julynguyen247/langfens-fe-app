@@ -28,7 +28,7 @@ export function VocabularySuggestions({
     <div className="space-y-4" data-testid="vocabulary-suggestions">
       <h3
         className="text-lg font-bold text-[var(--foreground)]"
-        style={{ fontFamily: 'var(--font-sans)' }}
+        style={{ fontFamily: 'var(--font-heading)' }}
       >
         Vocabulary suggestions
       </h3>
@@ -57,11 +57,11 @@ export function VocabularySuggestions({
               <div className="grid grid-cols-2 gap-3 mb-2">
                 <div>
                   <p className="text-xs font-bold text-[var(--text-muted)] mb-1">Current</p>
-                  <p className="text-sm line-through text-[var(--destructive)] opacity-70">{item.original}</p>
+                  <p className="text-sm line-through text-[var(--destructive)] opacity-70 break-all">{item.original}</p>
                 </div>
                 <div>
                   <p className="text-xs font-bold text-[var(--text-muted)] mb-1">Suggested</p>
-                  <p className="text-sm font-semibold text-emerald-600">{item.improved}</p>
+                  <p className="text-sm font-semibold text-emerald-600 break-all">{item.improved}</p>
                 </div>
               </div>
               {item.explanation && (
@@ -81,7 +81,7 @@ export function VocabularySuggestions({
         >
           <p
             className="text-xs font-bold text-[var(--text-muted)] mb-3"
-            style={{ fontFamily: 'var(--font-sans)' }}
+            style={{ fontFamily: 'var(--font-heading)' }}
           >
             Key improvements
           </p>

@@ -127,7 +127,7 @@ export default function VerifyEmailPage() {
       </div>
 
       {/* Right Panel - Form */}
-      <div className="lg:w-[60%] bg-white flex items-center justify-center px-4 py-10 lg:py-0 lg:min-h-screen">
+      <div className="lg:w-[60%] bg-[var(--background)] flex items-center justify-center px-4 py-10 lg:py-0 lg:min-h-screen">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -136,7 +136,7 @@ export default function VerifyEmailPage() {
         >
           <h1
             className="text-2xl font-bold text-[var(--primary)]"
-            style={{ fontFamily: "var(--font-sans)" }}
+            style={{ fontFamily: "var(--font-heading)" }}
           >
             Nhập mã xác minh
           </h1>

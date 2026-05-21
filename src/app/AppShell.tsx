@@ -31,6 +31,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   const requireAuth =
     pathname.startsWith("/attempts") ||
+    pathname.startsWith("/history") ||
     pathname.startsWith("/home") ||
     pathname.startsWith("/courses") ||
     pathname.startsWith("/dictionary") ||

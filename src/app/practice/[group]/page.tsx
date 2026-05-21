@@ -159,14 +159,14 @@ export default function GroupPage() {
           >
             <span
               className="text-lg font-bold text-[var(--primary)]"
-              style={{ fontFamily: "var(--font-sans)" }}
+              style={{ fontFamily: "var(--font-heading)" }}
             >
               ?
             </span>
           </div>
           <p
             className="text-[var(--text-body)] font-semibold mb-1"
-            style={{ fontFamily: "var(--font-sans)" }}
+            style={{ fontFamily: "var(--font-heading)" }}
           >
             Login required
           </p>
@@ -186,14 +186,14 @@ export default function GroupPage() {
           <SkillBadge skill={groupId} size="md" />
           <span
             className="text-sm font-semibold text-[var(--text-muted)]"
-            style={{ fontFamily: "var(--font-sans)" }}
+            style={{ fontFamily: "var(--font-heading)" }}
           >
             Quest Board
           </span>
         </div>
         <h1
           className="text-2xl sm:text-3xl font-bold text-[var(--foreground)] mb-1"
-          style={{ fontFamily: "var(--font-sans)" }}
+          style={{ fontFamily: "var(--font-heading)" }}
         >
           {skillMeta.title}
         </h1>

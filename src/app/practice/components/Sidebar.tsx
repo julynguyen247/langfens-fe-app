@@ -80,7 +80,7 @@ export default function PracticeSidebar({
       <div className="p-6 border-b-[2px] border-[var(--border)]">
         <h2
           className="text-lg font-bold text-[var(--foreground)]"
-          style={{ fontFamily: "var(--font-sans)" }}
+          style={{ fontFamily: "var(--font-heading)" }}
         >
           Skill Tree
         </h2>
@@ -158,7 +158,7 @@ export default function PracticeSidebar({
                   <span
                     className="font-semibold text-sm transition-colors duration-200"
                     style={{
-                      fontFamily: "var(--font-sans)",
+                      fontFamily: "var(--font-heading)",
                       color: isActive
                         ? colors.text
                         : isLocked
@@ -228,7 +228,7 @@ export default function PracticeSidebar({
                                 ? colors.text
                                 : "var(--text-muted)",
                               fontWeight: active ? 600 : 400,
-                              fontFamily: "var(--font-sans)",
+                              fontFamily: "var(--font-heading)",
                             }}
                           >
                             {/* Small sub-node dot */}

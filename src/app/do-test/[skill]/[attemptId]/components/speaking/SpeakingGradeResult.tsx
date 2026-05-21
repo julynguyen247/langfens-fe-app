@@ -65,12 +65,12 @@ export function SpeakingGradeResult({ data }: { data: SpeakingGradeRes }) {
   return (
     <div className="max-w-5xl mx-auto py-8 px-4 space-y-8">
       {/* Score Header */}
-      <div className="rounded-[1.5rem] overflow-hidden shadow-[0_4px_0_rgba(0,0,0,0.08)] border-[3px] border-[var(--border)]">
+      <div className="rounded-[2rem] overflow-hidden shadow-[0_4px_0_rgba(0,0,0,0.08)] border-[3px] border-[var(--border)]">
         <ScoreHeader band={data.overallBand} criteria={criteria} skill="speaking" />
       </div>
 
       {/* Task Prompt (Subtle) */}
-      <div className="bg-[var(--background)] border-[3px] border-[var(--border)] rounded-[1.5rem] p-5 shadow-[0_4px_0_rgba(0,0,0,0.08)]">
+      <div className="bg-[var(--background)] border-[3px] border-[var(--border)] rounded-[2rem] p-5 shadow-[0_4px_0_rgba(0,0,0,0.08)]">
         <div className="flex items-center gap-2 mb-2">
           <h3 className="text-xs font-bold tracking-wider" style={{ color: 'var(--text-muted)' }}>
             Speaking Prompt
@@ -83,7 +83,7 @@ export function SpeakingGradeResult({ data }: { data: SpeakingGradeRes }) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* LEFT: The Transcript (Paper View) */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white border-[3px] border-[var(--border)] rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-8">
+          <div className="bg-white border-[3px] border-[var(--border)] rounded-[2rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-8">
             <h3 className="text-sm font-bold text-[var(--text-muted)] tracking-wider mb-4">
               Your Response
             </h3>
@@ -106,7 +106,7 @@ export function SpeakingGradeResult({ data }: { data: SpeakingGradeRes }) {
         {/* RIGHT: Examiner's Notes (Sidebar) */}
         <div className="space-y-6">
           {/* Examiner's Critique */}
-          <div className="bg-[var(--primary-light)] border-[3px] border-[var(--border)] rounded-[1.5rem] p-6 shadow-[0_4px_0_rgba(0,0,0,0.08)]">
+          <div className="bg-[var(--primary-light)] border-[3px] border-[var(--border)] rounded-[2rem] p-6 shadow-[0_4px_0_rgba(0,0,0,0.08)]">
             <h3 className="font-bold mb-4" style={{ color: 'var(--primary-dark)' }}>
               Examiner's Critique
             </h3>
@@ -142,7 +142,7 @@ export function SpeakingGradeResult({ data }: { data: SpeakingGradeRes }) {
 
           {/* Suggestions */}
           {data.suggestions?.length > 0 && (
-            <div className="bg-white border-[3px] border-[var(--border)] rounded-[1.5rem] p-6 shadow-[0_4px_0_rgba(0,0,0,0.08)]">
+            <div className="bg-white border-[3px] border-[var(--border)] rounded-[2rem] p-6 shadow-[0_4px_0_rgba(0,0,0,0.08)]">
               <h3 className="font-bold text-[var(--foreground)] mb-3">
                 Tips
               </h3>
@@ -159,7 +159,7 @@ export function SpeakingGradeResult({ data }: { data: SpeakingGradeRes }) {
 
           {/* Model Answer Toggle */}
           {data.improvedAnswer && (
-            <div className="bg-white border-[3px] border-[var(--border)] rounded-[1.5rem] p-6 shadow-[0_4px_0_rgba(0,0,0,0.08)]">
+            <div className="bg-white border-[3px] border-[var(--border)] rounded-[2rem] p-6 shadow-[0_4px_0_rgba(0,0,0,0.08)]">
               <h3 className="font-bold text-[var(--foreground)] mb-2">Better Version?</h3>
               <p className="text-xs text-[var(--text-muted)] mb-4">
                 See how an improved answer would sound.
@@ -177,7 +177,7 @@ export function SpeakingGradeResult({ data }: { data: SpeakingGradeRes }) {
 
       {/* Model Answer (Expandable) */}
       {showModel && data.improvedAnswer && (
-        <div className="bg-[var(--foreground)] text-white rounded-[1.5rem] p-8 shadow-[0_4px_0_rgba(0,0,0,0.08)] border-[3px] border-black">
+        <div className="bg-[var(--foreground)] text-white rounded-[2rem] p-8 shadow-[0_4px_0_rgba(0,0,0,0.08)] border-[3px] border-black">
           <div className="flex items-center gap-2 mb-4">
             <h3 className="font-bold">Improved Response</h3>
           </div>

@@ -77,7 +77,7 @@ const MultiCheckboxCard = memo(function MultiCheckboxCard({
   }, []);
 
   return (
-    <div className="border border-[var(--border)] rounded-lg p-4 space-y-3 bg-white">
+    <div className="border border-[var(--border)] rounded-lg p-4 space-y-3 bg-[var(--card)]">
       <div className="text-[var(--foreground)] leading-relaxed font-bold">
         <ReactMarkdown components={markdownComponents}>
           {text}
@@ -91,9 +91,9 @@ const MultiCheckboxCard = memo(function MultiCheckboxCard({
             <label
               key={choice.value}
               className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors
-                ${isChecked 
+                ${isChecked
                   ? "bg-[var(--skill-reading-light)] border-[var(--skill-reading-border)]"
-                  : "bg-white border-[var(--border)] hover:bg-[var(--background)]"
+                  : "bg-[var(--card)] border-[var(--border)] hover:bg-[var(--background)]"
                 }`}
             >
               <input

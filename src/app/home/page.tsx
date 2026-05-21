@@ -151,15 +151,15 @@ export default function Home() {
       try {
         const [res, wres, sres, analyticsRes, gamificationRes] =
           await Promise.all([
-            getAttempt(1, 10),
-            getWritingHistory(),
-            getSpeakingHistory(),
+            getAttempt(1, 10).catch(() => null),
+            getWritingHistory().catch(() => null),
+            getSpeakingHistory().catch(() => null),
             getAnalyticsSummary().catch(() => null),
             getGamificationStats().catch(() => null),
           ]);
 
         const raw =
-          (res as any)?.data?.items ?? (res as any)?.data?.data ?? [];
+          (res as any)?.data?.data?.items ?? (res as any)?.data?.items ?? (res as any)?.data?.data ?? [];
         const list: Attempt[] = Array.isArray(raw)
           ? raw.map(normalizeAttemptItem)
           : [];

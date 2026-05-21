@@ -104,7 +104,7 @@ const QuestionNavigationSidebar = memo(function QuestionNavigationSidebar({
   );
 
   return (
-    <aside className="w-48 bg-white border-r border-[var(--border)] flex flex-col h-full">
+    <aside className="w-48 bg-[var(--card)] border-r border-[var(--border)] flex flex-col h-full">
       {/* Filter Tabs */}
       <div className="p-3 border-b border-[var(--border)]">
         <div className="flex gap-1 bg-[var(--background)] rounded-xl p-1">
@@ -114,7 +114,7 @@ const QuestionNavigationSidebar = memo(function QuestionNavigationSidebar({
               onClick={() => setActiveFilter(tab)}
               className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-medium transition-all duration-200 capitalize ${
                 activeFilter === tab
-                  ? "bg-white text-[var(--primary)] shadow-sm"
+                  ? "bg-[var(--card)] text-[var(--primary)] shadow-sm"
                   : "text-[var(--text-muted)] hover:text-[var(--text-body)]"
               }`}
             >
@@ -169,7 +169,7 @@ const QuestionNavigationSidebar = memo(function QuestionNavigationSidebar({
 
                   {/* Flagged indicator dot */}
                   {isFlagged && (
-                    <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-amber-400 border-2 border-white shadow-sm" />
+                    <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-amber-400 border-2 border-[var(--card)] shadow-sm" />
                   )}
                 </button>
               );

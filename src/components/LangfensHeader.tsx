@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { label: "Practice", href: "/practice" },
   { label: "Vocabulary", href: "/flashcards" },
   { label: "Dictionary", href: "/dictionary" },
+  { label: "History", href: "/history" },
   { label: "Analytics", href: "/analytics" },
   { label: "Bookmarks", href: "/bookmarks" },
   { label: "Study Plan", href: "/study-plan" },
@@ -96,7 +97,7 @@ export default function LangfensHeader() {
       )}
 
       {/* Header */}
-      <header className="fixed inset-x-0 top-0 z-50 bg-white border-b-[3px] border-[var(--border)]">
+      <header className="fixed inset-x-0 top-0 z-50 bg-[var(--background)] border-b-[3px] border-[var(--border)]">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="h-16 flex items-center justify-between">
             {/* Left: Logo */}
@@ -107,7 +108,7 @@ export default function LangfensHeader() {
             >
               <span
                 className="text-xl font-bold tracking-wide text-[var(--primary)]"
-                style={{ fontFamily: "var(--font-sans)" }}
+                style={{ fontFamily: "var(--font-heading)" }}
               >
                 LANGFENS
               </span>
@@ -124,7 +125,7 @@ export default function LangfensHeader() {
                     onClick={() => !isActive && setRouteLoading(true)}
                     className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-150 ${
                       isActive
-                        ? "bg-[var(--primary)] text-white shadow-[0_3px_0_var(--primary-dark)]"
+                        ? "bg-[var(--primary)] text-[var(--card)] shadow-[0_3px_0_var(--primary-dark)]"
                         : "text-[var(--text-muted)] hover:text-[var(--foreground)] hover:bg-[var(--border-light)]"
                     }`}
                   >
@@ -143,13 +144,13 @@ export default function LangfensHeader() {
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
               >
-                <button className="inline-flex items-center justify-center w-10 h-10 rounded-full border-[2px] border-[var(--border)] bg-[var(--primary-light)] hover:border-[var(--primary)] transition-all duration-150 shadow-[0_2px_0_var(--border)]">
+                <button className="inline-flex items-center justify-center w-10 h-10 rounded-full border-[2px] border-[var(--border)] bg-[var(--primary-light)] hover:border-[var(--primary)] transition-all duration-150 shadow-[0_3px_0_rgba(0,0,0,0.06)]">
                   {avatarUrl ? (
                     <img src={avatarUrl} className="w-10 h-10 rounded-full object-cover" alt="Avatar" />
                   ) : (
                     <span
                       className="text-sm font-bold text-[var(--primary)]"
-                      style={{ fontFamily: "var(--font-sans)" }}
+                      style={{ fontFamily: "var(--font-heading)" }}
                     >
                       {initialsFromName(displayName)}
                     </span>
@@ -159,7 +160,7 @@ export default function LangfensHeader() {
                 {/* Dropdown Menu */}
                 {userOpen && (
                   <div
-                    className="absolute right-0 top-full mt-2 w-60 rounded-[1.5rem] bg-white border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] overflow-hidden"
+                    className="absolute right-0 top-full mt-2 w-60 rounded-[2rem] bg-[var(--card)] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] overflow-hidden"
                     onMouseEnter={handleMouseEnter}
                     onMouseLeave={handleMouseLeave}
                   >
@@ -201,7 +202,7 @@ export default function LangfensHeader() {
                     <div className="border-t-[2px] border-[var(--border)] py-2">
                       <button
                         onClick={handleLogout}
-                        className="w-full text-left px-5 py-3 text-sm font-semibold text-[var(--destructive)] hover:bg-red-50 transition-colors"
+                        className="w-full text-left px-5 py-3 text-sm font-semibold text-[var(--destructive)] hover:bg-[var(--destructive-light)] transition-colors"
                       >
                         Sign Out
                       </button>
@@ -215,7 +216,7 @@ export default function LangfensHeader() {
       </header>
 
       {/* Header spacer */}
-      <div style={{ height: 64 }} />
+      <div className="h-16" />
     </>
   );
 }

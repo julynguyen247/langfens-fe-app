@@ -55,7 +55,7 @@ const FlowChartCard = memo(function FlowChartCard({
   }, [order, steps, onChange]);
 
   return (
-    <div className="p-4 border border-[var(--border)] rounded-lg bg-white space-y-4 text-black">
+    <div className="p-4 border border-[var(--border)] rounded-lg bg-[var(--card)] space-y-4 text-[var(--foreground)]">
       <div className="font-bold text-[var(--foreground)]">{stem}</div>
       <div className="space-y-3">
         {steps.map((label, idx) => (
@@ -65,8 +65,8 @@ const FlowChartCard = memo(function FlowChartCard({
               type="number"
               min={1}
               max={steps.length}
-              className="w-16 px-2 py-1 border border-[var(--border)] rounded-md text-center 
-                focus:ring-2 focus:ring-blue-500"
+              className="w-16 px-2 py-1 border border-[var(--border)] rounded-md text-center
+                focus:ring-2 focus:ring-[var(--primary)]"
               value={order[idx] === "" ? "" : order[idx]}
               onChange={(e) => updateOrder(idx, e.target.value)}
             />

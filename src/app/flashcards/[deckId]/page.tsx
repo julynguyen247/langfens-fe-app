@@ -382,7 +382,7 @@ export default function StudyPage() {
             <div className="bg-white border-[3px] border-[var(--border)] rounded-[2rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-8 text-center">
               <div
                 className="text-2xl font-bold text-[var(--foreground)]"
-                style={{ fontFamily: "var(--font-sans)" }}
+                style={{ fontFamily: "var(--font-heading)" }}
               >
                 Session Complete
               </div>

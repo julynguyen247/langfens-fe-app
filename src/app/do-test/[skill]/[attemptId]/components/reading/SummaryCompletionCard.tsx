@@ -81,7 +81,7 @@ const SummaryCompletionCard = memo(function SummaryCompletionCard({
   let blankIndex = -1;
 
   return (
-    <div className="border border-[var(--border)] rounded-lg p-4 space-y-3 bg-white">
+    <div className="border border-[var(--border)] rounded-lg p-4 space-y-3 bg-[var(--card)]">
       {instructionMd && (
         <div className="text-[var(--text-body)] text-sm leading-relaxed">
           <ReactMarkdown components={instructionComponents}>
@@ -112,7 +112,7 @@ const SummaryCompletionCard = memo(function SummaryCompletionCard({
               value={values[currentBlankIndex] ?? ""}
               onChange={(e) => onChange(currentBlankIndex, e.target.value)}
               className="inline-block align-baseline mx-1 w-[14ch] rounded-md border border-[var(--border)] px-2 py-1 text-sm
-                         focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black"
+                         focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] text-[var(--foreground)]"
               placeholder=""
             />
           );

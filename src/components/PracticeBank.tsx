@@ -199,7 +199,7 @@ export default function PracticeBank({
             }}
             placeholder="Search quests..."
             className="w-full rounded-full border-[2px] border-[var(--border)] bg-white py-3 pl-5 pr-4 text-sm outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20 text-[var(--foreground)] transition placeholder:text-[var(--text-muted)]"
-            style={{ fontFamily: "var(--font-sans)" }}
+            style={{ fontFamily: "var(--font-heading)" }}
           />
         </div>
 
@@ -212,7 +212,7 @@ export default function PracticeBank({
                   ? "bg-[var(--primary)] text-white border-b-[3px] border-[var(--primary-dark)]"
                   : "bg-white border-[2px] border-[var(--border)] text-[var(--text-body)] hover:border-[var(--primary)]"
               }`}
-              style={{ fontFamily: "var(--font-sans)" }}
+              style={{ fontFamily: "var(--font-heading)" }}
             >
               Filter
               {selectedTypes.length > 0 && (
@@ -225,7 +225,7 @@ export default function PracticeBank({
 
           <button
             className="rounded-full px-5 py-2.5 text-sm font-bold bg-white border-[2px] border-[var(--border)] text-[var(--text-body)] hover:border-[var(--primary)] flex items-center gap-2 transition-colors"
-            style={{ fontFamily: "var(--font-sans)" }}
+            style={{ fontFamily: "var(--font-heading)" }}
           >
             Sort: Newest
           </button>
@@ -245,7 +245,7 @@ export default function PracticeBank({
               <div className="flex items-center justify-between mb-4">
                 <span
                   className="text-sm font-bold text-[var(--foreground)]"
-                  style={{ fontFamily: "var(--font-sans)" }}
+                  style={{ fontFamily: "var(--font-heading)" }}
                 >
                   Filter by question type
                 </span>
@@ -253,7 +253,7 @@ export default function PracticeBank({
                   <button
                     onClick={() => setSelectedTypes([])}
                     className="text-xs font-bold text-[var(--destructive)] hover:text-red-600"
-                    style={{ fontFamily: "var(--font-sans)" }}
+                    style={{ fontFamily: "var(--font-heading)" }}
                   >
                     Clear all
                   </button>
@@ -284,7 +284,7 @@ export default function PracticeBank({
                         borderColor: isActive
                           ? chipColors.activeBorder
                           : "var(--border)",
-                        fontFamily: "var(--font-sans)",
+                        fontFamily: "var(--font-heading)",
                       }}
                     >
                       {QUESTION_TYPE_LABELS[qt.type] || qt.type}
@@ -303,7 +303,7 @@ export default function PracticeBank({
         <div className="mb-6 flex flex-wrap gap-2 items-center">
           <span
             className="text-xs text-[var(--text-muted)]"
-            style={{ fontFamily: "var(--font-sans)" }}
+            style={{ fontFamily: "var(--font-heading)" }}
           >
             Active filters:
           </span>
@@ -315,7 +315,7 @@ export default function PracticeBank({
                 backgroundColor: chipColors.activeBg,
                 color: chipColors.activeText,
                 borderColor: chipColors.activeBorder,
-                fontFamily: "var(--font-sans)",
+                fontFamily: "var(--font-heading)",
               }}
             >
               {QUESTION_TYPE_LABELS[type] || type}
@@ -385,7 +385,7 @@ export default function PracticeBank({
                             backgroundColor: chipColors.activeBg,
                             color: chipColors.activeText,
                             borderColor: chipColors.activeBorder,
-                            fontFamily: "var(--font-sans)",
+                            fontFamily: "var(--font-heading)",
                           }}
                         >
                           {QUESTION_TYPE_LABELS[type] || type}
@@ -405,7 +405,7 @@ export default function PracticeBank({
                   {/* Title */}
                   <h3
                     className="font-bold text-lg text-[var(--foreground)] leading-snug line-clamp-2 mb-3 group-hover:text-[var(--primary)] transition-colors"
-                    style={{ fontFamily: "var(--font-sans)" }}
+                    style={{ fontFamily: "var(--font-heading)" }}
                   >
                     {it.title}
                   </h3>
@@ -414,7 +414,7 @@ export default function PracticeBank({
                   <div className="flex items-center gap-1.5 mb-4">
                     <span
                       className="text-xs font-semibold text-[var(--text-muted)] mr-1"
-                      style={{ fontFamily: "var(--font-sans)" }}
+                      style={{ fontFamily: "var(--font-heading)" }}
                     >
                       Difficulty
                     </span>
@@ -437,7 +437,7 @@ export default function PracticeBank({
                     <div className="flex items-center justify-between mb-1">
                       <span
                         className="text-xs text-[var(--text-muted)]"
-                        style={{ fontFamily: "var(--font-sans)" }}
+                        style={{ fontFamily: "var(--font-heading)" }}
                       >
                         Completion
                       </span>
@@ -460,7 +460,7 @@ export default function PracticeBank({
                   <div className="mt-auto pt-2">
                     <span
                       className="inline-flex items-center rounded-full bg-[var(--primary)] text-white font-bold px-5 py-2 text-sm border-b-[4px] border-[var(--primary-dark)] group-hover:-translate-y-0.5 group-hover:border-b-[5px] group-active:translate-y-[2px] group-active:border-b-[2px] transition-all duration-150"
-                      style={{ fontFamily: "var(--font-sans)" }}
+                      style={{ fontFamily: "var(--font-heading)" }}
                     >
                       Start practice
                     </span>
@@ -485,14 +485,14 @@ export default function PracticeBank({
           <div className="w-16 h-16 rounded-full bg-[var(--background)] border-[3px] border-[var(--border)] flex items-center justify-center mx-auto mb-4">
             <span
               className="text-2xl font-bold text-[var(--text-muted)]"
-              style={{ fontFamily: "var(--font-sans)" }}
+              style={{ fontFamily: "var(--font-heading)" }}
             >
               ?
             </span>
           </div>
           <p
             className="text-[var(--text-body)] text-lg font-semibold"
-            style={{ fontFamily: "var(--font-sans)" }}
+            style={{ fontFamily: "var(--font-heading)" }}
           >
             No quests found
           </p>

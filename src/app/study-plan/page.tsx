@@ -187,7 +187,7 @@ export default function StudyPlanPage() {
             <div className="p-8 border-b-[2px] border-[var(--border)]">
               <h1
                 className="text-3xl font-extrabold text-[var(--foreground)]"
-                style={{ fontFamily: "var(--font-sans)" }}
+                style={{ fontFamily: "var(--font-heading)" }}
               >
                 Create Study Plan
               </h1>
@@ -407,7 +407,7 @@ export default function StudyPlanPage() {
             <div>
               <h3
                 className="font-bold text-xl text-[var(--foreground)] mb-6"
-                style={{ fontFamily: "var(--font-sans)" }}
+                style={{ fontFamily: "var(--font-heading)" }}
               >
                 Study Rhythm
               </h3>
@@ -468,7 +468,7 @@ export default function StudyPlanPage() {
               <div className="flex items-center justify-between mb-6">
                 <h3
                   className="font-bold text-xl text-[var(--foreground)]"
-                  style={{ fontFamily: "var(--font-sans)" }}
+                  style={{ fontFamily: "var(--font-heading)" }}
                 >
                   Critical Focus Areas
                 </h3>
@@ -486,7 +486,7 @@ export default function StudyPlanPage() {
                     <div>
                       <h4
                         className="font-bold text-[var(--foreground)]"
-                        style={{ fontFamily: "var(--font-sans)" }}
+                        style={{ fontFamily: "var(--font-heading)" }}
                       >
                         {area.skill}
                       </h4>

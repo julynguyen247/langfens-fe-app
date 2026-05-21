@@ -129,7 +129,7 @@ export default function CreateDeckPage() {
         <div className="flex items-center justify-between mb-8">
           <h1
             className="text-3xl sm:text-4xl font-extrabold text-[var(--foreground)]"
-            style={{ fontFamily: "var(--font-sans)" }}
+            style={{ fontFamily: "var(--font-heading)" }}
           >
             Create Deck
           </h1>
@@ -145,7 +145,7 @@ export default function CreateDeckPage() {
         <section className="bg-white border-[3px] border-[var(--border)] rounded-[2rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-6 mb-6">
           <h2
             className="text-xl font-bold text-[var(--foreground)] mb-4"
-            style={{ fontFamily: "var(--font-sans)" }}
+            style={{ fontFamily: "var(--font-heading)" }}
           >
             Deck Details
           </h2>
@@ -221,7 +221,7 @@ export default function CreateDeckPage() {
           <div className="mb-4 flex items-center justify-between">
             <h2
               className="text-xl font-bold text-[var(--foreground)]"
-              style={{ fontFamily: "var(--font-sans)" }}
+              style={{ fontFamily: "var(--font-heading)" }}
             >
               Cards
             </h2>

@@ -114,7 +114,7 @@ export default function DictionaryDetailPage() {
         <div className="rounded-[2rem] border-[3px] border-[var(--destructive)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-white p-8 text-center">
           <h3
             className="text-xl font-bold text-[var(--foreground)] mb-2"
-            style={{ fontFamily: "var(--font-sans)" }}
+            style={{ fontFamily: "var(--font-heading)" }}
           >
             Something went wrong
           </h3>
@@ -139,7 +139,7 @@ export default function DictionaryDetailPage() {
           {/* Word */}
           <h1
             className="text-3xl font-bold text-[var(--text-heading)] mb-3"
-            style={{ fontFamily: "var(--font-sans)" }}
+            style={{ fontFamily: "var(--font-heading)" }}
           >
             {data.word}
           </h1>
@@ -214,7 +214,7 @@ export default function DictionaryDetailPage() {
         <div className="mb-8">
           <h2
             className="text-sm font-bold text-[var(--text-muted)] mb-4"
-            style={{ fontFamily: "var(--font-sans)" }}
+            style={{ fontFamily: "var(--font-heading)" }}
           >
             Definitions
           </h2>
@@ -308,7 +308,7 @@ export default function DictionaryDetailPage() {
           >
             <h2
               className="text-sm font-bold text-[var(--text-muted)] mb-3"
-              style={{ fontFamily: "var(--font-sans)" }}
+              style={{ fontFamily: "var(--font-heading)" }}
             >
               Related forms
             </h2>

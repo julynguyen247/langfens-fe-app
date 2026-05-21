@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getNotes, updateNote, deleteNote } from "@/utils/api";
+import { Spinner } from "@/components/ui/spinner";
 
 type Note = {
   id: string;
@@ -124,7 +125,7 @@ export default function NotesPanel({ attemptId, className = "" }: NotesPanelProp
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="border rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] overflow-hidden"
+            className="border rounded-[2rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] overflow-hidden"
             style={{
               backgroundColor: "var(--background)",
               borderColor: "var(--border)",
@@ -146,13 +147,10 @@ export default function NotesPanel({ attemptId, className = "" }: NotesPanelProp
                   <textarea
                     value={editContent}
                     onChange={(e) => setEditContent(e.target.value)}
-                    className="w-full h-24 p-2 text-sm border rounded-lg resize-none focus:outline-none focus:ring-2"
+                    className="w-full h-24 p-4 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 border-2 border-[var(--border)] rounded-[2rem]"
                     style={{
                       color: "var(--foreground)",
-                      borderColor: "var(--border)",
-                      // @ts-ignore
-                      "--tw-ring-color": "var(--primary)",
-                    } as React.CSSProperties}
+                    }}
                     autoFocus
                   />
                   <div className="flex gap-2 justify-end">
@@ -173,7 +171,7 @@ export default function NotesPanel({ attemptId, className = "" }: NotesPanelProp
                       style={{ backgroundColor: "var(--primary)" }}
                     >
                       {saving ? (
-                        <div className="w-3.5 h-3.5 border border-white/30 border-t-white rounded-full animate-spin" />
+                        <Spinner className="w-3.5 h-3.5 border border-white/30 border-t-white" />
                       ) : (
                         "Lưu"
                       )}

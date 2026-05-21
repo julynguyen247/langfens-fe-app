@@ -125,9 +125,9 @@ const ReadingTextPanel = memo(function ReadingTextPanel({
   );
 
   return (
-    <div className={`flex flex-col h-full bg-white overflow-hidden ${className}`}>
+    <div className={`flex flex-col h-full bg-[var(--card)] overflow-hidden ${className}`}>
       {/* Header */}
-      <div className="flex-shrink-0 px-6 py-4 bg-white border-b border-[var(--border-light)]">
+      <div className="flex-shrink-0 px-6 py-4 bg-[var(--card)] border-b border-[var(--border-light)]">
         <div className="font-sans text-xl font-bold text-[var(--foreground)]">
           <ReactMarkdown components={titleComponents}>
             {processedTitle}

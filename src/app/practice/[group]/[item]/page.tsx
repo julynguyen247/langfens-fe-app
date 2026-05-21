@@ -46,7 +46,7 @@ export default function ItemPage({
             {/* Title */}
             <h1
               className="text-2xl sm:text-3xl font-bold text-[var(--foreground)] mb-2"
-              style={{ fontFamily: "var(--font-sans)" }}
+              style={{ fontFamily: "var(--font-heading)" }}
             >
               {data.title}
             </h1>
@@ -58,7 +58,7 @@ export default function ItemPage({
             <div className="flex items-center gap-2 mb-4">
               <span
                 className="text-xs font-semibold text-[var(--text-muted)] mr-1"
-                style={{ fontFamily: "var(--font-sans)" }}
+                style={{ fontFamily: "var(--font-heading)" }}
               >
                 Difficulty
               </span>
@@ -81,7 +81,7 @@ export default function ItemPage({
               <div className="flex items-center justify-between mb-1">
                 <span
                   className="text-xs font-semibold text-[var(--text-muted)]"
-                  style={{ fontFamily: "var(--font-sans)" }}
+                  style={{ fontFamily: "var(--font-heading)" }}
                 >
                   Progress
                 </span>
@@ -125,7 +125,7 @@ export default function ItemPage({
       >
         <button
           className="rounded-full bg-[var(--primary)] text-white font-bold px-8 py-3 border-b-[4px] border-[var(--primary-dark)] hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px] transition-all duration-150"
-          style={{ fontFamily: "var(--font-sans)" }}
+          style={{ fontFamily: "var(--font-heading)" }}
         >
           Start practice
         </button>

@@ -418,7 +418,7 @@ export default function MultiSkillAttemptPage() {
         <div className="flex items-center gap-3">
           <div
             className="font-bold text-[var(--foreground)] flex items-center gap-2"
-            style={{ fontFamily: "var(--font-sans)" }}
+            style={{ fontFamily: "var(--font-heading)" }}
           >
             <span className="text-[var(--primary)] font-extrabold">EP</span>
             <span>English Placement</span>
@@ -506,7 +506,7 @@ export default function MultiSkillAttemptPage() {
                     <div className="flex items-center justify-between">
                       <h2
                         className="font-bold text-[var(--foreground)]"
-                        style={{ fontFamily: "var(--font-sans)" }}
+                        style={{ fontFamily: "var(--font-heading)" }}
                       >
                         Questions
                       </h2>
@@ -592,7 +592,7 @@ export default function MultiSkillAttemptPage() {
                     <div>
                       <h2
                         className="text-lg font-bold text-[var(--foreground)]"
-                        style={{ fontFamily: "var(--font-sans)" }}
+                        style={{ fontFamily: "var(--font-heading)" }}
                       >
                         Listening
                       </h2>
@@ -671,7 +671,7 @@ export default function MultiSkillAttemptPage() {
                 onChange={(e) => handleWritingChange(e.target.value)}
                 placeholder="Start typing your essay here..."
                 className="flex-1 w-full p-8 resize-none outline-none text-lg text-[var(--foreground)] leading-8 selection:bg-[var(--primary-light)]"
-                style={{ fontFamily: "var(--font-sans)" }}
+                style={{ fontFamily: "var(--font-heading)" }}
                 spellCheck={false}
               />
 

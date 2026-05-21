@@ -76,7 +76,7 @@ const MobileTabBar = memo(function MobileTabBar({
   const hasNext = currentQuestionIndex < questionCount - 1;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[var(--border)] z-40 safe-area-inset-bottom">
+    <div className="fixed bottom-0 left-0 right-0 bg-[var(--card)] border-t border-[var(--border)] z-40 safe-area-inset-bottom">
       {/* Tab Bar */}
       <div
         ref={containerRef}
@@ -123,7 +123,7 @@ const MobileTabBar = memo(function MobileTabBar({
 
             {/* Badge for questions tab */}
             {tab.id === "questions" && answeredCount > 0 && (
-              <span className="ml-1 px-1.5 py-0.5 rounded-full bg-[var(--primary)] text-white text-xs font-bold">
+              <span className="ml-1 px-1.5 py-0.5 rounded-full bg-[var(--primary)] text-[var(--card)] text-xs font-bold">
                 {answeredCount}
               </span>
             )}
@@ -161,7 +161,7 @@ const MobileTabBar = memo(function MobileTabBar({
             </div>
 
             {/* Progress bar */}
-            <div className="w-full h-1.5 bg-white rounded-full overflow-hidden mb-3">
+            <div className="w-full h-1.5 bg-[var(--card)] rounded-full overflow-hidden mb-3">
               <motion.div
                 className="h-full bg-[var(--primary)] rounded-full"
                 initial={{ width: 0 }}
@@ -177,7 +177,7 @@ const MobileTabBar = memo(function MobileTabBar({
                 disabled={!hasPrev}
                 className={`flex-1 py-2.5 px-4 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all ${
                   hasPrev
-                    ? "bg-white border-[3px] border-[var(--border)] text-[var(--text-body)] hover:border-[var(--primary)] hover:text-[var(--primary)]"
+                    ? "bg-[var(--card)] border-[3px] border-[var(--border)] text-[var(--text-body)] hover:border-[var(--primary)] hover:text-[var(--primary)]"
                     : "bg-[var(--background)] text-[var(--text-muted)] cursor-not-allowed"
                 }`}
               >
@@ -191,8 +191,8 @@ const MobileTabBar = memo(function MobileTabBar({
                 disabled={!hasNext}
                 className={`flex-1 py-2.5 px-4 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all ${
                   hasNext
-                    ? "bg-[var(--primary)] text-white shadow-[0_4px_0_var(--primary-dark)] active:shadow-none active:translate-y-[2px]"
-                    : "bg-[var(--primary)]/50 text-white/80 cursor-not-allowed"
+                    ? "bg-[var(--primary)] text-[var(--card)] shadow-[0_4px_0_var(--primary-dark)] active:shadow-none active:translate-y-[2px]"
+                    : "bg-[var(--primary)]/50 text-[var(--card)]/80 cursor-not-allowed"
                 }`}
               >
                 Next

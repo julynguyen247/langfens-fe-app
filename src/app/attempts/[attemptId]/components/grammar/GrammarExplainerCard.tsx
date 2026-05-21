@@ -44,9 +44,9 @@ export function GrammarExplainerCard({ data, errorText, defaultExpanded = false 
             </span>
           </div>
           <p className="text-sm text-[var(--text-body)]">
-            <span className="line-through text-[var(--destructive)] opacity-70">{errorText}</span>
+            <span className="line-through text-[var(--destructive)] opacity-70 break-all">{errorText}</span>
             <span className="mx-2 text-[var(--text-muted)]">→</span>
-            <span className="font-semibold text-emerald-600">{data.correct_form}</span>
+            <span className="font-semibold text-emerald-600 break-all">{data.correct_form}</span>
           </p>
         </div>
         <span
@@ -70,7 +70,7 @@ export function GrammarExplainerCard({ data, errorText, defaultExpanded = false 
               <div className="rounded-[1.5rem] border-[2px] border-blue-200 bg-blue-50 p-4">
                 <p
                   className="text-xs font-bold text-blue-800 mb-1"
-                  style={{ fontFamily: 'var(--font-sans)' }}
+                  style={{ fontFamily: 'var(--font-heading)' }}
                 >
                   Grammar Rule
                 </p>
@@ -80,7 +80,7 @@ export function GrammarExplainerCard({ data, errorText, defaultExpanded = false 
               <div>
                 <p
                   className="text-xs font-bold text-[var(--text-muted)] mb-1"
-                  style={{ fontFamily: 'var(--font-sans)' }}
+                  style={{ fontFamily: 'var(--font-heading)' }}
                 >
                   Explanation
                 </p>
@@ -91,7 +91,7 @@ export function GrammarExplainerCard({ data, errorText, defaultExpanded = false 
                 <div>
                   <p
                     className="text-xs font-bold text-[var(--text-muted)] mb-2"
-                    style={{ fontFamily: 'var(--font-sans)' }}
+                    style={{ fontFamily: 'var(--font-heading)' }}
                   >
                     Examples
                   </p>

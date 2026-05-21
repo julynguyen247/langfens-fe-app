@@ -158,13 +158,13 @@ export default function VocabularyExtractor({ passageText, onAddWords }: Vocabul
     switch (level?.toUpperCase()) {
       case "C1":
       case "C2":
-        return "bg-purple-50 text-purple-700 border-purple-200";
+        return "bg-[var(--skill-listening-light)] text-[var(--skill-listening)] border-[var(--skill-listening-border)]";
       case "B1":
       case "B2":
-        return "bg-blue-50 text-blue-700 border-blue-200";
+        return "bg-[var(--skill-reading-light)] text-[var(--skill-reading)] border-[var(--skill-reading-border)]";
       case "A1":
       case "A2":
-        return "bg-green-50 text-green-700 border-green-200";
+        return "bg-[var(--skill-speaking-light)] text-[var(--skill-speaking)] border-[var(--skill-speaking-border)]";
       default:
         return "border";
     }
@@ -232,9 +232,10 @@ export default function VocabularyExtractor({ passageText, onAddWords }: Vocabul
                   <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4"
+                    className="w-16 h-16 rounded-full flex items-center justify-center mb-4"
+                    style={{ backgroundColor: "var(--skill-speaking-light)" }}
                   >
-                    <span className="text-2xl font-bold text-green-500">OK</span>
+                    <span className="text-2xl font-bold" style={{ color: "var(--skill-speaking)" }}>OK</span>
                   </motion.div>
                   <p className="text-lg font-semibold" style={{ color: "var(--foreground)" }}>Đã lưu thành công!</p>
                   <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>

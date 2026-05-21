@@ -5,7 +5,7 @@ export default function PromoBanner() {
         <div className="max-w-[60%]">
           <h3
             className="text-xl font-bold text-white"
-            style={{ fontFamily: "var(--font-sans)" }}
+            style={{ fontFamily: "var(--font-heading)" }}
           >
             Kiểm tra trình độ nhanh chóng – chính xác
           </h3>
@@ -16,7 +16,7 @@ export default function PromoBanner() {
         <div className="hidden items-center gap-2 md:flex text-white">
           <span
             className="text-5xl font-bold opacity-70"
-            style={{ fontFamily: "var(--font-sans)" }}
+            style={{ fontFamily: "var(--font-heading)" }}
           >
             FC
           </span>

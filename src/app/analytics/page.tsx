@@ -205,7 +205,7 @@ export default function AnalyticsPage() {
           <div>
             <h1
               className="text-3xl font-bold text-[var(--foreground)]"
-              style={{ fontFamily: "var(--font-sans)" }}
+              style={{ fontFamily: "var(--font-heading)" }}
             >
               Insights Dashboard
             </h1>
@@ -273,7 +273,7 @@ export default function AnalyticsPage() {
               <div>
                 <h2
                   className="text-lg font-bold text-[var(--foreground)]"
-                  style={{ fontFamily: "var(--font-sans)" }}
+                  style={{ fontFamily: "var(--font-heading)" }}
                 >
                   Score Trend
                 </h2>
@@ -307,7 +307,7 @@ export default function AnalyticsPage() {
           >
             <h2
               className="text-lg font-bold text-[var(--foreground)] mb-1"
-              style={{ fontFamily: "var(--font-sans)" }}
+              style={{ fontFamily: "var(--font-heading)" }}
             >
               Skill Breakdown
             </h2>
@@ -339,7 +339,7 @@ export default function AnalyticsPage() {
           >
             <h2
               className="text-lg font-bold text-[var(--foreground)] mb-1"
-              style={{ fontFamily: "var(--font-sans)" }}
+              style={{ fontFamily: "var(--font-heading)" }}
             >
               Activity Heatmap
             </h2>
@@ -375,7 +375,7 @@ export default function AnalyticsPage() {
           >
             <h2
               className="text-lg font-bold text-[var(--foreground)] mb-1"
-              style={{ fontFamily: "var(--font-sans)" }}
+              style={{ fontFamily: "var(--font-heading)" }}
             >
               Question Type Performance
             </h2>
@@ -400,7 +400,7 @@ export default function AnalyticsPage() {
           >
             <h2
               className="text-lg font-bold text-[var(--foreground)] mb-1"
-              style={{ fontFamily: "var(--font-sans)" }}
+              style={{ fontFamily: "var(--font-heading)" }}
             >
               AI Insights
             </h2>
@@ -453,12 +453,12 @@ export default function AnalyticsPage() {
           >
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-full bg-[var(--primary)] flex items-center justify-center flex-shrink-0 border-b-[3px] border-[var(--primary-dark)]">
-                <span className="text-white font-bold text-sm" style={{ fontFamily: "var(--font-sans)" }}>AI</span>
+                <span className="text-white font-bold text-sm" style={{ fontFamily: "var(--font-heading)" }}>AI</span>
               </div>
               <div className="flex-1">
                 <h3
                   className="text-lg font-bold text-[var(--foreground)] mb-2"
-                  style={{ fontFamily: "var(--font-sans)" }}
+                  style={{ fontFamily: "var(--font-heading)" }}
                 >
                   AI Study Coach
                 </h3>
@@ -502,7 +502,7 @@ export default function AnalyticsPage() {
             <div className="flex items-center gap-3 mb-5">
               <h2
                 className="text-lg font-bold text-[var(--foreground)]"
-                style={{ fontFamily: "var(--font-sans)" }}
+                style={{ fontFamily: "var(--font-heading)" }}
               >
                 Focus Areas
               </h2>
@@ -550,7 +550,7 @@ export default function AnalyticsPage() {
                 <div>
                   <h2
                     className="text-lg font-bold text-[var(--foreground)]"
-                    style={{ fontFamily: "var(--font-sans)" }}
+                    style={{ fontFamily: "var(--font-heading)" }}
                   >
                     Mistake Review
                   </h2>

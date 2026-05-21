@@ -29,7 +29,7 @@ export default function AttemptResultPage() {
         <div className="h-10 w-10 animate-spin rounded-full border-[4px] border-[var(--border)] border-t-[var(--primary)]" />
         <p
           className="text-base font-bold text-[var(--text-muted)]"
-          style={{ fontFamily: "var(--font-sans)" }}
+          style={{ fontFamily: "var(--font-heading)" }}
         >
           Loading results...
         </p>
@@ -45,7 +45,7 @@ export default function AttemptResultPage() {
         <button
           onClick={() => router.push("/home")}
           className="px-6 py-2.5 rounded-full bg-[var(--primary)] text-white font-bold border-b-[4px] border-[var(--primary-dark)] hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px] transition-all duration-150"
-          style={{ fontFamily: "var(--font-sans)" }}
+          style={{ fontFamily: "var(--font-heading)" }}
         >
           Go Home
         </button>
@@ -71,6 +71,7 @@ export default function AttemptResultPage() {
         activeSkill={activeSkill}
         setActiveSkill={setActiveSkill}
         overallBand={overallBand}
+        source={source}
       />
     );
   }

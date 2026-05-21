@@ -22,32 +22,32 @@ type Achievement = {
 // Tier color palettes - solid colors only
 const TIER_STYLES = {
   COMMON: {
-    bg: 'bg-[var(--skill-reading-light)]',
-    text: 'text-[var(--skill-reading)]',
-    iconBg: 'bg-[var(--skill-reading)]',
-    iconBorder: 'border-[var(--skill-reading)]',
-    border: 'border-[var(--skill-reading-border)]',
+    bg: 'bg-[var(--tier-common-light)]',
+    text: 'text-[var(--tier-common)]',
+    iconBg: 'bg-[var(--tier-common)]',
+    iconBorder: 'border-[var(--tier-common)]',
+    border: 'border-[var(--tier-common-border)]',
   },
   RARE: {
-    bg: 'bg-orange-50',
-    text: 'text-orange-700',
-    iconBg: 'bg-orange-500',
-    iconBorder: 'border-orange-600',
-    border: 'border-orange-200',
+    bg: 'bg-[var(--tier-rare-light)]',
+    text: 'text-[var(--tier-rare)]',
+    iconBg: 'bg-[var(--tier-rare)]',
+    iconBorder: 'border-[var(--tier-rare)]',
+    border: 'border-[var(--tier-rare-border)]',
   },
   EPIC: {
-    bg: 'bg-[var(--skill-listening-light)]',
-    text: 'text-[var(--skill-listening)]',
-    iconBg: 'bg-[var(--skill-listening)]',
-    iconBorder: 'border-[var(--skill-listening)]',
-    border: 'border-[var(--skill-listening-border)]',
+    bg: 'bg-[var(--tier-epic-light)]',
+    text: 'text-[var(--tier-epic)]',
+    iconBg: 'bg-[var(--tier-epic)]',
+    iconBorder: 'border-[var(--tier-epic)]',
+    border: 'border-[var(--tier-epic-border)]',
   },
   LEGENDARY: {
-    bg: 'bg-[var(--skill-writing-light)]',
-    text: 'text-[var(--skill-writing)]',
-    iconBg: 'bg-[var(--skill-writing)]',
-    iconBorder: 'border-[var(--skill-writing)]',
-    border: 'border-[var(--skill-writing-border)]',
+    bg: 'bg-[var(--tier-legendary-light)]',
+    text: 'text-[var(--tier-legendary)]',
+    iconBg: 'bg-[var(--tier-legendary)]',
+    iconBorder: 'border-[var(--tier-legendary)]',
+    border: 'border-[var(--tier-legendary-border)]',
   },
 };
 
@@ -126,7 +126,7 @@ export default function AchievementsPage() {
           <div>
             <h1
               className="text-2xl font-bold text-[var(--foreground)]"
-              style={{ fontFamily: "var(--font-sans)" }}
+              style={{ fontFamily: "var(--font-heading)" }}
             >
               Achievement Collection
             </h1>
@@ -242,7 +242,7 @@ function AchievementCard({
         `}>
           <span
             className={`text-2xl font-bold ${isUnlocked ? 'text-white' : 'text-[var(--text-muted)]'}`}
-            style={{ fontFamily: "var(--font-sans)" }}
+            style={{ fontFamily: "var(--font-heading)" }}
           >
             {TIER_LABELS[tier]}
           </span>
@@ -268,7 +268,7 @@ function AchievementCard({
       {/* TEXT CONTENT */}
       <h3
         className={`font-bold text-base mb-1 leading-tight ${isUnlocked ? 'text-[var(--foreground)]' : 'text-[var(--text-muted)]'}`}
-        style={{ fontFamily: "var(--font-sans)" }}
+        style={{ fontFamily: "var(--font-heading)" }}
       >
         {achievement.title}
       </h3>

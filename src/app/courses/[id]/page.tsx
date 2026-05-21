@@ -69,7 +69,7 @@ export default function CourseDetailPage() {
       <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--background)]">
         <h2
           className="text-xl font-bold text-[var(--foreground)]"
-          style={{ fontFamily: "var(--font-sans)" }}
+          style={{ fontFamily: "var(--font-heading)" }}
         >
           Course not found
         </h2>
@@ -120,7 +120,7 @@ export default function CourseDetailPage() {
               )}
               <h1
                 className="text-3xl sm:text-4xl font-extrabold text-[var(--foreground)] mb-3"
-                style={{ fontFamily: "var(--font-sans)" }}
+                style={{ fontFamily: "var(--font-heading)" }}
               >
                 {course.title}
               </h1>
@@ -191,7 +191,7 @@ export default function CourseDetailPage() {
         >
           <h2
             className="text-2xl font-bold text-[var(--foreground)] mb-6"
-            style={{ fontFamily: "var(--font-sans)" }}
+            style={{ fontFamily: "var(--font-heading)" }}
           >
             Course content
           </h2>

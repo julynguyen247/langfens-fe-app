@@ -77,7 +77,7 @@ export default function ExploreDecksPage() {
           </button>
           <h1
             className="text-3xl sm:text-4xl font-extrabold text-[var(--foreground)]"
-            style={{ fontFamily: "var(--font-sans)" }}
+            style={{ fontFamily: "var(--font-heading)" }}
           >
             Explore Decks
           </h1>

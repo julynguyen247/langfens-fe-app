@@ -28,7 +28,7 @@ export function ProductiveBandSection({
             <section className="rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-[var(--background)] p-6">
               <h3
                 className="text-sm font-bold text-[var(--text-muted)] mb-2"
-                style={{ fontFamily: "var(--font-sans)" }}
+                style={{ fontFamily: "var(--font-heading)" }}
               >
                 Task Prompt
               </h3>
@@ -71,7 +71,7 @@ export function ProductiveBandSection({
             <section className="rounded-[2rem] border-[3px] border-[var(--primary)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-[var(--primary-light)] p-6">
               <h3
                 className="font-bold text-[var(--primary-dark)] mb-3"
-                style={{ fontFamily: "var(--font-sans)" }}
+                style={{ fontFamily: "var(--font-heading)" }}
               >
                 Improvement Suggestions
               </h3>
@@ -94,7 +94,7 @@ export function ProductiveBandSection({
               <button
                 onClick={() => setShowModel(!showModel)}
                 className="w-full py-3 rounded-full bg-[var(--foreground)] text-white font-bold text-sm border-b-[4px] border-black hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px] transition-all duration-150"
-                style={{ fontFamily: "var(--font-sans)" }}
+                style={{ fontFamily: "var(--font-heading)" }}
               >
                 {showModel ? "Hide Model Answer" : "View Model Answer"}
               </button>
@@ -110,7 +110,7 @@ export function ProductiveBandSection({
                   >
                     <h3
                       className="font-bold mb-3"
-                      style={{ fontFamily: "var(--font-sans)" }}
+                      style={{ fontFamily: "var(--font-heading)" }}
                     >
                       Improved Version
                     </h3>
@@ -132,7 +132,7 @@ export function ProductiveBandSection({
             <section className="rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-[var(--background)] p-6">
               <h3
                 className="text-sm font-bold text-[var(--foreground)] mb-2"
-                style={{ fontFamily: "var(--font-sans)" }}
+                style={{ fontFamily: "var(--font-heading)" }}
               >
                 Task prompt
               </h3>
@@ -146,7 +146,7 @@ export function ProductiveBandSection({
             <section className="rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-[var(--background)] p-6">
               <h3
                 className="text-sm font-bold text-[var(--foreground)] mb-2"
-                style={{ fontFamily: "var(--font-sans)" }}
+                style={{ fontFamily: "var(--font-heading)" }}
               >
                 Transcript
               </h3>
@@ -188,7 +188,7 @@ export function ProductiveBandSection({
               <section className="rounded-[2rem] border-[3px] border-[var(--skill-speaking-border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-[var(--skill-speaking-light)] p-6">
                 <h3
                   className="text-sm font-bold text-[var(--skill-speaking)] mb-2"
-                  style={{ fontFamily: "var(--font-sans)" }}
+                  style={{ fontFamily: "var(--font-heading)" }}
                 >
                   Improvement suggestions
                 </h3>
@@ -204,7 +204,7 @@ export function ProductiveBandSection({
             <section className="rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-[var(--background)] p-6">
               <h3
                 className="text-sm font-bold text-[var(--foreground)] mb-2"
-                style={{ fontFamily: "var(--font-sans)" }}
+                style={{ fontFamily: "var(--font-heading)" }}
               >
                 Improved answer
               </h3>

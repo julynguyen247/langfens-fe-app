@@ -89,7 +89,7 @@ export default function DeckCardsModal({
         <div className="flex items-center justify-between border-b-[3px] border-[var(--border)] px-5 py-3 gap-2">
           <h3
             className="text-base font-bold flex-1 text-[var(--foreground)]"
-            style={{ fontFamily: "var(--font-sans)" }}
+            style={{ fontFamily: "var(--font-heading)" }}
           >
             {editingCard
               ? editingCard.id === "__new"
@@ -192,7 +192,7 @@ export default function DeckCardsModal({
           <div className="bg-white rounded-[2rem] border-[3px] border-[var(--border)] shadow-lg p-6 w-full max-w-sm space-y-4">
             <h2
               className="text-lg font-bold text-[var(--foreground)]"
-              style={{ fontFamily: "var(--font-sans)" }}
+              style={{ fontFamily: "var(--font-heading)" }}
             >
               Xác nhận xoá
             </h2>
