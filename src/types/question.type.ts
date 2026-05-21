@@ -36,11 +36,17 @@ export type QuestionUiKind =
   | "matching_information";
 type Choice = { value: string; label: string };
 
-export type QuestionUi = {
+export interface QuestionData {
   id: string;
+  idx: number;
+  type: string;
   stem: string;
-  backendType: BackendQuestionType;
-  uiKind: QuestionUiKind;
-  choices?: Choice[];
+  promptMd?: string;
+  explanationMd?: string;
+  options?: { id: string; idx: number; contentMd: string }[];
+  flowChartNodes?: { key: string; label: string }[];
+  /** Structured word list for MATCHING_INFORMATION — populated from API payload */
+  wordList?: string[];
+  order?: string;
   placeholder?: string;
-};
+}

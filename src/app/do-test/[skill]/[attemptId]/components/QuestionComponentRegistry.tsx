@@ -20,6 +20,8 @@ export type RawQuestion = {
   explanationMd?: string;
   options?: { id: string; idx: number; contentMd: string }[];
   flowChartNodes?: { key: string; label: string }[];
+  /** Structured word list for MATCHING_INFORMATION */
+  wordList?: string[];
 };
 
 /** Props accepted by every registered component via the registry */
@@ -299,10 +301,10 @@ export const QuestionComponentRegistry: Record<
   }) as React.FC<QuestionProps>,
 
   MATCHING_INFORMATION: (({ question, values, onBlankChange }) => {
-    // Word-list parsing is handled inside MatchingInformation itself
     return (
       <MatchingInformation
         stem={question.stem ?? question.promptMd ?? ""}
+        wordList={question.wordList ?? []}
         values={values ?? []}
         onChange={onBlankChange!}
       />

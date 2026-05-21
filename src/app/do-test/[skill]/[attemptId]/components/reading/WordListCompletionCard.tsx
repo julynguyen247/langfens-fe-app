@@ -4,44 +4,7 @@ import React, { memo, useMemo, useCallback } from "react";
 
 type Choice = { value: string; label: string };
 
-const RE_SPLIT_WORDLIST = /^([\s\S]*?)\n\s*\*\*Word List:\*\*\s*\n([\s\S]*)$/;
 const RE_BLANK = /___(?:\[\d+\])?/g;
-
-function splitByBlanks(promptMd: string) {
-  const normalized = promptMd.includes("\\n")
-    ? promptMd.replace(/\\n/g, "\n")
-    : promptMd;
-
-  const m = normalized.match(RE_SPLIT_WORDLIST);
-
-  if (!m) {
-    return {
-      stem: normalized.trim(),
-      choices: [] as Array<{ value: string; label: string }>,
-    };
-  }
-
-  const stem = m[1].trim();
-  const list = m[2].trim();
-
-  const lines = list
-    .split(/\r?\n/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-
-  const out = [];
-
-  for (const line of lines) {
-    const choice = line.match(/^([A-Z])\s*(?:[.)\-:])\s*(.+)$/);
-    if (!choice) continue;
-
-    out.push({ value: choice[1], label: choice[2].trim() });
-  }
-
-  out.sort((a, b) => a.value.localeCompare(b.value));
-
-  return { stem, choices: out };
-}
 
 function extractBodyAfterColon(stem: string) {
   const m = stem.match(/Fill in blank[\s\S]*?:\s*\n+([\s\S]*)/i);
@@ -73,16 +36,27 @@ function splitBodyByBlanks(body: string) {
 
 const MatchingInformation = memo(function MatchingInformation({
   stem,
+  wordList,
   values,
   onChange,
 }: {
   stem: string;
+  /** Structured word list from API payload (e.g. ["A. Apple", "B. Banana"]) */
+  wordList: string[];
   values: string[];
   onChange: (blankIndex: number, value: string) => void;
 }) {
-  const parsed = useMemo(() => splitByBlanks(stem), [stem]);
-  const body = useMemo(() => extractBodyAfterColon(parsed.stem), [parsed.stem]);
+  const body = useMemo(() => extractBodyAfterColon(stem), [stem]);
   const split = useMemo(() => splitBodyByBlanks(body), [body]);
+
+  const choices: Choice[] = useMemo(() => {
+    return (wordList ?? []).map((item) => {
+      const m = item.match(/^([A-Z])\s*(?:[.)\-:])\s*(.+)$/);
+      return m
+        ? { value: m[1], label: m[2].trim() }
+        : { value: item, label: item };
+    }).sort((a, b) => a.value.localeCompare(b.value));
+  }, [wordList]);
 
   const handleChange = useCallback(
     (blankIndex: number, value: string) => {
@@ -113,7 +87,7 @@ const MatchingInformation = memo(function MatchingInformation({
                            focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
               >
                 <option value="">—</option>
-                {parsed.choices.map((c) => (
+                {choices.map((c) => (
                   <option key={c.value} value={c.value}>
                     {c.value}
                   </option>
@@ -129,7 +103,7 @@ const MatchingInformation = memo(function MatchingInformation({
           Word List
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {parsed.choices.map((c) => (
+          {choices.map((c) => (
             <div
               key={`wl-${c.value}`}
               className="flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--background)] px-2 py-1"
