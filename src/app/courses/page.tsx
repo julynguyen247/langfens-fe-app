@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { getCourses } from "@/utils/api";
+import { Button } from "@/components/ui/button";
 
 type Course = {
   id: string;
@@ -90,7 +91,7 @@ export default function CoursesPage() {
           <div>
             <h1
               className="text-2xl font-bold text-[var(--foreground)]"
-              style={{ fontFamily: "var(--font-sans)" }}
+              style={{ fontFamily: "var(--font-heading)" }}
             >
               Courses
             </h1>
@@ -119,20 +120,17 @@ export default function CoursesPage() {
             const active = categoryFilter === cat;
             const label = cat === "ALL" ? "All" : cat.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
             return (
-              <button
+              <Button
                 key={cat}
+                variant={active ? "category-active" : "category"}
+                size="category-sm"
                 onClick={() => {
                   setCategoryFilter(cat);
                   setPage(1);
                 }}
-                className={`rounded-full px-4 py-1.5 text-sm font-bold transition-all ${
-                  active
-                    ? "bg-[var(--primary)] text-white border-b-[3px] border-[var(--primary-dark)]"
-                    : "border-[2px] border-[var(--border)] bg-white text-[var(--text-body)] hover:border-[var(--primary)] hover:text-[var(--primary)]"
-                }`}
               >
                 {label}
-              </button>
+              </Button>
             );
           })}
         </div>
@@ -147,17 +145,17 @@ export default function CoursesPage() {
           >
             <Link href={`/courses/${c.slug}`} className="block">
               <div className="h-32 bg-[var(--primary)] flex items-center justify-center">
-                <span className="text-4xl font-bold text-white/80" style={{ fontFamily: "var(--font-sans)" }}>
+                <span className="text-4xl font-bold text-white/80" style={{ fontFamily: "var(--font-heading)" }}>
                   {c.title.charAt(0)}
                 </span>
               </div>
               <div className="p-4">
-                <span className="inline-block rounded-full bg-[var(--primary-light)] px-2.5 py-0.5 text-xs font-bold text-[var(--primary)] mb-2 border-[2px] border-blue-200">
+                <span className="inline-block rounded-full bg-[var(--primary-light)] px-2.5 py-0.5 text-xs font-bold text-[var(--primary)] mb-2 border-[2px] border-[var(--primary-light)]">
                   {c.category?.replace(/_/g, " ") || "Course"}
                 </span>
                 <h3
                   className="line-clamp-2 text-sm font-bold text-[var(--foreground)]"
-                  style={{ fontFamily: "var(--font-sans)" }}
+                  style={{ fontFamily: "var(--font-heading)" }}
                 >
                   {c.title}
                 </h3>
@@ -193,13 +191,14 @@ export default function CoursesPage() {
       {/* Pagination */}
       {total > 0 && maxPage > 1 && (
         <div className="mt-6 flex items-center justify-center gap-2 text-sm">
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => go(current - 1)}
             disabled={current === 1}
-            className="rounded-full px-4 py-2 font-bold text-[var(--text-body)] border-[2px] border-[var(--border)] hover:border-[var(--primary)] hover:text-[var(--primary)] disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
           >
             Prev
-          </button>
+          </Button>
           <span
             className="inline-flex h-9 min-w-9 items-center justify-center rounded-full bg-[var(--primary)] px-3 text-white font-bold border-b-[3px] border-[var(--primary-dark)]"
             style={{ fontFamily: "var(--font-mono)" }}
@@ -209,13 +208,14 @@ export default function CoursesPage() {
           <span className="text-[var(--text-muted)] font-bold" style={{ fontFamily: "var(--font-mono)" }}>
             / {maxPage}
           </span>
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => go(current + 1)}
             disabled={current === maxPage}
-            className="rounded-full px-4 py-2 font-bold text-[var(--text-body)] border-[2px] border-[var(--border)] hover:border-[var(--primary)] hover:text-[var(--primary)] disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
           >
             Next
-          </button>
+          </Button>
         </div>
       )}
     </main>

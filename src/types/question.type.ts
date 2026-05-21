@@ -18,6 +18,11 @@ export type BackendQuestionType =
   | "MATCHING_FEATURES"
   | "MATCHING_ENDINGS"
   | "FLOW_CHART";
+/**
+ * @deprecated Use BackendQuestionType directly with QuestionComponentRegistry
+ * instead of this indirection layer. Kept for backward compatibility during
+ * migration — will be removed in Phase 2.
+ */
 export type QuestionUiKind =
   | "choice_single"
   | "choice_multiple"

@@ -52,6 +52,48 @@ export default function Modal({
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
+  // Focus trapping
+  useEffect(() => {
+    if (!open) return;
+    const panel = panelRef.current;
+    if (!panel) return;
+
+    const focusableSelectors = [
+      'button:not([disabled])',
+      'a[href]',
+      'input:not([disabled])',
+      'select:not([disabled])',
+      'textarea:not([disabled])',
+      '[tabindex]:not([tabindex="-1"])',
+    ].join(',');
+
+    const getFocusable = () => panel?.querySelectorAll<HTMLElement>(focusableSelectors) ?? [];
+
+    const trapFocus = (e: KeyboardEvent) => {
+      if (e.key !== "Tab") return;
+      const focusable = getFocusable();
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+
+    panel.addEventListener("keydown", trapFocus);
+    return () => panel.removeEventListener("keydown", trapFocus);
+  }, [open]);
+
   useEffect(() => {
     if (!open) return;
     const target =
@@ -70,15 +112,16 @@ export default function Modal({
       aria-labelledby={title ? "modal-title" : undefined}
     >
       <div
-        className="fixed opacity-100 animate-in fade-in duration-150"
+        className="fixed inset-0 bg-black/40 animate-in fade-in duration-150"
         onClick={() => closeOnBackdrop && onClose()}
+        aria-hidden="true"
       />
 
       <div className="min-h-full flex items-center justify-center">
         <div
           ref={panelRef}
           tabIndex={-1}
-          className={`w-full max-w-md rounded-[2rem] border-[3px] shadow-[0_4px_0_rgba(0,0,0,0.08)] animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-150 ${className}`}
+          className={`w-full max-w-md rounded-[2rem] border-[3px] shadow-[0_4px_0_rgba(0,0,0,0.08)] animate-in fade-in zoom-in slide-in-from-top duration-150 ${className}`}
           style={{
             backgroundColor: "var(--background)",
             color: "var(--foreground)",
@@ -100,9 +143,9 @@ export default function Modal({
                     // @ts-ignore
                     "--tw-ring-color": "var(--primary)",
                   } as React.CSSProperties}
-                  aria-label="Close"
+                  aria-label="Close modal"
                 >
-                  x
+                  <span className="material-symbols-rounded text-sm">close</span>
                 </button>
               )}
             </div>

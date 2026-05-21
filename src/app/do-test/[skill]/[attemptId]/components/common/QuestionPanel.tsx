@@ -3,19 +3,46 @@
 import React, { memo, useEffect, useMemo, useState, useCallback, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import QuestionCard from "./QuestionCard";
-import FillInBlankCard from "../reading/FillInBlankCard";
-import MatchingLetterCard from "../reading/MatchingLetterCard";
-import HeadingDropdown from "../reading/HeadingDropdown";
-import FlowChartCard from "../reading/FlowChartCard";
-import MultiCheckboxCard from "../reading/MultiCheckboxCard";
-import SummaryCompletionCard from "../reading/SummaryCompletionCard";
-import MatchingInformation from "../reading/WordListCompletionCard";
-import { AttemptQuestionGroup } from "@/app/store/useAttemptStore";
 import BookmarkButton from "@/components/BookmarkButton";
+import { AttemptQuestionGroup } from "@/app/store/useAttemptStore";
+import { QuestionComponentRegistry, RawQuestion } from "../QuestionComponentRegistry";
 
 type Choice = { value: string; label: string };
 type QA = Record<string, string>;
+
+// Map BackendQuestionType → uiKind for dispatch decisions
+function deriveUiKind(type: string): string {
+  switch (type) {
+    case "TRUE_FALSE_NOT_GIVEN":
+    case "YES_NO_NOT_GIVEN":
+    case "MULTIPLE_CHOICE_SINGLE":
+    case "MULTIPLE_CHOICE_SINGLE_IMAGE":
+    case "CLASSIFICATION":
+      return "choice_single";
+    case "MULTIPLE_CHOICE_MULTIPLE":
+      return "choice_multiple";
+    case "FORM_COMPLETION":
+    case "NOTE_COMPLETION":
+    case "SENTENCE_COMPLETION":
+    case "SUMMARY_COMPLETION":
+    case "TABLE_COMPLETION":
+    case "SHORT_ANSWER":
+    case "DIAGRAM_LABEL":
+    case "MAP_LABEL":
+      return "completion";
+    case "MATCHING_FEATURES":
+    case "MATCHING_ENDINGS":
+      return "matching_letter";
+    case "MATCHING_HEADING":
+      return "matching_heading";
+    case "MATCHING_INFORMATION":
+      return "matching_information";
+    case "FLOW_CHART":
+      return "flow_chart";
+    default:
+      return "completion";
+  }
+}
 
 export type BackendQuestionType = string;
 
@@ -182,7 +209,6 @@ const QuestionPanel = memo(function QuestionPanel({
       questions.map((q) => ({
         ...q,
         id: String(q.id),
-        choices: q.choices ? normalizeChoices(q.choices) : undefined,
       })),
     [questions]
   );
@@ -234,131 +260,91 @@ const QuestionPanel = memo(function QuestionPanel({
 
           let questionContent: React.ReactNode = null;
 
-          switch (q.uiKind) {
-            case "choice_single":
+          // Build a RawQuestion-compatible object from the transformed Question
+          const rawQ: RawQuestion = {
+            id: q.id,
+            idx: q.idx,
+            type: q.backendType,
+            promptMd: q.stem,
+            explanationMd: q.explanationMd,
+            options: q.choices ? (q.choices as Choice[]).map((c, i) => ({
+              id: typeof c === "string" ? String(i + 1) : c.value,
+              idx: i,
+              contentMd: typeof c === "string" ? c : `${String.fromCharCode(65 + i)}. ${c.label}`,
+            })) : undefined,
+            flowChartNodes: q.flowChartNodes,
+          };
+
+          // Dynamic dispatch via registry — replaces the giant switch statement
+          const TargetComponent = QuestionComponentRegistry[q.backendType];
+
+          // Derive uiKind from backendType when not set in the legacy Question shape
+          const uiKind = q.uiKind || deriveUiKind(q.backendType);
+
+          if (uiKind === "matching_paragraph") {
+            // Inline rendering — not in registry (no stem match in BE type)
+            questionContent = (
+              <div className="flex items-start gap-3 py-3 border-b last:border-b-0">
+                <span className="w-6 text-sm font-semibold text-[var(--text-body)]">
+                  {q.order}.
+                </span>
+                <p className="flex-1 text-sm text-[var(--foreground)] leading-relaxed">
+                  {q.stem}
+                </p>
+                <input
+                  value={value}
+                  maxLength={1}
+                  placeholder={q.placeholder ?? "A"}
+                  onChange={(e) =>
+                    handleAnswer(
+                      q.id,
+                      e.target.value.toUpperCase().replace(/[^A-F]/g, "")
+                    )
+                  }
+                  className="w-12 h-10 rounded-lg border border-[var(--border)] text-center font-semibold text-black
+                   focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                />
+              </div>
+            );
+          } else if (TargetComponent) {
+            // Dispatch via registry — use derived uiKind for decision
+            if (uiKind === "choice_single") {
+              // Single-choice: use selected + onSelect API
+              const normalizedChoices = normalizeChoices(q.choices);
               questionContent = (
-                <QuestionCard
-                  question={{
-                    id: q.id,
-                    stem: q.stem,
-                    choices: q.choices ?? [],
-                  }}
+                <TargetComponent
+                  question={rawQ}
                   selected={value}
                   onSelect={(_, v) => handleAnswer(q.id, v)}
                 />
               );
-              break;
-
-            case "completion": {
+            } else if (
+              uiKind === "completion" ||
+              uiKind === "summary_completion"
+            ) {
+              // Completion types: unpack blanks for SummaryCompletionCard
               const arr = unpackBlanks(value);
               questionContent = (
-                <SummaryCompletionCard
-                  id={q.id}
-                  stem={q.stem}
+                <TargetComponent
+                  question={rawQ}
                   values={arr}
-                  onChange={(blankIndex, v) => {
+                  onBlankChange={(blankIndex: number, v: string) => {
                     const next = [...arr];
                     next[blankIndex] = v;
                     handleAnswer(q.id, packBlanks(next));
                   }}
                 />
               );
-              break;
+            } else {
+              // All other types: use value + onChange API
+              questionContent = (
+                <TargetComponent
+                  question={rawQ}
+                  value={value}
+                  onChange={(v: string) => handleAnswer(q.id, v)}
+                />
+              );
             }
-
-            case "matching_information": {
-              const arr = unpackBlanks(value);
-              questionContent = (
-                <MatchingInformation
-                  stem={q.stem}
-                  values={arr}
-                  onChange={(blankIndex, v) => {
-                    const next = [...arr];
-                    next[blankIndex] = v;
-                    handleAnswer(q.id, packBlanks(next));
-                  }}
-                />
-              );
-              break;
-            }
-
-            case "matching_paragraph":
-              questionContent = (
-                <div className="flex items-start gap-3 py-3 border-b last:border-b-0">
-                  <span className="w-6 text-sm font-semibold text-[var(--text-body)]">
-                    {q.order}.
-                  </span>
-                  <p className="flex-1 text-sm text-[var(--foreground)] leading-relaxed">
-                    {q.stem}
-                  </p>
-                  <input
-                    value={value}
-                    maxLength={1}
-                    placeholder={q.placeholder ?? "A"}
-                    onChange={(e) =>
-                      handleAnswer(
-                        q.id,
-                        e.target.value.toUpperCase().replace(/[^A-F]/g, "")
-                      )
-                    }
-                    className="w-12 h-10 rounded-lg border border-[var(--border)] text-center font-semibold text-black
-                   focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                  />
-                </div>
-              );
-              break;
-
-            case "choice_multiple":
-              questionContent = (
-                <MultiCheckboxCard
-                  id={q.id}
-                  stem={q.stem}
-                  choices={q.choices ?? []}
-                  value={value}
-                  onChange={(v) => handleAnswer(q.id, v)}
-                />
-              );
-              break;
-
-            case "matching_letter":
-              questionContent = (
-                <MatchingLetterCard
-                  id={q.id}
-                  stem={q.stem}
-                  value={value}
-                  onChange={(v) => handleAnswer(q.id, v)}
-                />
-              );
-              break;
-
-            case "matching_heading":
-              questionContent = (
-                <HeadingDropdown
-                  id={q.id}
-                  stem={q.stem}
-                  options={(q.choices ?? []).map((c) => ({
-                    contentMd: typeof c === "string" ? c : c.label,
-                  }))}
-                  value={value}
-                  onChange={(v) => handleAnswer(q.id, v)}
-                />
-              );
-              break;
-
-            case "flow_chart":
-              questionContent = (
-                <FlowChartCard
-                  id={q.id}
-                  stem={q.stem}
-                  nodes={q.flowChartNodes ?? []}
-                  value={value}
-                  onChange={(v) => handleAnswer(q.id, v)}
-                />
-              );
-              break;
-
-            default:
-              questionContent = null;
           }
 
           const review = reviewMap[q.id];
