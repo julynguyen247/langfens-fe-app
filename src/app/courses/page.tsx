@@ -31,7 +31,7 @@ export default function CoursesPage() {
       try {
         setLoading(true);
         const res = await getCourses({ status: "Published" });
-        const data = (res as any).data?.data ?? [];
+        const data = (res as any)?.data?.data ?? [];
         setCourses(Array.isArray(data) ? data : []);
       } catch (e) {
         console.error("Failed to fetch courses:", e);

@@ -42,7 +42,7 @@ export default function PredictedBandWidget() {
       try {
         setLoading(true);
         const res = await getPredictedBand();
-        const result = (res as any).data;
+        const result = (res as any)?.data;
 
         if (result.isSuccess) {
           setData(result.data);
@@ -68,7 +68,7 @@ export default function PredictedBandWidget() {
     try {
       setInsightsLoading(true);
       const res = await getAiInsights();
-      const result = (res as any).data;
+      const result = (res as any)?.data;
 
       if (result.isSuccess && result.data) {
         setInsights(result.data);

@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import { completeLesson } from "@/utils/api";
+import { useUserStore } from "@/app/store/userStore";
 
 type TranscriptLine = { t: number; text: string }; // seconds
 type Resource = { label: string; href: string; type?: "file" | "link" };
@@ -93,9 +95,11 @@ export default function CourseLearnPage() {
   );
 
   const markDone = () => {
-    if (!completed.includes(current.id)) {
-      setCompleted((prev) => [...prev, current.id]);
+    const userId = useUserStore.getState().user?.id;
+    if (!completed.includes(current.id) && userId) {
+      completeLesson(userId, current.id).catch(console.error);
     }
+    setCompleted((prev) => [...prev, current.id]);
   };
 
   const goPrev = () => setCurrentIdx((i) => Math.max(0, i - 1));

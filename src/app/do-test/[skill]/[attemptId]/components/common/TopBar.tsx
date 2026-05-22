@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import ProgressRing from "./ProgressRing";
 
 interface TopBarProps {
   title?: string;
@@ -20,6 +21,8 @@ interface TopBarProps {
   onSubmit?: () => void;
   isSubmitting?: boolean;
   mobileMenu?: React.ReactNode;
+  // New ring progress (Duolingo-style)
+  ringProgress?: number; // 0-100, replaces linear bar when provided
 }
 
 type SubmitState = "idle" | "confirming" | "submitting";
@@ -42,6 +45,7 @@ export default function TopBar({
   onSubmit,
   isSubmitting = false,
   mobileMenu,
+  ringProgress,
 }: TopBarProps) {
   const router = useRouter();
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
@@ -221,19 +225,28 @@ export default function TopBar({
 
         {/* CENTER: Progress (desktop only) */}
         <div className="hidden lg:flex items-center gap-4 flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-32 h-2 bg-[var(--background)] rounded-full overflow-hidden">
-              <motion.div
-                className="h-full bg-[var(--primary)] rounded-full"
-                initial={{ width: 0 }}
-                animate={{ width: `${progress}%` }}
-                transition={{ duration: 0.3 }}
-              />
+          {ringProgress !== undefined ? (
+            <div className="flex items-center gap-3">
+              <ProgressRing progress={ringProgress} size={48} strokeWidth={4} />
+              <span className="text-sm font-medium text-[var(--text-muted)] whitespace-nowrap">
+                {answeredCount} of {totalQuestions} answered
+              </span>
             </div>
-            <span className="text-sm font-medium text-[var(--text-muted)] whitespace-nowrap">
-              {answeredCount} of {totalQuestions} answered
-            </span>
-          </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <div className="w-32 h-2 bg-[var(--background)] rounded-full overflow-hidden">
+                <motion.div
+                  className="h-full bg-[var(--primary)] rounded-full"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${progress}%` }}
+                  transition={{ duration: 0.3 }}
+                />
+              </div>
+              <span className="text-sm font-medium text-[var(--text-muted)] whitespace-nowrap">
+                {answeredCount} of {totalQuestions} answered
+              </span>
+            </div>
+          )}
 
           {seconds !== null && (
             <div

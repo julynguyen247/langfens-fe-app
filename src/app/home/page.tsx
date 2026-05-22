@@ -229,11 +229,11 @@ export default function Home() {
           }
           // Try to find current user rank
           if (Array.isArray(lbData)) {
-            const userEntry = lbData.find(
+            const userIndex = lbData.findIndex(
               (u: any) => String(u.userId ?? u.id) === userId
             );
-            if (userEntry) {
-              setCurrentUserRank(userEntry.rank);
+            if (userIndex !== -1) {
+              setCurrentUserRank(userIndex + 1);
             }
           }
         }

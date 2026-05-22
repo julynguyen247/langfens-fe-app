@@ -112,7 +112,7 @@ export default function ErrorReviewPage() {
     async function fetchTypes() {
       try {
         const res = await getQuestionTypes();
-        const types = (res as any).data?.data ?? [];
+        const types = (res as any)?.data?.data ?? [];
         setQuestionTypes(types);
       } catch (e) {
         console.error("Failed to fetch question types:", e);
@@ -136,7 +136,7 @@ export default function ErrorReviewPage() {
           pageSize: 20,
         });
 
-        const result = (res as any).data?.data;
+        const result = (res as any)?.data?.data;
         setData(result);
       } catch (e) {
         console.error("Failed to fetch wrong answers:", e);

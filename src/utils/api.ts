@@ -9,6 +9,7 @@ import api, {
   apisGamification,
   apisNotification,
   apisSpeaking,
+  apisStudyplan,
   apisVocabulary,
   apisWriting,
 } from "./api.customize";
@@ -132,6 +133,46 @@ export async function submitAttempt(attemptId: string) {
 export async function getAttemptResult(attemptId: string) {
   const res = await apisAttempt.get(`/attempt/getresult/${attemptId}`);
   return res;
+}
+
+export interface NavigatorEntry {
+  questionId: string;
+  idx: number;
+  isAnswered: boolean;
+  isFlagged: boolean;
+}
+
+export interface NavigatorResponse {
+  totalQuestions: number;
+  answeredCount: number;
+  questions: NavigatorEntry[];
+}
+
+export async function getQuestionNavigator(attemptId: string): Promise<NavigatorResponse> {
+  const res = await apisAttempt.get(`/attempt/${attemptId}/navigator`);
+  return res.data?.data;
+}
+
+export async function toggleQuestionFlag(
+  attemptId: string,
+  questionId: string
+): Promise<{ flagged: boolean }> {
+  const res = await apisAttempt.patch(`/attempt/${attemptId}/question/${questionId}/flag`);
+  return res.data?.data;
+}
+
+export interface ProgressRingResponse {
+  currentXp: number;
+  targetXp: number;
+  level: number;
+  streak: number;
+  dailyGoalPercent: number;
+  todayXp: string;
+}
+
+export async function getProgressRing(): Promise<ProgressRingResponse> {
+  const res = await apisGamification.get("/gamification/progress-ring");
+  return res.data?.data;
 }
 
 export async function getAttempt(
@@ -545,22 +586,22 @@ export async function createStudyGoal(goal: {
   focusSkills: string[];
   studyHoursPerDay: number;
 }) {
-  const res = await apisAnalytics.post("/study-plan/goals", goal);
+  const res = await apisStudyplan.post("/study-plan/goals", goal);
   return res;
 }
 
 export async function getActiveStudyGoal() {
-  const res = await apisAnalytics.get("/study-plan/goals/active");
+  const res = await apisStudyplan.get("/study-plan/goals/active");
   return res;
 }
 
 export async function getStudyProgress() {
-  const res = await apisAnalytics.get("/study-plan/progress");
+  const res = await apisStudyplan.get("/study-plan/progress");
   return res;
 }
 
 export async function deleteStudyGoal(goalId: string) {
-  const res = await apisAnalytics.delete(`/study-plan/goals/${goalId}`);
+  const res = await apisStudyplan.delete(`/study-plan/goals/${goalId}`);
   return res;
 }
 

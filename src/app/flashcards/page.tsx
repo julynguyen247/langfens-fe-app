@@ -74,7 +74,7 @@ export default function FlashcardsPage() {
     setError(null);
     try {
       const res = await getUserSubscriptions(user.id);
-      setSubs(res.data.data);
+      setSubs((res as any)?.data?.data ?? []);
     } catch (e: any) {
       setError(e?.message || "Failed to load subscribed decks.");
     } finally {
