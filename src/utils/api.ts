@@ -344,7 +344,7 @@ export async function createExam(
   level: string,
   tag: string
 ) {
-  const res = await apisWriting.post(`/admin/create`, {
+  const res = await apisWriting.post(`/admin/writing/create`, {
     title,
     taskText,
     examType,
@@ -385,10 +385,6 @@ export async function startWritingExam(examId: string) {
 }
 export async function startSpeakingExam(examId: string) {
   const res = await apisSpeaking.post(`/speaking/start/${examId}`);
-  return res;
-}
-export async function getWritingExam(examId: string) {
-  const res = await apisWriting.get(`/writing/exams/${examId}`);
   return res;
 }
 export async function getSpeakingExamsById(examId: string) {

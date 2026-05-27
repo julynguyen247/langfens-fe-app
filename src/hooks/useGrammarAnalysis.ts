@@ -71,7 +71,11 @@ export function useGrammarAnalysis(
       setLoadingPhase('explaining');
       const explainRes = await apisAi.post<BatchExplainResponse>(
         '/v1/grammar/batch-explain',
-        { errors: detectedErrors, max_concurrent: 3 }
+        // Use max_concurrent=1 (sequential) - Ollama cannot reliably handle parallel LLM calls.
+        // This ensures all grammar errors are processed successfully rather than risking
+        // partial failures under concurrency. Cloud LLM providers (Groq/MiniMax) can
+        // support higher concurrency if USE_OLLAMA=false in production.
+        { errors: detectedErrors, max_concurrent: 1 }
       );
 
       setResults(explainRes.data.results);

@@ -18,7 +18,7 @@ import { mapApiQuestionToUi } from "@/lib/mapApiQuestionToUi";
 import { useReactMediaRecorder } from "react-media-recorder";
 import {
   getSpeakingExamsById,
-  getWritingExam,
+  getWritingExamById,
   gradeSpeaking,
   gradeWriting,
   submitAttempt,
@@ -1110,7 +1110,7 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
           return;
         }
 
-        const res = await getWritingExam(examId);
+        const res = await getWritingExamById(examId);
         if (cancelled) return;
         setExam(res.data?.data ?? null);
       } catch (e) {

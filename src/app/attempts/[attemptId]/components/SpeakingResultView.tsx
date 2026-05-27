@@ -148,7 +148,7 @@ export function SpeakingResultView({
         </div>
 
         {/* Transcript */}
-        {speakingDetail?.transcript && (
+        {(speakingDetail?.transcriptNormalized ?? speakingDetail?.transcriptRaw) && (
           <motion.div
             className="rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-white overflow-hidden"
             initial={{ opacity: 0, y: 15 }}
@@ -180,7 +180,7 @@ export function SpeakingResultView({
                   Your Response:
                 </p>
                 <p className="text-[var(--foreground)] font-medium text-lg leading-relaxed whitespace-pre-wrap">
-                  {speakingDetail.transcript}
+                  {speakingDetail.transcriptNormalized ?? speakingDetail.transcriptRaw}
                 </p>
               </div>
             </div>
