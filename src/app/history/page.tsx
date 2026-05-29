@@ -79,7 +79,7 @@ export default function HistoryPage() {
               examTitle: a.title ?? a.examTitle ?? "Untitled Exam",
               skill: a.skill || "READING",
               status: a.status || "GRADED",
-              bandScore: a.scorePct ?? a.bandScore ?? a.ieltsBand,
+              bandScore: a.ieltsBand ?? a.bandScore,
               correctCount: a.correctCount || a.correct,
               totalQuestions: a.totalQuestions || a.totalPoints,
               finishedAt: a.submittedAt ?? a.finishedAt ?? a.gradedAt,
