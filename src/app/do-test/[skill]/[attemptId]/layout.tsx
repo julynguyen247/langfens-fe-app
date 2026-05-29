@@ -196,6 +196,10 @@ export default function DoTestAttemptLayout({
     </button>
   ) : null;
 
+  // For writing/speaking, use a placeholder rightSlot to force legacy mode
+  // so TopBar doesn't render its own submit button (those skills have their own submit UI)
+  const forceLegacySlot = !isAutoGraded ? <></> : null;
+
   return (
     <>
       <div className="h-screen flex flex-col bg-[var(--background)] overflow-hidden">
@@ -203,7 +207,7 @@ export default function DoTestAttemptLayout({
           title={testTitle}
           subtitle={subtitle}
           onClose={handleExit}
-          rightSlot={timerSlot}
+          rightSlot={timerSlot || forceLegacySlot}
           submitButton={submitButton}
         />
 

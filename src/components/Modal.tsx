@@ -117,7 +117,7 @@ export default function Modal({
         aria-hidden="true"
       />
 
-      <div className="min-h-full flex items-center justify-center">
+      <div className="relative min-h-full flex items-center justify-center p-4">
         <div
           ref={panelRef}
           tabIndex={-1}
