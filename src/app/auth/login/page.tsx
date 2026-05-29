@@ -51,7 +51,7 @@ export default function Login() {
         router.replace("/home");
         return;
       }
-      setError("Đăng nhập thất bại. Vui lòng thử lại.");
+      setError("Login failed. Please try again.");
     } catch (err: any) {
       const data = err?.response?.data;
       if (
@@ -70,7 +70,7 @@ export default function Login() {
         setError("Invalid email or password");
         return;
       }
-      setError("Có lỗi xảy ra. Vui lòng thử lại.");
+      setError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -96,7 +96,7 @@ export default function Login() {
             Langfens
           </h2>
           <p className="text-sm lg:text-base text-[var(--text-body)] mt-2 text-center max-w-xs">
-            Hành trình chinh phục IELTS bắt đầu từ đây
+            Your journey to conquer IELTS starts here
           </p>
         </motion.div>
       </div>
@@ -113,11 +113,11 @@ export default function Login() {
             className="text-2xl xl:text-3xl font-bold text-[var(--primary)] text-center"
             style={{ fontFamily: "var(--font-heading)" }}
           >
-            Đăng nhập vào tài khoản
+            Sign in to your account
           </h1>
 
           <p className="text-sm text-[var(--text-muted)] mt-2 text-center">
-            Học tập cùng Langfens và theo dõi tiến độ của bạn.
+            Learn with Langfens and track your progress.
           </p>
 
           <form
@@ -183,13 +183,13 @@ export default function Login() {
                   onChange={(e) => setRememberMe(e.target.checked)}
                   className="w-4 h-4 rounded border-[2px] border-[var(--border)] accent-[var(--primary)]"
                 />
-                <span className="text-sm text-[var(--text-body)]">Ghi nhớ đăng nhập</span>
+                <span className="text-sm text-[var(--text-body)]">Remember me</span>
               </label>
               <Link
                 href="/auth/reset-password"
                 className="text-sm font-semibold text-[var(--primary)] hover:underline transition-colors"
               >
-                Quên mật khẩu?
+                Forgot password?
               </Link>
             </div>
 
@@ -198,26 +198,26 @@ export default function Login() {
               type="submit"
               className="w-full mt-6 py-3 rounded-full font-bold text-base text-white bg-[var(--primary)] border-b-[4px] border-[var(--primary-dark)] hover:-translate-y-0.5 hover:bg-[var(--primary-hover)] hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px] active:duration-[50ms] transition-all disabled:opacity-50 disabled:pointer-events-none"
             >
-              Đăng nhập
+              Sign in
             </button>
           </form>
 
           <div className="relative w-full flex items-center justify-center my-6">
             <div className="w-full border-t-[2px] border-[var(--border)]"></div>
             <span className="absolute bg-[var(--background)] px-3 text-[var(--text-muted)] text-sm font-medium">
-              hoặc
+              or
             </span>
           </div>
 
           <GoogleLoginButton className="w-full" redirectTo="/home" />
 
           <p className="mt-6 text-sm text-[var(--text-body)] text-center">
-            Chưa có tài khoản Langfens?{" "}
+            Don&apos;t have a Langfens account?{" "}
             <Link
               href="/auth/register"
               className="text-[var(--primary)] font-bold hover:underline transition-colors"
             >
-              Đăng ký
+              Sign up
             </Link>
           </p>
         </motion.div>
