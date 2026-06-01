@@ -7,10 +7,10 @@ export default function PromoBanner() {
             className="text-xl font-bold text-white"
             style={{ fontFamily: "var(--font-heading)" }}
           >
-            Kiểm tra trình độ nhanh chóng – chính xác
+            Test your level quickly and accurately
           </h3>
           <p className="mt-1 text-sm text-white">
-            Ôn luyện chủ động với bộ thẻ phù hợp mục tiêu.
+            Study proactively with decks that match your goals.
           </p>
         </div>
         <div className="hidden items-center gap-2 md:flex text-white">

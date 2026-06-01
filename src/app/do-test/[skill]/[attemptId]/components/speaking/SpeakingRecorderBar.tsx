@@ -46,7 +46,7 @@ export function SpeakingRecorderBar() {
             ⏱ <span className="ml-1 font-mono">00:00</span>
           </span>
           <span className="hidden sm:inline">
-            Timer UI sẽ update sau khi làm logic.
+            Timer UI sẽ update sau khi ism logic.
           </span>
         </div>
 

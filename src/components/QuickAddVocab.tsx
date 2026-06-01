@@ -59,7 +59,7 @@ export default function QuickAddVocab({ isOpen, onClose, initialWord = "", onAdd
         const data = await enrichVocabulary(word);
         setEnrichedData(data);
       } catch (err) {
-        setError("Không thể lấy thông tin từ vựng");
+        setError("Failed to fetch vocabulary information");
         setEnrichedData(null);
       } finally {
         setLoading(false);
@@ -250,9 +250,9 @@ export default function QuickAddVocab({ isOpen, onClose, initialWord = "", onAdd
               }
             >
               {added ? (
-                "Đã thêm!"
+                "Added!"
               ) : (
-                "+ Thêm vào Flashcard"
+                "+ Add to Flashcard"
               )}
             </button>
           </div>

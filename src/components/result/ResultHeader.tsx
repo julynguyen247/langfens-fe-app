@@ -29,6 +29,9 @@ export interface MetricItem {
 export interface BandBreakdown {
   skill: string;
   score: number;
+  // Optional palette key so the displayed label can differ from the color
+  // source (e.g. writing/speaking criteria reusing the four skill colors).
+  colorKey?: string;
 }
 
 interface ResultHeaderProps {
@@ -106,6 +109,7 @@ export function ResultHeader({
             >
               <SkillProgressBar
                 skill={b.skill}
+                colorKey={b.colorKey}
                 score={b.score}
                 delay={0.2 * idx}
               />

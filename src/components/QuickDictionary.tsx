@@ -77,9 +77,9 @@ export default function QuickDictionary({ onAddToFlashcard }: QuickDictionaryPro
       setEntry(data);
     } catch (err: any) {
       if (err?.response?.status === 404) {
-        setError("Không tìm thấy từ này");
+        setError("Word not found");
       } else {
-        setError("Lỗi khi tra từ");
+        setError("Error looking up word");
       }
       setEntry(null);
     } finally {

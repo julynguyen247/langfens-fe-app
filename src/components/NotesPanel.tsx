@@ -73,7 +73,7 @@ export default function NotesPanel({ attemptId, className = "" }: NotesPanelProp
   };
 
   const handleDelete = async (noteId: string) => {
-    if (!confirm("Bạn có chắc muốn xóa ghi chú này?")) return;
+    if (!confirm("Are you sure you want to delete this note?")) return;
 
     try {
       await deleteNote(noteId);
@@ -173,7 +173,7 @@ export default function NotesPanel({ attemptId, className = "" }: NotesPanelProp
                       {saving ? (
                         <Spinner className="w-3.5 h-3.5 border border-white/30 border-t-white" />
                       ) : (
-                        "Lưu"
+                        "Save"
                       )}
                     </button>
                   </div>
@@ -193,7 +193,7 @@ export default function NotesPanel({ attemptId, className = "" }: NotesPanelProp
                         onClick={() => handleEdit(note)}
                         className="px-2 py-1 text-xs rounded-full transition"
                         style={{ color: "var(--primary)" }}
-                        title="Sửa"
+                        title="Edit"
                       >
                         Sửa
                       </button>
@@ -201,7 +201,7 @@ export default function NotesPanel({ attemptId, className = "" }: NotesPanelProp
                         onClick={() => handleDelete(note.id)}
                         className="px-2 py-1 text-xs rounded-full transition"
                         style={{ color: "var(--destructive)" }}
-                        title="Xóa"
+                        title="Delete"
                       >
                         Xóa
                       </button>

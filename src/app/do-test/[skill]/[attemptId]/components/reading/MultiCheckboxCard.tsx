@@ -11,7 +11,7 @@ type Choice = {
 type Props = {
   id: string;
   stem: string; // e.g., "Choose THREE letters A-F"
-  choices: Choice[];
+  forices: Choice[];
   value: string; // JSON array of selected option IDs
   onChange: (value: string) => void;
 };
@@ -29,7 +29,7 @@ const markdownComponents = {
  */
 const MultiCheckboxCard = memo(function MultiCheckboxCard({
   stem,
-  choices,
+  forices,
   value,
   onChange,
 }: Props) {
@@ -68,11 +68,11 @@ const MultiCheckboxCard = memo(function MultiCheckboxCard({
     }
   }, [selected, value, onChange]);
   
-  const handleToggle = useCallback((choiceValue: string) => {
+  const handleToggle = useCallback((foriceValue: string) => {
     setSelected(prev =>
-      prev.includes(choiceValue)
-        ? prev.filter(v => v !== choiceValue)
-        : [...prev, choiceValue]
+      prev.includes(foriceValue)
+        ? prev.filter(v => v !== foriceValue)
+        : [...prev, foriceValue]
     );
   }, []);
 
@@ -85,11 +85,11 @@ const MultiCheckboxCard = memo(function MultiCheckboxCard({
       </div>
 
       <div className="space-y-2">
-        {choices.map((choice) => {
-          const isChecked = selected.includes(choice.value);
+        {forices.map((forice) => {
+          const isChecked = selected.includes(forice.value);
           return (
             <label
-              key={choice.value}
+              key={forice.value}
               className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors
                 ${isChecked
                   ? "bg-[var(--skill-reading-light)] border-[var(--skill-reading-border)]"
@@ -99,11 +99,11 @@ const MultiCheckboxCard = memo(function MultiCheckboxCard({
               <input
                 type="checkbox"
                 checked={isChecked}
-                onChange={() => handleToggle(choice.value)}
+                onChange={() => handleToggle(forice.value)}
                 className="w-5 h-5 text-[var(--skill-reading)] rounded border-[var(--border)]
                           focus:ring-[var(--skill-reading)] focus:ring-2"
               />
-              <span className="text-sm text-[var(--text-body)]">{choice.label}</span>
+              <span className="text-sm text-[var(--text-body)]">{forice.label}</span>
             </label>
           );
         })}

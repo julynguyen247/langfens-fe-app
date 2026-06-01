@@ -15,6 +15,9 @@ interface SkillProgressBarProps {
   maxScore?: number; // default 9
   animate?: boolean;
   delay?: number; // seconds
+  // Optional override for color lookup so the displayed label can differ from
+  // the palette key (e.g. writing criteria reusing the four skill colors).
+  colorKey?: string;
 }
 
 export function SkillProgressBar({
@@ -23,9 +26,10 @@ export function SkillProgressBar({
   maxScore = 9,
   animate: shouldAnimate = true,
   delay = 0,
+  colorKey,
 }: SkillProgressBarProps) {
   const prefersReducedMotion = useReducedMotion();
-  const color = SKILL_COLORS[skill.toUpperCase()] ?? 'var(--primary)';
+  const color = SKILL_COLORS[(colorKey ?? skill).toUpperCase()] ?? 'var(--primary)';
   const shouldSkipAnimation = prefersReducedMotion || !shouldAnimate;
   const percentage = Math.min((score / maxScore) * 100, 100);
 
@@ -47,10 +51,10 @@ export function SkillProgressBar({
         />
       </div>
       <span
-        className="w-8 text-sm font-bold text-right shrink-0"
+        className="w-10 text-sm font-bold text-right shrink-0"
         style={{ fontFamily: 'var(--font-mono)' }}
       >
-        {score}
+        {score.toFixed(1)}
       </span>
     </div>
   );

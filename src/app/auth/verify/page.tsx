@@ -62,7 +62,7 @@ export default function VerifyEmailPage() {
     setInfo("");
     if (!isComplete) {
       setLoading(false);
-      return setError("Hãy nhập đủ 6 số");
+      return setError("Please enter all 6 digits");
     }
     try {
       const res = await verifyEmail(email, code);
@@ -71,18 +71,18 @@ export default function VerifyEmailPage() {
         router.replace("/auth/login?verified=1");
         return;
       }
-      setError("Mã không đúng. Vui lòng thử lại.");
+      setError("Invalid code. Please try again.");
     } catch (err: any) {
       if (err?.response?.status === 400)
-        setError("Mã xác minh không hợp lệ hoặc đã hết hạn");
-      else setError("Có lỗi xảy ra. Vui lòng thử lại.");
+        setError("Invalid or expired verification code");
+      else setError("An error occurred. Please try again.");
     }
     setLoading(false);
   };
 
   const handleResend = async () => {
     if (!email) {
-      setError("Thiếu email để gửi lại mã.");
+      setError("Missing email. Go back to enter your email.");
       return;
     }
     try {
@@ -90,12 +90,12 @@ export default function VerifyEmailPage() {
       setError("");
       setInfo("");
       await resendEmail(email);
-      setInfo("Đã gửi lại mã xác minh. Vui lòng kiểm tra email.");
+      setInfo("Verification code resent. Please check your email.");
       setDigits(Array(6).fill(""));
       inputsRef.current[0]?.focus();
       setResendCooldown(60);
     } catch {
-      setError("Không thể gửi lại mã. Vui lòng thử lại sau.");
+      setError("Failed to resend code. Please try again later.");
     } finally {
       setResendLoading(false);
     }
@@ -121,7 +121,7 @@ export default function VerifyEmailPage() {
             Langfens
           </h2>
           <p className="text-sm lg:text-base text-[var(--text-body)] mt-2 text-center max-w-xs">
-            Chỉ còn một bước nữa thôi!
+            Almost there!
           </p>
         </motion.div>
       </div>
@@ -138,10 +138,10 @@ export default function VerifyEmailPage() {
             className="text-2xl font-bold text-[var(--primary)]"
             style={{ fontFamily: "var(--font-heading)" }}
           >
-            Nhập mã xác minh
+            Enter verification code
           </h1>
           <p className="text-sm text-[var(--text-muted)] mt-2">
-            Mã đã được gửi tới: <span className="font-semibold text-[var(--text-body)]">{email}</span>
+            Code sent to: <span className="font-semibold text-[var(--text-body)]">{email}</span>
           </p>
 
           <div className="mt-6 grid grid-cols-6 gap-2">
@@ -176,19 +176,19 @@ export default function VerifyEmailPage() {
             onClick={submit}
             className="w-full mt-5 py-3 rounded-full font-semibold text-white bg-[var(--primary)] border-b-[4px] border-[var(--primary-dark)] hover:bg-[var(--primary-hover)] hover:-translate-y-0.5 active:translate-y-[2px] active:border-b-[2px] transition-all focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none"
           >
-            Xác minh
+            Verify
           </button>
 
           <div className="mt-5 text-center text-sm text-[var(--text-body)]">
-            Chưa nhận được mã?{" "}
+            Did not receive the code?{" "}
             <button
               disabled={resendCooldown > 0 || resendLoading}
               onClick={handleResend}
               className="font-bold text-[var(--primary)] hover:underline disabled:text-[var(--text-muted)] disabled:cursor-not-allowed disabled:no-underline cursor-pointer transition-colors"
             >
               {resendLoading
-                ? "Đang gửi..."
-                : `Gửi lại ${resendCooldown > 0 ? `(${resendCooldown}s)` : ""}`}
+                ? "Sending..."
+                : `Resend ${resendCooldown > 0 ? `(${resendCooldown}s)` : ""}`}
             </button>
           </div>
         </motion.div>

@@ -75,10 +75,10 @@ export default function VerifyForgotPasswordPage() {
     setInfo("");
     setError("");
 
-    if (!email) return setError("Thiếu email. Vui lòng quay lại bước nhập email.");
-    if (!isOtpComplete) return setError("Hãy nhập đủ 6 số OTP.");
-    if (!passOk) return setError("Mật khẩu mới phải có ít nhất 8 ký tự.");
-    if (!confirmOk) return setError("Mật khẩu xác nhận không khớp.");
+    if (!email) return setError("Missing email. Go back to enter your email.");
+    if (!isOtpComplete) return setError("Please enter all 6 OTP digits.");
+    if (!passOk) return setError("New password must be at least 8 characters.");
+    if (!confirmOk) return setError("Passwords do not match.");
 
     try {
       setLoading(true);
@@ -88,15 +88,15 @@ export default function VerifyForgotPasswordPage() {
         router.replace("/auth/login?reset=1");
         return;
       }
-      setError("Không thể đặt lại mật khẩu. Vui lòng thử lại.");
+      setError("Failed to reset password. Please try again.");
     } catch (err: any) {
       const msg =
         err?.response?.data?.message ||
         err?.response?.data?.error ||
         (err?.response?.status === 400
-          ? "OTP không hợp lệ hoặc đã hết hạn."
-          : "Có lỗi xảy ra. Vui lòng thử lại.");
-      setError(typeof msg === "string" ? msg : "Có lỗi xảy ra. Vui lòng thử lại.");
+          ? "Invalid or expired OTP."
+          : "An error occurred. Please try again.");
+      setError(typeof msg === "string" ? msg : "An error occurred. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -104,7 +104,7 @@ export default function VerifyForgotPasswordPage() {
 
   const handleResend = async () => {
     if (!email) {
-      setError("Thiếu email để gửi lại mã.");
+      setError("Missing email. Go back to enter your email.");
       return;
     }
     try {
@@ -112,12 +112,12 @@ export default function VerifyForgotPasswordPage() {
       setError("");
       setInfo("");
       await resendEmailForgot(email);
-      setInfo("Đã gửi lại mã OTP. Vui lòng kiểm tra email.");
+      setInfo("OTP resent. Please check your email.");
       setDigits(Array(6).fill(""));
       inputsRef.current[0]?.focus();
       setResendCooldown(60);
     } catch {
-      setError("Không thể gửi lại mã. Vui lòng thử lại sau.");
+      setError("Failed to resend code. Please try again later.");
     } finally {
       setResendLoading(false);
     }
@@ -143,7 +143,7 @@ export default function VerifyForgotPasswordPage() {
             Langfens
           </h2>
           <p className="text-sm lg:text-base text-[var(--text-body)] mt-2 text-center max-w-xs">
-            Đặt lại mật khẩu và tiếp tục hành trình
+            Reset your password and continue your journey
           </p>
         </motion.div>
       </div>
@@ -160,11 +160,11 @@ export default function VerifyForgotPasswordPage() {
             className="text-2xl font-bold text-[var(--primary)]"
             style={{ fontFamily: "var(--font-heading)" }}
           >
-            Đặt lại mật khẩu
+            Reset Password
           </h1>
 
           <p className="text-sm text-[var(--text-muted)] mt-2">
-            OTP đã được gửi tới:{" "}
+            OTP sent to:{" "}
             <span className="font-semibold text-[var(--text-body)]">{email || "?"}</span>
           </p>
 
@@ -187,7 +187,7 @@ export default function VerifyForgotPasswordPage() {
           <div className="mt-5 flex flex-col gap-4">
             <div>
               <label className="text-sm font-medium text-[var(--text-body)] mb-1 block">
-                Mật khẩu mới
+                New Password
               </label>
               <input
                 type="password"
@@ -197,14 +197,14 @@ export default function VerifyForgotPasswordPage() {
                   setInfo("");
                   setNewPassword(e.target.value);
                 }}
-                placeholder="Ít nhất 8 ký tự"
+                placeholder="At least 8 characters"
                 className="w-full px-4 py-3 rounded-xl border-[3px] border-[var(--border)] border-b-[5px] focus:border-[var(--primary)] focus:outline-none transition-colors bg-[var(--surface)] text-[var(--text-heading)] placeholder:text-[var(--text-muted)]"
               />
             </div>
 
             <div>
               <label className="text-sm font-medium text-[var(--text-body)] mb-1 block">
-                Xác nhận mật khẩu
+                Confirm Password
               </label>
               <input
                 type="password"
@@ -214,7 +214,7 @@ export default function VerifyForgotPasswordPage() {
                   setInfo("");
                   setConfirmPassword(e.target.value);
                 }}
-                placeholder="Nhập lại mật khẩu"
+                placeholder="Confirm password"
                 className="w-full px-4 py-3 rounded-xl border-[3px] border-[var(--border)] border-b-[5px] focus:border-[var(--primary)] focus:outline-none transition-colors bg-[var(--surface)] text-[var(--text-heading)] placeholder:text-[var(--text-muted)]"
               />
             </div>
@@ -236,19 +236,19 @@ export default function VerifyForgotPasswordPage() {
             onClick={submit}
             className="w-full mt-5 py-3 rounded-full font-semibold text-white bg-[var(--primary)] border-b-[4px] border-[var(--primary-dark)] hover:bg-[var(--primary-hover)] hover:-translate-y-0.5 active:translate-y-[2px] active:border-b-[2px] transition-all focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none"
           >
-            Xác nhận & đổi mật khẩu
+            Confirm & Change Password
           </button>
 
           <div className="mt-5 text-center text-sm text-[var(--text-body)]">
-            Chưa nhận được mã?{" "}
+            Did not receive the code?{" "}
             <button
               disabled={resendCooldown > 0 || resendLoading}
               onClick={handleResend}
               className="font-bold text-[var(--primary)] hover:underline disabled:text-[var(--text-muted)] disabled:cursor-not-allowed disabled:no-underline cursor-pointer transition-colors"
             >
               {resendLoading
-                ? "Đang gửi..."
-                : `Gửi lại ${resendCooldown > 0 ? `(${resendCooldown}s)` : ""}`}
+                ? "Sending..."
+                : `Resend ${resendCooldown > 0 ? `(${resendCooldown}s)` : ""}`}
             </button>
           </div>
 
@@ -257,7 +257,7 @@ export default function VerifyForgotPasswordPage() {
               onClick={() => router.replace("/auth/reset-password")}
               className="text-sm font-semibold text-[var(--text-muted)] hover:text-[var(--foreground)] hover:underline transition-colors"
             >
-              Quay lại nhập email
+              Back to enter email
             </button>
           </div>
         </motion.div>

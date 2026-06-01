@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { WordDiff } from '../WordDiff';
 import type { GrammarExplainResponse } from '@/types/writing';
 
 const CATEGORY_COLORS: Record<string, { bg: string; text: string }> = {
@@ -44,9 +45,7 @@ export function GrammarExplainerCard({ data, errorText, defaultExpanded = false 
             </span>
           </div>
           <p className="text-sm text-[var(--text-body)]">
-            <span className="line-through text-[var(--destructive)] opacity-70 break-all">{errorText}</span>
-            <span className="mx-2 text-[var(--text-muted)]">→</span>
-            <span className="font-semibold text-emerald-600 break-all">{data.correct_form}</span>
+            <WordDiff original={errorText} improved={data.correct_form} side="inline" />
           </p>
         </div>
         <span

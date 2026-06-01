@@ -28,7 +28,7 @@ export default function Register() {
     return Math.min(score, 4);
   }, [password]);
 
-  const strengthLabel = ["Yếu", "Vừa", "Khá", "Mạnh", "Rất mạnh"][passwordScore];
+  const strengthLabel = ["Weak", "Fair", "Good", "Sthe", "Very Sthe"][passwordScore];
   const strengthColor = [
     "text-[var(--destructive)]",
     "text-[var(--destructive)]",
@@ -67,7 +67,7 @@ export default function Register() {
       return;
     }
     if (passwordScore < 2) {
-      setError("Mật khẩu quá yếu. Hãy dùng ≥8 ký tự, gồm chữ hoa, số và ký tự đặc biệt.");
+      setError("Password is too weak. Use at least 8 characters with uppercase, numbers, and special characters.");
       setLoading(false);
       return;
     }
@@ -78,12 +78,12 @@ export default function Register() {
         router.replace(`/auth/verify?email=${encodeURIComponent(email)}`);
         return;
       }
-      setError("Đăng ký thất bại. Vui lòng thử lại.");
+      setError("Registration failed. Please try again.");
     } catch (err: any) {
       if (err?.response?.status === 400) {
-        setError("Email đã tồn tại hoặc không hợp lệ");
+        setError("Email already exists or is invalid");
       } else {
-        setError("Có lỗi xảy ra. Vui lòng thử lại.");
+        setError("An error occurred. Please try again.");
       }
     } finally {
       setLoading(false);
@@ -110,7 +110,7 @@ export default function Register() {
             Langfens
           </h2>
           <p className="text-sm lg:text-base text-[var(--text-body)] mt-2 text-center max-w-xs">
-            Bắt đầu hành trình học tập cùng Langfens
+            Start your IELTS journey with Langfens
           </p>
         </motion.div>
       </div>
@@ -127,10 +127,10 @@ export default function Register() {
             className="text-2xl xl:text-3xl font-bold text-[var(--primary)] text-center"
             style={{ fontFamily: "var(--font-heading)" }}
           >
-            Tạo tài khoản của bạn
+            Create your account
           </h1>
           <p className="text-sm text-[var(--text-muted)] mt-2 text-center">
-            Bắt đầu hành trình học tập cùng Langfens.
+            Start your IELTS journey with Langfens.
           </p>
 
           <form
@@ -156,7 +156,7 @@ export default function Register() {
               />
             </div>
             <p className="mt-1.5 text-xs text-[var(--text-muted)]">
-              Sử dụng email bạn thường xuyên kiểm tra để nhận mã xác thực.
+              Use an email you check regularly to receive your verification code.
             </p>
 
             <div className="flex flex-col gap-1 mt-5">
@@ -164,14 +164,14 @@ export default function Register() {
                 htmlFor="password"
                 className="text-sm font-medium text-[var(--text-body)] mb-1 block"
               >
-                Mật khẩu
+                Password
               </label>
               <div className="relative">
                 <Input
                   id="password"
                   value={password}
                   onChange={passwordChangeHandler}
-                  placeholder="Mật khẩu"
+                  placeholder="Password"
                   type={showPassword ? "text" : "password"}
                   className="pr-12"
                 />
@@ -188,7 +188,7 @@ export default function Register() {
             {password.length > 0 && (
               <div className="mt-3">
                 <div className={`text-sm font-semibold ${strengthColor}`}>
-                  Độ mạnh: {strengthLabel}
+                  Strength: {strengthLabel}
                 </div>
                 <div className="mt-2 grid grid-cols-4 gap-1.5">
                   {[0, 1, 2, 3].map((i) => (
@@ -203,11 +203,11 @@ export default function Register() {
                 <ul className="mt-2.5 text-xs text-[var(--text-muted)] space-y-1">
                   <li className="flex items-center gap-2">
                     <span className={`inline-block w-1.5 h-1.5 rounded-full ${password.length >= 8 ? "bg-[var(--primary)]" : "bg-[var(--border)]"}`} />
-                    Ít nhất 8 ký tự
+                    At least 8 characters
                   </li>
                   <li className="flex items-center gap-2">
                     <span className={`inline-block w-1.5 h-1.5 rounded-full ${/[A-Z]/.test(password) && /\d/.test(password) && /[^A-Za-z0-9]/.test(password) ? "bg-[var(--primary)]" : "bg-[var(--border)]"}`} />
-                    Có chữ hoa, số và ký tự đặc biệt
+                    Contains uppercase, numbers, and special characters
                   </li>
                 </ul>
               </div>
@@ -224,16 +224,16 @@ export default function Register() {
               type="submit"
               className="w-full mt-6 py-3 rounded-full font-bold text-base text-white bg-[var(--primary)] border-b-[4px] border-[var(--primary-dark)] hover:-translate-y-0.5 hover:bg-[var(--primary-hover)] hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px] active:duration-[50ms] transition-all disabled:opacity-50 disabled:pointer-events-none"
             >
-              Tiếp tục
+              Continue
             </button>
 
             <p className="flex items-center justify-center mt-6 text-sm text-[var(--text-body)]">
-              Đã có tài khoản?&nbsp;
+              Already have an account?&nbsp;
               <Link
                 href="/auth/login"
                 className="text-[var(--primary)] font-bold hover:underline transition-colors"
               >
-                Đăng nhập
+                Login
               </Link>
             </p>
           </form>

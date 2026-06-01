@@ -101,7 +101,7 @@ export default function StartAttemptPage() {
       throw new Error("Unknown skill");
     } catch (e) {
       console.error(e);
-      alert("Không thể bắt đầu bài thi. Vui lòng thử lại.");
+      alert("Cannot start exam. Please try again.");
       router.back();
     } finally {
       setLoading(false);

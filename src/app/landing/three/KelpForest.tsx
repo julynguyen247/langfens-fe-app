@@ -182,7 +182,7 @@ export default function KelpForest({ tier }: KelpForestProps) {
       shader.vertexShader = shader.vertexShader.replace(
         "#include <begin_vertex>",
         `#include <begin_vertex>
-        // Height-dependent sway — top sways more, base stays anchored
+        // Height-dependent sway — top sways more, base stays anforred
         float normalizedY = clamp((transformed.y + 0.5) / 1.0, 0.0, 1.0);
         float swayWeight = normalizedY * normalizedY; // quadratic — rooted at base
 

@@ -12,6 +12,12 @@ export function ConfettiTrigger({
 }) {
   useEffect(() => {
     if (score >= targetScore) {
+      if (
+        typeof window !== "undefined" &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      ) {
+        return;
+      }
       const timer = setTimeout(() => {
         confetti({ particleCount: 100, spread: 70 });
       }, 1600);

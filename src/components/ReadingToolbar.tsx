@@ -71,7 +71,7 @@ export default function ReadingToolbar({
   const tools = [
     { id: "highlight", label: "Highlight", shortcut: "H" },
     { id: "notes", label: "Notes", shortcut: "N" },
-    { id: "vocabulary", label: "Tra từ vựng", shortcut: "T" },
+    { id: "vocabulary", label: "Lookup vocabulary", shortcut: "T" },
   ];
 
   // Handle keyboard shortcuts
@@ -173,9 +173,9 @@ export default function ReadingToolbar({
         setEntry(data);
       } catch (err: any) {
         if (err?.response?.status === 404) {
-          setError("Không tìm thấy từ này");
+          setError("Word not found");
         } else {
-          setError("Lỗi khi tra từ");
+          setError("Error looking up word");
         }
         setEntry(null);
       } finally {
@@ -288,9 +288,9 @@ export default function ReadingToolbar({
               style={{ borderColor: "var(--border)" }}
             >
               <div className="text-[9px] text-center leading-tight" style={{ color: "var(--text-muted)" }}>
-                {activeMode === "highlight" && "Bôi đen để highlight"}
-                {activeMode === "notes" && "Chọn text để ghi chú"}
-                {activeMode === "vocabulary" && "Double-click tra từ"}
+                {activeMode === "highlight" && "Select text to highlight"}
+                {activeMode === "notes" && "Select text to add notes"}
+                {activeMode === "vocabulary" && "Double-click to look up word"}
               </div>
             </motion.div>
           )}
@@ -377,7 +377,7 @@ export default function ReadingToolbar({
                 {savingNote ? (
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : (
-                  "Lưu"
+                  "Save"
                 )}
               </button>
             </div>

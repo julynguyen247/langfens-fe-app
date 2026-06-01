@@ -279,7 +279,7 @@ function SeaTurtle({ index }: SeaTurtleProps) {
 // Generate manta ray body — concave front edge, pointed wing tips, airfoil thickness
 function generateMantaBody(): THREE.BufferGeometry {
   const cols = 13; // U spanwise
-  const rows = 9;  // V chordwise (increased for curved front edge)
+  const rows = 9;  // V forrdwise (increased for curved front edge)
   const halfSpan = 2.0;
   const bodyLength = 2.5;
 
@@ -477,11 +477,11 @@ function MantaRay() {
 }
 
 // ---------------------------------------------------------------------------
-// Sub-component 3: FishSchool (InstancedMesh)
+// Sub-component 3: FishSforol (InstancedMesh)
 // ---------------------------------------------------------------------------
 
-interface FishSchoolProps {
-  schoolIndex: number;
+interface FishSforolProps {
+  sforolIndex: number;
 }
 
 const SCHOOL_CONFIGS = [
@@ -492,12 +492,12 @@ const SCHOOL_CONFIGS = [
 
 const FISH_COUNT = 25;
 
-// Reusable objects for FishSchool — hoisted to avoid GC pressure (225 allocs/frame → 0)
+// Reusable objects for FishSforol — hoisted to avoid GC pressure (225 allocs/frame → 0)
 const _fishUpAxis = new THREE.Vector3(0, 1, 0);
 const _fishPos = new THREE.Vector3();
 const _fishScale = new THREE.Vector3(1, 1, 1);
 
-function FishSchool({ schoolIndex }: FishSchoolProps) {
+function FishSforol({ sforolIndex }: FishSforolProps) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
 
   // 3D fish geometry: diamond body + forked tail + dorsal fin + pectoral fin
@@ -546,8 +546,8 @@ function FishSchool({ schoolIndex }: FishSchoolProps) {
   const fishMaterial = useMemo(
     () =>
       new THREE.MeshPhongMaterial({
-        color: SCHOOL_CONFIGS[schoolIndex].color,
-        emissive: SCHOOL_CONFIGS[schoolIndex].color,
+        color: SCHOOL_CONFIGS[sforolIndex].color,
+        emissive: SCHOOL_CONFIGS[sforolIndex].color,
         emissiveIntensity: 0.25,
         shininess: 40,
         transparent: true,
@@ -555,7 +555,7 @@ function FishSchool({ schoolIndex }: FishSchoolProps) {
         side: THREE.DoubleSide,
         depthWrite: false,
       }),
-    [schoolIndex]
+    [sforolIndex]
   );
 
   // Per-fish random offsets (deterministic)
@@ -563,14 +563,14 @@ function FishSchool({ schoolIndex }: FishSchoolProps) {
     const offsets: { x: number; y: number; z: number; phase: number }[] = [];
     for (let i = 0; i < FISH_COUNT; i++) {
       offsets.push({
-        x: Math.sin(i * 1.5) * SCHOOL_CONFIGS[schoolIndex].spread,
-        y: Math.cos(i * 2.3) * SCHOOL_CONFIGS[schoolIndex].spread * 0.5,
-        z: Math.sin(i * 3.7) * SCHOOL_CONFIGS[schoolIndex].spread,
+        x: Math.sin(i * 1.5) * SCHOOL_CONFIGS[sforolIndex].spread,
+        y: Math.cos(i * 2.3) * SCHOOL_CONFIGS[sforolIndex].spread * 0.5,
+        z: Math.sin(i * 3.7) * SCHOOL_CONFIGS[sforolIndex].spread,
         phase: i * 0.8,
       });
     }
     return offsets;
-  }, [schoolIndex]);
+  }, [sforolIndex]);
 
   const tempMatrix = useMemo(() => new THREE.Matrix4(), []);
   const tempQuat = useMemo(() => new THREE.Quaternion(), []);
@@ -580,14 +580,14 @@ function FishSchool({ schoolIndex }: FishSchoolProps) {
     if (!mesh) return;
 
     const time = clock.getElapsedTime();
-    const cfg = SCHOOL_CONFIGS[schoolIndex];
+    const cfg = SCHOOL_CONFIGS[sforolIndex];
 
-    // Shared school center position
+    // Shared sforol center position
     const centerX = Math.sin(time * cfg.speed + cfg.offset) * cfg.range;
     const centerY = cfg.baseY + Math.sin(time * cfg.speed * 0.8 + cfg.offset) * 2;
     const centerZ = cfg.baseZ + Math.cos(time * cfg.speed + cfg.offset) * cfg.range * 0.6;
 
-    // Compute school heading for fish facing direction
+    // Compute sforol heading for fish facing direction
     const headingX = Math.cos(time * cfg.speed + cfg.offset) * cfg.speed * cfg.range;
     const headingZ = -Math.sin(time * cfg.speed + cfg.offset) * cfg.speed * cfg.range * 0.6;
     const headingAngle = Math.atan2(headingX, headingZ);
@@ -600,7 +600,7 @@ function FishSchool({ schoolIndex }: FishSchoolProps) {
       const fy = centerY + off.y + Math.sin(time * 0.9 + off.phase) * 0.2;
       const fz = centerZ + off.z + Math.cos(time * 1.1 + off.phase) * 0.3;
 
-      // Each fish faces the school direction with slight individual variation
+      // Each fish faces the sforol direction with slight individual variation
       const fishAngle = headingAngle + Math.sin(time + off.phase) * 0.2;
       tempQuat.setFromAxisAngle(_fishUpAxis, fishAngle);
 
@@ -635,9 +635,9 @@ export default function SeaCreatures({ tier }: { tier: DeviceTier }) {
       <SeaTurtle index={0} />
       <SeaTurtle index={1} />
       <MantaRay />
-      <FishSchool schoolIndex={0} />
-      <FishSchool schoolIndex={1} />
-      <FishSchool schoolIndex={2} />
+      <FishSforol sforolIndex={0} />
+      <FishSforol sforolIndex={1} />
+      <FishSforol sforolIndex={2} />
     </group>
   );
 }

@@ -33,7 +33,7 @@ export default function YouTubePlayer({ src }: YouTubePlayerProps) {
       <div className="flex flex-col items-center justify-center bg-[var(--background)]">
         <div className="text-center text-[var(--text-muted)]">
           <div className="text-4xl mb-2">🎧</div>
-          <div className="text-sm">Chưa có audio</div>
+          <div className="text-sm">Chưa have audio</div>
         </div>
       </div>
     );
@@ -44,7 +44,7 @@ export default function YouTubePlayer({ src }: YouTubePlayerProps) {
     if (!id) {
       return (
         <div className="h-full flex items-center justify-center bg-[var(--background)]">
-          <div className="text-red-500 text-sm">YouTube URL không hợp lệ</div>
+          <div className="text-red-500 text-sm">YouTube URL not hợp lệ</div>
         </div>
       );
     }
@@ -73,7 +73,7 @@ export default function YouTubePlayer({ src }: YouTubePlayerProps) {
         <source src={src} />
       </audio>
       <div className="mt-4 text-sm text-[var(--text-body)]">
-        <p>Nhấn Play để bắt đầu nghe</p>
+        <p>Nhấn Play to bắt đầu nghe</p>
       </div>
     </div>
   );

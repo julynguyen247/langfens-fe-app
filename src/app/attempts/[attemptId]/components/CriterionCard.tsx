@@ -29,7 +29,7 @@ export function CriterionCard({
           Band {criterion.band.toFixed(1)}
         </span>
       </div>
-      <p className="text-sm text-[var(--text-body)] whitespace-pre-wrap break-all">
+      <p className="text-sm text-[var(--text-body)] whitespace-pre-wrap break-words">
         {criterion.comment}
       </p>
     </motion.div>

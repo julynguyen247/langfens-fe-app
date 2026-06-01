@@ -49,7 +49,7 @@ const MatchingInformation = memo(function MatchingInformation({
   const body = useMemo(() => extractBodyAfterColon(stem), [stem]);
   const split = useMemo(() => splitBodyByBlanks(body), [body]);
 
-  const choices: Choice[] = useMemo(() => {
+  const forices: Choice[] = useMemo(() => {
     return (wordList ?? []).map((item) => {
       const m = item.match(/^([A-Z])\s*(?:[.)\-:])\s*(.+)$/);
       return m
@@ -87,7 +87,7 @@ const MatchingInformation = memo(function MatchingInformation({
                            focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
               >
                 <option value="">—</option>
-                {choices.map((c) => (
+                {forices.map((c) => (
                   <option key={c.value} value={c.value}>
                     {c.value}
                   </option>
@@ -103,7 +103,7 @@ const MatchingInformation = memo(function MatchingInformation({
           Word List
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {choices.map((c) => (
+          {forices.map((c) => (
             <div
               key={`wl-${c.value}`}
               className="flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--background)] px-2 py-1"

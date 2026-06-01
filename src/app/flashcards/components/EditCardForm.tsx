@@ -37,10 +37,10 @@ export default function EditCardForm({
         hintMd: hint,
       });
 
-      setMsg("Đã lưu thẻ!");
+      setMsg("Card saved!");
       onSaved?.();
     } catch (e: any) {
-      setMsg("Lỗi khi lưu thẻ.");
+      setMsg("Error saving card.");
     } finally {
       setLoading(false);
     }
@@ -49,7 +49,7 @@ export default function EditCardForm({
   return (
     <div className="space-y-4 text-[var(--foreground)]">
       <div>
-        <label className="block text-sm font-bold text-[var(--foreground)]">Mặt trước (front)</label>
+        <label className="block text-sm font-bold text-[var(--foreground)]">Front</label>
         <textarea
           value={front}
           onChange={(e) => setFront(e.target.value)}
@@ -59,7 +59,7 @@ export default function EditCardForm({
       </div>
 
       <div>
-        <label className="block text-sm font-bold text-[var(--foreground)]">Mặt sau (back)</label>
+        <label className="block text-sm font-bold text-[var(--foreground)]">Back</label>
         <textarea
           value={back}
           onChange={(e) => setBack(e.target.value)}
@@ -69,7 +69,7 @@ export default function EditCardForm({
       </div>
 
       <div>
-        <label className="block text-sm font-bold text-[var(--foreground)]">Gợi ý (hint)</label>
+        <label className="block text-sm font-bold text-[var(--foreground)]">Hint</label>
         <textarea
           value={hint}
           onChange={(e) => setHint(e.target.value)}
@@ -83,7 +83,7 @@ export default function EditCardForm({
         disabled={loading}
         className="w-full rounded-full bg-[var(--primary)] border-b-[4px] border-[var(--primary-dark)] px-4 py-2.5 text-white font-bold hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px] transition-all disabled:opacity-60"
       >
-        {loading ? "Đang lưu..." : "Lưu thẻ"}
+        {loading ? "Saving..." : "Save card"}
       </button>
 
       {msg && <p className="text-center text-sm font-bold text-[var(--text-muted)]">{msg}</p>}

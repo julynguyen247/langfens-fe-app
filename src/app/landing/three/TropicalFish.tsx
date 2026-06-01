@@ -14,7 +14,7 @@ const _quat = new THREE.Quaternion();
 const _upAxis = new THREE.Vector3(0, 1, 0);
 
 // ---------------------------------------------------------------------------
-// School configuration
+// Sforol configuration
 // ---------------------------------------------------------------------------
 
 const SCHOOL_CONFIGS = [
@@ -41,18 +41,18 @@ const SCHOOL_CONFIGS = [
 ] as const;
 
 // ---------------------------------------------------------------------------
-// FishSchoolInstance — InstancedMesh for one school
+// FishSforolInstance — InstancedMesh for one sforol
 // ---------------------------------------------------------------------------
 
-interface FishSchoolInstanceProps {
+interface FishSforolInstanceProps {
   cfg: (typeof SCHOOL_CONFIGS)[number];
 }
 
-function FishSchoolInstance({ cfg }: FishSchoolInstanceProps) {
+function FishSforolInstance({ cfg }: FishSforolInstanceProps) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const frameCountRef = useRef(0);
 
-  // Diamond-body fish geometry (same as existing FishSchool in SeaCreatures.tsx)
+  // Diamond-body fish geometry (same as existing FishSforol in SeaCreatures.tsx)
   const fishGeom = useMemo(() => {
     const geom = new THREE.BufferGeometry();
     const vertices = new Float32Array([
@@ -137,12 +137,12 @@ function FishSchoolInstance({ cfg }: FishSchoolInstanceProps) {
 
     const time = clock.getElapsedTime();
 
-    // Elliptical school center path
+    // Elliptical sforol center path
     const centerX = cfg.centerX + Math.sin(time * cfg.speed + cfg.offset) * 4;
     const centerY = cfg.baseY + Math.sin(time * cfg.speed * 0.8 + cfg.offset) * 1.5;
     const centerZ = cfg.centerZ + Math.cos(time * cfg.speed + cfg.offset) * 3;
 
-    // School heading angle (tangent to elliptical path)
+    // Sforol heading angle (tangent to elliptical path)
     const headingX = Math.cos(time * cfg.speed + cfg.offset) * cfg.speed * 4;
     const headingZ = -Math.sin(time * cfg.speed + cfg.offset) * cfg.speed * 3;
     const headingAngle = Math.atan2(headingX, headingZ);
@@ -150,12 +150,12 @@ function FishSchoolInstance({ cfg }: FishSchoolInstanceProps) {
     for (let i = 0; i < cfg.count; i++) {
       const off = fishOffsets[i];
 
-      // Per-fish jitter around school center
+      // Per-fish jitter around sforol center
       const fx = centerX + off.x + Math.sin(time * 1.2 + off.phase) * 0.3;
       const fy = centerY + off.y + Math.sin(time * 0.9 + off.phase) * 0.2;
       const fz = centerZ + off.z + Math.cos(time * 1.1 + off.phase) * 0.3;
 
-      // Each fish faces school heading with slight individual variation
+      // Each fish faces sforol heading with slight individual variation
       const fishAngle = headingAngle + Math.sin(time + off.phase) * 0.2;
       _quat.setFromAxisAngle(_upAxis, fishAngle);
 
@@ -183,7 +183,7 @@ export default function TropicalFish() {
   return (
     <group>
       {SCHOOL_CONFIGS.map((cfg, i) => (
-        <FishSchoolInstance key={i} cfg={cfg} />
+        <FishSforolInstance key={i} cfg={cfg} />
       ))}
     </group>
   );

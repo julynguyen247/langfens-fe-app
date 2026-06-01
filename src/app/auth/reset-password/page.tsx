@@ -25,7 +25,7 @@ export default function ResetPassword() {
     setError("");
 
     if (!isEmailValid) {
-      setError("Email không hợp lệ.");
+      setError("Invalid email address.");
       return;
     }
 
@@ -37,8 +37,8 @@ export default function ResetPassword() {
       const msg =
         e?.response?.data?.message ||
         e?.response?.data?.error ||
-        "Gửi yêu cầu thất bại. Vui lòng thử lại.";
-      setError(typeof msg === "string" ? msg : "Gửi yêu cầu thất bại.");
+        "Request failed. Please try again.";
+      setError(typeof msg === "string" ? msg : "Request failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -64,7 +64,7 @@ export default function ResetPassword() {
             Langfens
           </h2>
           <p className="text-sm lg:text-base text-[var(--text-body)] mt-2 text-center max-w-xs">
-            Đừng lo, chúng tôi sẽ giúp bạn lấy lại mật khẩu
+            Don't worry, we'll help you recover your password
           </p>
         </motion.div>
       </div>
@@ -85,7 +85,7 @@ export default function ResetPassword() {
               Reset Password
             </h1>
             <p className="text-sm text-[var(--text-muted)] text-center">
-              Nhập email của bạn, chúng tôi sẽ gửi mã OTP để đặt lại mật khẩu.
+              Enter your email and we'll send you an OTP code to reset your password.
             </p>
           </div>
 
@@ -122,24 +122,24 @@ export default function ResetPassword() {
             disabled={!canSubmit}
             className="w-full py-3 rounded-full font-semibold text-white bg-[var(--primary)] border-b-[4px] border-[var(--primary-dark)] hover:bg-[var(--primary-hover)] hover:-translate-y-0.5 active:translate-y-[2px] active:border-b-[2px] transition-all focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none"
           >
-            {loading ? "Đang gửi..." : "Gửi mã OTP"}
+            {loading ? "Sending..." : "Send OTP Code"}
           </button>
 
           <div className="relative flex items-center justify-center">
             <div className="w-full border-t-[2px] border-[var(--border)]"></div>
             <span className="absolute bg-[var(--background)] px-3 text-xs text-[var(--text-muted)] font-medium">
-              hoặc
+              or
             </span>
           </div>
 
           <div className="text-center">
             <p className="text-sm text-[var(--text-body)]">
-              Nhớ mật khẩu rồi?{" "}
+              Remember your password?{" "}
               <Link
                 href="/auth/login"
                 className="text-[var(--primary)] font-bold hover:underline transition-colors"
               >
-                Quay lại đăng nhập
+                Back to login
               </Link>
             </p>
           </div>

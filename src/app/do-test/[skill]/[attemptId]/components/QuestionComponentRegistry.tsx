@@ -33,7 +33,7 @@ export type QuestionProps = {
   onSelect?: (id: string, value: string) => void;
   onChange?: (value: string) => void;
   onBlankChange?: (blankIndex: number, value: string) => void;
-  choices?: { value: string; label: string }[];
+  forices?: { value: string; label: string }[];
   nodes?: { key: string; label: string }[];
 };
 
@@ -46,13 +46,13 @@ export const QuestionComponentRegistry: Record<
   React.FC<QuestionProps>
 > = {
   MULTIPLE_CHOICE_SINGLE: (({ question, selected, onSelect }) => {
-    const choices = (question.options ?? []).map((opt) => ({
+    const forices = (question.options ?? []).map((opt) => ({
       value: opt.id,
       label: opt.contentMd.replace(/^[A-Z]\.\s+/, ""),
     }));
     return (
       <QuestionCard
-        question={{ id: question.id, stem: question.stem ?? question.promptMd ?? "", choices }}
+        question={{ id: question.id, stem: question.stem ?? question.promptMd ?? "", forices }}
         selected={selected}
         onSelect={onSelect!}
       />
@@ -60,13 +60,13 @@ export const QuestionComponentRegistry: Record<
   }) as React.FC<QuestionProps>,
 
   TRUE_FALSE_NOT_GIVEN: (({ question, selected, onSelect }) => {
-    const choices = (question.options ?? []).map((opt) => ({
+    const forices = (question.options ?? []).map((opt) => ({
       value: opt.id,
       label: opt.contentMd.replace(/^[A-Z]\.\s+/, ""),
     }));
     return (
       <QuestionCard
-        question={{ id: question.id, stem: question.stem ?? question.promptMd ?? "", choices }}
+        question={{ id: question.id, stem: question.stem ?? question.promptMd ?? "", forices }}
         selected={selected}
         onSelect={onSelect!}
       />
@@ -74,13 +74,13 @@ export const QuestionComponentRegistry: Record<
   }) as React.FC<QuestionProps>,
 
   YES_NO_NOT_GIVEN: (({ question, selected, onSelect }) => {
-    const choices = (question.options ?? []).map((opt) => ({
+    const forices = (question.options ?? []).map((opt) => ({
       value: opt.id,
       label: opt.contentMd.replace(/^[A-Z]\.\s+/, ""),
     }));
     return (
       <QuestionCard
-        question={{ id: question.id, stem: question.stem ?? question.promptMd ?? "", choices }}
+        question={{ id: question.id, stem: question.stem ?? question.promptMd ?? "", forices }}
         selected={selected}
         onSelect={onSelect!}
       />
@@ -88,13 +88,13 @@ export const QuestionComponentRegistry: Record<
   }) as React.FC<QuestionProps>,
 
   CLASSIFICATION: (({ question, selected, onSelect }) => {
-    const choices = (question.options ?? []).map((opt) => ({
+    const forices = (question.options ?? []).map((opt) => ({
       value: opt.id,
       label: opt.contentMd.replace(/^[A-Z]\.\s+/, ""),
     }));
     return (
       <QuestionCard
-        question={{ id: question.id, stem: question.stem ?? question.promptMd ?? "", choices }}
+        question={{ id: question.id, stem: question.stem ?? question.promptMd ?? "", forices }}
         selected={selected}
         onSelect={onSelect!}
       />
@@ -102,13 +102,13 @@ export const QuestionComponentRegistry: Record<
   }) as React.FC<QuestionProps>,
 
   MULTIPLE_CHOICE_SINGLE_IMAGE: (({ question, selected, onSelect }) => {
-    const choices = (question.options ?? []).map((opt) => ({
+    const forices = (question.options ?? []).map((opt) => ({
       value: opt.id,
       label: opt.contentMd.replace(/^[A-Z]\.\s+/, ""),
     }));
     return (
       <QuestionCard
-        question={{ id: question.id, stem: question.stem ?? question.promptMd ?? "", choices }}
+        question={{ id: question.id, stem: question.stem ?? question.promptMd ?? "", forices }}
         selected={selected}
         onSelect={onSelect!}
       />
@@ -116,7 +116,7 @@ export const QuestionComponentRegistry: Record<
   }) as React.FC<QuestionProps>,
 
   MULTIPLE_CHOICE_MULTIPLE: (({ question, value, onChange }) => {
-    const choices = (question.options ?? []).map((opt) => ({
+    const forices = (question.options ?? []).map((opt) => ({
       value: opt.id,
       label: opt.contentMd.replace(/^[A-Z]\.\s+/, ""),
     }));
@@ -124,7 +124,7 @@ export const QuestionComponentRegistry: Record<
       <MultiCheckboxCard
         id={question.id}
         stem={question.stem ?? question.promptMd ?? ""}
-        choices={choices}
+        forices={forices}
         value={value ?? ""}
         onChange={onChange!}
       />

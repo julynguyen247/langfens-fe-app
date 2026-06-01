@@ -305,7 +305,7 @@ export default function PredictedBandWidget() {
             </div>
           ) : (
             <div className="py-6 text-center text-sm" style={{ color: "var(--text-muted)" }}>
-              Không thể tạo AI insights. Vui lòng thử lại sau.
+              Unable to generate AI insights. Please try again later.
             </div>
           )}
         </div>

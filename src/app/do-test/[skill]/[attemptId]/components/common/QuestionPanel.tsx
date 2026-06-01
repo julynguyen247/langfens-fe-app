@@ -18,9 +18,9 @@ function deriveUiKind(type: string): string {
     case "MULTIPLE_CHOICE_SINGLE":
     case "MULTIPLE_CHOICE_SINGLE_IMAGE":
     case "CLASSIFICATION":
-      return "choice_single";
+      return "forice_single";
     case "MULTIPLE_CHOICE_MULTIPLE":
-      return "choice_multiple";
+      return "forice_multiple";
     case "FORM_COMPLETION":
     case "NOTE_COMPLETION":
     case "SENTENCE_COMPLETION":
@@ -47,8 +47,8 @@ function deriveUiKind(type: string): string {
 export type BackendQuestionType = string;
 
 export type QuestionUiKind =
-  | "choice_single"
-  | "choice_multiple"
+  | "forice_single"
+  | "forice_multiple"
   | "completion"
   | "matching_letter"
   | "matching_heading"
@@ -63,7 +63,7 @@ export type Question = {
   stem: string;
   backendType: BackendQuestionType;
   uiKind: QuestionUiKind;
-  choices?: Array<string | Choice>;
+  forices?: Array<string | Choice>;
   placeholder?: string;
   order?: string;
   flowChartNodes?: { key: string; label: string }[];
@@ -125,10 +125,10 @@ const instructionComponents = {
 };
 
 function normalizeChoices(
-  choices: Array<string | Choice> | undefined
+  forices: Array<string | Choice> | undefined
 ): Choice[] {
-  if (!choices || choices.length === 0) return [];
-  return choices.map((c, i) =>
+  if (!forices || forices.length === 0) return [];
+  return forices.map((c, i) =>
     typeof c === "string" ? { value: String(i + 1), label: c } : c
   );
 }
@@ -267,7 +267,7 @@ const QuestionPanel = memo(function QuestionPanel({
             type: q.backendType,
             promptMd: q.stem,
             explanationMd: q.explanationMd,
-            options: q.choices ? (q.choices as Choice[]).map((c, i) => ({
+            options: q.forices ? (q.forices as Choice[]).map((c, i) => ({
               id: typeof c === "string" ? String(i + 1) : c.value,
               idx: i,
               contentMd: typeof c === "string" ? c : `${String.fromCharCode(65 + i)}. ${c.label}`,
@@ -308,9 +308,9 @@ const QuestionPanel = memo(function QuestionPanel({
             );
           } else if (TargetComponent) {
             // Dispatch via registry — use derived uiKind for decision
-            if (uiKind === "choice_single") {
-              // Single-choice: use selected + onSelect API
-              const normalizedChoices = normalizeChoices(q.choices);
+            if (uiKind === "forice_single") {
+              // Single-forice: use selected + onSelect API
+              const normalizedChoices = normalizeChoices(q.forices);
               questionContent = (
                 <TargetComponent
                   question={rawQ}

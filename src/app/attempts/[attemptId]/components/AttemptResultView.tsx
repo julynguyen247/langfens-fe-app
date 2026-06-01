@@ -120,16 +120,19 @@ export function AttemptResultView({
         { label: "Accuracy", value: `${accuracy}%` },
       ];
 
-  // Build band breakdowns for the progress bars
+  // Build band breakdowns for the progress bars. Reuse the four skill colors
+  // (in order) so each criterion bar is visually distinct rather than all blue.
+  const BREAKDOWN_COLOR_KEYS = ["READING", "LISTENING", "WRITING", "SPEAKING"];
   const bandBreakdowns = isProductiveSkill
-    ? productiveCriteria.map((c) => ({
+    ? productiveCriteria.map((c, idx) => ({
         skill: c.name,
+        colorKey: BREAKDOWN_COLOR_KEYS[idx % BREAKDOWN_COLOR_KEYS.length],
         score: c.score ?? 0,
       }))
     : undefined;
 
   return (
-    <div className="min-h-screen bg-[var(--background)] py-10 px-4">
+    <div className="min-h-[100dvh] bg-[var(--background)] py-10 px-4">
       <div className="max-w-3xl mx-auto space-y-8">
         {/* Score Reveal Section */}
         <ConfettiTrigger

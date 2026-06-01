@@ -22,7 +22,7 @@ type AttemptItem = {
 function formatDate(dateStr: string | undefined) {
   if (!dateStr) return "—";
   const date = new Date(dateStr);
-  return date.toLocaleDateString("vi-VN", {
+  return date.toLocaleDateString("en-US", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -33,11 +33,11 @@ function formatDate(dateStr: string | undefined) {
 
 function getStatusBadge(status: string) {
   const statusMap: Record<string, { color: string; text: string }> = {
-    GRADED: { color: "bg-green-100 text-green-700", text: "Đã chấm" },
-    SUBMITTED: { color: "bg-blue-100 text-blue-700", text: "Đã nộp" },
-    IN_PROGRESS: { color: "bg-yellow-100 text-yellow-700", text: "Đang làm" },
-    STARTED: { color: "bg-yellow-100 text-yellow-700", text: "Đang làm" },
-    EXPIRED: { color: "bg-red-100 text-red-700", text: "Hết giờ" },
+    GRADED: { color: "bg-green-100 text-green-700", text: "Graded" },
+    SUBMITTED: { color: "bg-blue-100 text-blue-700", text: "Submitted" },
+    IN_PROGRESS: { color: "bg-yellow-100 text-yellow-700", text: "In Progress" },
+    STARTED: { color: "bg-yellow-100 text-yellow-700", text: "In Progress" },
+    EXPIRED: { color: "bg-red-100 text-red-700", text: "Expired" },
   };
   const s = statusMap[status?.toUpperCase()] || {
     color: "bg-gray-100 text-gray-700",
@@ -144,10 +144,10 @@ export default function HistoryPage() {
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-[var(--foreground)] mb-1" style={{ fontFamily: "var(--font-heading)" }}>
-            Lịch sử luyện tập
+            Practice History
           </h1>
           <p className="text-[var(--text-muted)] text-sm">
-            Xem lại các bài thi bạn đã làm
+            Review your past exam attempts
           </p>
         </div>
 
@@ -176,16 +176,16 @@ export default function HistoryPage() {
         {loading ? (
           <div className="bg-[var(--card)] rounded-[2rem] p-12 text-center">
             <Spinner className="mx-auto mb-4" />
-            <p className="text-[var(--text-muted)]">Đang tải...</p>
+            <p className="text-[var(--text-muted)]">Loading...</p>
           </div>
         ) : currentList.length === 0 ? (
           <div className="bg-[var(--card)] rounded-[2rem] p-12 text-center">
-            <p className="text-[var(--text-muted)] mb-4">Chưa có bài thi nào</p>
+            <p className="text-[var(--text-muted)] mb-4">No exams yet</p>
             <button
               onClick={() => router.push("/practice")}
               className="px-4 py-2 bg-[var(--primary)] text-white rounded-full border-b-[4px] border-[var(--primary-dark)] hover:-translate-y-0.5 transition"
             >
-              Bắt đầu luyện tập
+              Start Practice
             </button>
           </div>
         ) : (

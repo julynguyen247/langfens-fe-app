@@ -44,7 +44,7 @@ export function ReferenceEssayCard({ essay }: Props) {
         </div>
       </div>
 
-      <p className="text-sm text-[var(--text-body)] leading-relaxed whitespace-pre-wrap break-all">
+      <p className="text-sm text-[var(--text-body)] leading-relaxed whitespace-pre-wrap break-words">
         {expanded || !needsTruncation
           ? essay.text
           : essay.text.slice(0, previewLength) + '...'}

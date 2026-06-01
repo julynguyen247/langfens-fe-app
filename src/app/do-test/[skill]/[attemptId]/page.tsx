@@ -175,7 +175,7 @@ export function ReadingScreen({
   const buildTextAnswer = (qid: string, value: string) => {
     if (!value) return undefined;
     const kind = questionUiKindMap[qid];
-    if (kind === "choice_single" || kind === "choice_multiple")
+    if (kind === "forice_single" || kind === "forice_multiple")
       return undefined;
     return value;
   };
@@ -216,7 +216,7 @@ export function ReadingScreen({
       await submitAttempt(attemptId);
       router.replace(`/attempts/${attemptId}`);
     } catch {
-      alert("Nộp bài thất bại. Vui lòng thử lại.");
+      alert("Nộp bài thất bai. Vui lòng thử lai.");
     } finally {
       setIsSubmitting(false);
       setLoading(false);
@@ -437,7 +437,7 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
   const buildTextAnswer = (qid: string, value: string) => {
     if (!value) return undefined;
     const kind = questionUiKindMap[qid];
-    if (kind === "choice_single" || kind === "choice_multiple")
+    if (kind === "forice_single" || kind === "forice_multiple")
       return undefined;
     return value;
   };

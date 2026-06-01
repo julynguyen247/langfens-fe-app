@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GrammarExplainerCard } from '../grammar/GrammarExplainerCard';
+import { WordDiff } from '../WordDiff';
 import { useGrammarSingleExplain } from '@/hooks/useGrammarExplain';
 import type { SentenceComparison } from '@/types/writing';
 
@@ -45,7 +46,9 @@ function ComparisonRow({ sc, index }: { sc: SentenceComparison; index: number })
           >
             Original
           </p>
-          <p className="text-sm text-[var(--text-body)] break-all">{sc.original}</p>
+          <p className="text-sm text-[var(--text-body)] break-words">
+            <WordDiff original={sc.original} improved={sc.improved} side="left" />
+          </p>
         </div>
         <div>
           <p
@@ -54,7 +57,9 @@ function ComparisonRow({ sc, index }: { sc: SentenceComparison; index: number })
           >
             Improved
           </p>
-          <p className="text-sm text-[var(--text-body)] break-all">{sc.improved}</p>
+          <p className="text-sm text-[var(--text-body)] break-words">
+            <WordDiff original={sc.original} improved={sc.improved} side="right" />
+          </p>
         </div>
       </div>
 

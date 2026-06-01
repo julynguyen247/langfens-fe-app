@@ -50,14 +50,14 @@ export function WritingComparativeTab({ submissionId }: Props) {
         className="rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-white p-8 text-center"
         data-testid="writing-comparative-timeout"
       >
-        <p className="text-[var(--text-body)] font-bold mb-2">Phân tích so sánh đang mất nhiều thời gian hơn dự kiến.</p>
-        <p className="text-sm text-[var(--text-muted)] mb-4">Vui lòng thử lại sau giây lát.</p>
+        <p className="text-[var(--text-body)] font-bold mb-2">Phân tích so sánh is mất nhiều thời gian hơn dự kiến.</p>
+        <p className="text-sm text-[var(--text-muted)] mb-4">Vui lòng thử lai sau giây lát.</p>
         <button
           onClick={refetch}
           className="px-6 py-2.5 rounded-full bg-[var(--primary)] text-white font-bold text-sm border-b-[4px] border-[var(--primary-dark)] hover:-translate-y-0.5 active:translate-y-[2px] active:border-b-[2px] transition-all duration-150"
           style={{ fontFamily: 'var(--font-heading)' }}
         >
-          Thử lại
+          Thử lai
         </button>
       </div>
     );
@@ -86,6 +86,12 @@ export function WritingComparativeTab({ submissionId }: Props) {
       </div>
     );
   }
+
+  // Vocabulary comparisons are surfaced in VocabularySuggestions; restrict the
+  // sentence-by-sentence table to everything else so each item renders once.
+  const nonVocabComparisons = data.sentence_comparisons.filter(
+    (sc) => sc.category !== 'vocabulary',
+  );
 
   return (
     <motion.div
@@ -120,7 +126,9 @@ export function WritingComparativeTab({ submissionId }: Props) {
         keyImprovements={data.key_improvements}
       />
 
-      <SentenceComparisonTable comparisons={data.sentence_comparisons} />
+      {nonVocabComparisons.length > 0 && (
+        <SentenceComparisonTable comparisons={nonVocabComparisons} />
+      )}
 
       {data.references.length > 0 && (
         <div className="space-y-4">

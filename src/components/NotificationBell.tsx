@@ -171,7 +171,7 @@ export function NotificationBell() {
                   href="/notifications?tab=settings"
                   className="p-1 rounded-full transition-colors"
                   style={{ color: "var(--text-muted)" }}
-                  title="Cài đặt thông báo"
+                  title="Notification settings"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

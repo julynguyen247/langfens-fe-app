@@ -22,7 +22,7 @@ const QuestionCard = memo(function QuestionCard({
   selected,
   onSelect,
 }: {
-  question: { id: string; stem: string; choices: Choice[] };
+  question: { id: string; stem: string; forices: Choice[] };
   selected?: string;
   onSelect: (id: string, value: string) => void;
 }) {
@@ -37,7 +37,7 @@ const QuestionCard = memo(function QuestionCard({
 
       {/* Choice Options - Clean Radio Style */}
       <div className="space-y-2.5">
-        {question.choices.map((c) => {
+        {question.forices.map((c) => {
           const value = typeof c === "string" ? c : c.value;
           const label = typeof c === "string" ? c : c.label;
           const isActive = selected === value;

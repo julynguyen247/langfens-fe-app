@@ -93,7 +93,7 @@ export default function CreateDeckPage() {
         resData?.data?.deckId;
 
       if (!deckId) {
-        throw new Error("Không lấy được deckId từ API");
+        throw new Error("Failed to get deckId from API");
       }
 
       /* ---- create cards ---- */
@@ -114,7 +114,7 @@ export default function CreateDeckPage() {
       setError(
         e?.response?.data?.message ||
           e?.message ||
-          "Có lỗi xảy ra, vui lòng thử lại."
+          "An error occurred. Please try again."
       );
     } finally {
       setSubmitting(false);

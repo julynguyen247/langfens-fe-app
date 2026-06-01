@@ -49,7 +49,7 @@ export default function DeckCardsModal({
           .sort((a: any, b: any) => (a?.idx ?? 0) - (b?.idx ?? 0));
         if (mounted) setCards(list);
       } catch {
-        if (mounted) setError("Không tải được thẻ.");
+        if (mounted) setError("Failed to load cards.");
       } finally {
         if (mounted) setLoading(false);
       }
@@ -93,9 +93,9 @@ export default function DeckCardsModal({
           >
             {editingCard
               ? editingCard.id === "__new"
-                ? "Thêm thẻ mới"
-                : "Chỉnh sửa thẻ"
-              : "Thẻ trong bộ"}
+                ? "Add new card"
+                : "Edit card"
+              : "Cards in deck"}
           </h3>
 
           <button
@@ -109,14 +109,14 @@ export default function DeckCardsModal({
             }
             className="rounded-full border-b-[4px] border-[var(--primary-dark)] bg-[var(--primary)] px-3 py-1.5 text-sm font-bold text-white hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px] transition-all"
           >
-            + Thêm thẻ
+            + Add card
           </button>
 
           <button
             onClick={editingCard ? () => setEditingCard(null) : onClose}
             className="rounded-full px-3 py-1.5 text-[var(--text-muted)] font-bold border-[3px] border-[var(--border)] hover:bg-[var(--background)] hover:border-[var(--primary)] transition-all"
           >
-            Đóng
+            Close
           </button>
         </div>
 
@@ -134,11 +134,11 @@ export default function DeckCardsModal({
               />
             )
           ) : loading ? (
-            <div className="py-10 text-center text-[var(--text-muted)] font-bold">Đang tải...</div>
+            <div className="py-10 text-center text-[var(--text-muted)] font-bold">Loading...</div>
           ) : error ? (
             <div className="py-10 text-center text-[var(--destructive)] font-bold">{error}</div>
           ) : cards.length === 0 ? (
-            <div className="py-10 text-center text-[var(--text-muted)] font-bold">Chưa có thẻ.</div>
+            <div className="py-10 text-center text-[var(--text-muted)] font-bold">No cards yet.</div>
           ) : (
             cards.map((c, i) => {
               const front = c.frontMd ?? c.front ?? "";
@@ -157,10 +157,10 @@ export default function DeckCardsModal({
                       #{i + 1}
                     </div>
                     <div className="mt-1 line-clamp-2 font-bold text-[var(--foreground)]">
-                      {front || "(Front trống)"}
+                      {front || "(Empty front)"}
                     </div>
                     <div className="mt-1 line-clamp-2 text-sm text-[var(--text-muted)]">
-                      {back || "(Back trống)"}
+                      {back || "(Empty back)"}
                     </div>
                   </div>
 
@@ -169,7 +169,7 @@ export default function DeckCardsModal({
                       onClick={() => setEditingCard(c)}
                       className="rounded-full border-[3px] border-[var(--border)] border-b-[5px] px-3 py-1.5 text-sm font-bold text-[var(--primary)] hover:border-[var(--primary)] hover:bg-[var(--primary-light)] hover:-translate-y-0.5 active:translate-y-[2px] active:border-b-[3px] transition-all"
                     >
-                      Sửa
+                      Edit
                     </button>
 
                     <button
@@ -177,7 +177,7 @@ export default function DeckCardsModal({
                       disabled={deletingId === c.id}
                       className="rounded-full border-[3px] border-[var(--destructive)]/30 border-b-[5px] px-3 py-1.5 text-sm font-bold text-[var(--destructive)] hover:bg-red-50 hover:-translate-y-0.5 active:translate-y-[2px] active:border-b-[3px] transition-all disabled:opacity-60"
                     >
-                      {deletingId === c.id ? "Đang xóa..." : "Xóa"}
+                      {deletingId === c.id ? "Deleting..." : "Delete"}
                     </button>
                   </div>
                 </div>
@@ -194,10 +194,10 @@ export default function DeckCardsModal({
               className="text-lg font-bold text-[var(--foreground)]"
               style={{ fontFamily: "var(--font-heading)" }}
             >
-              Xác nhận xoá
+              Confirm deletion
             </h2>
             <p className="text-sm text-[var(--text-muted)]">
-              Bạn có chắc muốn xoá thẻ này không?
+              Are you sure you want to delete this card?
             </p>
 
             <div className="flex justify-end gap-3 pt-2">
@@ -205,7 +205,7 @@ export default function DeckCardsModal({
                 onClick={() => setConfirmDeleteId(null)}
                 className="px-4 py-2 rounded-full border-[3px] border-[var(--border)] border-b-[5px] font-bold text-[var(--foreground)] hover:bg-[var(--background)] hover:-translate-y-0.5 active:translate-y-[2px] active:border-b-[3px] transition-all"
               >
-                Hủy
+                Cancel
               </button>
 
               <button
@@ -215,7 +215,7 @@ export default function DeckCardsModal({
                 }}
                 className="px-4 py-2 rounded-full border-b-[4px] border-red-700 bg-[var(--destructive)] text-white font-bold hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px] transition-all"
               >
-                Xoá
+                Delete
               </button>
             </div>
           </div>

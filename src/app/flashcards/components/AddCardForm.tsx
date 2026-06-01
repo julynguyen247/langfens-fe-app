@@ -28,13 +28,13 @@ export default function AddCardForm({
         hintMd: hint,
       });
 
-      setMsg("Đã thêm thẻ!");
+      setMsg("Card added!");
       setFront("");
       setBack("");
       setHint("");
       onSaved?.();
     } catch {
-      setMsg("Lỗi khi thêm thẻ.");
+      setMsg("Error adding card.");
     } finally {
       setLoading(false);
     }
@@ -44,7 +44,7 @@ export default function AddCardForm({
     <div className="space-y-4 p-5 rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)]">
       <div>
         <label className="block text-sm font-bold text-[var(--foreground)]">
-          Mặt trước (front)
+          Front
         </label>
         <textarea
           value={front}
@@ -56,7 +56,7 @@ export default function AddCardForm({
 
       <div>
         <label className="block text-sm font-bold text-[var(--foreground)]">
-          Mặt sau (back)
+          Back
         </label>
         <textarea
           value={back}
@@ -68,7 +68,7 @@ export default function AddCardForm({
 
       <div>
         <label className="block text-sm font-bold text-[var(--foreground)]">
-          Gợi ý (hint)
+          Hint
         </label>
         <textarea
           value={hint}
@@ -83,7 +83,7 @@ export default function AddCardForm({
         disabled={loading}
         className="w-full rounded-full bg-[var(--primary)] border-b-[4px] border-[var(--primary-dark)] px-4 py-2.5 text-white font-bold hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px] transition-all disabled:opacity-60"
       >
-        {loading ? "Đang thêm..." : "Thêm thẻ"}
+        {loading ? "Adding..." : "Add card"}
       </button>
 
       {msg && <p className="text-center text-sm font-bold text-[var(--text-muted)]">{msg}</p>}

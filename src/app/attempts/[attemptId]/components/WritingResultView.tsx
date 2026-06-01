@@ -79,7 +79,7 @@ export function WritingResultView({
   ].filter(Boolean) as { skill: string; score: number; label: string }[];
 
   return (
-    <div className="min-h-screen bg-[var(--background)] py-10 px-4">
+    <div className="min-h-[100dvh] bg-[var(--background)] py-10 px-4">
       <div className="max-w-3xl mx-auto space-y-8">
         {/* Confetti */}
         <ConfettiTrigger
@@ -137,6 +137,7 @@ export function WritingResultView({
             >
               <SkillProgressBar
                 skill={b.label}
+                colorKey={b.skill}
                 score={b.score}
                 delay={0.2 * idx}
               />
@@ -184,7 +185,7 @@ export function WritingResultView({
           >
             Task Prompt
           </h3>
-          <p className="text-sm text-[var(--text-body)] leading-relaxed whitespace-pre-wrap break-all">
+          <p className="text-sm text-[var(--text-body)] leading-relaxed whitespace-pre-wrap break-words">
             {writingDetail.taskText || (
               <span className="italic text-[var(--text-muted)]">
                 (No task text)
@@ -219,7 +220,7 @@ export function WritingResultView({
               >
                 Your Submission
               </h3>
-              <div className="text-lg leading-loose text-[var(--foreground)] whitespace-pre-wrap break-all">
+              <div className="text-lg leading-loose text-[var(--foreground)] whitespace-pre-wrap break-words">
                 {writingDetail.essayRaw || (
                   <span className="italic text-[var(--text-muted)]">
                     (No essay content)

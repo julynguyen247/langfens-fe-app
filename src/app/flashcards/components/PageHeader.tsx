@@ -21,7 +21,7 @@ export default function PageHeader() {
               Langfens Flashcards
             </h1>
             <p className="text-sm text-[var(--primary-dark)]">
-              Khám phá bộ thẻ từ vựng được nhiều người học yêu thích.
+              Explore vocabulary decks loved by learners.
             </p>
           </div>
         </div>
@@ -31,14 +31,14 @@ export default function PageHeader() {
             href="/flashcards/create"
             className="inline-flex items-center gap-2 rounded-full border-b-[4px] border-[var(--primary-dark)] bg-[var(--primary)] px-4 py-2 text-sm font-bold text-white shadow-[0_2px_0_rgba(0,0,0,0.08)] hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px] transition-all"
           >
-            + Tạo deck
+            + Create deck
           </Link>
 
           <Link
             href="/flashcards/explore"
             className="inline-flex items-center gap-2 rounded-full border-[3px] border-[var(--border)] border-b-[5px] bg-white px-4 py-2 text-sm font-bold text-[var(--primary-dark)] shadow-[0_2px_0_rgba(0,0,0,0.08)] hover:border-[var(--primary)] hover:-translate-y-0.5 active:translate-y-[2px] active:border-b-[3px] transition-all"
           >
-            Khám phá
+            Explore
           </Link>
         </div>
       </div>

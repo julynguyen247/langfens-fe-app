@@ -45,7 +45,7 @@ export default function VocabularyExtractor({ passageText, onAddWords }: Vocabul
       setWords(result);
       setSelectedWords(new Set(result.map((_: unknown, idx: number) => idx)));
     } catch (err) {
-      setError("Không thể trích xuất từ vựng. Vui lòng thử lại.");
+      setError("Failed to extract vocabulary. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -118,7 +118,7 @@ export default function VocabularyExtractor({ passageText, onAddWords }: Vocabul
       const deckId = await getOrCreateDefaultDeck();
 
       if (!deckId) {
-        setError("Không thể tạo bộ thẻ. Vui lòng đăng nhập và thử lại.");
+        setError("Failed to create deck. Please login and try again.");
         setSaving(false);
         return;
       }
@@ -148,7 +148,7 @@ export default function VocabularyExtractor({ passageText, onAddWords }: Vocabul
 
     } catch (err) {
       console.error("Failed to save words:", err);
-      setError("Không thể lưu từ vựng. Vui lòng thử lại.");
+      setError("Failed to save vocabulary. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -251,7 +251,7 @@ export default function VocabularyExtractor({ passageText, onAddWords }: Vocabul
                     <div className="w-6 h-6 border-2 rounded-full animate-spin" style={{ borderColor: "var(--primary-light)", borderTopColor: "var(--primary)" }} />
                   </div>
                   <p className="text-sm font-medium" style={{ color: "var(--foreground)" }}>AI đang phân tích bài đọc...</p>
-                  <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Vui lòng đợi trong giây lát</p>
+                  <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Please wait...</p>
                 </div>
               )}
 

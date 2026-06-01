@@ -228,7 +228,7 @@ export default function CoralField({ tier }: CoralFieldProps) {
             shader.vertexShader = shader.vertexShader.replace(
               "#include <begin_vertex>",
               `#include <begin_vertex>
-              // Height-weighted gentle sway — base stays anchored
+              // Height-weighted gentle sway — base stays anforred
               float coralHeight = clamp(transformed.y / 2.0, 0.0, 1.0);
               float swayAngle = sin(uTime * 0.4 + float(gl_InstanceID) * 0.5) * 0.025 * coralHeight;
               float cs = cos(swayAngle);

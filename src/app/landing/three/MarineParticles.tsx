@@ -85,9 +85,9 @@ function PlanktonLayer() {
   );
 }
 
-// --- Layer 2: Fish Schools (full tier only) ---
+// --- Layer 2: Fish Sforols (full tier only) ---
 
-function FishSchoolLayer() {
+function FishSforolLayer() {
   const pointsRef = useRef<THREE.Points>(null);
   const frameCounter = useRef(0);
 
@@ -561,7 +561,7 @@ export default function MarineParticles({ tier }: MarineParticlesProps) {
   return (
     <group>
       <PlanktonLayer />
-      {tier === "full" && <FishSchoolLayer />}
+      {tier === "full" && <FishSforolLayer />}
       {tier === "full" && <JellyfishLayer />}
       {tier === "full" && <BioluminescenceLayer />}
     </group>

@@ -49,7 +49,7 @@ export default function GoogleLoginButton({
           setErr(null);
           const response = await loginWithGoogle(credential);
           if (!response?.isSuccess) {
-            setErr(response?.message || "Đăng nhập thất bại");
+            setErr(response?.message || "Login failed");
             setLoading(false);
             return;
           }
@@ -93,7 +93,7 @@ export default function GoogleLoginButton({
         <div ref={btnRef} className="flex items-center justify-center" />
         {loading && (
           <p className="mt-2 text-sm text-gray-600 text-center">
-            Đang đăng nhập với Google…
+            Signing in with Google…
           </p>
         )}
         {err && <p className="mt-2 text-sm text-red-600 text-center">{err}</p>}

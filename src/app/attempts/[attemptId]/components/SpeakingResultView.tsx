@@ -26,24 +26,28 @@ export function SpeakingResultView({
   const speakingBandBreakdowns = [
     speakingDetail?.fluencyAndCoherence && {
       skill: "Fluency",
+      colorKey: "READING",
       score: speakingDetail.fluencyAndCoherence.band,
     },
     speakingDetail?.pronunciation && {
       skill: "Pronunciation",
+      colorKey: "LISTENING",
       score: speakingDetail.pronunciation.band,
     },
     speakingDetail?.lexicalResource && {
       skill: "Vocabulary",
+      colorKey: "WRITING",
       score: speakingDetail.lexicalResource.band,
     },
     speakingDetail?.grammaticalRangeAndAccuracy && {
       skill: "Grammar",
+      colorKey: "SPEAKING",
       score: speakingDetail.grammaticalRangeAndAccuracy.band,
     },
-  ].filter(Boolean) as { skill: string; score: number }[];
+  ].filter(Boolean) as { skill: string; colorKey: string; score: number }[];
 
   return (
-    <div className="min-h-screen bg-[var(--background)] py-10 px-4">
+    <div className="min-h-[100dvh] bg-[var(--background)] py-10 px-4">
       <div className="max-w-3xl mx-auto space-y-8">
         {/* Confetti */}
         <ConfettiTrigger
@@ -113,6 +117,7 @@ export function SpeakingResultView({
             >
               <SkillProgressBar
                 skill={b.skill}
+                colorKey={b.colorKey}
                 score={b.score}
                 delay={0.2 * idx}
               />

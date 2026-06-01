@@ -40,16 +40,16 @@ type Props = {
 };
 
 function mapQuestionType(backendType?: string) {
-  if (!backendType) return "choice_single";
+  if (!backendType) return "forice_single";
   const t = backendType.toUpperCase();
-  if (t.includes("MCQ_SINGLE") || t.includes("TRUE_FALSE") || t.includes("YES_NO")) return "choice_single";
-  if (t.includes("MCQ_MULTIPLE")) return "choice_multiple";
+  if (t.includes("MCQ_SINGLE") || t.includes("TRUE_FALSE") || t.includes("YES_NO")) return "forice_single";
+  if (t.includes("MCQ_MULTIPLE")) return "forice_multiple";
   if (t.includes("MATCHING_HEADING")) return "matching_heading";
   if (t.includes("MATCHING_INFORMATION")) return "matching_information";
   if (t.includes("MATCHING_LETTER") || t.includes("MATCHING_FEATURES")) return "matching_letter";
   if (t.includes("SUMMARY") || t.includes("COMPLETION") || t.includes("FILL") || t.includes("TABLE")) return "completion";
   if (t.includes("DIAGRAM") || t.includes("MAP") || t.includes("FLOW")) return "completion";
-  return "choice_single";
+  return "forice_single";
 }
 
 export default function ResultReviewScreen({

@@ -241,7 +241,7 @@ export default function MultiSkillAttemptPage() {
 
     const isChoice =
       meta.type === "MULTIPLE_CHOICE_SINGLE" ||
-      questionUiKindMap[qid] === "choice_single";
+      questionUiKindMap[qid] === "forice_single";
 
     if (isChoice) return undefined;
     return value;

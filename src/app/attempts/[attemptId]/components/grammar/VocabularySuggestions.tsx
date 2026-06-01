@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { WordDiff } from '../WordDiff';
 import type { SentenceComparison } from '@/types/writing';
 
 interface Props {
@@ -57,11 +58,15 @@ export function VocabularySuggestions({
               <div className="grid grid-cols-2 gap-3 mb-2">
                 <div>
                   <p className="text-xs font-bold text-[var(--text-muted)] mb-1">Current</p>
-                  <p className="text-sm line-through text-[var(--destructive)] opacity-70 break-all">{item.original}</p>
+                  <p className="text-sm text-[var(--text-body)] break-words">
+                    <WordDiff original={item.original} improved={item.improved} side="left" />
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs font-bold text-[var(--text-muted)] mb-1">Suggested</p>
-                  <p className="text-sm font-semibold text-emerald-600 break-all">{item.improved}</p>
+                  <p className="text-sm text-[var(--text-body)] break-words">
+                    <WordDiff original={item.original} improved={item.improved} side="right" />
+                  </p>
                 </div>
               </div>
               {item.explanation && (
