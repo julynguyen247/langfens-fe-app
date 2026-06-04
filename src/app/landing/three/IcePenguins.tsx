@@ -4,7 +4,6 @@ import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
-import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { cameraYRef } from "./OceanEnvironment";
 
 const PENGUIN_PATH = "/models/penguin.glb";
@@ -33,80 +32,46 @@ const PENGUIN_CONFIGS = [
 
 const TOTAL = PENGUIN_CONFIGS.length;
 
-// Hoisted reusable objects (zero GC per frame)
-const _pos = new THREE.Vector3();
-const _quat = new THREE.Quaternion();
-const _scale = new THREE.Vector3();
-const _mat4 = new THREE.Matrix4();
-const _yAxis = new THREE.Vector3(0, 1, 0);
-
-function buildMergedPenguinGeometry(scene: THREE.Group): THREE.BufferGeometry | null {
-  let bodyGeo: THREE.BufferGeometry | null = null;
-  let wingLGeo: THREE.BufferGeometry | null = null;
-  let wingRGeo: THREE.BufferGeometry | null = null;
-
-  scene.traverse((child) => {
-    if (!(child instanceof THREE.Mesh)) return;
-    if (child.name.includes("PenguinBody")) bodyGeo = child.geometry;
-    else if (child.name.includes("PenguinWingL")) wingLGeo = child.geometry;
-    else if (child.name.includes("PenguinWingR")) wingRGeo = child.geometry;
-  });
-
-  if (!bodyGeo) return null;
-
-  const safeBodyGeo = bodyGeo as THREE.BufferGeometry;
-  const parts: THREE.BufferGeometry[] = [safeBodyGeo.clone()];
-
-  const wingColor = new THREE.Color("#1E293B");
-  for (const wGeo of [wingLGeo, wingRGeo] as Array<THREE.BufferGeometry | null>) {
-    if (!wGeo) continue;
-    const clone = wGeo.clone();
-    const count = clone.attributes.position.count;
-    const colors = new Float32Array(count * 3);
-    for (let i = 0; i < count; i++) {
-      colors[i * 3] = wingColor.r;
-      colors[i * 3 + 1] = wingColor.g;
-      colors[i * 3 + 2] = wingColor.b;
-    }
-    clone.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-    parts.push(clone);
-  }
-
-  const merged = mergeGeometries(parts);
-  parts.forEach((g) => g.dispose());
-  return merged;
-}
-
 export default function IcePenguins() {
-  const meshRef = useRef<THREE.InstancedMesh>(null);
+  const groupRef = useRef<THREE.Group>(null);
   const frameCounter = useRef(0);
   const { scene } = useGLTF(PENGUIN_PATH, true);
 
-  const geometry = useMemo(() => buildMergedPenguinGeometry(scene), [scene]);
-
-  const material = useMemo(
-    () =>
-      new THREE.MeshStandardMaterial({
-        vertexColors: true,
-        emissive: "#555555",
-        emissiveIntensity: 0.3,
-        roughness: 0.6,
-        transparent: true,
-        opacity: 1,
-      }),
-    []
-  );
+  // We clone the scene for each penguin so we can animate wings independently
+  // 10 penguins * 3 meshes is only 30 draw calls, which is extremely fast and avoids InstancedMesh complexity for articulated parts.
+  const penguins = useMemo(() => {
+    return Array.from({ length: TOTAL }).map((_, i) => {
+      const clone = scene.clone();
+      
+      // Update materials for the wet, sleek look
+      clone.traverse((child) => {
+        if (child instanceof THREE.Mesh) {
+          const m = child.material.clone() as THREE.MeshStandardMaterial;
+          m.emissive = new THREE.Color("#1e293b"); // Cooler, sleeker dark blue/slate emissive
+          m.emissiveIntensity = 0.4;
+          m.roughness = 0.25; // Sleek and wet look
+          m.metalness = 0.1;
+          m.transparent = true;
+          m.opacity = 1;
+          
+          // Make wings distinct if needed
+          if (child.name.includes("Wing")) {
+             m.color = new THREE.Color("#111827"); 
+          }
+          child.material = m;
+        }
+      });
+      return clone;
+    });
+  }, [scene]);
 
   useFrame(({ clock }) => {
-    const mesh = meshRef.current;
-    if (!mesh) return;
+    if (!groupRef.current) return;
 
     const camY = cameraYRef.current;
     const opacity = THREE.MathUtils.clamp((camY + 5) / 3, 0, 1);
-    mesh.visible = opacity > 0.001;
-    if (!mesh.visible) return;
-
-    material.opacity = opacity;
+    groupRef.current.visible = opacity > 0.001;
+    if (!groupRef.current.visible) return;
 
     // Frame-skip: update every 3rd frame
     frameCounter.current++;
@@ -115,6 +80,7 @@ export default function IcePenguins() {
     const t = clock.getElapsedTime();
 
     for (let i = 0; i < TOTAL; i++) {
+      const clone = penguins[i];
       const cfg = PENGUIN_CONFIGS[i];
       const iceberg = ICEBERG_REFS[cfg.iceberg];
 
@@ -129,39 +95,72 @@ export default function IcePenguins() {
       const worldLx = cfg.lx * cosR - cfg.lz * sinR;
       const worldLz = cfg.lx * sinR + cfg.lz * cosR;
 
-      _pos.set(
-        iceberg.position[0] + worldLx,
-        iceberg.position[1] + 2.5 + bobY,
-        iceberg.position[2] + worldLz
-      );
+      let posX = iceberg.position[0] + worldLx;
+      let posY = iceberg.position[1] + 2.5 + bobY;
+      let posZ = iceberg.position[2] + worldLz;
 
       let yRot = iceberg.rotY + Math.atan2(cfg.lx, cfg.lz) + Math.PI;
+      let tiltZ = 0;
 
       if (cfg.waddle) {
         const waddlePhase = Math.sin(t * 1.5 + i * 2.0);
-        _pos.x += Math.sin(yRot) * waddlePhase * 0.3;
-        _pos.z += Math.cos(yRot) * waddlePhase * 0.3;
+        posX += Math.sin(yRot) * waddlePhase * 0.3;
+        posZ += Math.cos(yRot) * waddlePhase * 0.3;
+        // Cute hop while waddling
+        posY += Math.abs(Math.sin(t * 3.0 + i * 2.0)) * 0.12;
         yRot += waddlePhase * 0.08;
+        // Cute side-to-side tilt
+        tiltZ = waddlePhase * 0.15;
       } else {
         yRot += Math.sin(t * 2.1 + i * 1.3) * 0.035;
       }
 
-      _quat.setFromAxisAngle(_yAxis, yRot);
-      _scale.setScalar(cfg.scale);
-      _mat4.compose(_pos, _quat, _scale);
-      mesh.setMatrixAt(i, _mat4);
-    }
+      clone.position.set(posX, posY, posZ);
+      clone.rotation.set(0, yRot, tiltZ);
+      
+      // Idle breathing (squish and stretch slightly)
+      let scaleY = cfg.scale;
+      let scaleX = cfg.scale;
+      let scaleZ = cfg.scale;
+      
+      if (!cfg.waddle) {
+        const breath = Math.sin(t * 2.5 + i * 1.5);
+        scaleY *= 1.0 + breath * 0.04;
+        scaleX *= 1.0 - breath * 0.02;
+        scaleZ *= 1.0 - breath * 0.02;
+      }
+      clone.scale.set(scaleX, scaleY, scaleZ);
 
-    mesh.instanceMatrix.needsUpdate = true;
+      // Wing animation!
+      const wingL = clone.getObjectByName("PenguinWingL");
+      const wingR = clone.getObjectByName("PenguinWingR");
+      
+      if (cfg.waddle) {
+        // Active flapping while walking
+        const flap = Math.sin(t * 6.0 + i) * 0.3;
+        if (wingL) wingL.rotation.z = -0.5 - flap;
+        if (wingR) wingR.rotation.z = 0.5 + flap;
+      } else {
+        // Idle wing movement
+        const flap = Math.sin(t * 2.0 + i) * 0.05;
+        if (wingL) wingL.rotation.z = -0.1 - flap;
+        if (wingR) wingR.rotation.z = 0.1 + flap;
+      }
+      
+      // Apply opacity
+      clone.traverse((child) => {
+        if (child instanceof THREE.Mesh && child.material) {
+           child.material.opacity = opacity;
+        }
+      });
+    }
   });
 
-  if (!geometry) return null;
-
   return (
-    <instancedMesh
-      ref={meshRef}
-      args={[geometry, material, TOTAL]}
-      frustumCulled={false}
-    />
+    <group ref={groupRef}>
+      {penguins.map((p, i) => (
+        <primitive key={i} object={p} />
+      ))}
+    </group>
   );
 }

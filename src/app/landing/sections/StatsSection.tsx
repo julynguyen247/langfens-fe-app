@@ -10,6 +10,8 @@ import { useCountUp } from "../hooks/useCountUp";
 import { useReducedMotion } from "../hooks/useReducedMotion";
 import { EASE, STAGGER } from "../lib/animation-config";
 
+import { GlassCard } from "../ui/GlassCard";
+
 function StatCard({
   value,
   suffix,
@@ -24,27 +26,25 @@ function StatCard({
   const { ref, display } = useCountUp(value, { suffix, duration: 2000 });
 
   return (
-    <div
-      ref={ref}
-      className="stat-card bg-[var(--ocean-bg-light)] border-[3px] border-[rgba(255,255,255,0.07)] rounded-[2rem] shadow-[0_5px_0_rgba(0,0,0,0.35),0_0_0_1px_rgba(255,255,255,0.04)] transition-all duration-150 hover:-translate-y-[3px] hover:scale-[1.01] hover:border-[var(--ocean-border-glow)] hover:shadow-[0_7px_0_rgba(0,0,0,0.35),0_0_25px_var(--ocean-primary-glow)] rounded-3xl p-8 text-center h-full"
-      style={{ opacity: 0 }}
-    >
-      <div
-        className="text-5xl sm:text-6xl font-bold bg-gradient-to-br from-[#2563EB] to-[#06D6A0] bg-clip-text text-transparent mb-3"
-        style={{ fontFamily: 'var(--font-heading)' }}
-      >
-        {display}
-      </div>
-      <h3
-        className="text-lg font-semibold mb-2"
-        style={{ fontFamily: 'var(--font-heading)' }}
-      >{label}</h3>
-      <p
-        className="text-sm text-[var(--ocean-text-muted)]"
-        style={{ fontFamily: 'var(--font-body)' }}
-      >
-        {sublabel}
-      </p>
+    <div ref={ref} className="stat-card h-full" style={{ opacity: 0 }}>
+      <GlassCard className="p-8 text-center h-full flex flex-col justify-center">
+        <div
+          className="text-5xl sm:text-6xl font-bold bg-gradient-to-br from-[#2563EB] to-[#06D6A0] bg-clip-text text-transparent mb-3 drop-shadow-sm"
+          style={{ fontFamily: 'var(--font-heading)' }}
+        >
+          {display}
+        </div>
+        <h3
+          className="text-xl font-semibold mb-2 text-white"
+          style={{ fontFamily: 'var(--font-heading)' }}
+        >{label}</h3>
+        <p
+          className="text-sm text-[var(--ocean-text-muted)]"
+          style={{ fontFamily: 'var(--font-body)' }}
+        >
+          {sublabel}
+        </p>
+      </GlassCard>
     </div>
   );
 }

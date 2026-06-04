@@ -52,7 +52,7 @@ const _colossalBodyGeom = (() => {
     mantleColors[i * 3 + 1] = mantleColor.g;
     mantleColors[i * 3 + 2] = mantleColor.b;
   }
-  mantle.setAttribute("color", new THREE.BufferAttribute(mantleColors, 3));
+  mantle.setAttribute("color", new THREE.Float32BufferAttribute(mantleColors, 3));
 
   // 2 large eyes: glowing green (#4ADE80), SphereGeometry(0.4, 6, 4)
   const eyeLeft = new THREE.SphereGeometry(0.4, 6, 4);
@@ -82,7 +82,7 @@ const _colossalBodyGeom = (() => {
       cols[i * 3 + 1] = eyeColor.g;
       cols[i * 3 + 2] = eyeColor.b;
     }
-    eye.setAttribute("color", new THREE.BufferAttribute(cols, 3));
+    eye.setAttribute("color", new THREE.Float32BufferAttribute(cols, 3));
   }
 
   const merged = mergeGeometries([mantle, eyeLeft, eyeRight])!;
@@ -132,15 +132,15 @@ function buildTentacle(
   }
   geom.setAttribute("aWaveParams", new THREE.BufferAttribute(waveParams, 4));
 
-  // Vertex color: black (#0C0A09)
-  const col = new THREE.Color("#0C0A09");
+  // Vertex color: dark red-black (#1F0A0A)
+  const col = new THREE.Color("#1F0A0A");
   const colors = new Float32Array(count * 3);
   for (let i = 0; i < count; i++) {
     colors[i * 3 + 0] = col.r;
     colors[i * 3 + 1] = col.g;
     colors[i * 3 + 2] = col.b;
   }
-  geom.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+  geom.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
 
   // Position: spread around mantle base (top of mantle is at y = 10 in local space)
   // Tentacles reach upward → cylinder sits above the apex at y ~= 10
@@ -190,8 +190,8 @@ const _colossalTentacleGeom = (() => {
 // Body material: MeshStandardMaterial with vertex colors + eye glow
 const _colossalBodyMat = new THREE.MeshStandardMaterial({
   vertexColors: true,
-  emissive: "#4ADE80",
-  emissiveIntensity: 0.3,
+  emissive: "#450A0A",
+  emissiveIntensity: 0.5,
   roughness: 0.7,
   transparent: true,
   opacity: 0.8,

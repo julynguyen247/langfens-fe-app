@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useEffect, useState } from "react";
+import gsap from "gsap";
 
 /**
  * Animates a number from 0 to the target value when the element scrolls into view.
@@ -18,36 +19,29 @@ export function useCountUp(
   useEffect(() => {
     if (!ref.current || hasAnimated) return;
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry.isIntersecting) return;
-        setHasAnimated(true);
-        observer.disconnect();
-
-        const start = performance.now();
-
-        function tick(now: number) {
-          const elapsed = now - start;
-          const progress = Math.min(elapsed / duration, 1);
-          // Ease out cubic
-          const eased = 1 - Math.pow(1 - progress, 3);
-          const current = Math.floor(eased * target);
-          setDisplay(`${current.toLocaleString()}${suffix}`);
-
-          if (progress < 1) {
-            requestAnimationFrame(tick);
-          } else {
-            setDisplay(`${target.toLocaleString()}${suffix}`);
-          }
-        }
-
-        requestAnimationFrame(tick);
+    const obj = { value: 0 };
+    
+    const tl = gsap.to(obj, {
+      value: target,
+      duration: duration / 1000,
+      ease: "power3.out",
+      scrollTrigger: {
+        trigger: ref.current,
+        start: "top 85%",
+        once: true,
       },
-      { threshold: 0.5 }
-    );
+      onUpdate: () => {
+        setDisplay(`${Math.floor(obj.value).toLocaleString()}${suffix}`);
+      },
+      onComplete: () => {
+        setDisplay(`${target.toLocaleString()}${suffix}`);
+        setHasAnimated(true);
+      }
+    });
 
-    observer.observe(ref.current);
-    return () => observer.disconnect();
+    return () => {
+      tl.kill();
+    };
   }, [target, duration, suffix, hasAnimated]);
 
   return { ref, display };

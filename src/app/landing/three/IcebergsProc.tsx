@@ -157,8 +157,8 @@ function generateIceberg(seed: number, params: IcebergParams): THREE.BufferGeome
     colors[i * 3 + 2] = tempColor.b;
   }
 
-  nonIndexed.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-  nonIndexed.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+  nonIndexed.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  nonIndexed.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
   nonIndexed.computeVertexNormals();
 
   return nonIndexed;
@@ -231,7 +231,7 @@ function IcebergMesh({ geometry, config }: IcebergMeshProps) {
           roughness={0.25}
           metalness={0.02}
           emissive="#40C4FF"
-          emissiveIntensity={0.06}
+          emissiveIntensity={0.25}
           flatShading
           transparent
           opacity={1}
@@ -244,7 +244,7 @@ function IcebergMesh({ geometry, config }: IcebergMeshProps) {
           ref={innerNearRef}
           color="#40C4FF"
           transparent
-          opacity={0.12}
+          opacity={0.3}
         />
       </mesh>
 
@@ -254,7 +254,7 @@ function IcebergMesh({ geometry, config }: IcebergMeshProps) {
           ref={innerDeepRef}
           color="#1A8FBF"
           transparent
-          opacity={0.08}
+          opacity={0.25}
           side={THREE.BackSide}
         />
       </mesh>

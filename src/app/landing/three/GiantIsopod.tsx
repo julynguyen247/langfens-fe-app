@@ -60,7 +60,7 @@ const _isopodGeom = (() => {
       colors[i * 3 + 1] = c.g;
       colors[i * 3 + 2] = c.b;
     }
-    seg.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+    seg.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
 
     parts.push(seg);
   }
@@ -86,7 +86,7 @@ const _isopodGeom = (() => {
       colors[i * 3 + 1] = antennaColor.g;
       colors[i * 3 + 2] = antennaColor.b;
     }
-    antennaLeft.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+    antennaLeft.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
   }
   parts.push(antennaLeft);
 
@@ -106,7 +106,7 @@ const _isopodGeom = (() => {
       colors[i * 3 + 1] = antennaColor.g;
       colors[i * 3 + 2] = antennaColor.b;
     }
-    antennaRight.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+    antennaRight.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
   }
   parts.push(antennaRight);
 
@@ -136,7 +136,7 @@ const _isopodGeom = (() => {
         colors[i * 3 + 1] = legColor.g;
         colors[i * 3 + 2] = legColor.b;
       }
-      leg.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+      leg.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
 
       parts.push(leg);
     }
@@ -165,8 +165,8 @@ export default function GiantIsopod() {
   const material = useMemo(() => {
     const mat = new THREE.MeshStandardMaterial({
       vertexColors: true,
-      emissive: new THREE.Color("#333333"),
-      emissiveIntensity: 0.2,
+      emissive: new THREE.Color("#57534E"),
+      emissiveIntensity: 0.5,
       roughness: 0.85,
       metalness: 0.05,
     });
