@@ -113,7 +113,7 @@ export default function OceanTerrain() {
               color="#1a1008"
               roughness={0.9}
               emissive="#FF6B35"
-              emissiveIntensity={0.05}
+              emissiveIntensity={0.4}
             />
           </mesh>
           {/* Chimney cap */}
@@ -123,7 +123,7 @@ export default function OceanTerrain() {
               color="#1a1008"
               roughness={0.9}
               emissive="#FF6B35"
-              emissiveIntensity={0.05}
+              emissiveIntensity={0.4}
             />
           </mesh>
         </group>

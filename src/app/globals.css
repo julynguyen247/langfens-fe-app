@@ -207,25 +207,25 @@ body {
 
 /* CSS variables (scoped — cannot be inlined) */
 .landing-ocean {
-  --ocean-bg: #040B14;
-  --ocean-bg-light: #0A1628;
-  --ocean-surface: #0F1D32;
-  --ocean-surface-light: #162544;
-  --ocean-primary: #2563EB;
-  --ocean-primary-hover: #1D4ED8;
-  --ocean-primary-light: #3B82F6;
-  --ocean-primary-dark: #1E40AF;
-  --ocean-primary-glow: rgba(37, 99, 235, 0.3);
-  --ocean-accent: #06D6A0;
-  --ocean-accent-glow: rgba(6, 214, 160, 0.3);
+  --ocean-bg: #030712;
+  --ocean-bg-light: #111827;
+  --ocean-surface: rgba(17, 24, 39, 0.7);
+  --ocean-surface-light: rgba(31, 41, 55, 0.7);
+  --ocean-primary: #3B82F6;
+  --ocean-primary-hover: #2563EB;
+  --ocean-primary-light: #60A5FA;
+  --ocean-primary-dark: #1D4ED8;
+  --ocean-primary-glow: rgba(59, 130, 246, 0.35);
+  --ocean-accent: #10B981;
+  --ocean-accent-glow: rgba(16, 185, 129, 0.35);
   --ocean-gold: #F59E0B;
   --ocean-gold-light: #FBBF24;
-  --ocean-text: #F0F4F8;
+  --ocean-text: #F8FAFC;
   --ocean-text-secondary: #94A3B8;
   --ocean-text-muted: #64748B;
-  --ocean-border: rgba(255, 255, 255, 0.10);
-  --ocean-border-glow: rgba(37, 99, 235, 0.35);
-  --ocean-shadow-glow: 0 0 30px var(--ocean-primary-glow);
+  --ocean-border: rgba(255, 255, 255, 0.08);
+  --ocean-border-glow: rgba(59, 130, 246, 0.4);
+  --ocean-shadow-glow: 0 0 40px var(--ocean-primary-glow);
   --font-heading: var(--font-sans);
   --font-body: var(--font-sans);
   --font-code: var(--font-mono);

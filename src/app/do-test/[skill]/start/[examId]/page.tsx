@@ -95,10 +95,8 @@ export default function StartAttemptPage() {
           const payload = res?.data?.data ?? res?.data;
           const speakingExamId: string = payload?.id ?? examId;
 
-          if (!cancelled) {
-            setAttempt({ ...payload, examId: speakingExamId, attemptId: speakingExamId });
-            router.replace(`/do-test/${skill}/${speakingExamId}`);
-          }
+          setAttempt({ ...payload, examId: speakingExamId, attemptId: speakingExamId });
+          router.replace(`/do-test/${skill}/${speakingExamId}`);
           return;
         }
 

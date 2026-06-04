@@ -38,15 +38,24 @@ function IcebergGLBMesh({ config }: IcebergGLBMeshProps) {
   // Load shared GLB with Draco enabled
   const { scene } = useGLTF(ICEBERG_PATH, true);
 
-  // Extract geometry from GLTF scene
-  const geometry = useMemo(() => {
+  // Extract geometry and material from GLTF scene
+  const parts = useMemo(() => {
     let geo: THREE.BufferGeometry | null = null;
+    let mat: THREE.Material | null = null;
     scene.traverse((child) => {
       if (child instanceof THREE.Mesh && !geo) {
         geo = child.geometry;
+        mat = Array.isArray(child.material) ? child.material[0] : child.material;
       }
     });
-    return geo;
+    if (mat) {
+      const m = (mat as THREE.Material).clone() as THREE.MeshStandardMaterial;
+      m.emissive = new THREE.Color("#40C4FF");
+      m.emissiveIntensity = 0.06;
+      m.transparent = true;
+      return { geo, mat: m };
+    }
+    return { geo, mat: null };
   }, [scene]);
 
   // Animation — identical to procedural version
@@ -72,7 +81,7 @@ function IcebergGLBMesh({ config }: IcebergGLBMeshProps) {
     if (innerDeepRef.current) innerDeepRef.current.opacity = opacity * 0.08;
   });
 
-  if (!geometry) return null;
+  if (!parts.geo) return null;
 
   return (
     <group
@@ -82,22 +91,26 @@ function IcebergGLBMesh({ config }: IcebergGLBMeshProps) {
       rotation={[0, rotY, 0]}
     >
       {/* Outer ice surface — Blender materials + flat shading */}
-      <mesh geometry={geometry}>
-        <meshStandardMaterial
-          ref={outerRef}
-          color="#d9ebf7"
-          roughness={0.25}
-          metalness={0.02}
-          emissive="#40C4FF"
-          emissiveIntensity={0.06}
-          flatShading
-          transparent
-          opacity={1}
-        />
-      </mesh>
+      {parts.mat ? (
+        <mesh geometry={parts.geo} material={parts.mat} />
+      ) : (
+        <mesh geometry={parts.geo}>
+          <meshStandardMaterial
+            ref={outerRef}
+            color="#d9ebf7"
+            roughness={0.25}
+            metalness={0.02}
+            emissive="#40C4FF"
+            emissiveIntensity={0.06}
+            flatShading
+            transparent
+            opacity={1}
+          />
+        </mesh>
+      )}
 
       {/* Near-surface translucency */}
-      <mesh geometry={geometry} scale={[0.88, 0.88, 0.88]}>
+      <mesh geometry={parts.geo} scale={[0.88, 0.88, 0.88]}>
         <meshBasicMaterial
           ref={innerNearRef}
           color="#40C4FF"
@@ -107,7 +120,7 @@ function IcebergGLBMesh({ config }: IcebergGLBMeshProps) {
       </mesh>
 
       {/* Deep internal glow (BackSide for volumetric feel) */}
-      <mesh geometry={geometry} scale={[0.6, 0.6, 0.6]}>
+      <mesh geometry={parts.geo} scale={[0.6, 0.6, 0.6]}>
         <meshBasicMaterial
           ref={innerDeepRef}
           color="#1A8FBF"

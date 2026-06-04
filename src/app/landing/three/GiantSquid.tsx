@@ -67,7 +67,7 @@ function buildSquidBody(): THREE.BufferGeometry {
       colors[i * 3 + 1] = col.g;
       colors[i * 3 + 2] = col.b;
     }
-    geom.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+    geom.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
   }
 
   applyVertexColor(mantleGeom, mantleColor);
@@ -140,7 +140,7 @@ function buildSquidTentacles(): {
     colors[i * 3 + 1] = col.g;
     colors[i * 3 + 2] = col.b;
   }
-  geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+  geo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
 
   const timeUniform = { value: 0 };
   return { geometry: geo, timeUniform };
@@ -161,8 +161,8 @@ const _bodyMat = new THREE.MeshPhongMaterial({
   transparent: true,
   opacity: 0.85,
   shininess: 30,
-  emissive: new THREE.Color("#3B0F04"),
-  emissiveIntensity: 0.2,
+  emissive: new THREE.Color("#7C2D12"),
+  emissiveIntensity: 0.5,
   side: THREE.DoubleSide,
 });
 

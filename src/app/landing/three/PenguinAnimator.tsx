@@ -78,6 +78,10 @@ export default function PenguinAnimator() {
   const bubblesRef = useRef<THREE.Points>(null);
   const spotlightRef = useRef<THREE.SpotLight>(null);
   const spotlightTargetRef = useRef<THREE.Object3D>(null);
+  
+  // Track continuous barrel rolls to prevent Euler snapping
+  const barrelRollAcc = useRef(0);
+  const spinTimer = useRef(0);
 
   // Track each bubble's spawn Y so we know when to reset
   const bubbleSpawnY = useRef(new Float32Array(BUBBLE_COUNT));
@@ -131,47 +135,87 @@ export default function PenguinAnimator() {
 
     // --- Wing animation ---
     if (leftWingRef.current && rightWingRef.current) {
-      let wingAngle = 0;
+      let wingZ = 0;
+      let wingX = 0;
+      let wingY = 0;
       let bodyTilt = 0;
+      let bodyRoll = 0;
 
       switch (zone) {
         case "surface":
-          wingAngle = Math.sin(time * 1.0) * 0.15; // Slow idle flap
+          wingZ = Math.sin(time * 1.5) * 0.15 - 0.1; // Idle balance
+          wingX = 0.1;
           bodyTilt = 0; // Upright
           break;
         case "dive":
-          wingAngle = -0.8; // Wings back, streamlined
-          bodyTilt = -0.5; // Tilted forward (diving)
+          wingZ = -1.2; // Wings tucked tight against body for speed
+          wingX = 0.3;
+          bodyTilt = -0.8; // Steep dive angle
           break;
         case "sunlight":
-          wingAngle = Math.sin(time * 2.5) * 0.4; // Active swimming
-          bodyTilt = -0.2; // Slight forward tilt
+          // Power stroke! Realistic figure-8 swimming motion
+          const strokePhase = time * 4.0;
+          wingZ = Math.sin(strokePhase) * 0.5 - 0.2; // Up/down sweep
+          wingX = Math.cos(strokePhase) * 0.3;       // Forward/back rowing
+          wingY = Math.sin(strokePhase) * 0.2;       // Twist (pitch control)
+          bodyTilt = -0.3 + Math.sin(strokePhase * 0.5) * 0.05; // Speed bobbing
+          bodyRoll = Math.sin(strokePhase) * 0.1; // Side to side roll
+          
+          // Trigger a beautiful 360 barrel roll every 8 seconds!
+          spinTimer.current += delta;
+          if (spinTimer.current > 8.0) {
+             barrelRollAcc.current -= Math.PI * 2.0; // Target another full spin
+             spinTimer.current = 0;
+          }
           break;
         case "twilight":
-          wingAngle = Math.sin(time * 1.5) * 0.25; // Slower
-          bodyTilt = -0.1;
+          // Slower, relaxed gliding strokes
+          const glidePhase = time * 2.5;
+          wingZ = Math.sin(glidePhase) * 0.3 - 0.1;
+          wingX = Math.cos(glidePhase) * 0.2;
+          wingY = Math.sin(glidePhase) * 0.1;
+          bodyTilt = -0.15;
+          bodyRoll = Math.sin(glidePhase) * 0.05;
           break;
         case "midnight":
-          wingAngle = Math.sin(time * 0.8) * 0.1; // Minimal movement
-          bodyTilt = 0; // Upright, cautious
+          // Suspended / cautious hovering
+          wingZ = Math.sin(time * 1.0) * 0.1 - 0.3;
+          wingX = 0.15;
+          bodyTilt = 0;
           break;
         case "deep":
         case "abyss":
-          wingAngle = Math.sin(time * 1.0) * 0.15; // Gentle glide
+          // Exploring deep, very slow motion
+          wingZ = Math.sin(time * 0.8) * 0.15 - 0.2;
+          wingX = Math.cos(time * 0.8) * 0.1;
           bodyTilt = -0.05;
           break;
       }
 
-      // Apply to wings (opposite rotation for left/right)
-      leftWingRef.current.rotation.z = wingAngle;
-      rightWingRef.current.rotation.z = -wingAngle;
+      // Apply realistic 3D stroke to wings (Left)
+      leftWingRef.current.rotation.set(wingX, wingY, wingZ);
+      // Right wing is mirrored: X is same, Y is inverted, Z is inverted
+      rightWingRef.current.rotation.set(wingX, -wingY, -wingZ);
 
-      // Apply body tilt
+      // Apply body tilt, dynamic roll, and looking around
       if (penguinRef.current) {
         penguinRef.current.rotation.x = THREE.MathUtils.lerp(
           penguinRef.current.rotation.x,
           bodyTilt,
           delta * 3
+        );
+        // Lerp towards the base roll PLUS any accumulated barrel rolls
+        penguinRef.current.rotation.z = THREE.MathUtils.lerp(
+          penguinRef.current.rotation.z,
+          bodyRoll + barrelRollAcc.current,
+          delta * 2.5 // Smooth, natural spin interpolation
+        );
+        // Add a gentle Y-axis turning motion so it looks around!
+        const lookAroundY = Math.sin(time * 0.8) * 0.3;
+        penguinRef.current.rotation.y = THREE.MathUtils.lerp(
+          penguinRef.current.rotation.y,
+          lookAroundY,
+          delta * 2
         );
       }
     }
