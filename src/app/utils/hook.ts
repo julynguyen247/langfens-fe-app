@@ -3,17 +3,12 @@ import { useRef } from "react";
 
 type QA = Record<string, string>;
 
-export function useDebouncedAutoSave(
-  userId: string | undefined,
-  attemptId: string
+export function buildAnswerPayload(
+  answers: QA,
+  buildSectionId: (qid: string) => string | undefined,
+  buildTextAnswer?: (qid: string, value: string) => string | undefined
 ) {
-  const t = useRef<NodeJS.Timeout | null>(null);
-
-  const buildPayload = (
-    answers: QA,
-    buildSectionId: (qid: string) => string | undefined,
-    buildTextAnswer?: (qid: string, value: string) => string | undefined
-  ) => ({
+  return {
     answers: Object.entries(answers).map(([questionId, value]) => {
       const textAnswer = buildTextAnswer?.(questionId, value);
       const hasText = !!textAnswer && textAnswer.trim().length > 0;
@@ -33,7 +28,7 @@ export function useDebouncedAutoSave(
 
       // Check if value is a valid UUID (GUID format)
       const isValidGuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
-      
+
       // Determine selectedOptionIds:
       // 1. If it's a JSON array of GUIDs, use those
       // 2. If it's a single GUID, use that
@@ -41,7 +36,7 @@ export function useDebouncedAutoSave(
       let selectedOptionIds: string[] = [];
       if (parsedArray && parsedArray.length > 0) {
         // Check if array contains GUIDs
-        const allGuids = parsedArray.every(v => 
+        const allGuids = parsedArray.every(v =>
           /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v)
         );
         if (allGuids) {
@@ -50,7 +45,7 @@ export function useDebouncedAutoSave(
       } else if (!hasText && value && isValidGuid) {
         selectedOptionIds = [value];
       }
-      
+
       // For non-GUID values, use textAnswer instead
       // But if we have parsedArray of non-GUIDs, also send as textAnswer
       let finalTextAnswer: string | undefined;
@@ -71,7 +66,14 @@ export function useDebouncedAutoSave(
       };
     }),
     clientRevision: Date.now(),
-  });
+  };
+}
+
+export function useDebouncedAutoSave(
+  userId: string | undefined,
+  attemptId: string
+) {
+  const t = useRef<NodeJS.Timeout | null>(null);
 
   const run = (
     answers: QA,
@@ -83,7 +85,7 @@ export function useDebouncedAutoSave(
 
     t.current = setTimeout(async () => {
       try {
-        const payload = buildPayload(answers, buildSectionId, buildTextAnswer);
+        const payload = buildAnswerPayload(answers, buildSectionId, buildTextAnswer);
         await autoSaveAttempt(attemptId, payload);
       } catch {}
     }, 2000);
@@ -96,7 +98,7 @@ export function useDebouncedAutoSave(
     buildTextAnswer?: (qid: string, value: string) => string | undefined
   ) => {
     if (t.current) clearTimeout(t.current);
-    const payload = buildPayload(answers, buildSectionId, buildTextAnswer);
+    const payload = buildAnswerPayload(answers, buildSectionId, buildTextAnswer);
     await autoSaveAttempt(attemptId, payload);
   };
 

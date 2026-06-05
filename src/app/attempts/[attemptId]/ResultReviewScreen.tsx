@@ -28,6 +28,8 @@ type Section = {
   questionGroups?: any[];
 };
 
+type PaperOption = { id: string; idx: number; contentMd: string };
+
 type Props = {
   attemptId: string;
   paper: {
@@ -60,16 +62,56 @@ export default function ResultReviewScreen({
 }: Props) {
   const section = paper?.sections?.[0];
 
+  // Build a questionId -> {promptMd, options} lookup from the snapshot so
+  // MATCHING_HEADING questions can render with their full list of headings
+  // (instead of an empty dropdown in review mode).
+  const questionLookup = useMemo(() => {
+    const m: Record<
+      string,
+      { promptMd?: string; options: PaperOption[] }
+    > = {};
+    for (const sec of paper?.sections ?? []) {
+      for (const grp of sec.questionGroups ?? []) {
+        for (const q of grp.questions ?? []) {
+          if (!q?.id) continue;
+          m[String(q.id)] = {
+            promptMd: q.promptMd,
+            options: Array.isArray(q.options) ? q.options : [],
+          };
+        }
+      }
+    }
+    return m;
+  }, [paper]);
+
   // Convert questions to QuestionPanel format
   const panelQuestions: Question[] = useMemo(() => {
-    return questions.map((q, i) => ({
-      id: q.questionId,
-      stem: q.promptMd || `Question ${q.index}`,
-      backendType: q.questionType || "MCQ_SINGLE",
-      uiKind: mapQuestionType(q.questionType) as any,
-      idx: q.index,
-    }));
-  }, [questions]);
+    return questions.map((q) => {
+      const snap = questionLookup[q.questionId];
+      // For MATCHING_HEADING the dropdown in review mode must show the full
+      // list of headings (snap.options), not the single user answer. We feed
+      // those into QuestionPanel as `forices`; the panel then passes them to
+      // HeadingDropdown so the user can see what they picked vs the rest of
+      // the option list. `value` is the option id (used as the <select> value)
+      // and `label` is the full content (e.g. "viii. The Spread of Coffee").
+      const isMatchingHeading =
+        (q.questionType ?? "").toUpperCase() === "MATCHING_HEADING";
+      const forices = isMatchingHeading
+        ? (snap?.options ?? []).map((o) => ({
+            value: o.contentMd.split(".")[0].trim(),
+            label: o.contentMd,
+          }))
+        : undefined;
+      return {
+        id: q.questionId,
+        stem: q.promptMd || snap?.promptMd || `Question ${q.index}`,
+        backendType: q.questionType || "MCQ_SINGLE",
+        uiKind: mapQuestionType(q.questionType) as any,
+        idx: q.index,
+        forices,
+      };
+    });
+  }, [questions, questionLookup]);
 
   // Create review data
   const reviewData: ReviewResult[] = useMemo(() => {
@@ -85,7 +127,16 @@ export default function ResultReviewScreen({
   const initialAnswers = useMemo(() => {
     const ans: Record<string, string> = {};
     for (const q of questions) {
-      ans[q.questionId] = q.selectedAnswerText || "";
+      // For MATCHING_HEADING the BE returns the full option content
+      // (e.g. "viii. The Spread of Coffee") as selectedAnswerText, but the
+      // dropdown's <option value> is the roman ("viii"). Re-derive the key
+      // so the select actually highlights the right option.
+      const isMatchingHeading =
+        (q.questionType ?? "").toUpperCase() === "MATCHING_HEADING";
+      const text = q.selectedAnswerText || "";
+      ans[q.questionId] = isMatchingHeading
+        ? text.split(".")[0].trim()
+        : text;
     }
     return ans;
   }, [questions]);

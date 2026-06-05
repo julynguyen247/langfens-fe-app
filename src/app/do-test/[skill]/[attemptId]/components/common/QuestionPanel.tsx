@@ -267,11 +267,29 @@ const QuestionPanel = memo(function QuestionPanel({
             type: q.backendType,
             promptMd: q.stem,
             explanationMd: q.explanationMd,
-            options: q.forices ? (q.forices as Choice[]).map((c, i) => ({
-              id: typeof c === "string" ? String(i + 1) : c.value,
-              idx: i,
-              contentMd: typeof c === "string" ? c : `${String.fromCharCode(65 + i)}. ${c.label}`,
-            })) : undefined,
+            // For matching heading, the renderer stores the label-only contentMd
+            // in forices (e.g. "viii. The Spread of Coffee") and the heading
+            // prefix is added by the dropdown itself. Adding a second letter
+            // prefix here would produce "H. viii. The Spread of Coffee" — the
+            // exact double-prefix the question-data standard forbids.
+            options: q.forices
+              ? (q.forices as Choice[]).map((c, i) => {
+                  if (q.backendType === "MATCHING_HEADING" || q.uiKind === "matching_heading") {
+                    return {
+                      id: typeof c === "string" ? String(i + 1) : c.value,
+                      idx: i,
+                      contentMd: typeof c === "string" ? c : c.label,
+                    };
+                  }
+                  return {
+                    id: typeof c === "string" ? String(i + 1) : c.value,
+                    idx: i,
+                    contentMd: typeof c === "string"
+                      ? c
+                      : `${String.fromCharCode(65 + i)}. ${c.label}`,
+                  };
+                })
+              : undefined,
             flowChartNodes: q.flowChartNodes,
           };
 
@@ -422,7 +440,27 @@ const QuestionPanel = memo(function QuestionPanel({
                             ? "text-[var(--text-muted)] italic"
                             : "text-red-600 line-through decoration-red-200"
                       }`}>
-                        {isSkipped ? "Empty" : answers[q.id] || "--"}
+                        {isSkipped
+                          ? "Empty"
+                          : (() => {
+                              // For MATCHING_HEADING, the user's dropdown value
+                              // is the roman ("viii") but the correct key is
+                              // shown as the full option content
+                              // ("viii. The Spread of Coffee"). Resolve to the
+                              // same full content so the two columns match.
+                              if (q.backendType === "MATCHING_HEADING") {
+                                const userVal = answers[q.id] ?? "";
+                                const matched = (rawQ.options ?? []).find(
+                                  (o) =>
+                                    o.contentMd
+                                      .split(".")[0]
+                                      .trim()
+                                      .toLowerCase() === userVal.trim().toLowerCase()
+                                );
+                                return matched?.contentMd || userVal || "--";
+                              }
+                              return answers[q.id] || "--";
+                            })()}
                       </div>
                     </div>
 

@@ -125,8 +125,18 @@ export async function getPublicExams(
   });
   return res;
 }
-export async function submitAttempt(attemptId: string) {
-  const res = await apisAttempt.post(`/attempt/submit/${attemptId}`, {});
+export async function submitAttempt(
+  attemptId: string,
+  answers?: Array<{
+    questionId: string;
+    sectionId: string;
+    selectedOptionIds: string[];
+    textAnswer?: string;
+  }>
+) {
+  const res = await apisAttempt.post(`/attempt/submit/${attemptId}`, {
+    answers: answers ?? [],
+  });
   return res;
 }
 

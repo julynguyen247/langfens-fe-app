@@ -69,6 +69,15 @@ type State = {
   setIsSubmitting: (submitting: boolean) => void;
   getAttempt: (id: string) => AttemptStartData | undefined;
   clear: (id?: string) => void;
+  // Per-attempt submit handler so the layout's Submit button can flush the
+  // latest in-memory answers (autosave is 2s-debounced; without this the
+  // layout would call `submitAttempt(attemptId)` with no answers and lose
+  // anything the user typed in the last 2 seconds).
+  submitHandlers: Record<string, (() => Promise<void>) | undefined>;
+  setSubmitHandler: (
+    id: string,
+    handler: (() => Promise<void>) | undefined
+  ) => void;
 };
 
 function loadAllFromSession(): Record<string, AttemptStartData> {
@@ -109,8 +118,18 @@ function readOneFromSession(id: string): AttemptStartData | undefined {
 export const useAttemptStore = create<State>((set, get) => ({
   byId: loadAllFromSession(),
   isSubmitting: false,
+  submitHandlers: {},
 
   setIsSubmitting: (submitting) => set({ isSubmitting: submitting }),
+
+  setSubmitHandler: (id, handler) =>
+    set((s) => {
+      if (!id) return s;
+      const next = { ...s.submitHandlers };
+      if (handler) next[id] = handler;
+      else delete next[id];
+      return { submitHandlers: next };
+    }),
 
   setAttempt: (data) =>
     set((s) => {
@@ -152,11 +171,14 @@ export const useAttemptStore = create<State>((set, get) => ({
             for (const k of keys) sessionStorage.removeItem(k);
           } catch {}
         }
-        return { byId: {} };
+        return { byId: {}, submitHandlers: {} };
       }
 
       const next = { ...s.byId };
       delete next[id];
+
+      const nextHandlers = { ...s.submitHandlers };
+      delete nextHandlers[id];
 
       if (typeof window !== "undefined") {
         try {
@@ -164,6 +186,6 @@ export const useAttemptStore = create<State>((set, get) => ({
         } catch {}
       }
 
-      return { byId: next };
+      return { byId: next, submitHandlers: nextHandlers };
     }),
 }));

@@ -42,6 +42,7 @@ export default function DoTestAttemptLayout({
   const attempt = useAttemptStore((s) => s.byId[attemptId]);
   const isSubmitting = useAttemptStore((s) => s.isSubmitting);
   const setIsSubmitting = useAttemptStore((s) => s.setIsSubmitting);
+  const submitHandler = useAttemptStore((s) => s.submitHandlers[attemptId]);
   const { setLoading } = useLoadingStore();
 
   const router = useRouter();
@@ -134,7 +135,13 @@ export default function DoTestAttemptLayout({
       setLoading(true);
 
       if (isAutoGraded && attempt) {
-        await submitAttempt(attempt.attemptId);
+        // Delegate to the screen's doSubmit so the latest in-memory answers
+        // (autosave is 2s-debounced) are flushed to the BE first.
+        if (submitHandler) {
+          await submitHandler();
+        } else {
+          await submitAttempt(attempt.attemptId);
+        }
         clearAttempt(attemptId);
         router.replace(`/attempts/${attempt.attemptId}`);
         return;
@@ -150,17 +157,18 @@ export default function DoTestAttemptLayout({
   const handleSubmit = async () => {
     if (isSubmitting || !attempt) return;
 
-    try {
-      setIsSubmitting(true);
-      setLoading(true);
-      await submitAttempt(attempt.attemptId);
-      clearAttempt(attemptId);
-      router.replace(`/attempts/${attempt.attemptId}`);
-    } catch {
-      alert("Submit failed. Please try again.");
-    } finally {
-      setLoading(false);
-      setIsSubmitting(false);
+    // Delegate to the screen's doSubmit so the latest in-memory answers
+    // (autosave is 2s-debounced) are flushed to the BE first.
+    if (submitHandler) {
+      await submitHandler();
+      return;
+    }
+
+    // Fallback only if the screen hasn't registered a handler yet (e.g. paper
+    // still loading). The screen's handler will do the right thing; here we
+    // just bail instead of submitting with no answers.
+    if (typeof window !== "undefined") {
+      alert("Test is still loading. Please wait a moment and try again.");
     }
   };
 
@@ -177,7 +185,7 @@ export default function DoTestAttemptLayout({
   const submitButton = isAutoGraded && attempt ? (
     <button
       onClick={() => setSubmitConfirm(true)}
-      disabled={isSubmitting}
+      disabled={isSubmitting || !submitHandler}
       className="inline-flex items-center gap-2 bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white px-6 py-2 rounded-full font-medium shadow-sm transition-all border-b-[4px] border-[var(--primary-dark)] active:translate-y-[2px] active:border-b-[2px] disabled:opacity-60"
     >
       {isSubmitting ? (

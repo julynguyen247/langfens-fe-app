@@ -13,7 +13,7 @@ import { useAttemptStore } from "@/app/store/useAttemptStore";
 import { useUserStore } from "@/app/store/userStore";
 import { useLoadingStore } from "@/app/store/loading";
 import Modal from "@/components/Modal";
-import { useDebouncedAutoSave } from "@/app/utils/hook";
+import { useDebouncedAutoSave, buildAnswerPayload } from "@/app/utils/hook";
 import { mapApiQuestionToUi } from "@/lib/mapApiQuestionToUi";
 import { useReactMediaRecorder } from "react-media-recorder";
 import {
@@ -213,7 +213,18 @@ export function ReadingScreen({
         );
       }
 
-      await submitAttempt(attemptId);
+      // Build the submit payload from the same answer map (defensive — the BE
+      // already has the answers via autosave, but we also send them inline so
+      // a missed autosave doesn't silently drop the user's selection). Use
+      // the same payload builder as the autosave path so MCQ UUIDs end up in
+      // `selectedOptionIds` (and only completion-style answers land in
+      // `textAnswer`).
+      const { answers: submitAnswers } = buildAnswerPayload(
+        lastAnswersRef.current,
+        () => activeSec.id,
+        buildTextAnswer
+      );
+      await submitAttempt(attemptId, submitAnswers);
       router.replace(`/attempts/${attemptId}`);
     } catch {
       alert("Nộp bài thất bai. Vui lòng thử lai.");
@@ -222,6 +233,19 @@ export function ReadingScreen({
       setLoading(false);
     }
   };
+
+  // Register doSubmit with the global store so the layout's TopBar Submit
+  // button can flush the latest in-memory answers (autosave is 2s-debounced)
+  // before the BE Submit. We use a ref to always invoke the latest closure
+  // without re-registering on every render.
+  const doSubmitRef = useRef(doSubmit);
+  doSubmitRef.current = doSubmit;
+  const setSubmitHandler = useAttemptStore((s) => s.setSubmitHandler);
+  useEffect(() => {
+    const handler = () => doSubmitRef.current();
+    setSubmitHandler(attemptId, handler);
+    return () => setSubmitHandler(attemptId, undefined);
+  }, [attemptId, setSubmitHandler]);
 
   if (!attempt || !activeSec) {
     return (
@@ -461,7 +485,18 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
         );
       }
 
-      await submitAttempt(attemptId);
+      // Build the submit payload from the same answer map (defensive — the BE
+      // already has the answers via autosave, but we also send them inline so
+      // a missed autosave doesn't silently drop the user's selection). Use
+      // the same payload builder as the autosave path so MCQ UUIDs end up in
+      // `selectedOptionIds` (and only completion-style answers land in
+      // `textAnswer`).
+      const { answers: submitAnswers } = buildAnswerPayload(
+        lastAnswersRef.current,
+        (qid) => sectionOfQuestion.get(qid),
+        buildTextAnswer
+      );
+      await submitAttempt(attemptId, submitAnswers);
       router.replace(`/attempts/${attemptId}`);
     } catch {
       alert("Submit failed. Please try again.");
@@ -470,6 +505,19 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
       setLoading(false);
     }
   };
+
+  // Register doSubmit with the global store so the layout's TopBar Submit
+  // button can flush the latest in-memory answers (autosave is 2s-debounced)
+  // before the BE Submit. We use a ref to always invoke the latest closure
+  // without re-registering on every render.
+  const listeningDoSubmitRef = useRef(doSubmit);
+  listeningDoSubmitRef.current = doSubmit;
+  const setListeningSubmitHandler = useAttemptStore((s) => s.setSubmitHandler);
+  useEffect(() => {
+    const handler = () => listeningDoSubmitRef.current();
+    setListeningSubmitHandler(attemptId, handler);
+    return () => setListeningSubmitHandler(attemptId, undefined);
+  }, [attemptId, setListeningSubmitHandler]);
 
   if (!attempt) {
     return (

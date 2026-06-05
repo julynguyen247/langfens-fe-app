@@ -90,7 +90,7 @@ export function mapApiQuestionToUi(q: ApiQuestion): Question {
   if (uiKind === "choice_single") {
     return {
       ...base,
-      choices: (q.options ?? []).map((opt) => ({
+      forices: (q.options ?? []).map((opt) => ({
         value: opt.id,
         label: normalizeOptionLabel(opt.contentMd),
       })),
@@ -101,7 +101,7 @@ export function mapApiQuestionToUi(q: ApiQuestion): Question {
   if (uiKind === "choice_multiple") {
     return {
       ...base,
-      choices: (q.options ?? []).map((opt) => ({
+      forices: (q.options ?? []).map((opt) => ({
         value: opt.id,
         label: normalizeOptionLabel(opt.contentMd),
       })),
@@ -116,12 +116,15 @@ export function mapApiQuestionToUi(q: ApiQuestion): Question {
     };
   }
 
-  // matching heading
+  // matching heading — value is the roman numeral extracted from the option's
+  // contentMd (e.g. "viii" from "viii. The Spread of Coffee"), label is the
+  // full content. QuestionPanel then maps this to RawQuestion.options for the
+  // HeadingDropdown registry handler.
   if (uiKind === "matching_heading" && q.options?.length) {
     return {
       ...base,
-      choices: q.options.map((opt) => ({
-        value: opt.contentMd.split(".")[0].trim(), // e.g. "i", "ii"
+      forices: q.options.map((opt) => ({
+        value: opt.contentMd.split(".")[0].trim(),
         label: opt.contentMd,
       })),
     };
