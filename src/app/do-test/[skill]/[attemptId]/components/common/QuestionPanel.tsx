@@ -50,6 +50,7 @@ export type QuestionUiKind =
   | "forice_single"
   | "forice_multiple"
   | "completion"
+  | "short_answer"
   | "matching_letter"
   | "matching_heading"
   | "flow_chart"

@@ -65,10 +65,6 @@ export function cleanAnswer(s: string) {
     .replace(/\s+/g, " ")
     .trim();
 
-  if (clean.includes(" / ")) {
-    clean = clean.split(" / ")[0].trim();
-  }
-
   if (/^([A-Za-z0-9]+)\/\1$/i.test(clean)) {
     clean = clean.split("/")[0].trim();
   }

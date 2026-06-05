@@ -24,9 +24,10 @@ export type BackendQuestionType =
  * migration — will be removed in Phase 2.
  */
 export type QuestionUiKind =
-  | "choice_single"
-  | "choice_multiple"
+  | "forice_single"
+  | "forice_multiple"
   | "completion"
+  | "short_answer"
   | "matching_letter"
   | "matching_heading"
   | "flow_chart"

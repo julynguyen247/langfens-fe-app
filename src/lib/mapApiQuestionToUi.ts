@@ -36,11 +36,11 @@ function mapBackendTypeToUiKind(type: BackendQuestionType): QuestionUiKind {
     case "MULTIPLE_CHOICE_SINGLE":
     case "MULTIPLE_CHOICE_SINGLE_IMAGE":
     case "CLASSIFICATION":
-      return "choice_single";
+      return "forice_single";
 
     // checkbox
     case "MULTIPLE_CHOICE_MULTIPLE":
-      return "choice_multiple";
+      return "forice_multiple";
 
     // input text
     case "FORM_COMPLETION":
@@ -48,10 +48,13 @@ function mapBackendTypeToUiKind(type: BackendQuestionType): QuestionUiKind {
     case "SENTENCE_COMPLETION":
     case "SUMMARY_COMPLETION":
     case "TABLE_COMPLETION":
+      return "completion";
+
+    // single-input text (no `___` blanks in the prompt; just one answer field)
     case "SHORT_ANSWER":
     case "DIAGRAM_LABEL":
     case "MAP_LABEL":
-      return "completion";
+      return "short_answer";
 
     // matching letter
     case "MATCHING_FEATURES":
@@ -87,7 +90,7 @@ export function mapApiQuestionToUi(q: ApiQuestion): Question {
   };
 
   // choice single
-  if (uiKind === "choice_single") {
+  if (uiKind === "forice_single") {
     return {
       ...base,
       forices: (q.options ?? []).map((opt) => ({
@@ -98,7 +101,7 @@ export function mapApiQuestionToUi(q: ApiQuestion): Question {
   }
 
   // choice multiple
-  if (uiKind === "choice_multiple") {
+  if (uiKind === "forice_multiple") {
     return {
       ...base,
       forices: (q.options ?? []).map((opt) => ({
