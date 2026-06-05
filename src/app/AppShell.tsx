@@ -39,6 +39,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     pathname.startsWith("/flashcards") ||
     pathname.startsWith("/placement") ||
     pathname.startsWith("/practice") ||
+    pathname.startsWith("/writing") ||
+    pathname.startsWith("/grammar") ||
+    pathname.startsWith("/speaking") ||
     pathname.startsWith("/profile") ||
     pathname.startsWith("/achievements") ||
     pathname.startsWith("/leaderboard") ||

@@ -1,3 +1,5 @@
+"use client";
+
 import { autoSaveAttempt } from "@/utils/api";
 import { useRef } from "react";
 

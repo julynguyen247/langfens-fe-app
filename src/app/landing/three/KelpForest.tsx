@@ -101,7 +101,7 @@ function buildKelpGeometry(): THREE.BufferGeometry {
       colors[i * 3 + 1] = tmp.g;
       colors[i * 3 + 2] = tmp.b;
     }
-    merged.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+    merged.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
   }
 
   allParts.forEach((g) => g.dispose());

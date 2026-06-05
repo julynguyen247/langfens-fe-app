@@ -1,10 +1,13 @@
-FROM node:18-alpine AS build
+FROM node:20-alpine AS build
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Build-time args for Next.js public env vars
 ARG NEXT_PUBLIC_GOOGLE_CLIENT_ID
 ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=${NEXT_PUBLIC_GOOGLE_CLIENT_ID}
+
+ARG NEXT_PUBLIC_GATEWAY_URL
+ENV NEXT_PUBLIC_GATEWAY_URL=${NEXT_PUBLIC_GATEWAY_URL}
 
 COPY package*.json ./
 RUN npm ci
@@ -17,7 +20,7 @@ RUN if [ ! -s "src/app/do-test/[skill]/page.tsx" ]; then \
   fi
 RUN npm run build
 
-FROM node:18-alpine
+FROM node:20-alpine
 WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1

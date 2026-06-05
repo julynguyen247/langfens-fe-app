@@ -82,7 +82,7 @@ function buildLandmassGeometry(profileIndex: number): THREE.BufferGeometry {
     colors[i * 3 + 2] = tempColor.b;
   }
 
-  nonIndexed.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+  nonIndexed.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
   nonIndexed.computeVertexNormals();
   return nonIndexed;
 }

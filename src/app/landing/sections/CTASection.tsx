@@ -8,6 +8,7 @@ import { CTA } from "../data";
 import { Button } from "../ui/Button";
 import { useReducedMotion } from "../hooks/useReducedMotion";
 import { EASE } from "../lib/animation-config";
+import { GlassCard } from "../ui/GlassCard";
 
 interface CTASectionProps {
   onCTA: () => void;
@@ -35,28 +36,50 @@ export default function CTASection({ onCTA, onConfetti }: CTASectionProps) {
 
       const trigger = {
         trigger: sectionRef.current,
+        start: "top 75%",
+        end: "bottom bottom",
+        scrub: 1, // scrub for immersive scale effect
+      };
+
+      // Background immersive scale
+      gsap.fromTo(
+        ".cta-bg-glow",
+        { scale: 0.8, opacity: 0 },
+        { scale: 1.2, opacity: 1, ease: "none", scrollTrigger: trigger }
+      );
+
+      // Card parallax
+      gsap.fromTo(
+        ".cta-card-wrapper",
+        { y: 50 },
+        { y: -50, ease: "none", scrollTrigger: trigger }
+      );
+
+      // Normal enter animations
+      const enterTrigger = {
+        trigger: sectionRef.current,
         start: "top 70%",
       };
 
       gsap.fromTo(
         ".cta-label",
         { y: 30, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.6, ease: EASE.smooth, scrollTrigger: trigger }
+        { y: 0, opacity: 1, duration: 0.6, ease: EASE.smooth, scrollTrigger: enterTrigger }
       );
       gsap.fromTo(
         ".cta-title",
-        { y: 40, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.8, delay: 0.1, ease: EASE.smooth, scrollTrigger: trigger }
+        { y: 40, opacity: 0, scale: 0.95 },
+        { y: 0, opacity: 1, scale: 1, duration: 0.8, delay: 0.1, ease: EASE.smooth, scrollTrigger: enterTrigger }
       );
       gsap.fromTo(
         ".cta-subtitle",
         { y: 30, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.6, delay: 0.2, ease: EASE.smooth, scrollTrigger: trigger }
+        { y: 0, opacity: 1, duration: 0.6, delay: 0.2, ease: EASE.smooth, scrollTrigger: enterTrigger }
       );
       gsap.fromTo(
         ".cta-buttons",
         { y: 30, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.6, delay: 0.3, ease: EASE.smooth, scrollTrigger: trigger }
+        { y: 0, opacity: 1, duration: 0.6, delay: 0.3, ease: EASE.smooth, scrollTrigger: enterTrigger }
       );
     },
     { scope: sectionRef, dependencies: [reducedMotion] }
@@ -68,11 +91,14 @@ export default function CTASection({ onCTA, onConfetti }: CTASectionProps) {
       data-section="cta"
       className="relative z-10 min-h-screen flex items-center py-24 lg:py-32"
     >
-      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center w-full">
-        <div className="bg-[var(--ocean-bg-light)] border-[3px] border-[rgba(255,255,255,0.07)] rounded-[2rem] shadow-[0_5px_0_rgba(0,0,0,0.35),0_0_0_1px_rgba(255,255,255,0.04)] transition-all duration-150 hover:-translate-y-[3px] hover:scale-[1.01] hover:border-[var(--ocean-border-glow)] hover:shadow-[0_7px_0_rgba(0,0,0,0.35),0_0_25px_var(--ocean-primary-glow)] rounded-3xl p-12 sm:p-16 space-y-6">
+      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center w-full relative">
+        <div className="cta-bg-glow absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full aspect-square max-w-[800px] bg-blue-600/20 rounded-full blur-[100px] pointer-events-none" />
+        
+        <div className="cta-card-wrapper relative z-10">
+          <GlassCard className="p-12 sm:p-16 space-y-6" glowColor="rgba(59, 130, 246, 0.4)">
           {/* Label */}
           <span
-            className="cta-label text-sm font-bold text-[var(--ocean-primary)]"
+            className="cta-label text-sm font-bold text-blue-400"
             style={{ opacity: 0, fontFamily: 'var(--font-heading)' }}
           >
             {CTA.label}
@@ -80,15 +106,15 @@ export default function CTASection({ onCTA, onConfetti }: CTASectionProps) {
 
           {/* Headline */}
           <h2
-            className="cta-title text-3xl sm:text-4xl lg:text-6xl font-bold bg-gradient-to-br from-[#2563EB] to-[#06D6A0] bg-clip-text text-transparent leading-tight"
-            style={{ opacity: 0, fontFamily: 'var(--font-heading)', textShadow: '0 0 40px rgba(37, 99, 235, 0.3)' }}
+            className="cta-title text-3xl sm:text-4xl lg:text-6xl font-bold bg-gradient-to-br from-[#2563EB] to-[#06D6A0] bg-clip-text text-transparent leading-tight drop-shadow-sm"
+            style={{ opacity: 0, fontFamily: 'var(--font-heading)' }}
           >
             {CTA.headline}
           </h2>
 
           {/* Subtitle */}
           <p
-            className="cta-subtitle text-lg text-[var(--ocean-text-secondary)] max-w-2xl mx-auto"
+            className="cta-subtitle text-lg text-white/80 max-w-2xl mx-auto"
             style={{ opacity: 0, fontFamily: 'var(--font-body)' }}
           >
             {CTA.subtitle}
@@ -109,11 +135,12 @@ export default function CTASection({ onCTA, onConfetti }: CTASectionProps) {
 
           {/* Note */}
           <p
-            className="text-sm text-[var(--ocean-text-muted)]"
+            className="text-sm text-white/50"
             style={{ fontFamily: 'var(--font-code)' }}
           >
             {CTA.note}
           </p>
+        </GlassCard>
         </div>
       </div>
     </section>

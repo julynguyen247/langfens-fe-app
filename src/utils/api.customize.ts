@@ -7,14 +7,14 @@ type ServiceKey =
   | "attempt"
   | "vocabulary"
   | "speaking"
+  | "ai"
   | "writing"
   | "dictionary"
   | "gamification"
   | "analytics"
   | "notification"
   | "studyplan"
-  | "course"
-  | "ai";
+  | "course";
 
 const GATEWAY_BASE = process.env.NEXT_PUBLIC_GATEWAY_URL || "";
 const buildBase = (suffix: string) =>
@@ -26,6 +26,7 @@ const BASE_URL: Record<ServiceKey, string> = {
   attempt: buildBase("/api-attempts"),
   vocabulary: buildBase("/api-vocabulary"),
   speaking: buildBase("/api-speaking"),
+  ai: buildBase("/api-ai"),
   writing: buildBase("/api-writing"),
   dictionary: buildBase("/api-dictionary"),
   gamification: buildBase("/api-gamification"),
@@ -33,7 +34,6 @@ const BASE_URL: Record<ServiceKey, string> = {
   notification: buildBase("/api-notification"),
   studyplan: buildBase("/api-study-plan"),
   course: buildBase("/api-course"),
-  ai: buildBase("/api-ai"),
 };
 
 const getToken = () => getCookieToken();
@@ -131,6 +131,7 @@ export const apisExam = apis.exam;
 export const apisAttempt = apis.attempt;
 export const apisVocabulary = apis.vocabulary;
 export const apisSpeaking = apis.speaking;
+export const apisAi = apis.ai;
 export const apisWriting = apis.writing;
 export const apisDictionary = apis.dictionary;
 export const apisGamification = apis.gamification;
@@ -138,7 +139,5 @@ export const apisAnalytics = apis.analytics;
 export const apisNotification = apis.notification;
 export const apisStudyplan = apis.studyplan;
 export const apisCourse = apis.course;
-export const apisAi = apis.ai;
 const api = apisAuth;
 export default api;
-

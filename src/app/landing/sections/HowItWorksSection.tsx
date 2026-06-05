@@ -45,6 +45,20 @@ export default function HowItWorksSection() {
           scrollTrigger: { trigger: sectionRef.current, start: "top 85%" },
         }
       );
+      gsap.fromTo(
+        ".hiw-line-mask",
+        { width: "0%" },
+        {
+          width: "100%",
+          ease: "none",
+          scrollTrigger: {
+            trigger: sectionRef.current,
+            start: "top 60%",
+            end: "center center",
+            scrub: 1,
+          },
+        }
+      );
     },
     { scope: sectionRef, dependencies: [reducedMotion] }
   );
@@ -67,26 +81,13 @@ export default function HowItWorksSection() {
 
         {/* Steps with connecting line */}
         <div className="relative grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
-          {/* SVG connecting line (desktop) */}
-          <svg
-            className="absolute top-1/2 left-0 w-full h-0.5 hidden md:block pointer-events-none -translate-y-1/2"
-            preserveAspectRatio="none"
-          >
-            <motion.line
-              x1="17%"
-              y1="50%"
-              x2="83%"
-              y2="50%"
-              stroke="var(--ocean-primary)"
-              strokeWidth="1"
-              strokeDasharray="8 6"
-              strokeOpacity="0.25"
-              initial={{ pathLength: 0 }}
-              whileInView={{ pathLength: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 1.5, ease: "easeInOut", delay: 0.3 }}
-            />
-          </svg>
+          {/* Connecting line (desktop) drawn via GSAP scrub */}
+          <div className="absolute top-1/2 left-[16.66%] right-[16.66%] h-[2px] hidden md:block pointer-events-none -translate-y-1/2">
+            <div className="w-full h-full border-t-2 border-dashed border-[var(--ocean-primary)] opacity-10" />
+            <div className="absolute inset-0 overflow-hidden hiw-line-mask w-0">
+              <div className="w-[800px] h-full border-t-2 border-dashed border-[var(--ocean-primary)] opacity-60" />
+            </div>
+          </div>
 
           {STEPS.map((step, i) => {
             const accentColors = ["#2563EB", "#06D6A0", "#8B5CF6"];

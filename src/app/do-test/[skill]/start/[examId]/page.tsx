@@ -90,13 +90,15 @@ export default function StartAttemptPage() {
         return;
       }
 
-      if (skill === "speaking") {
-        const res = await startSpeakingExam(examId);
-        const payload = res?.data?.data ?? res?.data;
-        setAttempt({ ...payload, attemptId: examId });
-        router.replace(`/do-test/${skill}/${examId}`);
-        return;
-      }
+        if (skill === "speaking") {
+          const res = await startSpeakingExam(examId);
+          const payload = res?.data?.data ?? res?.data;
+          const speakingExamId: string = payload?.id ?? examId;
+
+          setAttempt({ ...payload, examId: speakingExamId, attemptId: speakingExamId });
+          router.replace(`/do-test/${skill}/${speakingExamId}`);
+          return;
+        }
 
       throw new Error("Unknown skill");
     } catch (e) {

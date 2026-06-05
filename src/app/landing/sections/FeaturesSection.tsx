@@ -10,6 +10,7 @@ import { FeatureVisual } from "../ui/feature-visuals";
 import { useDeviceCapability } from "@/app/components/effects/useDeviceCapability";
 import { useReducedMotion } from "../hooks/useReducedMotion";
 import { EASE, DURATION } from "../lib/animation-config";
+import { GlassCard } from "../ui/GlassCard";
 
 const VISUAL_TYPES = ["skills", "grading", "questions", "analytics", "flashcards", "gamification"] as const;
 
@@ -68,27 +69,31 @@ export default function FeaturesSection() {
       },
     });
 
-    for (let i = 0; i < total - 1; i++) {
-      const position = i; // timeline position
+      for (let i = 0; i < total - 1; i++) {
+        const position = i; // timeline position
 
-      // Fade out current
-      tl.to(texts[i], { opacity: 0, y: -30, duration: 0.4, ease: EASE.smooth }, position);
-      tl.to(visuals[i], { opacity: 0, scale: 0.95, duration: 0.4, ease: EASE.smooth }, position);
+        // Fade out current text
+        tl.to(texts[i], { opacity: 0, y: -40, filter: "blur(5px)", duration: 0.5, ease: EASE.smooth }, position);
+        
+        // Stack current visual (push back and scale down)
+        tl.to(visuals[i], { opacity: 0.4, scale: 0.9, y: -30, filter: "blur(4px)", duration: 0.6, ease: "power2.inOut" }, position);
 
-      // Deactivate current dot
-      if (dots[i]) {
-        tl.call(() => setDotInactive(dots[i] as HTMLElement), [], position + 0.3);
+        // Deactivate current dot
+        if (dots[i]) {
+          tl.call(() => setDotInactive(dots[i] as HTMLElement), [], position + 0.3);
+        }
+
+        // Fade in next text
+        tl.fromTo(texts[i + 1], { opacity: 0, y: 40, filter: "blur(5px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.5, ease: EASE.smooth }, position + 0.3);
+        
+        // Slide in next visual from bottom (stacking over previous)
+        tl.fromTo(visuals[i + 1], { opacity: 0, scale: 1.05, y: "50%", filter: "blur(8px)" }, { opacity: 1, scale: 1, y: "0%", filter: "blur(0px)", duration: 0.8, ease: "power3.out" }, position + 0.2);
+
+        // Activate next dot
+        if (dots[i + 1]) {
+          tl.call(() => setDotActive(dots[i + 1] as HTMLElement), [], position + 0.3);
+        }
       }
-
-      // Fade in next
-      tl.fromTo(texts[i + 1], { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.4, ease: EASE.smooth }, position + 0.3);
-      tl.fromTo(visuals[i + 1], { opacity: 0, scale: 1.05 }, { opacity: 1, scale: 1, duration: 0.4, ease: EASE.smooth }, position + 0.3);
-
-      // Activate next dot
-      if (dots[i + 1]) {
-        tl.call(() => setDotActive(dots[i + 1] as HTMLElement), [], position + 0.3);
-      }
-    }
   }, { scope: sectionRef, dependencies: [tier, reducedMotion] });
 
   // Mobile / minimal fallback: simple grid
@@ -118,26 +123,27 @@ export default function FeaturesSection() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.2 }}
                 transition={{ delay: i * 0.08, duration: 0.6 }}
-                className="bg-[var(--ocean-bg-light)] border-[3px] border-[rgba(255,255,255,0.07)] rounded-[2rem] shadow-[0_5px_0_rgba(0,0,0,0.35),0_0_0_1px_rgba(255,255,255,0.04)] transition-all duration-150 hover:-translate-y-[3px] hover:scale-[1.01] hover:border-[var(--ocean-border-glow)] hover:shadow-[0_7px_0_rgba(0,0,0,0.35),0_0_25px_var(--ocean-primary-glow)] p-6"
               >
-                <span
-                  className="text-xs tracking-widest"
-                  style={{ color: FEATURE_COLORS[i], fontFamily: 'var(--font-code)' }}
-                >
-                  {f.number} — {f.label}
-                </span>
-                <h3
-                  className="text-xl font-semibold mt-3 mb-2"
-                  style={{ fontFamily: 'var(--font-heading)' }}
-                >
-                  {f.title}
-                </h3>
-                <p
-                  className="text-sm text-[var(--ocean-text-secondary)] leading-relaxed"
-                  style={{ fontFamily: 'var(--font-body)' }}
-                >
-                  {f.description}
-                </p>
+                <GlassCard className="p-6 h-full flex flex-col">
+                  <span
+                    className="text-xs tracking-widest"
+                    style={{ color: FEATURE_COLORS[i], fontFamily: 'var(--font-code)' }}
+                  >
+                    {f.number} — {f.label}
+                  </span>
+                  <h3
+                    className="text-xl font-semibold mt-3 mb-2"
+                    style={{ fontFamily: 'var(--font-heading)' }}
+                  >
+                    {f.title}
+                  </h3>
+                  <p
+                    className="text-sm text-[var(--ocean-text-secondary)] leading-relaxed flex-grow"
+                    style={{ fontFamily: 'var(--font-body)' }}
+                  >
+                    {f.description}
+                  </p>
+                </GlassCard>
               </motion.div>
             ))}
           </div>
@@ -201,16 +207,16 @@ export default function FeaturesSection() {
               {FEATURES.map((_, i) => (
                 <div
                   key={i}
-                  className="feature-visual absolute inset-0 flex items-center justify-center rounded-[2rem] border border-[var(--ocean-border)]/50 overflow-hidden shadow-[inset_0_0_40px_rgba(37,99,235,0.06)]"
+                  className="feature-visual absolute inset-0 flex items-center justify-center transform-gpu"
                   style={{
                     opacity: i === 0 ? 1 : 0,
-                    background: "linear-gradient(135deg, rgba(37,99,235,0.04), rgba(6,214,160,0.02))",
-                    backdropFilter: "blur(2px)",
-                    transform: "rotateY(2deg) rotateX(-1deg)",
+                    transform: "rotateY(5deg) rotateX(2deg)",
                     transformStyle: "preserve-3d",
                   }}
                 >
-                  <FeatureVisual type={VISUAL_TYPES[i]} />
+                  <GlassCard className="w-full h-full flex items-center justify-center rounded-[2.5rem] border border-white/20 bg-white/5 backdrop-blur-2xl shadow-2xl overflow-hidden" hoverEffect={false}>
+                    <FeatureVisual type={VISUAL_TYPES[i]} />
+                  </GlassCard>
                 </div>
               ))}
             </div>

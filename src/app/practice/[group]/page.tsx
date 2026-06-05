@@ -92,6 +92,8 @@ export default function GroupPage() {
             done: false,
             skill: "speaking",
             slug: item.slug ?? "",
+            tags: (item.tag ?? "").split(",").map((t: string) => t.trim()),
+            examType: item.examType,
           }))
         );
         return;

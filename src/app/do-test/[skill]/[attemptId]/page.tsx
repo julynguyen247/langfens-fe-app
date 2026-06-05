@@ -1,5 +1,7 @@
 "use client";
 
+import VoiceWaveAnimation from "@/components/VoiceWaveAnimation";
+
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
@@ -25,6 +27,11 @@ import {
 } from "@/utils/api";
 import ReactMarkdown from "react-markdown";
 import { Group, Panel, Separator } from "react-resizable-panels";
+
+// Material Icon Component
+function Icon({ name, className = "" }: { name: string; className?: string }) {
+  return <span className={`material-symbols-rounded ${className}`}>{name}</span>;
+}
 
 type Skill = "reading" | "listening" | "writing" | "speaking";
 type QA = Record<string, string>;
@@ -804,9 +811,9 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
         speech: blob,
       });
 
-      const payload = res.data?.data?.res;
+      const apiData = res.data?.data ?? res.data;
       const submissionId =
-        payload?.submissionId ?? (payload as any)?.submissionId;
+        apiData?.id ?? apiData?.res?.submissionId ?? (apiData as any)?.submissionId;
 
       if (submissionId)
         router.push(`/attempts/${submissionId}?source=speaking`);
@@ -834,9 +841,9 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
         speech: file,
       });
 
-      const payload = res.data?.data?.res;
+      const apiData = res.data?.data ?? res.data;
       const submissionId =
-        payload?.submissionId ?? (payload as any)?.submissionId;
+        apiData?.id ?? apiData?.res?.submissionId ?? (apiData as any)?.submissionId;
 
       if (submissionId)
         router.push(`/attempts/${submissionId}?source=speaking`);
@@ -985,22 +992,24 @@ function SpeakingScreen({ attemptId }: { attemptId: string }) {
                     Recording panel
                   </h3>
 
-                  <div className="flex items-center justify-center">
-                    <div className="w-52 h-52 rounded-full border-[6px] border-[var(--border)] flex items-center justify-center relative">
-                      <div
-                        className={`w-36 h-36 rounded-full flex items-center justify-center text-sm font-bold ${
-                          isRecording
-                            ? "bg-[var(--destructive)] text-white"
-                            : "bg-[var(--background)] text-[var(--text-body)]"
-                        }`}
-                        style={{ fontFamily: "var(--font-heading)" }}
-                      >
-                        {isRecording ? "Recording..." : "Tap Start to record"}
-                      </div>
-                      <div
-                        className="absolute -bottom-4 text-xs text-[var(--text-muted)] font-bold"
-                        style={{ fontFamily: "var(--font-mono)" }}
-                      >
+                  <div className="flex justify-center my-6">
+                    <div className="relative flex items-center justify-center w-64 h-24 bg-slate-50 rounded-xl border border-slate-200 shadow-inner overflow-hidden">
+                      {isRecording ? (
+                        <VoiceWaveAnimation
+                          isRecording={isRecording}
+                          barCount={32}
+                          height={64}
+                          activeColor="#317EFF"
+                          idleColor="#94A3B8"
+                        />
+                      ) : (
+                        <div className="flex flex-col items-center justify-center text-slate-400">
+                          <Icon name="mic" className="text-4xl" />
+                          <span className="text-xs font-semibold mt-1">Ready</span>
+                        </div>
+                      )}
+                      
+                      <div className="absolute top-2 right-3 text-[11px] text-slate-500 font-mono bg-white px-2 py-0.5 rounded-full shadow-sm border border-slate-100">
                         {formatTime(seconds)}
                       </div>
                     </div>

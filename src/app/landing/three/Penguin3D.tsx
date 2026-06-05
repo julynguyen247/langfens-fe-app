@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useRef } from "react";
 import { useGLTF } from "@react-three/drei";
+import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
 const PENGUIN_PATH = "/models/penguin.glb";
@@ -27,46 +28,91 @@ export default function Penguin3D({
   rightWingRef,
 }: Penguin3DProps) {
   const { scene } = useGLTF(PENGUIN_PATH, true);
+  const timeUniform = useMemo(() => ({ value: 0 }), []);
+
+  useFrame(({ clock }) => {
+    timeUniform.value = clock.getElapsedTime();
+  });
 
   const parts = useMemo(() => {
     let body: THREE.BufferGeometry | null = null;
     let wingL: THREE.BufferGeometry | null = null;
     let wingR: THREE.BufferGeometry | null = null;
+    let bodyMat: THREE.Material | null = null;
+    let wingLMat: THREE.Material | null = null;
+    let wingRMat: THREE.Material | null = null;
+    
+    const bodyPos = new THREE.Vector3();
+    const wingLPos = new THREE.Vector3();
+    const wingRPos = new THREE.Vector3();
 
     scene.traverse((child) => {
       if (!(child instanceof THREE.Mesh)) return;
       const name = child.name;
-      if (name.includes("PenguinBody")) body = child.geometry;
-      else if (name.includes("PenguinWingL")) wingL = child.geometry;
-      else if (name.includes("PenguinWingR")) wingR = child.geometry;
+      if (name.includes("PenguinBody")) {
+        body = child.geometry;
+        bodyMat = Array.isArray(child.material) ? child.material[0] : child.material;
+        bodyPos.copy(child.position);
+      } else if (name.includes("PenguinWingL")) {
+        wingL = child.geometry;
+        wingLMat = Array.isArray(child.material) ? child.material[0] : child.material;
+        wingLPos.copy(child.position);
+      } else if (name.includes("PenguinWingR")) {
+        wingR = child.geometry;
+        wingRMat = Array.isArray(child.material) ? child.material[0] : child.material;
+        wingRPos.copy(child.position);
+      }
     });
 
-    return { body, wingL, wingR };
+    // Clone materials and add emissive glow for dark ocean
+    const updateMat = (mat: THREE.Material | null, isWing = false) => {
+      if (!mat) return null;
+      const m = mat.clone() as THREE.MeshStandardMaterial;
+      m.emissive = new THREE.Color("#1e293b"); // Sleek cool blue
+      m.emissiveIntensity = 0.5;
+      m.roughness = 0.25;
+      m.metalness = 0.1;
+      if (isWing) m.color = new THREE.Color("#111827");
+      
+      // Inject custom vertex shader to make the body physically flex and bend like a real swimming animal
+      if (!isWing) {
+        m.onBeforeCompile = (shader) => {
+          shader.uniforms.uTime = timeUniform;
+          shader.vertexShader = `
+            uniform float uTime;
+            ${shader.vertexShader}
+          `;
+          shader.vertexShader = shader.vertexShader.replace(
+            `#include <begin_vertex>`,
+            `
+            #include <begin_vertex>
+            // Flex the body left/right based on Z axis (undulation)
+            // We multiply by position.z so the center (shoulders) stays still and the wings don't detach
+            float flexAmount = sin(uTime * 8.0 - position.z * 4.0) * 0.12 * position.z;
+            transformed.x += flexAmount;
+            
+            // Subtle breathing / organic squish
+            transformed.y *= 1.0 + sin(uTime * 2.0) * 0.015;
+            transformed.z *= 1.0 - sin(uTime * 2.0) * 0.01;
+            `
+          );
+        };
+      }
+      return m;
+    };
+
+    return {
+      body,
+      wingL,
+      wingR,
+      bodyMat: updateMat(bodyMat, false),
+      wingLMat: updateMat(wingLMat, true),
+      wingRMat: updateMat(wingRMat, true),
+      bodyPos,
+      wingLPos,
+      wingRPos
+    };
   }, [scene]);
-
-  // Body material: vertex colors + emissive for dark ocean visibility
-  const bodyMat = useMemo(
-    () =>
-      new THREE.MeshStandardMaterial({
-        vertexColors: true,
-        emissive: "#555555",
-        emissiveIntensity: 0.5,
-        roughness: 0.6,
-      }),
-    []
-  );
-
-  // Wing material: dark with emissive
-  const wingMat = useMemo(
-    () =>
-      new THREE.MeshStandardMaterial({
-        color: "#1E293B",
-        emissive: "#1E293B",
-        emissiveIntensity: 0.4,
-        roughness: 0.6,
-      }),
-    []
-  );
 
   const scale = 0.55;
 
@@ -75,22 +121,19 @@ export default function Penguin3D({
   return (
     <group ref={penguinRef}>
       <group scale={[scale, scale, scale]} rotation={[0, Math.PI, 0]}>
-        {/* Body — single vertex-colored mesh, eyes/beak/belly all baked in */}
-        {parts.body && (
-          <mesh geometry={parts.body} material={bodyMat} />
+        {parts.body && parts.bodyMat && (
+          <mesh geometry={parts.body} material={parts.bodyMat} position={parts.bodyPos} />
         )}
 
-        {/* Left Wing */}
-        <group ref={leftWingRef}>
-          {parts.wingL && (
-            <mesh geometry={parts.wingL} material={wingMat} />
+        <group ref={leftWingRef} position={parts.wingLPos}>
+          {parts.wingL && parts.wingLMat && (
+            <mesh geometry={parts.wingL} material={parts.wingLMat} />
           )}
         </group>
 
-        {/* Right Wing */}
-        <group ref={rightWingRef}>
-          {parts.wingR && (
-            <mesh geometry={parts.wingR} material={wingMat} />
+        <group ref={rightWingRef} position={parts.wingRPos}>
+          {parts.wingR && parts.wingRMat && (
+            <mesh geometry={parts.wingR} material={parts.wingRMat} />
           )}
         </group>
       </group>
