@@ -402,6 +402,18 @@ export default function PracticeBank({
                     </span>
                   </div>
 
+                  {/* Thumbnail (writing/speaking tasks with imageUrl) */}
+                  {it.imageUrl && (
+                    <div className="-mx-6 -mt-2 mb-4 aspect-video bg-[var(--background)] border-y-[3px] border-[var(--border)] overflow-hidden">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={it.imageUrl}
+                        alt={it.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+
                   {/* Title */}
                   <h3
                     className="font-bold text-lg text-[var(--foreground)] leading-snug line-clamp-2 mb-3 group-hover:text-[var(--primary)] transition-colors"
