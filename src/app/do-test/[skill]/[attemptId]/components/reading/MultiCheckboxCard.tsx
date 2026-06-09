@@ -77,43 +77,61 @@ const MultiCheckboxCard = memo(function MultiCheckboxCard({
   }, []);
 
   return (
-    <div className="border border-[var(--border)] rounded-lg p-4 space-y-3 bg-[var(--card)]">
-      <div className="text-[var(--foreground)] leading-relaxed font-bold">
+    <div className="rounded-[2rem] border-[3px] border-[var(--border)] bg-[var(--card)] p-5 shadow-[0_4px_0_rgba(0,0,0,0.08)]">
+      <div className="text-[var(--foreground)] leading-relaxed font-bold mb-4">
         <ReactMarkdown components={markdownComponents}>
           {text}
         </ReactMarkdown>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-2.5">
         {forices.map((forice) => {
           const isChecked = selected.includes(forice.value);
           return (
-            <label
+            <button
               key={forice.value}
-              className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors
-                ${isChecked
-                  ? "bg-[var(--skill-reading-light)] border-[var(--skill-reading-border)]"
-                  : "bg-[var(--card)] border-[var(--border)] hover:bg-[var(--background)]"
-                }`}
+              type="button"
+              onClick={() => handleToggle(forice.value)}
+              className={`
+                w-full text-left px-4 py-3 rounded-[1rem]
+                border-[2px] border-b-[4px] transition-all duration-150
+                flex items-center gap-3 text-sm font-medium
+                ${
+                  isChecked
+                    ? "border-[var(--primary-dark)] bg-[var(--primary-light)] text-[var(--primary-dark)] shadow-[0_2px_0_var(--primary-dark)] scale-[0.99]"
+                    : "border-[var(--border)] bg-[var(--card)] text-[var(--text-body)] shadow-[0_3px_0_rgba(0,0,0,0.06)] hover:-translate-y-[2px] hover:border-[var(--primary)] hover:text-[var(--primary)] active:translate-y-0 active:shadow-[0_1px_0_rgba(0,0,0,0.06)]"
+                }
+              `}
             >
-              <input
-                type="checkbox"
-                checked={isChecked}
-                onChange={() => handleToggle(forice.value)}
-                className="w-5 h-5 text-[var(--skill-reading)] rounded border-[var(--border)]
-                          focus:ring-[var(--skill-reading)] focus:ring-2"
-              />
-              <span className="text-sm text-[var(--text-body)]">{forice.label}</span>
-            </label>
+              <span
+                className={`
+                  flex-shrink-0 w-5 h-5 rounded-md border-2
+                  flex items-center justify-center transition-all
+                  ${
+                    isChecked
+                      ? "border-[var(--primary-dark)] bg-[var(--primary)]"
+                      : "border-[var(--border)]"
+                  }
+                `}
+              >
+                {isChecked && (
+                  <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </span>
+
+              <span className="flex-1">{forice.label}</span>
+            </button>
           );
         })}
       </div>
-      
-      <span className="text-xs text-[var(--text-muted)]">
-        {selected.length > 0 
-          ? `Selected: ${selected.length}` 
-          : "Select the correct options. Order doesn't matter."}
-      </span>
+
+      <div className="mt-4 text-xs font-semibold text-[var(--text-muted)] text-center">
+        {selected.length > 0
+          ? `${selected.length} selected`
+          : "Tap to select the correct options"}
+      </div>
     </div>
   );
 });

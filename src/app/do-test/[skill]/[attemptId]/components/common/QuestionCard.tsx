@@ -10,7 +10,6 @@ type Choice =
       label: string;
     };
 
-// Memoized markdown components for clean rendering
 const markdownComponents = {
   p: ({ node, ...props }: any) => (
     <span className="whitespace-pre-wrap" {...props} />
@@ -27,15 +26,13 @@ const QuestionCard = memo(function QuestionCard({
   onSelect: (id: string, value: string) => void;
 }) {
   return (
-    <div className="rounded-[1.5rem] bg-white border-[3px] border-[var(--border)] p-5 shadow-[0_4px_0_rgba(0,0,0,0.08)] hover:shadow-md transition-shadow group">
-      {/* Question Stem */}
-      <div className="font-medium text-[var(--foreground)] mb-4 leading-relaxed">
+    <div className="rounded-[2rem] border-[3px] border-[var(--border)] bg-[var(--card)] p-5 shadow-[0_4px_0_rgba(0,0,0,0.08)]">
+      <div className="font-bold text-[var(--foreground)] mb-4 leading-relaxed">
         <ReactMarkdown components={markdownComponents}>
           {question.stem}
         </ReactMarkdown>
       </div>
 
-      {/* Choice Options - Clean Radio Style */}
       <div className="space-y-2.5">
         {question.forices.map((c) => {
           const value = typeof c === "string" ? c : c.value;
@@ -46,27 +43,34 @@ const QuestionCard = memo(function QuestionCard({
             <button
               key={value}
               onClick={() => onSelect(question.id, value)}
-              className={`w-full text-left px-4 py-3 rounded-lg border transition-all duration-200 flex items-start gap-3 ${
-                isActive
-                  ? "border-[var(--primary)] bg-[var(--primary-light)] ring-2 ring-[var(--primary)]/20"
-                  : "border-[var(--border)] hover:border-[var(--border)] hover:bg-[var(--background)]"
-              }`}
-            >
-              {/* Radio Indicator */}
-              <span
-                className={`flex-shrink-0 mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+              className={`
+                w-full text-left px-4 py-3 rounded-[1rem]
+                border-[2px] border-b-[4px] transition-all duration-150
+                flex items-start gap-3 text-sm
+                ${
                   isActive
-                    ? "border-[var(--primary)] bg-[var(--primary)]"
-                    : "border-[var(--border)] group-hover:border-[var(--text-muted)]"
-                }`}
+                    ? "border-[var(--primary-dark)] bg-[var(--primary-light)] text-[var(--primary-dark)] shadow-[0_2px_0_var(--primary-dark)] scale-[0.99]"
+                    : "border-[var(--border)] bg-[var(--card)] text-[var(--text-body)] shadow-[0_3px_0_rgba(0,0,0,0.06)] hover:-translate-y-[2px] hover:border-[var(--primary)] hover:text-[var(--primary)] active:translate-y-0 active:shadow-[0_1px_0_rgba(0,0,0,0.06)]"
+                }
+              `}
+            >
+              <span
+                className={`
+                  flex-shrink-0 mt-0.5 w-5 h-5 rounded-full border-2
+                  flex items-center justify-center transition-all
+                  ${
+                    isActive
+                      ? "border-[var(--primary-dark)] bg-[var(--primary)] "
+                      : "border-[var(--border)]"
+                  }
+                `}
               >
                 {isActive && (
                   <span className="block w-2 h-2 rounded-full bg-white" />
                 )}
               </span>
 
-              {/* Choice Label */}
-              <span className={`flex-1 text-sm ${isActive ? "text-[var(--primary-hover)] font-medium" : "text-[var(--text-body)]"}`}>
+              <span className={`flex-1 ${isActive ? "font-semibold" : "font-medium"}`}>
                 <ReactMarkdown components={markdownComponents}>
                   {label}
                 </ReactMarkdown>

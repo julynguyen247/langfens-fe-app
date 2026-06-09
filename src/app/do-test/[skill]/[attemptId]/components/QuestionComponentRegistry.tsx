@@ -8,6 +8,7 @@ import MatchingLetterCard from "./reading/MatchingLetterCard";
 import HeadingDropdown from "./reading/HeadingDropdown";
 import FlowChartCard from "./reading/FlowChartCard";
 import MatchingInformation from "./reading/WordListCompletionCard";
+import ClassificationCard from "./reading/ClassificationCard";
 import FillInBlankCard from "./reading/FillInBlankCard";
 
 /** Raw question shape from API */
@@ -88,15 +89,12 @@ export const QuestionComponentRegistry: Record<
   }) as React.FC<QuestionProps>,
 
   CLASSIFICATION: (({ question, selected, onSelect }) => {
-    const forices = (question.options ?? []).map((opt) => ({
-      value: opt.id,
-      label: opt.contentMd.replace(/^[A-Z]\.\s+/, ""),
-    }));
     return (
-      <QuestionCard
-        question={{ id: question.id, stem: question.stem ?? question.promptMd ?? "", forices }}
-        selected={selected}
-        onSelect={onSelect!}
+      <ClassificationCard
+        id={question.id}
+        stem={question.stem ?? question.promptMd ?? ""}
+        value={selected ?? ""}
+        onChange={(v) => onSelect!(question.id, v)}
       />
     );
   }) as React.FC<QuestionProps>,

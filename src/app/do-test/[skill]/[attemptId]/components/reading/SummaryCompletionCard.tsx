@@ -81,9 +81,9 @@ const SummaryCompletionCard = memo(function SummaryCompletionCard({
   let blankIndex = -1;
 
   return (
-    <div className="border border-[var(--border)] rounded-lg p-4 space-y-3 bg-[var(--card)]">
+    <div className="rounded-[2rem] border-[3px] border-[var(--border)] bg-[var(--card)] p-5 shadow-[0_4px_0_rgba(0,0,0,0.08)]">
       {instructionMd && (
-        <div className="text-[var(--text-body)] text-sm leading-relaxed">
+        <div className="text-[var(--text-body)] text-sm leading-relaxed mb-3">
           <ReactMarkdown components={instructionComponents}>
             {instructionMd}
           </ReactMarkdown>
@@ -105,14 +105,18 @@ const SummaryCompletionCard = memo(function SummaryCompletionCard({
 
           blankIndex += 1;
           const currentBlankIndex = blankIndex;
+          const hasValue = !!values[currentBlankIndex];
 
           return (
             <input
               key={i}
               value={values[currentBlankIndex] ?? ""}
               onChange={(e) => onChange(currentBlankIndex, e.target.value)}
-              className="inline-block align-baseline mx-1 w-[14ch] rounded-md border border-[var(--border)] px-2 py-1 text-sm
-                         focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] text-[var(--foreground)]"
+              className={`inline-block align-baseline mx-1 w-[14ch] rounded-full border-[2px] border-b-[3px] px-3 py-1.5 text-sm font-medium transition-all duration-150 focus:outline-none ${
+                hasValue
+                  ? "border-[var(--primary-dark)] bg-[var(--primary-light)] text-[var(--primary-dark)] shadow-[0_2px_0_var(--primary-dark)]"
+                  : "border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] shadow-[0_2px_0_rgba(0,0,0,0.06)] focus:border-[var(--primary)] focus:bg-[var(--primary-light)] focus:shadow-[0_2px_0_var(--primary)]"
+              }`}
               placeholder=""
             />
           );

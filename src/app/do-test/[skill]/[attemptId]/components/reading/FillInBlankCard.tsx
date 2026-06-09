@@ -24,8 +24,8 @@ const FillInBlankCard = memo(function FillInBlankCard({ stem, value, onChange }:
   );
 
   return (
-    <div className="border border-[var(--border)] rounded-[2rem] p-4 space-y-3 bg-[var(--card)]">
-      <div className="text-[var(--foreground)] leading-relaxed font-bold">
+    <div className="rounded-[2rem] border-[3px] border-[var(--border)] bg-[var(--card)] p-5 shadow-[0_4px_0_rgba(0,0,0,0.08)]">
+      <div className="text-[var(--foreground)] leading-relaxed font-bold mb-4">
         <ReactMarkdown components={markdownComponents}>
           {text}
         </ReactMarkdown>
@@ -35,8 +35,7 @@ const FillInBlankCard = memo(function FillInBlankCard({ stem, value, onChange }:
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="Write your answer here"
-        className="mt-1 w-full rounded-[2rem] border border-[var(--border)] px-3 py-2 text-sm
-                   focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] text-[var(--foreground)]"
+        className="w-full rounded-[1rem] border-[2px] border-b-[3px] border-[var(--border)] bg-[var(--background)] px-4 py-3 text-sm font-medium text-[var(--foreground)] placeholder:text-[var(--text-muted)] shadow-[0_3px_0_rgba(0,0,0,0.06)] transition-all duration-150 focus:outline-none focus:border-[var(--primary)] focus:bg-[var(--primary-light)] focus:shadow-[0_3px_0_var(--primary)]"
       />
     </div>
   );
