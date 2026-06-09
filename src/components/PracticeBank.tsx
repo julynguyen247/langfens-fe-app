@@ -362,6 +362,13 @@ export default function PracticeBank({
             const progress = getProgress(it.id);
             const questionCount = getQuestionCount(it.id);
             const types = it.questionTypes || it.tags || [];
+            // For writing tasks, the data has examType=1/2 — surface it as a meaningful chip
+            // instead of the first generic tag (e.g. "ielts").
+            const examType = (it as any).examType as number | undefined;
+            const examTypeLabel =
+              examType === 1 ? "Task 1" : examType === 2 ? "Task 2" : null;
+            const primaryType = examTypeLabel
+              ?? (types[0] ? (QUESTION_TYPE_LABELS[types[0]] || types[0]) : null);
 
             return (
               <motion.article
@@ -372,111 +379,106 @@ export default function PracticeBank({
                 onClick={() => handleGoToExam(it)}
                 className="group relative cursor-pointer bg-white border-[3px] border-[var(--border)] rounded-[2rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] hover:-translate-y-[3px] hover:border-[var(--primary)] hover:shadow-[0_6px_0_rgba(0,0,0,0.08)] transition-all duration-150 h-full flex flex-col overflow-hidden"
               >
-                {/* Card Content */}
-                <div className="p-6 flex flex-col flex-1">
-                  {/* Top Row: Type label + Question count badge */}
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex flex-wrap gap-1.5">
-                      {types.slice(0, 2).map((type, idx) => (
-                        <span
-                          key={idx}
-                          className="rounded-full px-2.5 py-1 text-xs font-bold border-[2px]"
-                          style={{
-                            backgroundColor: chipColors.activeBg,
-                            color: chipColors.activeText,
-                            borderColor: chipColors.activeBorder,
-                            fontFamily: "var(--font-heading)",
-                          }}
-                        >
-                          {QUESTION_TYPE_LABELS[type] || type}
-                        </span>
-                      ))}
+                {/* Hero: image (or colored fallback) with title overlay */}
+                <div className="relative aspect-[16/10] bg-[var(--background)]">
+                  {it.imageUrl ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={it.imageUrl}
+                      alt={it.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div
+                      className="w-full h-full flex items-center justify-center"
+                      style={{ backgroundColor: chipColors.activeBg }}
+                    >
+                      <span
+                        className="text-4xl font-extrabold"
+                        style={{
+                          color: chipColors.activeText,
+                          fontFamily: "var(--font-heading)",
+                        }}
+                      >
+                        {it.title?.charAt(0)?.toUpperCase() ?? "?"}
+                      </span>
                     </div>
+                  )}
 
-                    {/* Question count badge */}
+                  {/* Bottom gradient for legible title */}
+                  <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/65 via-black/30 to-transparent pointer-events-none" />
+
+                  {/* Primary type chip (top-left) */}
+                  {primaryType && (
+                    <div className="absolute top-3 left-3">
+                      <span
+                        className="rounded-full px-2.5 py-1 text-xs font-bold backdrop-blur-sm bg-white/85 border-[2px]"
+                        style={{
+                          color: chipColors.activeText,
+                          borderColor: chipColors.activeBorder,
+                          fontFamily: "var(--font-heading)",
+                        }}
+                      >
+                        {primaryType}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Question count chip (top-right) */}
+                  <div className="absolute top-3 right-3">
                     <span
-                      className="flex-shrink-0 rounded-full px-2.5 py-1 text-xs font-bold bg-[var(--background)] text-[var(--text-body)] border-[2px] border-[var(--border)]"
+                      className="rounded-full px-2.5 py-1 text-xs font-bold bg-black/55 text-white backdrop-blur-sm"
                       style={{ fontFamily: "var(--font-mono)" }}
                     >
                       {questionCount}q
                     </span>
                   </div>
 
-                  {/* Thumbnail (writing/speaking tasks with imageUrl) */}
-                  {it.imageUrl && (
-                    <div className="-mx-6 -mt-2 mb-4 aspect-video bg-[var(--background)] border-y-[3px] border-[var(--border)] overflow-hidden">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={it.imageUrl}
-                        alt={it.title}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  )}
-
-                  {/* Title */}
-                  <h3
-                    className="font-bold text-lg text-[var(--foreground)] leading-snug line-clamp-2 mb-3 group-hover:text-[var(--primary)] transition-colors"
-                    style={{ fontFamily: "var(--font-heading)" }}
-                  >
-                    {it.title}
-                  </h3>
-
-                  {/* Difficulty Circles */}
-                  <div className="flex items-center gap-1.5 mb-4">
-                    <span
-                      className="text-xs font-semibold text-[var(--text-muted)] mr-1"
+                  {/* Title overlay (bottom-left, on gradient) */}
+                  <div className="absolute inset-x-0 bottom-0 p-4">
+                    <h3
+                      className="font-bold text-white text-base leading-snug line-clamp-2 drop-shadow-sm"
                       style={{ fontFamily: "var(--font-heading)" }}
                     >
-                      Difficulty
-                    </span>
+                      {it.title}
+                    </h3>
+                  </div>
+                </div>
+
+                {/* Footer: difficulty + CTA */}
+                <div className="px-4 py-3 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 min-w-0">
                     {Array.from({ length: 5 }).map((_, i) => (
                       <span
                         key={i}
-                        className="w-2.5 h-2.5 rounded-full transition-colors"
+                        className="w-1.5 h-1.5 rounded-full"
                         style={{
                           backgroundColor:
                             i < difficulty
-                              ? "var(--primary)"
+                              ? chipColors.activeBorder
                               : "var(--border)",
                         }}
                       />
                     ))}
-                  </div>
-
-                  {/* Completion Progress Bar */}
-                  <div className="mb-4">
-                    <div className="flex items-center justify-between mb-1">
-                      <span
-                        className="text-xs text-[var(--text-muted)]"
-                        style={{ fontFamily: "var(--font-heading)" }}
-                      >
-                        Completion
-                      </span>
-                      <span
-                        className="text-xs font-bold text-[var(--primary)]"
-                        style={{ fontFamily: "var(--font-mono)" }}
-                      >
-                        {progress}%
-                      </span>
-                    </div>
-                    <div className="h-2.5 rounded-full bg-[var(--background)] border-[2px] border-[var(--border)] overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-[var(--primary)] transition-all duration-500"
-                        style={{ width: `${progress}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Start Practice Button */}
-                  <div className="mt-auto pt-2">
                     <span
-                      className="inline-flex items-center rounded-full bg-[var(--primary)] text-white font-bold px-5 py-2 text-sm border-b-[4px] border-[var(--primary-dark)] group-hover:-translate-y-0.5 group-hover:border-b-[5px] group-active:translate-y-[2px] group-active:border-b-[2px] transition-all duration-150"
+                      className="text-xs text-[var(--text-muted)] ml-1.5 truncate"
                       style={{ fontFamily: "var(--font-heading)" }}
                     >
-                      Start practice
+                      {progress}% done
                     </span>
                   </div>
+
+                  <span
+                    className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-[var(--primary)] text-white font-bold border-b-[3px] border-[var(--primary-dark)] group-hover:-translate-y-0.5 group-hover:border-b-[4px] group-active:translate-y-[2px] group-active:border-b-[2px] transition-all duration-150"
+                    aria-label="Start practice"
+                  >
+                    <span
+                      className="text-sm leading-none translate-y-[-1px]"
+                      aria-hidden
+                    >
+                      →
+                    </span>
+                  </span>
                 </div>
 
                 {/* Loading Overlay */}
