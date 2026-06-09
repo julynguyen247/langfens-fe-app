@@ -8,6 +8,9 @@ interface Props {
   sentenceComparisons: SentenceComparison[];
   vocabularyFeedback: string;
   keyImprovements: string[];
+  studentBand?: number;
+  stepUpBand?: number;
+  targetBand?: number;
 }
 
 const MAX_SUGGESTIONS = 5;
@@ -16,10 +19,18 @@ export function VocabularySuggestions({
   sentenceComparisons,
   vocabularyFeedback,
   keyImprovements,
+  studentBand,
+  stepUpBand,
+  targetBand,
 }: Props) {
   const vocabItems = sentenceComparisons
     .filter((sc) => sc.category === 'vocabulary')
     .slice(0, MAX_SUGGESTIONS);
+
+  const hasBands = studentBand !== undefined && stepUpBand !== undefined && targetBand !== undefined;
+  const journeyLabel = hasBands
+    ? `Path to Band ${targetBand!.toFixed(1)} — start at ${studentBand!.toFixed(1)}, aim first for ${stepUpBand!.toFixed(1)}`
+    : 'Key improvements';
 
   if (vocabItems.length === 0 && !vocabularyFeedback && keyImprovements.length === 0) {
     return null;
@@ -87,8 +98,15 @@ export function VocabularySuggestions({
           <p
             className="text-xs font-bold text-[var(--text-muted)] mb-3"
             style={{ fontFamily: 'var(--font-heading)' }}
+            data-testid="key-improvements-label"
           >
             Key improvements
+          </p>
+          <p
+            className="text-xs text-[var(--text-muted)] mb-3 italic"
+            data-testid="key-improvements-journey"
+          >
+            {journeyLabel}
           </p>
           <ul className="space-y-2">
             {keyImprovements.map((item, i) => (

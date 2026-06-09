@@ -101,7 +101,11 @@ export function WritingComparativeTab({ submissionId }: Props) {
       transition={{ duration: 0.4, ease: 'easeOut' }}
       data-testid="writing-comparative-tab"
     >
-      <BandProgressIndicator currentBand={data.step_up_band} targetBand={data.target_band} />
+      <BandProgressIndicator
+        studentBand={data.student_band}
+        stepUpBand={data.step_up_band}
+        targetBand={data.target_band}
+      />
 
       {data.overall_analysis && (
         <motion.div
@@ -124,6 +128,9 @@ export function WritingComparativeTab({ submissionId }: Props) {
         sentenceComparisons={data.sentence_comparisons}
         vocabularyFeedback={data.vocabulary_feedback}
         keyImprovements={data.key_improvements}
+        studentBand={data.student_band}
+        stepUpBand={data.step_up_band}
+        targetBand={data.target_band}
       />
 
       {nonVocabComparisons.length > 0 && (

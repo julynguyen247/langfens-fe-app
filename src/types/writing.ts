@@ -21,6 +21,7 @@ export interface AiCompareResponse {
   coherence_feedback: string;
   step_up_band: number;
   target_band: number;
+  student_band: number;
   step_up_analysis: string;
   target_analysis: string;
   key_improvements: string[];
