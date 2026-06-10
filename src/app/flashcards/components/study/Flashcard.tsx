@@ -9,6 +9,7 @@ type Card = {
   front: string;
   back: string;
   example?: string;
+  hint?: string;
 };
 
 export default function Flashcard({
@@ -83,15 +84,15 @@ export default function Flashcard({
           /* swipe completed -- just flip for now, grading handled externally */
         }}
         style={{ x, rotateZ, backgroundColor: swipeBg }}
-        className="rounded-[2rem]"
+        className="rounded-[2rem] [transform-style:preserve-3d]"
       >
         <div
-          className="h-[360px] w-full cursor-pointer select-none"
-          style={{ perspective: "1000px" }}
+          className="h-[440px] w-full cursor-pointer select-none"
+          style={{ perspective: "1200px", transformStyle: "preserve-3d" }}
           onClick={onFlip}
         >
           <div
-            className={`relative h-full w-full rounded-[2rem] border-[3px] border-[var(--border)] bg-white shadow-[0_4px_0_rgba(0,0,0,0.08)] transition-transform duration-[600ms] ${
+            className={`relative h-full w-full transition-transform duration-[600ms] ${
               anim ? "ring-2 ring-[var(--primary-light)]" : ""
             }`}
             style={{
@@ -101,16 +102,54 @@ export default function Flashcard({
           >
             {/* Front Face */}
             <div
-              className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-8"
-              style={{ backfaceVisibility: "hidden" }}
+              className="absolute inset-0 flex flex-col items-center justify-center gap-5 overflow-hidden rounded-[2rem] border-[3px] border-[var(--border)] bg-white p-10 shadow-[0_4px_0_rgba(0,0,0,0.08)]"
+              style={{
+                backfaceVisibility: "hidden",
+                WebkitBackfaceVisibility: "hidden",
+                transform: "rotateY(0deg)",
+              }}
             >
-              <span className="text-sm tracking-wide font-bold text-[var(--text-muted)]">
-                Term
+              <span
+                className="text-xs font-bold tracking-[0.18em] text-[var(--primary)] uppercase"
+                style={{ fontFamily: "var(--font-heading)" }}
+              >
+                {card.hint ? card.hint : "Term"}
               </span>
 
-              <div className="w-full text-center text-[var(--foreground)]">
-                <ReactMarkdown>
-                  {card.front.replace(/\.\s+/g, ".\n\n")}
+              <div className="w-full flex-1 overflow-y-auto text-center text-[var(--foreground)] flex items-center justify-center">
+                <ReactMarkdown
+                  components={{
+                    h1: ({ node, ...props }) => (
+                      <h1
+                        className="text-4xl sm:text-5xl font-extrabold leading-tight text-[var(--primary-dark)]"
+                        style={{ fontFamily: "var(--font-heading)" }}
+                        {...props}
+                      />
+                    ),
+                    h2: ({ node, ...props }) => (
+                      <h2
+                        className="text-3xl sm:text-4xl font-extrabold leading-tight text-[var(--primary-dark)]"
+                        style={{ fontFamily: "var(--font-heading)" }}
+                        {...props}
+                      />
+                    ),
+                    h3: ({ node, ...props }) => (
+                      <h3
+                        className="text-2xl sm:text-3xl font-bold leading-tight text-[var(--primary-dark)]"
+                        style={{ fontFamily: "var(--font-heading)" }}
+                        {...props}
+                      />
+                    ),
+                    p: ({ node, ...props }) => (
+                      <p
+                        className="text-2xl sm:text-3xl font-bold leading-snug text-[var(--primary-dark)]"
+                        style={{ fontFamily: "var(--font-heading)" }}
+                        {...props}
+                      />
+                    ),
+                  }}
+                >
+                  {card.front}
                 </ReactMarkdown>
               </div>
 
@@ -119,8 +158,9 @@ export default function Flashcard({
                   e.stopPropagation();
                   onFlip();
                 }}
-                className="mt-6 rounded-full border-b-[4px] border-[var(--primary-dark)] bg-[var(--primary)] px-5 py-2
+                className="mt-2 shrink-0 rounded-full border-b-[4px] border-[var(--primary-dark)] bg-[var(--primary)] px-7 py-2.5
                 text-sm font-bold text-white hover:-translate-y-0.5 hover:border-b-[5px] active:translate-y-[2px] active:border-b-[2px] transition-all"
+                style={{ fontFamily: "var(--font-heading)" }}
               >
                 Flip Card
               </button>
@@ -128,25 +168,75 @@ export default function Flashcard({
 
             {/* Back Face */}
             <div
-              className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-8"
+              className="absolute inset-0 flex flex-col items-center justify-center gap-5 overflow-hidden rounded-[2rem] border-[3px] border-[var(--border)] bg-white p-10 shadow-[0_4px_0_rgba(0,0,0,0.08)]"
               style={{
                 backfaceVisibility: "hidden",
+                WebkitBackfaceVisibility: "hidden",
                 transform: "rotateY(180deg)",
               }}
             >
-              <span className="text-sm tracking-wide font-bold text-[var(--text-muted)]">
+              <span
+                className="text-xs font-bold tracking-[0.18em] text-[var(--primary)] uppercase"
+                style={{ fontFamily: "var(--font-heading)" }}
+              >
                 Definition
               </span>
 
-              <div className="text-[var(--foreground)]">
-                <ReactMarkdown>
-                  {card.back.replace(/\.\s+/g, ".\n\n")}
+              <div className="w-full flex-1 overflow-y-auto text-center text-[var(--foreground)] flex items-center justify-center">
+                <ReactMarkdown
+                  components={{
+                    h1: ({ node, ...props }) => (
+                      <h1
+                        className="text-3xl sm:text-4xl font-extrabold leading-tight text-[var(--foreground)]"
+                        style={{ fontFamily: "var(--font-heading)" }}
+                        {...props}
+                      />
+                    ),
+                    h2: ({ node, ...props }) => (
+                      <h2
+                        className="text-2xl sm:text-3xl font-extrabold leading-tight text-[var(--foreground)]"
+                        style={{ fontFamily: "var(--font-heading)" }}
+                        {...props}
+                      />
+                    ),
+                    h3: ({ node, ...props }) => (
+                      <h3
+                        className="text-xl sm:text-2xl font-bold leading-tight text-[var(--foreground)]"
+                        style={{ fontFamily: "var(--font-heading)" }}
+                        {...props}
+                      />
+                    ),
+                    p: ({ node, ...props }) => (
+                      <p
+                        className="text-lg sm:text-xl font-semibold leading-relaxed text-[var(--text-body)]"
+                        style={{ fontFamily: "var(--font-heading)" }}
+                        {...props}
+                      />
+                    ),
+                  }}
+                >
+                  {card.back}
                 </ReactMarkdown>
               </div>
 
               {card.example && (
-                <div className="mt-2 w-full rounded-xl border-[2px] border-[var(--border)] bg-[var(--background)] p-3 text-sm text-[var(--text-muted)]">
-                  {card.example}
+                <div
+                  className="w-full shrink-0 rounded-2xl border-[3px] border-[var(--primary)] bg-[var(--primary-light)] p-4 text-base sm:text-lg text-[var(--text-body)]"
+                  style={{ fontFamily: "var(--font-heading)" }}
+                >
+                  <span className="block text-xs font-bold tracking-[0.18em] text-[var(--primary-dark)] uppercase mb-1">
+                    Example
+                  </span>
+                  <span className="italic">&ldquo;{card.example}&rdquo;</span>
+                </div>
+              )}
+
+              {card.hint && !card.example && (
+                <div
+                  className="shrink-0 rounded-full border-[2px] border-[var(--border)] bg-[var(--background)] px-4 py-1.5 text-sm font-bold text-[var(--text-muted)]"
+                  style={{ fontFamily: "var(--font-heading)" }}
+                >
+                  {card.hint}
                 </div>
               )}
 
@@ -155,8 +245,9 @@ export default function Flashcard({
                   e.stopPropagation();
                   onFlip();
                 }}
-                className="mt-6 rounded-full border-[3px] border-[var(--border)] border-b-[5px] bg-white px-5 py-2
+                className="mt-2 shrink-0 rounded-full border-[3px] border-[var(--border)] border-b-[5px] bg-white px-7 py-2.5
                 text-sm font-bold text-[var(--foreground)] hover:border-[var(--primary)] hover:text-[var(--primary)] hover:-translate-y-0.5 active:translate-y-[2px] active:border-b-[3px] transition-all"
+                style={{ fontFamily: "var(--font-heading)" }}
               >
                 Flip Back
               </button>

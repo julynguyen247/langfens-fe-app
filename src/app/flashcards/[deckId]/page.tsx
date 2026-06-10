@@ -137,16 +137,48 @@ export default function StudyPage() {
     }
   }, [cards.length]);
 
-  const transformed = useMemo(
-    () =>
-      cards.map((c) => ({
+  const transformed = useMemo(() => {
+    const decodeMd = (raw?: string) =>
+      (raw ?? "")
+        .replace(/\\r\\n|\\n|\\r|\r\n|\n|\r/g, "\n")
+        .trim();
+
+    return cards.map((c) => {
+      const backRaw = decodeMd(c.backMd);
+      const hintRaw = decodeMd(c.hintMd);
+
+      // Extract an example blockquote `> "..."` from the back text
+      const blockquoteMatch = backRaw.match(/>\s*"?([\s\S]+?)"?\s*$/m);
+      let definition = backRaw;
+      let example: string | undefined;
+
+      if (blockquoteMatch) {
+        const blockIdx = backRaw.indexOf(blockquoteMatch[0]);
+        definition = backRaw.slice(0, blockIdx).trim();
+        example = blockquoteMatch[1].replace(/^["']|["']$/g, "").trim();
+      }
+
+      // Also strip any "Example:" prefix the back text may carry
+      const examplePrefixMatch = definition.match(
+        /\bExample\s*[:\-]\s*([\s\S]+)$/i
+      );
+      if (examplePrefixMatch) {
+        definition = definition.slice(0, examplePrefixMatch.index).trim();
+        if (!example) example = examplePrefixMatch[1].trim();
+      }
+
+      // Split definition into paragraphs on sentence boundaries
+      definition = definition.replace(/([.!?])\s+(?=[A-Z])/g, "$1\n\n");
+
+      return {
         id: c.id,
-        front: c.frontMd,
-        back: c.backMd,
-        example: c.hintMd || "",
-      })),
-    [cards]
-  );
+        front: decodeMd(c.frontMd),
+        back: definition,
+        example,
+        hint: hintRaw || undefined,
+      };
+    });
+  }, [cards]);
 
   const study = useDeckStudy(transformed);
 

@@ -1,15 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-
-const AI_SERVICE_URL = process.env.AI_SERVICE_URL || "http://ai-service:8080";
+import { apisAi } from "@/utils/api.customize";
 
 export async function GET() {
   try {
-    const response = await fetch(`${AI_SERVICE_URL}/api/v1/speaking/roleplay/scenarios`, {
-      method: "GET",
+    const response = await apisAi.get("/v1/speaking/roleplay/scenarios", {
       headers: {
         "Content-Type": "application/json",
       },
-      next: { revalidate: 300 }, // Cache for 5 minutes
     });
 
     if (!response.ok) {

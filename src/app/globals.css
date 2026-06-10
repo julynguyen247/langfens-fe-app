@@ -74,6 +74,7 @@
   --skill-listening: #7C3AED;
   --skill-listening-light: #EDE9FE;
   --skill-listening-border: #DDD6FE;
+  --skill-listening-dark: #5B21B6;
   --skill-writing: #D97706;
   --skill-writing-light: #FEF3C7;
   --skill-writing-border: #FDE68A;
@@ -169,6 +170,7 @@
   --color-skill-listening: var(--skill-listening);
   --color-skill-listening-light: var(--skill-listening-light);
   --color-skill-listening-border: var(--skill-listening-border);
+  --color-skill-listening-dark: var(--skill-listening-dark);
   --color-skill-writing: var(--skill-writing);
   --color-skill-writing-light: var(--skill-writing-light);
   --color-skill-writing-border: var(--skill-writing-border);

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-
-const AI_SERVICE_URL = process.env.AI_SERVICE_URL || "http://ai-service:8080";
+import { apisAi } from "@/utils/api.customize";
 
 export async function POST(
   request: NextRequest,
@@ -18,15 +17,9 @@ export async function POST(
       );
     }
 
-    const response = await fetch(
-      `${AI_SERVICE_URL}/api/v1/speaking/roleplay/scenarios/${slug}/chat`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ message, history }),
-      }
+    const response = await apisAi.post(
+      `/v1/speaking/roleplay/scenarios/${slug}/chat`,
+      { message, history }
     );
 
     if (!response.ok) {

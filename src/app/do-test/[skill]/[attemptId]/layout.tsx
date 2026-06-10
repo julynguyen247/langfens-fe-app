@@ -82,13 +82,22 @@ export default function DoTestAttemptLayout({
   const currentPassage = passages[currentIndex] ?? passages[0];
   const searchParams = useSearchParams();
 
+  const prettySkill =
+    skill === "reading"
+      ? "Reading"
+      : skill === "listening"
+      ? "Listening"
+      : skill === "writing"
+      ? "Writing"
+      : "Speaking";
+
   // Get test title from current section or paper
   const testTitle = useMemo(() => {
-    if (!attempt) return "Test";
+    if (!attempt) return `${prettySkill} Test`;
     const sections = attempt.paper?.sections ?? [];
     const activeSec = sections.find((s: any) => s.id === currentSecId) ?? sections[0];
-    return activeSec?.title || attempt.paper?.title || "Reading Test";
-  }, [attempt, currentSecId]);
+    return activeSec?.title || attempt.paper?.title || `${prettySkill} Test`;
+  }, [attempt, currentSecId, prettySkill]);
 
   const gotoSection = (id: string) => {
     const nextParams = new URLSearchParams(searchParams.toString());
@@ -105,19 +114,10 @@ export default function DoTestAttemptLayout({
     gotoSection(passages[nextIdx].id);
   };
 
-  const prettySkill =
-    skill === "reading"
-      ? "Reading"
-      : skill === "listening"
-      ? "Listening"
-      : skill === "writing"
-      ? "Writing"
-      : "Speaking";
-
   const subtitle =
     skill === "reading" && passages.length > 1
       ? `Reading Passage ${currentIndex + 1}`
-      : prettySkill + " Test";
+      : "IELTS Online Test";
 
   const showTimer = skill === "reading" || skill === "listening";
 
