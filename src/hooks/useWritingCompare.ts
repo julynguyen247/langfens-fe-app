@@ -23,6 +23,8 @@ export function useWritingCompare(attemptId: string): UseWritingCompareResult {
   const [isTimeout, setIsTimeout] = useState(false);
   const retriesRef = useRef(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const startedRef = useRef(false);
+  const dataRef = useRef<AiCompareResponse | null>(null);
 
   const stopPolling = useCallback(() => {
     if (intervalRef.current !== null) {
@@ -43,6 +45,7 @@ export function useWritingCompare(attemptId: string): UseWritingCompareResult {
         }
       );
       if (response.status === 204) return 'pending';
+      dataRef.current = response.data;
       setData(response.data);
       return 'ready';
     } catch (err) {
@@ -56,6 +59,9 @@ export function useWritingCompare(attemptId: string): UseWritingCompareResult {
 
   const start = useCallback(async () => {
     if (!attemptId) return;
+    // If we already have data in this hook instance, don't refetch —
+    // re-fetching a 200 response can race with the consumer and produce a 204.
+    if (dataRef.current) return;
     setIsLoading(true);
     setIsError(false);
     setIsTimeout(false);
@@ -88,7 +94,10 @@ export function useWritingCompare(attemptId: string): UseWritingCompareResult {
   }, [attemptId, fetchOnce, stopPolling]);
 
   useEffect(() => {
+    // Reset only when the attemptId actually changes (not on remount with same id).
+    dataRef.current = null;
     setData(null);
+    startedRef.current = false;
     start();
     return stopPolling;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -96,6 +105,7 @@ export function useWritingCompare(attemptId: string): UseWritingCompareResult {
 
   const refetch = useCallback(() => {
     stopPolling();
+    dataRef.current = null;
     setData(null);
     start();
   }, [start, stopPolling]);
