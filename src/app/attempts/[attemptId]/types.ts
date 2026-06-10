@@ -46,6 +46,31 @@ export type GrammarRule = {
   category?: string;
 };
 
+// User-essay-specific grammar issue identified by the LLM grader. The
+// `quote` is a contiguous substring of the student's essay.
+export type GrammarError = {
+  quote: string;
+  fix: string;
+  reason: string;
+  category?: string;
+};
+
+// Best-effort short label for a grammar rule when the backend doesn't
+// supply a structured `category`. Extracts a human-readable title from
+// the first sentence of the rule text (capped at 32 chars).
+export function grammarRuleLabel(rule: GrammarRule): string {
+  const cat = (rule.category || "").trim();
+  if (cat && cat.toLowerCase() !== "grammar") {
+    return cat.replace(/-/g, " ");
+  }
+  const text = (rule.text || "").trim();
+  if (!text) return "rule";
+  // Take the first sentence, or up to 32 chars if no terminator.
+  const first = text.split(/(?<=[.!?])\s+/)[0] || text;
+  const cap = first.length > 32 ? first.slice(0, 30).trimEnd() + "…" : first;
+  return cap;
+}
+
 export type WritingDetail = {
   submissionId: string;
   taskText: string;
@@ -63,6 +88,7 @@ export type WritingDetail = {
   improvedParagraph?: string;
   gradedAt?: string;
   grammarRules?: GrammarRule[];
+  grammarErrors?: GrammarError[];
 };
 
 export type SpeakingCriterion = {

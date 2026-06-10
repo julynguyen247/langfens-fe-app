@@ -207,7 +207,7 @@ function ReviewItem({
   return (
     <div
       className="rounded-[2rem] border-[3px] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-white mb-4 overflow-hidden cursor-pointer hover:-translate-y-[3px] hover:shadow-[0_6px_0_rgba(0,0,0,0.08)] transition-all duration-150"
-      style={{ borderColor, borderLeftWidth: "4px" }}
+      style={{ borderColor, borderLeftWidth: "4px", fontFamily: "var(--font-heading)" }}
       onClick={toggleOpen}
     >
       {/* Collapsed Header */}
@@ -252,7 +252,10 @@ function ReviewItem({
           >
             {/* Question text */}
             <div className="px-5 pb-4 border-t-[2px] border-[var(--border)] pt-4">
-              <div className="prose prose-sm max-w-none text-[var(--foreground)]">
+              <div
+                className="prose prose-sm max-w-none text-[var(--foreground)]"
+                style={{ fontFamily: "var(--font-heading)" }}
+              >
                 <ReactMarkdown>{data.prompt}</ReactMarkdown>
               </div>
             </div>
@@ -310,7 +313,10 @@ function ReviewItem({
                     <p className="text-xs font-bold text-[var(--primary-dark)] mb-1">
                       Why is this correct?
                     </p>
-                    <div className="prose prose-sm max-w-none text-[var(--text-body)]">
+                    <div
+                      className="prose prose-sm max-w-none text-[var(--text-body)]"
+                      style={{ fontFamily: "var(--font-heading)" }}
+                    >
                       <ReactMarkdown>{data.explanation}</ReactMarkdown>
                     </div>
                   </div>

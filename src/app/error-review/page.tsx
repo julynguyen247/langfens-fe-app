@@ -9,6 +9,10 @@ import PenguinLottie from "@/components/PenguinLottie";
 import { RagFeedbackCard } from "@/components/rag/RagFeedbackCard";
 import type { RagFeedbackEnvelope } from "@/types/rag";
 
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const isUuidLike = (s: unknown) => typeof s === "string" && UUID_RE.test(s.trim());
+
 type WrongAnswer = {
   answerId: string;
   questionId: string;
@@ -481,7 +485,7 @@ export default function ErrorReviewPage() {
                         Your Answer
                       </div>
                       <div className="text-sm font-bold text-red-700">
-                        {selectedAnswer.userAnswer || "(Empty)"}
+                        {isUuidLike(selectedAnswer.userAnswer) ? "(Empty)" : (selectedAnswer.userAnswer || "(Empty)")}
                       </div>
                     </div>
                     <div className="bg-[var(--skill-speaking-light)] rounded-[2rem] p-4 border-[3px] border-[var(--skill-speaking-border)]">

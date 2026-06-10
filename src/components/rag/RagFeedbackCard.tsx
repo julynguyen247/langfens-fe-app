@@ -13,14 +13,25 @@ function CriterionRow({
   return (
     <div className="flex flex-col gap-2 border-b border-slate-200 py-3 last:border-b-0">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-semibold text-slate-700">
+        <span
+          className="text-sm font-semibold text-slate-700"
+          style={{ fontFamily: "var(--font-heading)" }}
+        >
           {criterion.name.replace(/_/g, " ")}
         </span>
-        <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
+        <span
+          className="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700"
+          style={{ fontFamily: "var(--font-heading)" }}
+        >
           Band {formatBand(criterion.band)}
         </span>
       </div>
-      <p className="text-sm text-slate-600">{criterion.comment}</p>
+      <p
+        className="text-sm text-slate-600"
+        style={{ fontFamily: "var(--font-heading)" }}
+      >
+        {criterion.comment}
+      </p>
       {criterion.evidence_ids && criterion.evidence_ids.length > 0 && (
         <div className="flex flex-wrap gap-1">
           {criterion.evidence_ids.map((id) => (
@@ -43,7 +54,10 @@ export function RagFeedbackCard({
   envelope: RagFeedbackEnvelope;
 }) {
   return (
-    <div className="rounded-[2rem] border-[3px] border-slate-200 bg-white p-2 shadow-[0_4px_0_rgba(0,0,0,0.08)]">
+    <div
+      className="rounded-[2rem] border-[3px] border-slate-200 bg-white p-2 shadow-[0_4px_0_rgba(0,0,0,0.08)]"
+      style={{ fontFamily: "var(--font-heading)" }}
+    >
       <div className="p-6">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold text-slate-900">

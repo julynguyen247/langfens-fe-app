@@ -33,7 +33,8 @@ export interface UseGrammarAnalysisResult {
 
 export function useGrammarAnalysis(
   essay: string,
-  enabled: boolean
+  enabled: boolean,
+  taskContext?: string
 ): UseGrammarAnalysisResult {
   const [results, setResults] = useState<GrammarExplainResponse[]>([]);
   const [errorTexts, setErrorTexts] = useState<string[]>([]);
@@ -54,6 +55,7 @@ export function useGrammarAnalysis(
     try {
       const detectRes = await apisAi.post<DetectResponse>('/v1/grammar/detect', {
         essay,
+        task: taskContext ?? undefined,
         max_errors: 20,
       });
       const detectedErrors = detectRes.data.errors || [];
@@ -88,7 +90,7 @@ export function useGrammarAnalysis(
       setIsError(true);
       setLoadingPhase('idle');
     }
-  }, [essay]);
+  }, [essay, taskContext]);
 
   useEffect(() => {
     if (!enabled) return;

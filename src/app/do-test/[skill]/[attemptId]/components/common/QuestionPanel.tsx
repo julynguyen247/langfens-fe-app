@@ -485,7 +485,10 @@ const QuestionPanel = memo(function QuestionPanel({
                   {review?.explanation && (
                     <div className="px-4 py-3 bg-[var(--background)] border-t border-[var(--border-light)]">
                       <p className="text-[10px] font-bold text-[var(--text-muted)] tracking-wider mb-1">Explanation</p>
-                      <div className="prose prose-sm prose-neutral max-w-none text-[var(--text-body)]">
+                      <div
+                        className="prose prose-sm prose-neutral max-w-none text-[var(--text-body)]"
+                        style={{ fontFamily: "var(--font-heading)" }}
+                      >
                         <ReactMarkdown components={instructionComponents}>
                           {review.explanation}
                         </ReactMarkdown>

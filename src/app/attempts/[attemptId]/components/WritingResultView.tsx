@@ -28,7 +28,8 @@ export function WritingResultView({
   const [writingTab, setWritingTab] = useState<'comparative' | 'grammar'>('comparative');
   const grammarAnalysis = useGrammarAnalysis(
     writingDetail.essayRaw,
-    writingTab === 'grammar'
+    writingTab === 'grammar',
+    writingDetail.taskText
   );
 
   const strengths: string[] = [];
@@ -415,6 +416,9 @@ export function WritingResultView({
             failedCount={grammarAnalysis.failedCount}
             totalCount={grammarAnalysis.totalCount}
             onRetry={grammarAnalysis.refetch}
+            graderComment={writingDetail.grammaticalRangeAndAccuracy?.comment}
+            graderBand={writingDetail.grammaticalRangeAndAccuracy?.band}
+            essayErrors={writingDetail.grammarErrors}
           />
         )}
 

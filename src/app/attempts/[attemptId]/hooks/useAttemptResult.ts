@@ -200,6 +200,7 @@ export function useAttemptResult(attemptId: string, source: PageSource) {
             improvedParagraph: raw.improvedParagraph ?? "",
             gradedAt: raw.gradedAt,
             grammarRules: Array.isArray(raw.grammarRules) ? raw.grammarRules : [],
+            grammarErrors: Array.isArray(raw.grammarErrors) ? raw.grammarErrors : [],
           };
 
           setAttemptData(mappedAttempt);
