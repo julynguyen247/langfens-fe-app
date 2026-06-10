@@ -1,4 +1,12 @@
 import type { AttemptQuestionResult } from "./types";
+import type { RagFeedbackEnvelope } from "@/types/rag";
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function isUuidLike(s: unknown): boolean {
+  return typeof s === "string" && UUID_RE.test(s.trim());
+}
 
 type OptionMap = Record<string, any>;
 
@@ -14,11 +22,20 @@ export type NormalizedDetail = {
   isCorrect: boolean | null;
   state: "answered" | "none";
   timeSpentSec?: number;
+  ragFeedback?: RagFeedbackEnvelope;
 };
 
 export function normalizeDetail(d: AttemptQuestionResult): NormalizedDetail {
+  // The BE sometimes falls back to a raw option UUID when it cannot resolve
+  // the user's selection to option text (e.g. malformed snapshot). Treat any
+  // UUID-shaped string as "no text" so we don't render the id to the user.
+  const rawSelected = d.selectedAnswerText ?? "";
+  const rawCorrect = d.correctAnswerText ?? "";
+  const selectedText = isUuidLike(rawSelected) ? "" : rawSelected;
+  const correctText = cleanAnswer(isUuidLike(rawCorrect) ? "" : rawCorrect);
+
   const hasAnswer =
-    !!d.selectedAnswerText || (d.selectedOptionIds?.length ?? 0) > 0;
+    !!selectedText || (d.selectedOptionIds?.length ?? 0) > 0;
 
   return {
     questionId: d.questionId,
@@ -26,9 +43,10 @@ export function normalizeDetail(d: AttemptQuestionResult): NormalizedDetail {
     skill: d.skill ?? "UNKNOWN",
     questionType: d.questionType ?? "UNKNOWN",
     prompt: cleanQuestion(d.promptMd ?? ""),
-    selectedText: d.selectedAnswerText ?? "",
-    correctText: cleanAnswer(d.correctAnswerText ?? ""),
+    selectedText,
+    correctText,
     explanation: d.explanationMd ?? "",
+    ragFeedback: d.ragFeedback,
     isCorrect: typeof d.isCorrect === "boolean" ? d.isCorrect : null,
     state: hasAnswer ? "answered" : "none",
     timeSpentSec: d.timeSpentSec,
@@ -169,6 +187,8 @@ export function mapAnswerContent({
       opt?.contentMd ?? opt?.content ?? opt?.label ?? opt?.text ?? "";
     if (text) return text;
   }
+
+  if (isUuidLike(fallbackText)) return "";
 
   return fallbackText ?? "";
 }

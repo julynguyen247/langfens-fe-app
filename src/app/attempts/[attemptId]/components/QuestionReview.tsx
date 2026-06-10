@@ -9,6 +9,7 @@ import { formatQuestionType } from "../types";
 import { normalizeDetail, fmtMinSec } from "../utils";
 import type { NormalizedDetail } from "../utils";
 import { SkillBadge } from "@/components/ui/SkillBadge";
+import { QuestionFeedbackPanel } from "@/app/do-test/[skill]/[attemptId]/components/QuestionFeedbackPanel";
 
 export function QuestionReview({ details }: { details: AttemptQuestionResult[] }) {
   const [filter, setFilter] = useState<"all" | "correct" | "wrong" | "none">(
@@ -314,6 +315,16 @@ function ReviewItem({
                     </div>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* RAG feedback (AI explainer) */}
+            {data.ragFeedback && (
+              <div className="px-5 py-4 bg-white border-t-[2px] border-[var(--border)]">
+                <p className="text-xs font-bold text-[var(--primary-dark)] mb-2">
+                  AI Explanation
+                </p>
+                <QuestionFeedbackPanel envelope={data.ragFeedback} />
               </div>
             )}
           </motion.div>
