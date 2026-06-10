@@ -10,6 +10,7 @@ import type {
   WritingDetail,
   SpeakingDetail,
 } from "../types";
+import type { RagFeedbackEnvelope } from "@/types/rag";
 import {
   fmtMinSec,
   parseTimeTaken,
@@ -150,6 +151,7 @@ export function useAttemptResult(attemptId: string, source: PageSource) {
                 explanationMd: a.explanationMd ?? meta?.explanationMd ?? "",
                 timeSpentSec:
                   a.timeSpentSec ?? a.elapsedSec ?? a.time ?? undefined,
+                ragFeedback: a.ragFeedback as RagFeedbackEnvelope | undefined,
               };
             }),
             totalTime: fmtMinSec(totalTimeSec),
@@ -197,6 +199,7 @@ export function useAttemptResult(attemptId: string, source: PageSource) {
             suggestions: Array.isArray(raw.suggestions) ? raw.suggestions : [],
             improvedParagraph: raw.improvedParagraph ?? "",
             gradedAt: raw.gradedAt,
+            grammarRules: Array.isArray(raw.grammarRules) ? raw.grammarRules : [],
           };
 
           setAttemptData(mappedAttempt);

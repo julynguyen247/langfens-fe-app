@@ -7,6 +7,12 @@ import QuestionPanel, {
   Question,
   ReviewResult,
 } from "../../do-test/[skill]/[attemptId]/components/common/QuestionPanel";
+import type { RagFeedbackEnvelope } from "@/types/rag";
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const isUuidLike = (s: unknown) =>
+  typeof s === "string" && UUID_RE.test(s.trim());
 
 type AttemptQuestionResult = {
   questionId: string;
@@ -19,6 +25,7 @@ type AttemptQuestionResult = {
   correctAnswerText?: string;
   isCorrect?: boolean | null;
   explanationMd?: string;
+  ragFeedback?: RagFeedbackEnvelope;
 };
 
 type Section = {
@@ -120,6 +127,7 @@ export default function ResultReviewScreen({
       isCorrect: q.isCorrect ?? null,
       correctAnswer: q.correctAnswerText,
       explanation: q.explanationMd,
+      ragFeedback: q.ragFeedback as RagFeedbackEnvelope | undefined,
     }));
   }, [questions]);
 
@@ -131,9 +139,13 @@ export default function ResultReviewScreen({
       // (e.g. "viii. The Spread of Coffee") as selectedAnswerText, but the
       // dropdown's <option value> is the roman ("viii"). Re-derive the key
       // so the select actually highlights the right option.
+      // Also: the BE occasionally falls back to the raw option UUID when it
+      // cannot resolve the user's selection to option text. Treat that as
+      // "no answer" so the dropdown shows as unselected.
       const isMatchingHeading =
         (q.questionType ?? "").toUpperCase() === "MATCHING_HEADING";
-      const text = q.selectedAnswerText || "";
+      const raw = q.selectedAnswerText || "";
+      const text = isUuidLike(raw) ? "" : raw;
       ans[q.questionId] = isMatchingHeading
         ? text.split(".")[0].trim()
         : text;

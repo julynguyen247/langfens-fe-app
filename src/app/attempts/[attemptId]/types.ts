@@ -1,3 +1,5 @@
+import type { RagFeedbackEnvelope } from "@/types/rag";
+
 export type PageSource = "attempt" | "writing" | "speaking";
 
 export type AttemptResult = {
@@ -30,11 +32,18 @@ export type AttemptQuestionResult = {
   isCorrect?: boolean | null;
   explanationMd?: string;
   timeSpentSec?: number;
+  ragFeedback?: RagFeedbackEnvelope;
 };
 
 export type WritingCriterion = {
   band: number;
   comment: string;
+};
+
+export type GrammarRule = {
+  id: string;
+  text: string;
+  category?: string;
 };
 
 export type WritingDetail = {
@@ -53,6 +62,7 @@ export type WritingDetail = {
   suggestions: string[];
   improvedParagraph?: string;
   gradedAt?: string;
+  grammarRules?: GrammarRule[];
 };
 
 export type SpeakingCriterion = {
