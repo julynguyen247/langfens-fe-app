@@ -6,6 +6,8 @@ import remarkGfm from "remark-gfm";
 import BookmarkButton from "@/components/BookmarkButton";
 import { AttemptQuestionGroup } from "@/app/store/useAttemptStore";
 import { QuestionComponentRegistry, RawQuestion } from "../QuestionComponentRegistry";
+import { QuestionFeedbackPanel } from "../QuestionFeedbackPanel";
+import type { RagFeedbackEnvelope } from "@/types/rag";
 
 type Choice = { value: string; label: string };
 type QA = Record<string, string>;
@@ -169,6 +171,7 @@ export type ReviewResult = {
   isCorrect: boolean | null;
   correctAnswer?: string;
   explanation?: string;
+  ragFeedback?: RagFeedbackEnvelope;
 };
 
 const QuestionPanel = memo(function QuestionPanel({
@@ -487,6 +490,13 @@ const QuestionPanel = memo(function QuestionPanel({
                           {review.explanation}
                         </ReactMarkdown>
                       </div>
+                    </div>
+                  )}
+
+                  {/* RAG feedback (if available) */}
+                  {review?.ragFeedback && (
+                    <div className="px-4 py-3 border-t border-[var(--border-light)]">
+                      <QuestionFeedbackPanel envelope={review.ragFeedback} />
                     </div>
                   )}
                 </div>

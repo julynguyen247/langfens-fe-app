@@ -6,6 +6,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { getWrongAnswers, getQuestionTypes } from "@/utils/api";
 import ReactMarkdown from "react-markdown";
 import PenguinLottie from "@/components/PenguinLottie";
+import { RagFeedbackCard } from "@/components/rag/RagFeedbackCard";
+import type { RagFeedbackEnvelope } from "@/types/rag";
 
 type WrongAnswer = {
   answerId: string;
@@ -17,6 +19,7 @@ type WrongAnswer = {
   userAnswer: string;
   correctAnswer: string;
   explanation?: string;
+  ragFeedback?: RagFeedbackEnvelope;
   attemptDate: string;
   examId: string;
   attemptId: string;
@@ -500,6 +503,13 @@ export default function ErrorReviewPage() {
                       <div className="prose prose-sm max-w-none text-[var(--text-body)]">
                         <ReactMarkdown>{selectedAnswer.explanation}</ReactMarkdown>
                       </div>
+                    </div>
+                  )}
+
+                  {/* RAG feedback */}
+                  {selectedAnswer.ragFeedback && (
+                    <div className="mt-4">
+                      <RagFeedbackCard envelope={selectedAnswer.ragFeedback} />
                     </div>
                   )}
                 </div>

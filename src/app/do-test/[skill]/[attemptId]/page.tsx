@@ -29,6 +29,7 @@ import ReactMarkdown from "react-markdown";
 import { Group, Panel, Separator } from "react-resizable-panels";
 import { motion } from "framer-motion";
 import WritingAssistRail from "./components/writing/WritingAssistRail";
+import type { RagFeedbackEnvelope } from "@/types/rag";
 
 // Material Icon Component
 function Icon({ name, className = "" }: { name: string; className?: string }) {
@@ -134,7 +135,7 @@ export function ReadingScreen({
 }: {
   attemptId: string;
   isReviewMode?: boolean;
-  reviewData?: Array<{ questionId: string; isCorrect: boolean | null; correctAnswer?: string; explanation?: string }>;
+  reviewData?: Array<{ questionId: string; isCorrect: boolean | null; correctAnswer?: string; explanation?: string; ragFeedback?: RagFeedbackEnvelope }>;
   initialAnswers?: Record<string, string>;
 }) {
   const router = useRouter();

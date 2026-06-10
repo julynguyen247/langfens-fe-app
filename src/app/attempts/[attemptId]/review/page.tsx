@@ -6,6 +6,7 @@ import { getAttemptResult } from "@/utils/api";
 import { useAttemptStore } from "@/app/store/useAttemptStore";
 import { ReadingScreen } from "../../../do-test/[skill]/[attemptId]/page";
 import { motion } from "framer-motion";
+import type { RagFeedbackEnvelope } from "@/types/rag";
 
 export default function ReviewPage() {
   const { attemptId } = useParams() as { attemptId: string };
@@ -18,6 +19,7 @@ export default function ReviewPage() {
     isCorrect: boolean | null;
     correctAnswer?: string;
     explanation?: string;
+    ragFeedback?: RagFeedbackEnvelope;
   }>>([]);
   const [initialAnswers, setInitialAnswers] = useState<Record<string, string>>({});
   const [skill, setSkill] = useState<"READING" | "LISTENING">("READING");
@@ -60,6 +62,7 @@ export default function ReviewPage() {
             isCorrect: a.isCorrect ?? null,
             correctAnswer: a.correctAnswerText ?? "",
             explanation: a.explanationMd ?? meta?.explanationMd ?? "",
+            ragFeedback: a.ragFeedback ?? undefined,
           });
 
           const qType = (meta?.questionType ?? "").toUpperCase();
