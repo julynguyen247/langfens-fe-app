@@ -1,53 +1,19 @@
-export type BackendQuestionType =
-  | "TRUE_FALSE_NOT_GIVEN"
-  | "YES_NO_NOT_GIVEN"
-  | "MULTIPLE_CHOICE_SINGLE"
-  | "MULTIPLE_CHOICE_MULTIPLE"
-  | "MULTIPLE_CHOICE_SINGLE_IMAGE"
-  | "CLASSIFICATION"
-  | "FORM_COMPLETION"
-  | "NOTE_COMPLETION"
-  | "SENTENCE_COMPLETION"
-  | "SUMMARY_COMPLETION"
-  | "TABLE_COMPLETION"
-  | "SHORT_ANSWER"
-  | "DIAGRAM_LABEL"
-  | "MAP_LABEL"
-  | "MATCHING_HEADING"
-  | "MATCHING_INFORMATION"
-  | "MATCHING_FEATURES"
-  | "MATCHING_ENDINGS"
-  | "FLOW_CHART";
-/**
- * @deprecated Use BackendQuestionType directly with QuestionComponentRegistry
- * instead of this indirection layer. Kept for backward compatibility during
- * migration — will be removed in Phase 2.
- */
-export type QuestionUiKind =
-  | "forice_single"
-  | "forice_multiple"
-  | "completion"
-  | "short_answer"
-  | "matching_letter"
-  | "matching_heading"
-  | "flow_chart"
-  | "matching_paragraph"
-  | "matching_heading_select"
-  | "summary_completion"
-  | "matching_information";
-type Choice = { value: string; label: string };
-
-export interface QuestionData {
-  id: string;
-  idx: number;
-  type: string;
-  stem: string;
-  promptMd?: string;
-  explanationMd?: string;
-  options?: { id: string; idx: number; contentMd: string }[];
-  flowChartNodes?: { key: string; label: string }[];
-  /** Structured word list for MATCHING_INFORMATION — populated from API payload */
-  wordList?: string[];
-  order?: string;
-  placeholder?: string;
-}
+// SSOT re-export: the Langfens question-schema package is the single
+// source of truth for canonical question type slugs, labels, and per-type
+// metadata. This file previously held a local 21-string literal union and
+// a deprecated QuestionUiKind indirection; both have been replaced by
+// the SSOT exports as of Phase 2.
+export {
+  QUESTION_TYPES,
+  QUESTION_TYPE_LABELS,
+  QUESTION_TYPE_METADATA,
+  resolveDeprecatedAlias,
+  isCanonicalType,
+  isDeprecatedAlias,
+} from "@langfens/question-schema";
+export type {
+  QuestionTypeSlug,
+  DeprecatedTypeAlias,
+  AnyQuestionType,
+  QuestionTypeMetadata,
+} from "@langfens/question-schema";

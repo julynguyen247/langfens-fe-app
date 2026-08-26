@@ -9,8 +9,8 @@ import PassageView from "./components/reading/PassageView";
 import YouTubePlayer from "./components/listening/YouTubePlayer";
 import QuestionPanel, {
   Question as UiQuestion,
-  QuestionUiKind,
 } from "./components/common/QuestionPanel";
+import type { QuestionTypeSlug } from "@langfens/question-schema";
 import { useAttemptStore } from "@/app/store/useAttemptStore";
 import { useUserStore } from "@/app/store/userStore";
 import { useLoadingStore } from "@/app/store/loading";
@@ -170,9 +170,9 @@ export function ReadingScreen({
       .map((q: any) => mapApiQuestionToUi(q));
   }, [activeSec]);
 
-  const questionUiKindMap = useMemo(() => {
-    const m: Record<string, QuestionUiKind> = {};
-    for (const q of panelQuestions) m[String(q.id)] = q.uiKind;
+  const backendTypeByQid = useMemo(() => {
+    const m: Record<string, QuestionTypeSlug> = {};
+    for (const q of panelQuestions) m[String(q.id)] = q.backendType;
     return m;
   }, [panelQuestions]);
 
@@ -184,12 +184,17 @@ export function ReadingScreen({
 
   const buildTextAnswer = (qid: string, value: string) => {
     if (!value) return undefined;
-    const kind = questionUiKindMap[qid];
-    if (kind === "forice_single" || kind === "forice_multiple")
-      return undefined;
+    const slug = backendTypeByQid[qid];
+    if (
+      slug === "MULTIPLE_CHOICE_SINGLE" ||
+      slug === "MULTIPLE_CHOICE_SINGLE_IMAGE" ||
+      slug === "MULTIPLE_CHOICE_MULTIPLE" ||
+      slug === "TRUE_FALSE_NOT_GIVEN" ||
+      slug === "YES_NO_NOT_GIVEN" ||
+      slug === "CLASSIFICATION"
+    ) return undefined;
     return value;
   };
-
   const isSubmitting = useAttemptStore((s) => s.isSubmitting);
   const setIsSubmitting = useAttemptStore((s) => s.setIsSubmitting);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -224,11 +229,6 @@ export function ReadingScreen({
       }
 
       // Build the submit payload from the same answer map (defensive — the BE
-      // already has the answers via autosave, but we also send them inline so
-      // a missed autosave doesn't silently drop the user's selection). Use
-      // the same payload builder as the autosave path so MCQ UUIDs end up in
-      // `selectedOptionIds` (and only completion-style answers land in
-      // `textAnswer`).
       const { answers: submitAnswers } = buildAnswerPayload(
         lastAnswersRef.current,
         () => activeSec.id,
@@ -454,9 +454,9 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
       .map((q: any) => mapApiQuestionToUi(q));
   }, [listeningQs]);
 
-  const questionUiKindMap = useMemo(() => {
-    const m: Record<string, QuestionUiKind> = {};
-    for (const q of panelQuestions) m[String(q.id)] = q.uiKind;
+  const backendTypeByQid = useMemo(() => {
+    const m: Record<string, QuestionTypeSlug> = {};
+    for (const q of panelQuestions) m[String(q.id)] = q.backendType;
     return m;
   }, [panelQuestions]);
 
@@ -470,9 +470,15 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
 
   const buildTextAnswer = (qid: string, value: string) => {
     if (!value) return undefined;
-    const kind = questionUiKindMap[qid];
-    if (kind === "forice_single" || kind === "forice_multiple")
-      return undefined;
+    const slug = backendTypeByQid[qid];
+    if (
+      slug === "MULTIPLE_CHOICE_SINGLE" ||
+      slug === "MULTIPLE_CHOICE_SINGLE_IMAGE" ||
+      slug === "MULTIPLE_CHOICE_MULTIPLE" ||
+      slug === "TRUE_FALSE_NOT_GIVEN" ||
+      slug === "YES_NO_NOT_GIVEN" ||
+      slug === "CLASSIFICATION"
+    ) return undefined;
     return value;
   };
 
@@ -515,14 +521,9 @@ function ListeningScreen({ attemptId }: { attemptId: string }) {
       setLoading(false);
     }
   };
-
-  // Register doSubmit with the global store so the layout's TopBar Submit
-  // button can flush the latest in-memory answers (autosave is 2s-debounced)
-  // before the BE Submit. We use a ref to always invoke the latest closure
-  // without re-registering on every render.
   const listeningDoSubmitRef = useRef(doSubmit);
-  listeningDoSubmitRef.current = doSubmit;
   const setListeningSubmitHandler = useAttemptStore((s) => s.setSubmitHandler);
+  listeningDoSubmitRef.current = doSubmit;
   useEffect(() => {
     const handler = () => listeningDoSubmitRef.current();
     setListeningSubmitHandler(attemptId, handler);

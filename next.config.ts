@@ -4,7 +4,6 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // React strict mode helps identify potential problems
   reactStrictMode: true,
-
   // Pin both Turbopack and Webpack workspace roots so neither inferring
   // mechanism walks up to /home/khoa/Projects/langfens/ (where a stray
   // package-lock.json without a sibling package.json lives) and loses track
@@ -12,14 +11,14 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(__dirname),
   },
-  outputFileTracingRoot: path.resolve(__dirname),
-
-  // Compiler optimizations
   compiler: {
     // Remove console logs in production
     removeConsole: process.env.NODE_ENV === "production",
   },
-  
+  // Symlinked local ESM package (file: dep) — Turbopack doesn't follow
+  // file: symlinks the way Node + tsc do, so transpile it explicitly.
+  transpilePackages: ["@langfens/question-schema"],
+
   // Experimental performance optimizations
   experimental: {
     // Optimize package imports for faster builds

@@ -8,6 +8,7 @@ import QuestionPanel, {
   ReviewResult,
 } from "../../do-test/[skill]/[attemptId]/components/common/QuestionPanel";
 import type { RagFeedbackEnvelope } from "@/types/rag";
+import type { QuestionTypeSlug } from "@langfens/question-schema";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -48,17 +49,14 @@ type Props = {
   skill: "READING" | "LISTENING";
 };
 
-function mapQuestionType(backendType?: string) {
-  if (!backendType) return "forice_single";
-  const t = backendType.toUpperCase();
-  if (t.includes("MCQ_SINGLE") || t.includes("TRUE_FALSE") || t.includes("YES_NO")) return "forice_single";
-  if (t.includes("MCQ_MULTIPLE")) return "forice_multiple";
-  if (t.includes("MATCHING_HEADING")) return "matching_heading";
-  if (t.includes("MATCHING_INFORMATION")) return "matching_information";
-  if (t.includes("MATCHING_LETTER") || t.includes("MATCHING_FEATURES")) return "matching_letter";
-  if (t.includes("SUMMARY") || t.includes("COMPLETION") || t.includes("FILL") || t.includes("TABLE")) return "completion";
-  if (t.includes("DIAGRAM") || t.includes("MAP") || t.includes("FLOW")) return "completion";
-  return "forice_single";
+/**
+ * Best-effort coercion of an untyped `questionType` from a BE review payload
+ * into the SSOT `QuestionTypeSlug` union. Falls back to MULTIPLE_CHOICE_SINGLE
+ * when the value is missing or unknown — the same default the registry path
+ * takes for any question whose slug isn't in QuestionComponentRegistry.
+ */
+function toQuestionTypeSlug(input: string | undefined): QuestionTypeSlug {
+  return (input as QuestionTypeSlug) ?? "MULTIPLE_CHOICE_SINGLE";
 }
 
 export default function ResultReviewScreen({
@@ -112,8 +110,7 @@ export default function ResultReviewScreen({
       return {
         id: q.questionId,
         stem: q.promptMd || snap?.promptMd || `Question ${q.index}`,
-        backendType: q.questionType || "MCQ_SINGLE",
-        uiKind: mapQuestionType(q.questionType) as any,
+        backendType: toQuestionTypeSlug(q.questionType),
         idx: q.index,
         forices,
       };
@@ -210,6 +207,7 @@ export default function ResultReviewScreen({
               <div className="flex-1 overflow-auto p-4">
                 <QuestionPanel
                   attemptId={attemptId}
+                  skill={skill}
                   questions={panelQuestions}
                   questionGroups={section?.questionGroups}
                   initialAnswers={initialAnswers}

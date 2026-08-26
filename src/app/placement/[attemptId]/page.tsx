@@ -10,7 +10,7 @@ import { useUserStore } from "@/app/store/userStore";
 import { autoSaveAttempt, submitAttempt, uploadFile } from "@/utils/api";
 import { useDebouncedAutoSave } from "@/app/utils/hook";
 import { mapApiQuestionToUi } from "@/lib/mapApiQuestionToUi";
-import { BackendQuestionType } from "@/types/question.type";
+import type { QuestionTypeSlug } from "@langfens/question-schema";
 import ListeningAudioBar from "../../do-test/[skill]/[attemptId]/components/listening/ListeningAudioBar";
 import QuestionPanel from "../../do-test/[skill]/[attemptId]/components/common/QuestionPanel";
 import PassageView from "../../do-test/[skill]/[attemptId]/components/reading/PassageView";
@@ -25,7 +25,7 @@ type Tab = "reading" | "listening" | "writing" | "speaking";
 
 type QuestionMeta = {
   sectionId: string;
-  type: BackendQuestionType;
+  type: QuestionTypeSlug;
   skill: string;
 };
 type SpeakingSource = "none" | "record" | "upload";
@@ -96,7 +96,7 @@ export default function MultiSkillAttemptPage() {
         for (const q of g.questions ?? []) {
           m.set(q.id, {
             sectionId: s.id,
-            type: q.type as BackendQuestionType,
+            type: q.type as QuestionTypeSlug,
             skill: q.skill.toLowerCase(),
           });
         }
@@ -208,10 +208,10 @@ export default function MultiSkillAttemptPage() {
     [listeningQuestionsApi]
   );
 
-  const questionUiKindMap = useMemo(() => {
-    const m: Record<string, string> = {};
+  const backendTypeByQid = useMemo(() => {
+    const m: Record<string, QuestionTypeSlug> = {};
     for (const q of [...readingUiQuestions, ...listeningUiQuestions]) {
-      m[String(q.id)] = q.uiKind;
+      m[String(q.id)] = q.backendType;
     }
     return m;
   }, [readingUiQuestions, listeningUiQuestions]);
@@ -240,9 +240,11 @@ export default function MultiSkillAttemptPage() {
     if (!meta) return undefined;
 
     const isChoice =
-      meta.type === "MULTIPLE_CHOICE_SINGLE" ||
-      questionUiKindMap[qid] === "forice_single";
-
+      backendTypeByQid[qid] === "MULTIPLE_CHOICE_SINGLE" ||
+      backendTypeByQid[qid] === "TRUE_FALSE_NOT_GIVEN" ||
+      backendTypeByQid[qid] === "YES_NO_NOT_GIVEN" ||
+      backendTypeByQid[qid] === "MULTIPLE_CHOICE_SINGLE_IMAGE" ||
+      backendTypeByQid[qid] === "CLASSIFICATION";
     if (isChoice) return undefined;
     return value;
   };
@@ -528,6 +530,7 @@ export default function MultiSkillAttemptPage() {
                   ">
                     <QuestionPanel
                       attemptId={attemptId}
+                      skill={activeTab}
                       questions={readingUiQuestions}
                       questionGroups={readingSection?.questionGroups}
                       initialAnswers={lastAnswersRef.current}
@@ -606,6 +609,7 @@ export default function MultiSkillAttemptPage() {
                   </div>
                   <div className="flex-1 overflow-auto p-5 scroll-smooth bg-[var(--background)]">
                     <QuestionPanel
+                      skill={activeTab}
                       attemptId={attemptId}
                       questions={listeningUiQuestions}
                       questionGroups={listeningSection?.questionGroups}

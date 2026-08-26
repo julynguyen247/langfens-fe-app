@@ -1,5 +1,5 @@
 import { Question } from "@/app/do-test/[skill]/[attemptId]/components/common/QuestionPanel";
-import { BackendQuestionType, QuestionUiKind } from "@/types/question.type";
+import type { QuestionTypeSlug } from "@langfens/question-schema";
 
 type ApiOption = {
   id: string;
@@ -10,7 +10,7 @@ type ApiOption = {
 type ApiQuestion = {
   id: string;
   idx: number;
-  type: BackendQuestionType;
+  type: QuestionTypeSlug | string;
   promptMd: string;
   explanationMd?: string;
   options?: ApiOption[];
@@ -23,74 +23,40 @@ function normalizeOptionLabel(contentMd: string): string {
   return m ? m[1] : trimmed;
 }
 
+/**
+ * MATCHING_INFORMATION has two real render variants:
+ *   - "Word List" blanks (the BE injects `**Word List:**` + `___` runs and
+ *     ships a structured `wordList`); rendered by WordListCompletionCard.
+ *   - Paragraph-match A-F inputs (no word list, just a stem with blanks);
+ *     rendered inline by QuestionPanel as an A-F single-letter input.
+ *
+ * The BE sends the same `type` for both — the prompt tells us apart.
+ */
 function isWordListBlank(promptMd: string): boolean {
   const s = promptMd ?? "";
   return s.includes("**Word List:**") && s.includes("___");
 }
 
-function mapBackendTypeToUiKind(type: BackendQuestionType): QuestionUiKind {
-  switch (type) {
-    // radio
-    case "TRUE_FALSE_NOT_GIVEN":
-    case "YES_NO_NOT_GIVEN":
-    case "MULTIPLE_CHOICE_SINGLE":
-    case "MULTIPLE_CHOICE_SINGLE_IMAGE":
-    case "CLASSIFICATION":
-      return "forice_single";
-
-    // checkbox
-    case "MULTIPLE_CHOICE_MULTIPLE":
-      return "forice_multiple";
-
-    // input text
-    case "FORM_COMPLETION":
-    case "NOTE_COMPLETION":
-    case "SENTENCE_COMPLETION":
-    case "SUMMARY_COMPLETION":
-    case "TABLE_COMPLETION":
-      return "completion";
-
-    // single-input text (no `___` blanks in the prompt; just one answer field)
-    case "SHORT_ANSWER":
-    case "DIAGRAM_LABEL":
-    case "MAP_LABEL":
-      return "short_answer";
-
-    // matching letter
-    case "MATCHING_FEATURES":
-    case "MATCHING_ENDINGS":
-      return "matching_letter";
-
-    // matching heading
-    case "MATCHING_HEADING":
-      return "matching_heading";
-
-    case "FLOW_CHART":
-      return "flow_chart";
-
-    default:
-      return "completion";
-  }
-}
-
 export function mapApiQuestionToUi(q: ApiQuestion): Question {
-  const uiKind: QuestionUiKind =
-    q.type === "MATCHING_INFORMATION"
-      ? isWordListBlank(q.promptMd)
-        ? "matching_information"
-        : "matching_paragraph"
-      : mapBackendTypeToUiKind(q.type);
+  const isMatchingWordList =
+    q.type === "MATCHING_INFORMATION" && isWordListBlank(q.promptMd);
 
   const base: Question = {
     id: q.id,
-    stem: q.promptMd, 
-    backendType: q.type,
-    uiKind,
+    stem: q.promptMd,
+    backendType: q.type as QuestionTypeSlug,
     explanationMd: q.explanationMd,
   };
 
-  // choice single
-  if (uiKind === "forice_single") {
+  // Radio-forice: derive forices from `options`.
+  const radioSlugs: QuestionTypeSlug[] = [
+    "TRUE_FALSE_NOT_GIVEN",
+    "YES_NO_NOT_GIVEN",
+    "MULTIPLE_CHOICE_SINGLE",
+    "MULTIPLE_CHOICE_SINGLE_IMAGE",
+    "CLASSIFICATION",
+  ];
+  if (radioSlugs.includes(q.type as QuestionTypeSlug)) {
     return {
       ...base,
       forices: (q.options ?? []).map((opt) => ({
@@ -100,8 +66,8 @@ export function mapApiQuestionToUi(q: ApiQuestion): Question {
     };
   }
 
-  // choice multiple
-  if (uiKind === "forice_multiple") {
+  // Checkbox-forice: derive forices from `options`.
+  if (q.type === "MULTIPLE_CHOICE_MULTIPLE") {
     return {
       ...base,
       forices: (q.options ?? []).map((opt) => ({
@@ -111,19 +77,19 @@ export function mapApiQuestionToUi(q: ApiQuestion): Question {
     };
   }
 
-  // flow chart
-  if (uiKind === "flow_chart") {
+  // Flow chart: pass through structured nodes.
+  if (q.type === "FLOW_CHART") {
     return {
       ...base,
       flowChartNodes: q.flowChartNodes ?? [],
     };
   }
 
-  // matching heading — value is the roman numeral extracted from the option's
+  // Matching heading — value is the roman numeral extracted from the option's
   // contentMd (e.g. "viii" from "viii. The Spread of Coffee"), label is the
   // full content. QuestionPanel then maps this to RawQuestion.options for the
   // HeadingDropdown registry handler.
-  if (uiKind === "matching_heading" && q.options?.length) {
+  if (q.type === "MATCHING_HEADING" && q.options?.length) {
     return {
       ...base,
       forices: q.options.map((opt) => ({
@@ -133,18 +99,14 @@ export function mapApiQuestionToUi(q: ApiQuestion): Question {
     };
   }
 
-  // matching_information_wordlist: không cần choices từ BE (nằm trong promptMd)
-  if (uiKind === "matching_information") {
+  // matching_information_wordlist: WordListCompletionCard reads `wordList`
+  // straight off the question — no choices to derive here. Leave `base` bare
+  // so the registry handler can pull wordList via RawQuestion.
+  if (isMatchingWordList) {
     return base;
   }
 
-  // matching_paragraph: hiện bạn đang render input A-F theo q.order/placeholder
-  if (uiKind === "matching_paragraph") {
-    return {
-      ...base,
-    };
-  }
-
-  // completion & others
+  // matching_information_paragraph (A-F single-letter input rendered inline
+  // by QuestionPanel) and all completion types: nothing extra to attach.
   return base;
 }

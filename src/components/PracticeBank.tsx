@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { getQuestionTypes } from "@/utils/api";
+import { QUESTION_TYPE_LABELS } from "@langfens/question-schema";
 
 export type PracticeItem = {
   id: string;
@@ -22,34 +23,16 @@ export type PracticeItem = {
 };
 
 export type PracticeBankProps = {
-  items?: PracticeItem[];
+  items: PracticeItem[];
   pageSize?: number;
   className?: string;
-  userId: string;
+  userId?: string;
   skill: string;
   onQuestionTypesChange?: (types: string[]) => void;
   loading?: boolean;
 };
 
 type QuestionType = { type: string; count: number };
-
-const QUESTION_TYPE_LABELS: Record<string, string> = {
-  TRUE_FALSE_NOT_GIVEN: "True/False/NG",
-  YES_NO_NOT_GIVEN: "Yes/No/NG",
-  MCQ_SINGLE: "Multiple Choice",
-  MCQ_MULTIPLE: "Multiple Selection",
-  MULTIPLE_CHOICE_SINGLE: "Multiple Choice",
-  MULTIPLE_CHOICE_MULTIPLE: "Multiple Selection",
-  MATCHING_HEADING: "Matching Headings",
-  MATCHING_INFORMATION: "Matching Info",
-  MATCHING_FEATURES: "Matching Features",
-  SUMMARY_COMPLETION: "Gap Filling",
-  TABLE_COMPLETION: "Table Completion",
-  SENTENCE_COMPLETION: "Sentence Completion",
-  DIAGRAM_LABEL: "Diagram Label",
-  SHORT_ANSWER: "Short Answer",
-  MAP_LABEL: "Map Label",
-};
 
 // Skill-based filter chip colors using CSS variables
 const SKILL_CHIP_COLORS: Record<
@@ -77,6 +60,12 @@ const SKILL_CHIP_COLORS: Record<
     activeBorder: "var(--skill-speaking-border)",
   },
 };
+
+/** SSOT `QUESTION_TYPE_LABELS` covers both canonical and deprecated slugs
+ * (MCQ_SINGLE/MCQ_MULTIPLE), so the same map resolves either form. */
+function labelFor(type: string): string {
+  return QUESTION_TYPE_LABELS[type as keyof typeof QUESTION_TYPE_LABELS] ?? type;
+}
 
 function SkeletonCard() {
   return (
@@ -287,7 +276,7 @@ export default function PracticeBank({
                         fontFamily: "var(--font-heading)",
                       }}
                     >
-                      {QUESTION_TYPE_LABELS[qt.type] || qt.type}
+                      {labelFor(qt.type)}
                       <span className="ml-1.5 opacity-70">({qt.count})</span>
                     </button>
                   );
@@ -318,7 +307,7 @@ export default function PracticeBank({
                 fontFamily: "var(--font-heading)",
               }}
             >
-              {QUESTION_TYPE_LABELS[type] || type}
+              {labelFor(type)}
               <button
                 onClick={() =>
                   setSelectedTypes((prev) => prev.filter((t) => t !== type))
@@ -368,7 +357,7 @@ export default function PracticeBank({
             const examTypeLabel =
               examType === 1 ? "Task 1" : examType === 2 ? "Task 2" : null;
             const primaryType = examTypeLabel
-              ?? (types[0] ? (QUESTION_TYPE_LABELS[types[0]] || types[0]) : null);
+              ?? (types[0] ? labelFor(types[0]) : null);
 
             return (
               <motion.article

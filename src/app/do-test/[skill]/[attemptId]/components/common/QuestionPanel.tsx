@@ -8,64 +8,91 @@ import { AttemptQuestionGroup } from "@/app/store/useAttemptStore";
 import { QuestionComponentRegistry, RawQuestion } from "../QuestionComponentRegistry";
 import { QuestionFeedbackPanel } from "../QuestionFeedbackPanel";
 import type { RagFeedbackEnvelope } from "@/types/rag";
+import type { QuestionTypeSlug } from "@langfens/question-schema";
 
 type Choice = { value: string; label: string };
 type QA = Record<string, string>;
 
-// Map BackendQuestionType → uiKind for dispatch decisions
-function deriveUiKind(type: string): string {
-  switch (type) {
-    case "TRUE_FALSE_NOT_GIVEN":
-    case "YES_NO_NOT_GIVEN":
-    case "MULTIPLE_CHOICE_SINGLE":
-    case "MULTIPLE_CHOICE_SINGLE_IMAGE":
-    case "CLASSIFICATION":
-      return "forice_single";
-    case "MULTIPLE_CHOICE_MULTIPLE":
-      return "forice_multiple";
-    case "FORM_COMPLETION":
-    case "NOTE_COMPLETION":
-    case "SENTENCE_COMPLETION":
-    case "SUMMARY_COMPLETION":
-    case "TABLE_COMPLETION":
-    case "SHORT_ANSWER":
-    case "DIAGRAM_LABEL":
-    case "MAP_LABEL":
-      return "completion";
-    case "MATCHING_FEATURES":
-    case "MATCHING_ENDINGS":
-      return "matching_letter";
-    case "MATCHING_HEADING":
-      return "matching_heading";
-    case "MATCHING_INFORMATION":
-      return "matching_information";
-    case "FLOW_CHART":
-      return "flow_chart";
-    default:
-      return "completion";
-  }
+/**
+ * Question types whose renderer takes `values` + `onBlankChange` (one input
+ * per `___` blank in the prompt), as opposed to a single `selected`/`value`
+ * input. Phase 1 made SummaryCompletionCard the dispatch target for every
+ * blank-bearing type when `values` is supplied; the rest of the completion
+ * family still falls through to FillInBlankCard via the registry.
+ */
+const COMPLETION_SLUGS: Record<QuestionTypeSlug, boolean> = {
+  FORM_COMPLETION: true,
+  NOTE_COMPLETION: true,
+  SENTENCE_COMPLETION: true,
+  SUMMARY_COMPLETION: true,
+  TABLE_COMPLETION: true,
+  SHORT_ANSWER: true,
+  AUDIO_RESPONSE: true,
+  DIAGRAM_LABEL: true,
+  MAP_LABEL: true,
+  FLOW_CHART_COMPLETION: true,
+  TRUE_FALSE_NOT_GIVEN: false,
+  YES_NO_NOT_GIVEN: false,
+  MULTIPLE_CHOICE_SINGLE: false,
+  MULTIPLE_CHOICE_SINGLE_IMAGE: false,
+  MULTIPLE_CHOICE_MULTIPLE: false,
+  MATCHING_HEADING: false,
+  MATCHING_INFORMATION: false,
+  MATCHING_FEATURES: false,
+  MATCHING_ENDINGS: false,
+  CLASSIFICATION: false,
+  FLOW_CHART: false,
+};
+
+/**
+ * Slugs whose renderer expects a single radio-style selection driven by
+ * `selected` + `onSelect`. Every other non-completion slug falls through
+ * to the `value` + `onChange` API.
+ */
+const CHOICE_SLUGS: Record<QuestionTypeSlug, boolean> = {
+  TRUE_FALSE_NOT_GIVEN: true,
+  YES_NO_NOT_GIVEN: true,
+  MULTIPLE_CHOICE_SINGLE: true,
+  MULTIPLE_CHOICE_SINGLE_IMAGE: true,
+  CLASSIFICATION: true,
+  MULTIPLE_CHOICE_MULTIPLE: false,
+  MATCHING_HEADING: false,
+  MATCHING_INFORMATION: false,
+  MATCHING_FEATURES: false,
+  MATCHING_ENDINGS: false,
+  FORM_COMPLETION: false,
+  NOTE_COMPLETION: false,
+  SENTENCE_COMPLETION: false,
+  SUMMARY_COMPLETION: false,
+  TABLE_COMPLETION: false,
+  SHORT_ANSWER: false,
+  AUDIO_RESPONSE: false,
+  DIAGRAM_LABEL: false,
+  MAP_LABEL: false,
+  FLOW_CHART: false,
+  FLOW_CHART_COMPLETION: false,
+};
+
+/**
+ * MATCHING_INFORMATION has two real render variants — same BE slug:
+ *   - "Word List" blanks (BE injects `**Word List:**` + `___` runs and
+ *     ships a structured `wordList`); rendered by WordListCompletionCard.
+ *   - Paragraph-match A-F inputs (no word list, just a stem with blanks);
+ *     rendered inline by QuestionPanel as an A-F single-letter input.
+ *
+ * The prompt tells us apart — replicate mapApiQuestionToUi's heuristic
+ * inline so the panel can dispatch without round-tripping through the
+ * upstream mapper.
+ */
+function isWordListBlank(promptMd: string | undefined): boolean {
+  const s = promptMd ?? "";
+  return s.includes("**Word List:**") && s.includes("___");
 }
-
-export type BackendQuestionType = string;
-
-export type QuestionUiKind =
-  | "forice_single"
-  | "forice_multiple"
-  | "completion"
-  | "short_answer"
-  | "matching_letter"
-  | "matching_heading"
-  | "flow_chart"
-  | "matching_paragraph"
-  | "matching_heading_select"
-  | "summary_completion"
-  | "matching_information";
 
 export type Question = {
   id: string;
   stem: string;
-  backendType: BackendQuestionType;
-  uiKind: QuestionUiKind;
+  backendType: QuestionTypeSlug;
   forices?: Array<string | Choice>;
   placeholder?: string;
   order?: string;
@@ -81,89 +108,35 @@ const instructionComponents = {
     <p className="whitespace-pre-wrap leading-relaxed text-sm text-[var(--foreground)]" {...props} />
   ),
   img: ({ node, src, alt, ...props }: any) => (
-    <img
-      src={src}
-      alt={alt || ""}
-      className="max-w-full h-auto rounded-lg shadow-md my-3 mx-auto block"
-      style={{ maxHeight: "300px" }}
-      {...props}
-    />
-  ),
-  h2: ({ node, ...props }: any) => (
-    <h2 className="text-lg font-bold text-[var(--foreground)] mt-4 mb-2" {...props} />
-  ),
-  h3: ({ node, ...props }: any) => (
-    <h3 className="text-base font-semibold text-[var(--text-body)] mt-3 mb-2" {...props} />
-  ),
-  strong: ({ node, ...props }: any) => (
-    <strong className="font-semibold text-[var(--foreground)]" {...props} />
-  ),
-  ul: ({ node, ...props }: any) => (
-    <ul className="list-disc pl-5 my-2 space-y-1" {...props} />
-  ),
-  li: ({ node, ...props }: any) => (
-    <li className="text-sm text-[var(--foreground)]" {...props} />
-  ),
-  // Add table components
-  table: ({ node, ...props }: any) => (
-    <div className="overflow-x-auto my-4 border border-[var(--border)] rounded-lg">
-      <table className="min-w-full divide-y divide-[var(--border)] text-sm" {...props} />
-    </div>
-  ),
-  thead: ({ node, ...props }: any) => (
-    <thead className="bg-[var(--background)]" {...props} />
-  ),
-  tbody: ({ node, ...props }: any) => (
-    <tbody className="divide-y divide-[var(--border)] bg-white" {...props} />
-  ),
-  tr: ({ node, ...props }: any) => (
-    <tr className="hover:bg-[var(--background)]" {...props} />
-  ),
-  th: ({ node, ...props }: any) => (
-    <th className="px-4 py-3 text-left text-xs font-medium text-[var(--text-muted)] tracking-wider font-bold border-b border-[var(--border)]" {...props} />
-  ),
-  td: ({ node, ...props }: any) => (
-    <td className="px-4 py-3 whitespace-pre-wrap text-[var(--text-body)] border-b border-[var(--border-light)]" {...props} />
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={src} alt={alt} {...props} />
   ),
 };
 
 function normalizeChoices(
   forices: Array<string | Choice> | undefined
 ): Choice[] {
-  if (!forices || forices.length === 0) return [];
-  return forices.map((c, i) =>
-    typeof c === "string" ? { value: String(i + 1), label: c } : c
-  );
+  if (!forices) return [];
+  return forices.map((c) => (typeof c === "string" ? { value: c, label: c } : c));
 }
 
 function unpackBlanks(value: string): string[] {
   if (!value) return [];
-  if (value.includes("\n")) return value.split("\n");
-  return [value];
+  return value.split(" ").map((v) => v.trim());
 }
 
 function packBlanks(values: string[]): string {
-  const cleaned = values.map((v) => (v ?? "").trim());
-  while (cleaned.length && cleaned[cleaned.length - 1] === "") cleaned.pop();
-  return cleaned.join("\n");
+  return values
+    .map((v) => v.trim())
+    .filter((v) => v.length > 0)
+    .join(" ");
 }
 
 // Clean raw answer strings like "feature-q1: D / D" -> "D"
 function cleanAnswer(s: string | undefined): string {
   if (!s) return "";
-  let clean = String(s)
-    .replace(/blank[-_]\w+:\s*/gi, "")
-    .replace(/label[-_ ]*\w*:\s*/gi, "")
-    .replace(/^feature[-_]?q?\d*:\s*/i, "")
-    .replace(/^q\d+:\s*/i, "")
-    .replace(/^(heading|item|answer|key)[-_]?\d*:\s*/gi, "")
-    .replace(/^[\w-]+:\s*/, "")
-    .trim();
-  // Handle "D / D" patterns - take first value
-  if (clean.includes(" / ")) {
-    clean = clean.split(" / ")[0].trim();
-  }
-  return clean;
+  const m = s.match(/^[A-Za-z]/);
+  return m ? s.trim() : s.trim();
 }
 
 export type ReviewResult = {
@@ -187,14 +160,10 @@ const QuestionPanel = memo(function QuestionPanel({
 }: {
   questions: Question[];
   attemptId: string;
-  skill?: string;
+  skill: string;
   initialAnswers?: QA;
-  onAnswer?: (payload: {
-    attemptId: string;
-    questionId: string;
-    value: string;
-  }) => void;
-  onAnswersChange?: (answers: QA) => void;
+  onAnswer?: (a: { attemptId: string; questionId: string; value: string }) => void;
+  onAnswersChange?: (a: QA) => void;
   questionGroups?: AttemptQuestionGroup[];
   isReviewMode?: boolean;
   reviewData?: ReviewResult[];
@@ -278,7 +247,7 @@ const QuestionPanel = memo(function QuestionPanel({
             // exact double-prefix the question-data standard forbids.
             options: q.forices
               ? (q.forices as Choice[]).map((c, i) => {
-                  if (q.backendType === "MATCHING_HEADING" || q.uiKind === "matching_heading") {
+                  if (q.backendType === "MATCHING_HEADING") {
                     return {
                       id: typeof c === "string" ? String(i + 1) : c.value,
                       idx: i,
@@ -300,15 +269,15 @@ const QuestionPanel = memo(function QuestionPanel({
           // Dynamic dispatch via registry — replaces the giant switch statement
           const TargetComponent = QuestionComponentRegistry[q.backendType];
 
-          // Derive uiKind from backendType when not set in the legacy Question shape
-          const uiKind = q.uiKind || deriveUiKind(q.backendType);
-
-          if (uiKind === "matching_paragraph") {
-            // Inline rendering — not in registry (no stem match in BE type)
+          // MATCHING_INFORMATION-paragraph (A-F single-letter input) is the
+          // one inline rendering path; the wordlist variant dispatches to
+          // WordListCompletionCard via the registry. The discriminant is the
+          // prompt, not the slug.
+          if (q.backendType === "MATCHING_INFORMATION" && !isWordListBlank(q.stem)) {
             questionContent = (
               <div className="flex items-start gap-3 py-3 border-b last:border-b-0">
                 <span className="w-6 text-sm font-semibold text-[var(--text-body)]">
-                  {q.order}.
+                  {q.order ?? ""}.
                 </span>
                 <p className="flex-1 text-sm text-[var(--foreground)] leading-relaxed">
                   {q.stem}
@@ -329,8 +298,7 @@ const QuestionPanel = memo(function QuestionPanel({
               </div>
             );
           } else if (TargetComponent) {
-            // Dispatch via registry — use derived uiKind for decision
-            if (uiKind === "forice_single") {
+            if (CHOICE_SLUGS[q.backendType]) {
               // Single-forice: use selected + onSelect API
               const normalizedChoices = normalizeChoices(q.forices);
               questionContent = (
@@ -340,10 +308,7 @@ const QuestionPanel = memo(function QuestionPanel({
                   onSelect={(_, v) => handleAnswer(q.id, v)}
                 />
               );
-            } else if (
-              uiKind === "completion" ||
-              uiKind === "summary_completion"
-            ) {
+            } else if (COMPLETION_SLUGS[q.backendType]) {
               // Completion types: unpack blanks for SummaryCompletionCard
               const arr = unpackBlanks(value);
               questionContent = (
@@ -386,56 +351,31 @@ const QuestionPanel = memo(function QuestionPanel({
               {/* Show group instruction before the first question of each group */}
               {groupInstruction && (
                 <div className="mb-4 p-4 bg-[var(--primary-light)] border-[3px] border-[var(--border)] rounded-[1.5rem] shadow-[0_4px_0_rgba(0,0,0,0.08)]">
-                  <ReactMarkdown
-                    components={instructionComponents}
-                    remarkPlugins={[remarkGfm]}
-                  >
-                    {groupInstruction.replace(/\\n/g, "\n")}
+                  <ReactMarkdown components={instructionComponents}>
+                    {groupInstruction}
                   </ReactMarkdown>
                 </div>
               )}
-
               {isReviewMode ? (
-                /* === REVIEW MODE: Clean Card === */
                 <div className={reviewCardClass}>
-                  {/* Header: Question Number + Content + Status */}
-                  <div className="p-4 flex gap-3">
-                    {/* Number Badge */}
-                    <span className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                      isCorrect === true
-                        ? "bg-[var(--background)] text-[var(--text-body)]"
-                        : isCorrect === false
-                          ? "bg-red-50 text-red-500"
-                          : "bg-[var(--background)] text-[var(--text-muted)]"
-                    }`}>
+                  <div className="flex items-baseline gap-2 p-3">
+                    <span className="inline-flex items-center justify-center min-w-[1.5rem] h-5 px-1.5 rounded-full bg-[var(--background)] text-[var(--text-body)] text-xs font-semibold">
                       {displayIdx + 1}
                     </span>
-
-                    <div className="flex-1 min-w-0">
-                      {/* Question Content (Read-only) */}
-                      <div className="pointer-events-none">
-                        {questionContent}
-                      </div>
-                    </div>
-
-                    {/* Status Icon */}
-                    <span className={`text-xl shrink-0 ${
-                      isCorrect === true
-                        ? "text-green-600"
-                        : isCorrect === false
-                          ? "text-red-500"
-                          : "text-[var(--text-muted)]"
-                    }`}>
-                      {isCorrect === true ? "Correct" : isCorrect === false ? "Wrong" : "--"}
-                    </span>
+                    <BookmarkButton
+                      questionId={q.id}
+                      attemptId={attemptId}
+                      skill={skill}
+                      questionContent={q.stem}
+                      questionType={q.backendType}
+                      className="opacity-50 hover:opacity-100"
+                    />
+                    <div className="flex-1">{questionContent}</div>
                   </div>
-
-                  {/* Footer: Answer Comparison */}
                   <div className="bg-[var(--background)] border-t border-[var(--border-light)] px-4 py-3 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* User Answer */}
                     <div>
                       <span className="text-[10px] font-bold text-[var(--text-muted)] tracking-wider block mb-1">
-                        Your Answer
+                        Your answer
                       </span>
                       <div className={`text-sm font-medium ${
                         isCorrect === true
