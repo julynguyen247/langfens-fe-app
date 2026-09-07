@@ -148,11 +148,20 @@ export function ReadingScreen({
 
   const sections = useMemo(() => {
     const secs = attempt?.paper?.sections ?? [];
-    return [...secs].sort((a: any, b: any) => a.idx - b.idx);
+    return [...secs].sort((a: any, b: any) => (a.idx ?? 0) - (b.idx ?? 0));
   }, [attempt?.paper?.sections]);
 
   const secFromUrl = sp.get("sec");
   const activeSec = sections.find((s) => s.id === secFromUrl) ?? sections[0];
+
+  const activeSecIndex = sections.findIndex((s) => s.id === activeSec?.id);
+  const questionsBefore = useMemo(() => {
+    if (activeSecIndex <= 0) return 0;
+    return sections.slice(0, activeSecIndex).reduce((total, sec) => {
+      const qs = (sec.questionGroups ?? []).flatMap((g: any) => g.questions ?? []);
+      return total + qs.length;
+    }, 0);
+  }, [sections, activeSecIndex]);
 
   const panelQuestions = useMemo<UiQuestion[]>(() => {
     const allQuestions = (activeSec?.questionGroups ?? []).flatMap(
@@ -164,11 +173,14 @@ export function ReadingScreen({
       seen.add(q.id);
       return true;
     });
-    return uniqueQuestions
-      .slice()
-      .sort((a: any, b: any) => a.idx - b.idx)
-      .map((q: any) => mapApiQuestionToUi(q));
-  }, [activeSec]);
+    return uniqueQuestions.map((q: any, idxInSec: number) => {
+      const continuousIdx = questionsBefore + idxInSec + 1;
+      return mapApiQuestionToUi({
+        ...q,
+        idx: continuousIdx,
+      });
+    });
+  }, [activeSec, questionsBefore]);
 
   const questionUiKindMap = useMemo(() => {
     const m: Record<string, QuestionUiKind> = {};

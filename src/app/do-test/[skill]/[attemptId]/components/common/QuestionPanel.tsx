@@ -217,18 +217,22 @@ const QuestionPanel = memo(function QuestionPanel({
     [questions]
   );
 
-  // Build a map of question index (1-based) to group instructionMd for first questions
-  const groupInstructionByIdx = useMemo(() => {
-    const map: Record<number, string> = {};
+  // Build a map of first question ID to group instructionMd
+  const groupInstructionByQuestionId = useMemo(() => {
+    const map: Record<string, string> = {};
     if (questionGroups && questionGroups.length > 0) {
       for (const grp of questionGroups) {
         if (grp.instructionMd) {
-          map[grp.startIdx] = grp.instructionMd;
+          const firstQ = grp.questions?.[0];
+          if (firstQ?.id) {
+            map[String(firstQ.id)] = grp.instructionMd;
+          }
         }
       }
     }
     return map;
   }, [questionGroups]);
+
 
   const [answers, setAnswers] = useState<QA>(() => initialAnswers ?? {});
   const onAnswersChangeRef = useRef(onAnswersChange);
@@ -260,7 +264,7 @@ const QuestionPanel = memo(function QuestionPanel({
           // Get 1-based question index
           const questionIdx = q.idx ?? (displayIdx + 1);
           // Check if this question is the start of a group
-          const groupInstruction = groupInstructionByIdx[questionIdx];
+          const groupInstruction = groupInstructionByQuestionId[q.id];
 
           let questionContent: React.ReactNode = null;
 
@@ -308,7 +312,7 @@ const QuestionPanel = memo(function QuestionPanel({
             questionContent = (
               <div className="flex items-start gap-3 py-3 border-b last:border-b-0">
                 <span className="w-6 text-sm font-semibold text-[var(--text-body)]">
-                  {q.order}.
+                  {q.order || questionIdx}.
                 </span>
                 <p className="flex-1 text-sm text-[var(--foreground)] leading-relaxed">
                   {q.stem}
@@ -408,7 +412,7 @@ const QuestionPanel = memo(function QuestionPanel({
                           ? "bg-red-50 text-red-500"
                           : "bg-[var(--background)] text-[var(--text-muted)]"
                     }`}>
-                      {displayIdx + 1}
+                      {questionIdx}
                     </span>
 
                     <div className="flex-1 min-w-0">
@@ -507,7 +511,7 @@ const QuestionPanel = memo(function QuestionPanel({
                 /* === NORMAL (TEST) MODE === */
                 <div className={normalClass}>
                   <span className="inline-flex items-center justify-center min-w-[1.5rem] h-5 px-1.5 rounded-full bg-[var(--background)] text-[var(--text-body)] text-xs font-semibold">
-                    {displayIdx + 1}
+                    {questionIdx}
                   </span>
                   <BookmarkButton
                     questionId={q.id}

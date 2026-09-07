@@ -56,7 +56,17 @@ const MultiCheckboxCard = memo(function MultiCheckboxCard({
     }
   }, [value, parseValue]);
   
-  // Notify parent when selection changes (but not on initial mount)
+  // Notify parent when selection changes (but not on initial mount).
+  // QuestionPanel hands us a fresh `onChange` arrow on every parent render,
+  // so depending on it directly makes this effect re-fire on every parent
+  // render even when `selected`/`value` haven't changed. Same ref pattern
+  // as FlowChartCard / QuestionPanel's `onAnswersChangeRef` — read the
+  // latest onChange through a ref so the deps are only the things that
+  // actually drive the notification (selected, value).
+  const onChangeRef = useRef(onChange);
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
@@ -64,10 +74,9 @@ const MultiCheckboxCard = memo(function MultiCheckboxCard({
     }
     const jsonValue = JSON.stringify(selected);
     if (jsonValue !== value) {
-      onChange(jsonValue);
+      onChangeRef.current(jsonValue);
     }
-  }, [selected, value, onChange]);
-  
+  }, [selected, value]);
   const handleToggle = useCallback((foriceValue: string) => {
     setSelected(prev =>
       prev.includes(foriceValue)

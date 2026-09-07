@@ -54,21 +54,28 @@ export default function DoTestAttemptLayout({
 
   const passages = useMemo(() => {
     if (!attempt || skill !== "reading") return [];
-    return [...attempt.paper.sections]
-      .sort((a, b) => a.idx - b.idx)
-      .map((sec) => {
-        const qs = [...(sec.questionGroups ?? [])].sort(
-          (a, b) => a.idx - b.idx
-        );
-        const total = qs.length;
-        const start = total ? qs[0].idx : sec.idx;
-        const label = total
-          ? `${String(start).padStart(2, "0")}–${String(
-              start + total - 1
-            ).padStart(2, "0")}`
-          : `S${sec.idx}`;
-        return { id: sec.id, label, total, done: 0 };
-      });
+    const sortedSections = [...attempt.paper.sections].sort(
+      (a, b) => (a.idx ?? 0) - (b.idx ?? 0)
+    );
+    let runningStart = 1;
+    return sortedSections.map((sec) => {
+      const groups = [...(sec.questionGroups ?? [])].sort(
+        (a, b) => (a.idx ?? 0) - (b.idx ?? 0)
+      );
+      const allQs = groups.flatMap((g) => g.questions ?? []);
+      const totalQs = allQs.length;
+
+      // Continuous question numbering across all reading sections
+      const start = runningStart;
+      const end = runningStart + totalQs - 1;
+      runningStart = end + 1;
+
+      const label =
+        totalQs > 0
+          ? `${String(start).padStart(2, "0")}–${String(end).padStart(2, "0")}`
+          : `S${(sec.idx ?? 0) + 1}`;
+      return { id: sec.id, label, total: totalQs, done: 0 };
+    });
   }, [attempt, skill]);
 
   const currentSecId =
@@ -231,8 +238,10 @@ export default function DoTestAttemptLayout({
             onChangePassage={gotoSection}
             onJumpRange={jumpRange}
             onGridClick={() => {}}
-            rangeLabel={currentPassage?.label ?? ""}
-            rangePrevLabel={passages[currentIndex - 1]?.label ?? ""}
+            rangeLabel={passages[currentIndex + 1]?.label ? `Next ${passages[currentIndex + 1].label}` : "Next"}
+            rangePrevLabel={passages[currentIndex - 1]?.label ? `Prev ${passages[currentIndex - 1].label}` : "Prev"}
+            hasPrev={currentIndex > 0}
+            hasNext={currentIndex < passages.length - 1}
           />
         )}
       </div>

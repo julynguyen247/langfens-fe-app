@@ -83,6 +83,7 @@ export function mapApiQuestionToUi(q: ApiQuestion): Question {
 
   const base: Question = {
     id: q.id,
+    idx: q.idx,
     stem: q.promptMd, 
     backendType: q.type,
     uiKind,
