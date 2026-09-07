@@ -47,11 +47,13 @@ export function TrueFalseCard({
 
         if (isReview) {
           if (isCorrectChoice && isSelected) {
-            styleClass = "border-emerald-500 bg-emerald-50 text-emerald-900 font-bold shadow-xs";
+            styleClass = "border-emerald-500 bg-emerald-50 text-emerald-950 font-bold shadow-xs";
           } else if (isCorrectChoice && !isSelected) {
-            styleClass = "border-emerald-400 bg-emerald-50/50 text-emerald-800";
+            styleClass = "border-emerald-500 bg-emerald-50/60 text-emerald-900 font-semibold";
           } else if (!isCorrectChoice && isSelected) {
-            styleClass = "border-rose-500 bg-rose-50 text-rose-900 font-bold shadow-xs";
+            styleClass = "border-rose-500 bg-rose-50 text-rose-950 font-semibold shadow-xs";
+          } else {
+            styleClass = "border-slate-200 bg-slate-50/50 text-slate-500";
           }
         }
 
@@ -61,18 +63,28 @@ export function TrueFalseCard({
             type="button"
             disabled={isReview}
             onClick={() => onChange(choiceUpper)}
-            className={`py-3.5 px-4 rounded-2xl border-2 text-xs font-bold flex flex-col items-center justify-center gap-1 transition-all shadow-2xs cursor-pointer ${styleClass}`}
+            className={`py-4 px-4 rounded-2xl border-2 text-xs font-bold flex flex-col items-center justify-center gap-1.5 transition-all shadow-2xs cursor-pointer ${styleClass}`}
           >
-            <span>{choice}</span>
-            {isReview && isCorrectChoice && (
-              <span className="text-[9px] uppercase font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md border border-emerald-300">
-                Correct
-              </span>
-            )}
-            {isReview && isSelected && !isCorrectChoice && (
-              <span className="text-[9px] uppercase font-bold text-rose-800 bg-rose-100 px-2 py-0.5 rounded-md border border-rose-300">
-                Your Answer
-              </span>
+            <span className="text-sm tracking-wide">{choice}</span>
+
+            {isReview && (
+              <div className="mt-0.5">
+                {isCorrectChoice && isSelected && (
+                  <span className="text-[10px] uppercase font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-md border border-emerald-300">
+                    ✓ Your Choice (Correct)
+                  </span>
+                )}
+                {isCorrectChoice && !isSelected && (
+                  <span className="text-[10px] uppercase font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-md border border-emerald-300">
+                    ✓ Correct Answer
+                  </span>
+                )}
+                {isSelected && !isCorrectChoice && (
+                  <span className="text-[10px] uppercase font-bold text-rose-800 bg-rose-100 px-2.5 py-0.5 rounded-md border border-rose-300">
+                    ✕ Your Choice (Incorrect)
+                  </span>
+                )}
+              </div>
             )}
           </button>
         );

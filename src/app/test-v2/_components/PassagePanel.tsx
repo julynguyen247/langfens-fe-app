@@ -36,8 +36,11 @@ export function PassagePanel({
         const label = labelMatch[1];
         const restContent = text.replace(/^\s*\[([A-Z])\]\s*/, "");
         return (
-          <div className="relative my-6 pl-8">
-            <span className="absolute left-0 top-0 font-sans text-sm font-bold text-slate-400 select-none">
+          <div
+            id={`para-${label}`}
+            className="relative my-6 pl-12 scroll-mt-20 transition-colors rounded-2xl p-2 hover:bg-amber-50/50"
+          >
+            <span className="absolute left-1 top-2.5 font-mono text-xs font-bold text-[#2563EB] bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-lg select-none">
               [{label}]
             </span>
             <p className="font-serif text-slate-800 text-justify leading-loose">

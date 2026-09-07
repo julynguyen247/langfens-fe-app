@@ -41,38 +41,42 @@ export function CompletionCard({
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {blankKeys.map((key) => {
         const userVal = userDict[key] || "";
         const accepted = texts[key] || [];
 
         let isCorrect = false;
-        if (isReview) {
-          const cleanUser = userVal.trim().toLowerCase();
-          if (cleanUser && accepted.some((acc) => acc && acc.trim().toLowerCase() === cleanUser)) {
+        const cleanUser = userVal.trim().toLowerCase();
+        if (isReview && cleanUser) {
+          if (accepted.some((acc) => acc && acc.trim().toLowerCase() === cleanUser)) {
             isCorrect = true;
           }
         }
 
         let inputClass = "bg-white border-slate-300 text-slate-900 focus:border-[#2563EB]";
         if (isReview) {
-          inputClass = isCorrect
-            ? "bg-emerald-50 border-emerald-500 text-emerald-950 font-bold"
-            : "bg-rose-50 border-rose-500 text-rose-950 font-bold";
+          if (isCorrect) {
+            inputClass = "bg-emerald-50 border-emerald-500 text-emerald-950 font-bold";
+          } else if (cleanUser) {
+            inputClass = "bg-rose-50 border-rose-500 text-rose-950 font-semibold";
+          } else {
+            inputClass = "bg-slate-50 border-slate-300 text-slate-400 italic";
+          }
         }
 
         return (
-          <div key={key} className="space-y-1.5">
+          <div key={key} className="space-y-1.5 p-3 rounded-2xl bg-slate-50/50 border border-slate-100">
             <div className="flex items-center gap-3">
               <span className="font-mono text-xs font-bold text-[#2563EB] bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-xl shrink-0">
-                [{key}]
+                Blank [{key}]
               </span>
 
               <div className="flex-1 relative">
                 <input
                   type="text"
                   disabled={isReview}
-                  value={userVal}
+                  value={isReview && !cleanUser ? "(Unanswered)" : userVal}
                   onChange={(e) => handleInputChange(key, e.target.value)}
                   placeholder={`Type answer for blank [${key}]...`}
                   className={`w-full rounded-xl border-2 px-4 py-2.5 text-xs sm:text-sm focus:outline-none transition-all shadow-2xs ${inputClass}`}
@@ -92,8 +96,13 @@ export function CompletionCard({
 
             {/* Review feedback: show correct acceptable answers */}
             {isReview && !isCorrect && (
-              <div className="ml-16 text-xs text-emerald-700 font-mono font-medium">
-                Accepted: <strong className="text-emerald-800">{accepted.join(" | ") || "N/A"}</strong>
+              <div className="ml-16 pl-4 text-xs space-y-0.5 pt-1">
+                <div className="flex items-center gap-1.5 text-emerald-700 font-bold">
+                  <span>✓ Correct answer:</span>
+                  <span className="font-mono text-emerald-900 bg-emerald-100/60 px-2 py-0.5 rounded border border-emerald-200">
+                    {accepted.join(" | ") || "N/A"}
+                  </span>
+                </div>
               </div>
             )}
           </div>

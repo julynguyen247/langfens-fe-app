@@ -46,13 +46,11 @@ export function FlowChartCompletionCard({
 
   let stepIdx = 0;
   for (const line of lines) {
-    // Check if line is a numbered step (e.g. "1. Plant seeds in __________")
     const match = line.match(/^(\d+)\.\s*(.*)$/);
     if (match) {
       const stepNum = Number(match[1]);
       const content = match[2];
 
-      // Split on underscore blanks (two or more underscores) or brackets [1]
       const parts = content.split(/_{2,}|\[\d+\]/);
       const prefix = parts[0] ? parts[0].trim() : "";
       const suffix = parts[1] ? parts[1].trim() : "";
@@ -74,7 +72,7 @@ export function FlowChartCompletionCard({
       steps.push({
         stepNumber: i + 1,
         key: k,
-        prefix: `Step ${i + 1}`,
+        prefix: `Stage ${i + 1}`,
         suffix: "",
       });
     });
@@ -94,9 +92,9 @@ export function FlowChartCompletionCard({
           const accepted = texts[step.key] || [];
 
           let isCorrect = false;
-          if (isReview) {
-            const cleanUser = userVal.trim().toLowerCase();
-            if (cleanUser && accepted.some((acc) => acc && acc.trim().toLowerCase() === cleanUser)) {
+          const cleanUser = userVal.trim().toLowerCase();
+          if (isReview && cleanUser) {
+            if (accepted.some((acc) => acc && acc.trim().toLowerCase() === cleanUser)) {
               isCorrect = true;
             }
           }
@@ -105,14 +103,14 @@ export function FlowChartCompletionCard({
           if (isReview) {
             inputClass = isCorrect
               ? "bg-emerald-50 border-2 border-emerald-500 text-emerald-950 font-bold"
-              : "bg-rose-50 border-2 border-rose-500 text-rose-950 font-bold";
+              : "bg-rose-50 border-2 border-rose-500 text-rose-950 font-semibold";
           }
 
           return (
             <div key={step.key} className="space-y-2">
               {/* Flowchart Box */}
               <div
-                className={`p-4 rounded-2xl border-2 transition-all shadow-2xs ${
+                className={`p-5 rounded-2xl border-2 transition-all shadow-2xs ${
                   isReview
                     ? isCorrect
                       ? "bg-white border-emerald-400 ring-2 ring-emerald-50"
@@ -126,7 +124,7 @@ export function FlowChartCompletionCard({
                     {step.stepNumber}
                   </span>
                   <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                    Step {step.stepNumber}
+                    Stage {step.stepNumber}
                   </span>
                   {isReview && (
                     <span className="ml-auto text-xs">
@@ -150,19 +148,22 @@ export function FlowChartCompletionCard({
                   <input
                     type="text"
                     disabled={isReview}
-                    value={userVal}
+                    value={isReview && !cleanUser ? "(Unanswered)" : userVal}
                     onChange={(e) => handleInputChange(step.key, e.target.value)}
                     placeholder="[ type answer ]"
-                    className={`rounded-xl px-3 py-1.5 text-xs sm:text-sm font-medium focus:outline-none min-w-40 transition-all ${inputClass}`}
+                    className={`rounded-xl px-3.5 py-1.5 text-xs sm:text-sm font-medium focus:outline-none min-w-44 transition-all ${inputClass}`}
                   />
 
                   {step.suffix && <span>{step.suffix}</span>}
                 </div>
 
-                {/* Review Mode Accepted Text */}
+                {/* Review Mode Inline Correct Answer */}
                 {isReview && !isCorrect && (
-                  <div className="mt-2.5 pt-2 border-t border-slate-100 text-xs text-emerald-700 font-mono">
-                    Accepted: <strong className="text-emerald-800">{accepted.join(" | ") || "N/A"}</strong>
+                  <div className="mt-3 pt-2.5 border-t border-rose-100 text-xs flex items-center gap-2">
+                    <span className="text-emerald-700 font-bold">✓ Correct answer:</span>
+                    <span className="font-mono text-emerald-900 font-bold bg-emerald-100/60 px-2.5 py-0.5 rounded border border-emerald-300">
+                      {accepted.join(" | ") || "N/A"}
+                    </span>
                   </div>
                 )}
               </div>

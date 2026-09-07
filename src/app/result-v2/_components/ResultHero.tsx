@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { AttemptResultData } from "../_lib/types";
+import { AttemptAnswerItem, AttemptResultData } from "../_lib/types";
 
 interface ResultHeroProps {
   result: AttemptResultData;
+  answersByDisplayIdx?: Record<number, AttemptAnswerItem>;
 }
 
-export function ResultHero({ result }: ResultHeroProps) {
+export function ResultHero({ result, answersByDisplayIdx = {} }: ResultHeroProps) {
   const band = result.ieltsBand || 0;
   let bandColor = "text-[#2563EB] border-blue-200 bg-blue-50/80";
   if (band >= 8.0) {
@@ -21,17 +22,47 @@ export function ResultHero({ result }: ResultHeroProps) {
   const incorrectCount = Math.max(0, result.totalQuestion - result.correctCount);
   const examId = result.examId || result.paper?.id;
 
+  // Calculate score breakdown for each Section / Part
+  const sectionBreakdowns = (result.paper?.sections || []).map((sec, i) => {
+    const questionIndices: number[] = [];
+    for (const q of sec.questions || []) {
+      questionIndices.push(q.displayIdx ?? q.idx);
+    }
+    for (const grp of sec.questionGroups || []) {
+      for (const q of grp.questions || []) {
+        const num = q.displayIdx ?? q.idx;
+        if (!questionIndices.includes(num)) questionIndices.push(num);
+      }
+    }
+
+    const total = questionIndices.length;
+    const correct = questionIndices.filter(
+      (idx) => answersByDisplayIdx[idx]?.isCorrect === true
+    ).length;
+
+    const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
+
+    return {
+      partNumber: i + 1,
+      title: sec.title || `Part ${i + 1}`,
+      correct,
+      total,
+      pct,
+    };
+  });
+
   return (
     <div className="p-8 rounded-3xl bg-white border-2 border-slate-200 shadow-xs space-y-6">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+      {/* Top section: Title, Band & Quick stats */}
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-6 border-b-2 border-slate-100">
         {/* Left: Info & Title */}
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <span className="px-2.5 py-1 text-xs font-bold rounded-lg bg-blue-50 text-[#2563EB] border border-blue-200 uppercase tracking-wider">
               {result.paper?.category || "IELTS"} Review
             </span>
-            <span className="text-xs font-medium text-slate-500">
-              Attempt: #{result.attemptId.slice(0, 8)}
+            <span className="text-xs font-medium text-slate-500 font-mono">
+              Attempt #{result.attemptId.slice(0, 8)}
             </span>
           </div>
 
@@ -117,6 +148,47 @@ export function ResultHero({ result }: ResultHeroProps) {
           </Link>
         </div>
       </div>
+
+      {/* Bottom section: Part 1 / Part 2 / Part 3 Score Breakdown */}
+      {sectionBreakdowns.length > 0 && (
+        <div className="space-y-3">
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-600 block">
+            Section / Part Breakdown
+          </span>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {sectionBreakdowns.map((part) => (
+              <div
+                key={part.partNumber}
+                className="p-4 rounded-2xl bg-slate-50 border-2 border-slate-200 space-y-2.5 shadow-2xs"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-xs text-slate-800 truncate" title={part.title}>
+                    Part {part.partNumber}
+                  </span>
+                  <span className="font-mono text-xs font-bold text-slate-700">
+                    {part.correct} / {part.total} ({part.pct}%)
+                  </span>
+                </div>
+
+                {/* Progress bar */}
+                <div className="h-2 w-full rounded-full bg-slate-200 overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all ${
+                      part.pct >= 80
+                        ? "bg-emerald-500"
+                        : part.pct >= 50
+                        ? "bg-[#2563EB]"
+                        : "bg-amber-500"
+                    }`}
+                    style={{ width: `${part.pct}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

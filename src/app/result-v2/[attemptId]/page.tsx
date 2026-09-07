@@ -322,9 +322,8 @@ export default function ResultV2Page({
           ref={rightPanelRef}
           className="w-1/2 h-full overflow-y-auto p-6 space-y-6 select-text"
         >
-          {/* Result Hero Banner */}
-          <ResultHero result={result} />
-
+          {/* Result Hero Banner with Section Breakdown */}
+          <ResultHero result={result} answersByDisplayIdx={answersByDisplayIdx} />
           {/* Section Heading & Filter Bar */}
           <div className="space-y-3 pb-3 border-b-2 border-slate-200">
             <div className="flex items-center justify-between">
@@ -408,11 +407,12 @@ export default function ResultV2Page({
         </div>
       </div>
 
-      {/* Bottom Result Navigator */}
+      {/* Bottom Result Navigator with Part dividers */}
       <ResultNavigator
         totalQuestions={allFlattenedQuestions.length}
         answersByDisplayIdx={answersByDisplayIdx}
         activeIdx={activeQuestionIdx}
+        sections={result.paper.sections}
         onSelect={handleSelectQuestion}
       />
     </div>

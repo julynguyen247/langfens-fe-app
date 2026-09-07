@@ -1,11 +1,12 @@
 "use client";
 
-import { AttemptAnswerItem } from "../_lib/types";
+import { AttemptAnswerItem, InternalDeliverySection } from "../_lib/types";
 
 interface ResultNavigatorProps {
   totalQuestions: number;
   answersByDisplayIdx: Record<number, AttemptAnswerItem>;
   activeIdx?: number | null;
+  sections?: InternalDeliverySection[];
   onSelect: (displayIdx: number) => void;
 }
 
@@ -13,58 +14,102 @@ export function ResultNavigator({
   totalQuestions,
   answersByDisplayIdx,
   activeIdx,
+  sections,
   onSelect,
 }: ResultNavigatorProps) {
-  const indices = Array.from({ length: totalQuestions }, (_, i) => i + 1);
+  // If sections provided, group questions by section
+  const sectionGroups = (sections || []).map((sec, i) => {
+    const indices: number[] = [];
+    for (const q of sec.questions || []) {
+      const num = q.displayIdx ?? q.idx;
+      if (!indices.includes(num)) indices.push(num);
+    }
+    for (const grp of sec.questionGroups || []) {
+      for (const q of grp.questions || []) {
+        const num = q.displayIdx ?? q.idx;
+        if (!indices.includes(num)) indices.push(num);
+      }
+    }
+    indices.sort((a, b) => a - b);
+
+    return {
+      partNumber: i + 1,
+      indices,
+    };
+  }).filter((g) => g.indices.length > 0);
+
+  const renderButton = (idx: number) => {
+    const ans = answersByDisplayIdx[idx];
+    const isCorrect = ans?.isCorrect === true;
+    const isWrong = ans?.isCorrect === false;
+    const isActive = activeIdx === idx;
+
+    let btnClass = "bg-slate-100 border-2 border-slate-200 text-slate-500 hover:bg-slate-200";
+    if (isCorrect) {
+      btnClass = "bg-emerald-500 border-2 border-emerald-600 text-white font-bold shadow-xs";
+    } else if (isWrong) {
+      btnClass = "bg-rose-500 border-2 border-rose-600 text-white font-bold shadow-xs";
+    }
+
+    if (isActive) {
+      btnClass += " ring-3 ring-[#2563EB] ring-offset-2 scale-105 z-10";
+    }
+
+    return (
+      <button
+        key={idx}
+        type="button"
+        onClick={() => onSelect(idx)}
+        className={`w-8 h-8 rounded-full text-xs font-mono flex items-center justify-center transition-all cursor-pointer shrink-0 ${btnClass}`}
+        title={`Question ${idx}: ${isCorrect ? "Correct" : isWrong ? "Incorrect" : "Unanswered"}`}
+      >
+        {idx}
+      </button>
+    );
+  };
 
   return (
     <footer className="fixed bottom-0 inset-x-0 h-16 z-40 bg-white/95 backdrop-blur-md border-t-2 border-slate-200 flex items-center justify-between px-6 select-none font-sans shadow-xs">
       {/* Question buttons row */}
-      <div className="flex items-center gap-2 overflow-x-auto py-2 pr-4 flex-1">
-        {indices.map((idx) => {
-          const ans = answersByDisplayIdx[idx];
-          const isCorrect = ans?.isCorrect === true;
-          const isWrong = ans?.isCorrect === false;
-          const isActive = activeIdx === idx;
+      <div className="flex items-center gap-4 overflow-x-auto py-2 pr-4 flex-1">
+        {sectionGroups.length > 0 ? (
+          sectionGroups.map((group, gIndex) => (
+            <div key={group.partNumber} className="flex items-center gap-2 shrink-0">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono shrink-0 mr-1">
+                P{group.partNumber}
+              </span>
 
-          let btnClass = "bg-slate-100 border-2 border-slate-200 text-slate-500";
-          if (isCorrect) {
-            btnClass = "bg-emerald-500 border-2 border-emerald-600 text-white font-bold shadow-xs";
-          } else if (isWrong) {
-            btnClass = "bg-rose-500 border-2 border-rose-600 text-white font-bold shadow-xs";
-          }
+              <div className="flex items-center gap-1.5">
+                {group.indices.map((idx) => renderButton(idx))}
+              </div>
 
-          if (isActive) {
-            btnClass += " ring-3 ring-[#2563EB] ring-offset-2 scale-105 z-10";
-          }
-
-          return (
-            <button
-              key={idx}
-              type="button"
-              onClick={() => onSelect(idx)}
-              className={`w-8 h-8 rounded-full text-xs font-mono flex items-center justify-center transition-all cursor-pointer shrink-0 ${btnClass}`}
-              title={`Question ${idx}: ${isCorrect ? "Correct" : isWrong ? "Incorrect" : "Unanswered"}`}
-            >
-              {idx}
-            </button>
-          );
-        })}
+              {gIndex < sectionGroups.length - 1 && (
+                <div className="h-6 w-[2px] bg-slate-200 mx-2 shrink-0" />
+              )}
+            </div>
+          ))
+        ) : (
+          <div className="flex items-center gap-1.5">
+            {Array.from({ length: totalQuestions }, (_, i) => i + 1).map((idx) =>
+              renderButton(idx)
+            )}
+          </div>
+        )}
       </div>
 
       {/* Legend */}
       <div className="hidden lg:flex items-center gap-4 pl-4 border-l-2 border-slate-200 shrink-0 text-xs font-medium text-slate-500">
         <div className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded-full bg-emerald-500 border border-emerald-600" />
-          <span className="text-slate-700">Correct</span>
+          <span className="text-slate-700 font-medium">Correct</span>
         </div>
         <div className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded-full bg-rose-500 border border-rose-600" />
-          <span className="text-slate-700">Incorrect</span>
+          <span className="text-slate-700 font-medium">Incorrect</span>
         </div>
         <div className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded-full bg-slate-100 border-2 border-slate-200" />
-          <span className="text-slate-700">Unanswered</span>
+          <span className="text-slate-700 font-medium">Unanswered</span>
         </div>
       </div>
     </footer>

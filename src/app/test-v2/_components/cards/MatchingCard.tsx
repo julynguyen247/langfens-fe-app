@@ -83,7 +83,8 @@ export function MatchingCard({
           const correctKey = (targetPair[0] || "").toLowerCase();
           const correctLabel = targetPair[1] || targetPair[0] || "";
 
-          const isMatchCorrect = isReview && userChoice === correctKey;
+          const isMatchCorrect = isReview && userChoice && userChoice === correctKey;
+          const hasAnswered = Boolean(userChoice);
 
           let borderClass = "border-slate-200 bg-white";
           if (isReview) {
@@ -95,50 +96,56 @@ export function MatchingCard({
           return (
             <div
               key={pKey}
-              className={`p-4 rounded-2xl border-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all shadow-2xs ${borderClass}`}
+              className={`p-4 rounded-2xl border-2 space-y-2 transition-all shadow-2xs ${borderClass}`}
             >
-              <div className="flex items-center gap-2.5">
-                <span className="font-mono text-xs font-bold text-[#2563EB] bg-blue-50 border border-blue-200 px-3 py-1 rounded-xl">
-                  {pKey}
-                </span>
-                <span className="text-xs font-bold text-slate-700">Matching target</span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <select
-                  disabled={isReview}
-                  value={userChoice}
-                  onChange={(e) => handleSelect(pKey, e.target.value)}
-                  className={`bg-white border-2 rounded-xl px-3.5 py-2 text-xs font-medium text-slate-800 focus:outline-none focus:border-[#2563EB] min-w-48 shadow-2xs ${
-                    isReview
-                      ? isMatchCorrect
-                        ? "border-emerald-500 text-emerald-900 font-bold"
-                        : "border-rose-500 text-rose-900 font-bold"
-                      : "border-slate-300"
-                  }`}
-                >
-                  <option value="">-- Select choice --</option>
-                  {choices.map((c) => (
-                    <option key={c.key} value={c.key}>
-                      [{c.key}] {c.label}
-                    </option>
-                  ))}
-                </select>
-
-                {isReview && (
-                  <span className="text-xs">
-                    {isMatchCorrect ? (
-                      <span className="text-emerald-600 font-bold">✓</span>
-                    ) : (
-                      <span className="text-rose-600 font-bold">✕</span>
-                    )}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <span className="font-mono text-xs font-bold text-[#2563EB] bg-blue-50 border border-blue-200 px-3 py-1 rounded-xl">
+                    Target [{pKey}]
                   </span>
-                )}
+                  <span className="text-xs font-bold text-slate-700">Match to choice</span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <select
+                    disabled={isReview}
+                    value={userChoice}
+                    onChange={(e) => handleSelect(pKey, e.target.value)}
+                    className={`bg-white border-2 rounded-xl px-3.5 py-2 text-xs font-medium text-slate-800 focus:outline-none focus:border-[#2563EB] min-w-48 shadow-2xs ${
+                      isReview
+                        ? isMatchCorrect
+                          ? "border-emerald-500 text-emerald-900 font-bold bg-emerald-50"
+                          : "border-rose-500 text-rose-900 font-bold bg-rose-50"
+                        : "border-slate-300"
+                    }`}
+                  >
+                    <option value="">{isReview && !hasAnswered ? "(Unanswered)" : "-- Select choice --"}</option>
+                    {choices.map((c) => (
+                      <option key={c.key} value={c.key}>
+                        [{c.key}] {c.label}
+                      </option>
+                    ))}
+                  </select>
+
+                  {isReview && (
+                    <span className="text-xs">
+                      {isMatchCorrect ? (
+                        <span className="text-emerald-600 font-bold text-sm">✓</span>
+                      ) : (
+                        <span className="text-rose-600 font-bold text-sm">✕</span>
+                      )}
+                    </span>
+                  )}
+                </div>
               </div>
 
+              {/* Review Mode: Inline correct answer display */}
               {isReview && !isMatchCorrect && (
-                <div className="text-xs text-emerald-700 sm:w-full font-mono mt-1">
-                  Correct: <strong className="text-emerald-800">[{correctKey}] {correctLabel}</strong>
+                <div className="pt-2 border-t border-rose-200 text-xs flex items-center gap-2">
+                  <span className="text-emerald-700 font-bold">✓ Correct match:</span>
+                  <span className="font-mono text-emerald-900 font-bold bg-emerald-100/60 px-2 py-0.5 rounded border border-emerald-300">
+                    [{correctKey}] {correctLabel}
+                  </span>
                 </div>
               )}
             </div>
