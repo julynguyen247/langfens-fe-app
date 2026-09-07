@@ -18,34 +18,6 @@ import { ShortAnswerCard } from "./cards/ShortAnswerCard";
 import { FlowChartCard } from "./cards/FlowChartCard";
 import { FlowChartCompletionCard } from "./cards/FlowChartCompletionCard";
 
-function formatAnswerDisplay(
-  val?: UserAnswerValue,
-  options?: InternalDeliveryOption[]
-): string {
-  if (val === undefined || val === null || val === "") return "(No answer provided)";
-  if (Array.isArray(val)) {
-    if (val.length === 0) return "(No answer provided)";
-    return val
-      .map((item) => {
-        const matched = options?.find(
-          (o) => o.id === item || o.contentMd.trim().toLowerCase() === String(item).trim().toLowerCase()
-        );
-        return matched?.contentMd || String(item);
-      })
-      .join(", ");
-  }
-  if (typeof val === "object") {
-    const entries = Object.entries(val);
-    if (entries.length === 0) return "(No answer provided)";
-    return entries.map(([k, v]) => `[${k}]: ${v}`).join(" ; ");
-  }
-
-  const str = String(val);
-  const matched = options?.find(
-    (o) => o.id === str || o.contentMd.trim().toLowerCase() === str.trim().toLowerCase()
-  );
-  return matched?.contentMd || str;
-}
 
 interface QuestionCardProps {
   question: InternalDeliveryQuestion;
@@ -270,69 +242,35 @@ export function QuestionCard({
       {/* Interactive question card */}
       <div>{renderBody()}</div>
 
-      {/* Review Mode Answer Summary & Explanation */}
-      {isReview && (
-        <div className="pt-4 border-t-2 border-slate-100 space-y-3">
-          <div className="p-5 rounded-2xl bg-slate-50 border-2 border-slate-200 text-xs space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-200/80">
-              <span className="font-bold text-slate-700 uppercase tracking-wider text-[11px]">
-                Answer Review & Analysis
-              </span>
-              <span
-                className={`font-bold px-2.5 py-0.5 rounded-md text-[10px] uppercase border ${
-                  isCorrect
-                    ? "bg-emerald-100 text-emerald-800 border-emerald-300"
-                    : "bg-rose-100 text-rose-800 border-rose-300"
-                }`}
-              >
-                {isCorrect ? "Correct ✓" : "Incorrect ✕"}
-              </span>
-            </div>
+      {/* Optional Explanation toggle (only if real explanation exists) */}
+      {isReview && Boolean(question.explanationMd?.trim()) && (
+        <div className="pt-3 border-t-2 border-slate-100">
+          <button
+            type="button"
+            onClick={() => setShowExplanation(!showExplanation)}
+            className="flex items-center gap-1.5 text-xs font-bold text-[#2563EB] hover:text-[#1D4ED8] transition cursor-pointer"
+          >
+            <span>{showExplanation ? "Hide Explanation" : "View Explanation"}</span>
+            <svg
+              className={`w-3.5 h-3.5 transform transition-transform ${
+                showExplanation ? "rotate-180" : ""
+              }`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2.5}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
-                  Correct Answer:
-                </span>
-                <span className="font-bold text-emerald-700 text-xs sm:text-sm font-sans block bg-white p-2.5 rounded-xl border border-emerald-200">
-                  {gradeResult?.correctAnswerText || "See highlighted choice above"}
-                </span>
-              </div>
-
-              <div>
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
-                  Your Answer:
-                </span>
-                <span
-                  className={`font-bold text-xs sm:text-sm font-sans block bg-white p-2.5 rounded-xl border ${
-                    isCorrect
-                      ? "text-emerald-700 border-emerald-200"
-                      : "text-rose-700 border-rose-200"
-                  }`}
-                >
-                  {formatAnswerDisplay(value, question.options)}
-                </span>
-              </div>
+          {showExplanation && (
+            <div className="mt-2.5 p-4 rounded-2xl bg-amber-50/70 border-2 border-amber-200 text-xs text-slate-800 leading-relaxed prose prose-slate max-w-none shadow-2xs">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {question.explanationMd}
+              </ReactMarkdown>
             </div>
-
-            {/* Explanation / Citation */}
-            <div className="pt-2 border-t border-slate-200/80 space-y-1.5">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                Explanation & Rationale:
-              </span>
-              <div className="text-xs text-slate-700 leading-relaxed prose prose-slate max-w-none">
-                {question.explanationMd ? (
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {question.explanationMd}
-                  </ReactMarkdown>
-                ) : (
-                  <p className="italic text-slate-500">
-                    Refer to the reading passage in Part {(question.displayIdx ? Math.ceil(question.displayIdx / 13) : 1)} for contextual evidence.
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
+          )}
         </div>
       )}
     </div>
