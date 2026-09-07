@@ -108,7 +108,8 @@ export function gradeSingleQuestion(
     t === QuestionType.FormCompletion ||
     t === QuestionType.SentenceCompletion ||
     t === QuestionType.DiagramLabel ||
-    t === QuestionType.MapLabel
+    t === QuestionType.MapLabel ||
+    t === QuestionType.FlowChartCompletion
   ) {
     const texts = q.blankAcceptTexts || {};
     const regex = q.blankAcceptRegex || {};
@@ -245,13 +246,12 @@ export function gradeSingleQuestion(
     };
   }
 
-  // 6. Flow Chart
-  if (t === QuestionType.FlowChart || t === QuestionType.FlowChartCompletion) {
+  // 6. Flow Chart Ordering
+  if (t === QuestionType.FlowChart) {
     const expected = (q.orderCorrects || []).map((k) => k.trim().toLowerCase());
     const userArr = Array.isArray(userAnswer)
       ? userAnswer.map((k) => String(k).trim().toLowerCase())
       : [];
-
     let isCorrect = false;
     if (expected.length > 0 && expected.length === userArr.length) {
       isCorrect = expected.every((val, idx) => val === userArr[idx]);
