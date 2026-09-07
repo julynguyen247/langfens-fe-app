@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getExamDelivery } from "@/app/admin/_lib/adminApi";
 import {
+  enrichExamWithSequentialNumbers,
   ExamGradeSummary,
   InternalDeliveryExam,
   InternalDeliveryQuestion,
@@ -69,11 +70,12 @@ export default function TestV2ExamPage({
       try {
         setLoading(true);
         setError(null);
-        const data = await getExamDelivery(examId, true);
-        if (!data) throw new Error("Exam payload empty or not found");
+        const raw = await getExamDelivery(examId, true);
+        if (!raw) throw new Error("Exam payload empty or not found");
 
-        setExam(data);
-        const durationSeconds = (data.durationMin || 60) * 60;
+        const { enrichedExam } = enrichExamWithSequentialNumbers(raw);
+        setExam(enrichedExam);
+        const durationSeconds = (enrichedExam.durationMin || 60) * 60;
         setTimeRemaining(durationSeconds);
       } catch (err: unknown) {
         setError(extractError(err));
@@ -103,19 +105,19 @@ export default function TestV2ExamPage({
     return () => clearInterval(timer);
   }, [isSubmitted, loading, exam]);
 
-  // All question indices across entire exam
+  // All question indices across entire exam (1, 2, 3 ... N)
   const allQuestionIndices = useMemo(() => {
     if (!exam) return [];
     const list: number[] = [];
     for (const sec of exam.sections || []) {
       for (const q of sec.questions || []) {
-        list.push(q.idx);
+        const num = q.displayIdx ?? q.idx;
+        if (!list.includes(num)) list.push(num);
       }
       for (const grp of sec.questionGroups || []) {
         for (const q of grp.questions || []) {
-          if (!list.includes(q.idx)) {
-            list.push(q.idx);
-          }
+          const num = q.displayIdx ?? q.idx;
+          if (!list.includes(num)) list.push(num);
         }
       }
     }
@@ -177,9 +179,11 @@ export default function TestV2ExamPage({
 
     // Find which section contains this question
     const secIndex = exam.sections.findIndex((sec) => {
-      const inMain = (sec.questions || []).some((q) => q.idx === qIdx);
+      const inMain = (sec.questions || []).some(
+        (q) => (q.displayIdx ?? q.idx) === qIdx
+      );
       const inGroup = (sec.questionGroups || []).some((g) =>
-        (g.questions || []).some((q) => q.idx === qIdx)
+        (g.questions || []).some((q) => (q.displayIdx ?? q.idx) === qIdx)
       );
       return inMain || inGroup;
     });
@@ -293,37 +297,42 @@ export default function TestV2ExamPage({
                   </span>
                   {grp.instructionMd}
                 </div>
-
                 {/* Group questions */}
-                {grp.questions.map((q) => (
-                  <QuestionCard
-                    key={q.id || q.idx}
-                    question={q}
-                    value={answers[q.idx]}
-                    isFlagged={flaggedIndices.includes(q.idx)}
-                    isReview={isSubmitted}
-                    gradeResult={gradeSummary?.resultsByQuestion[q.idx]}
-                    onAnswerChange={(val) => handleAnswerChange(q.idx, val)}
-                    onToggleFlag={() => handleToggleFlag(q.idx)}
-                  />
-                ))}
+                {grp.questions.map((q) => {
+                  const num = q.displayIdx ?? q.idx;
+                  return (
+                    <QuestionCard
+                      key={q.id || num}
+                      question={q}
+                      value={answers[num]}
+                      isFlagged={flaggedIndices.includes(num)}
+                      isReview={isSubmitted}
+                      gradeResult={gradeSummary?.resultsByQuestion[num]}
+                      onAnswerChange={(val) => handleAnswerChange(num, val)}
+                      onToggleFlag={() => handleToggleFlag(num)}
+                    />
+                  );
+                })}
               </div>
             ))}
 
           {/* Section root questions (ungrouped) */}
           <div className="space-y-4">
-            {currentSection.questions.map((q) => (
-              <QuestionCard
-                key={q.id || q.idx}
-                question={q}
-                value={answers[q.idx]}
-                isFlagged={flaggedIndices.includes(q.idx)}
-                isReview={isSubmitted}
-                gradeResult={gradeSummary?.resultsByQuestion[q.idx]}
-                onAnswerChange={(val) => handleAnswerChange(q.idx, val)}
-                onToggleFlag={() => handleToggleFlag(q.idx)}
-              />
-            ))}
+            {currentSection.questions.map((q) => {
+              const num = q.displayIdx ?? q.idx;
+              return (
+                <QuestionCard
+                  key={q.id || num}
+                  question={q}
+                  value={answers[num]}
+                  isFlagged={flaggedIndices.includes(num)}
+                  isReview={isSubmitted}
+                  gradeResult={gradeSummary?.resultsByQuestion[num]}
+                  onAnswerChange={(val) => handleAnswerChange(num, val)}
+                  onToggleFlag={() => handleToggleFlag(num)}
+                />
+              );
+            })}
           </div>
         </div>
       </div>

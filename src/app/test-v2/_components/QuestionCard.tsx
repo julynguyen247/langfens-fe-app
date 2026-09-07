@@ -151,9 +151,11 @@ export function QuestionCard({
 
   const isCorrect = isReview && gradeResult?.isCorrect;
 
+  const qIndex = question.displayIdx ?? question.idx;
+
   return (
     <div
-      id={`q-${question.idx}`}
+      id={`q-${qIndex}`}
       className={`rounded-3xl border-2 p-6 space-y-4 transition-all scroll-mt-24 shadow-2xs ${
         isReview
           ? isCorrect
@@ -166,7 +168,7 @@ export function QuestionCard({
       <div className="flex items-center justify-between gap-3 pb-3.5 border-b-2 border-slate-100">
         <div className="flex items-center gap-3">
           <span className="w-8 h-8 rounded-xl bg-blue-50 text-[#2563EB] border border-blue-200 flex items-center justify-center text-xs font-mono font-bold">
-            Q{question.idx}
+            Q{qIndex}
           </span>
           <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">
             {question.type.replace(/_/g, " ")}

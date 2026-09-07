@@ -34,6 +34,7 @@ export function gradeSingleQuestion(
   userAnswer?: UserAnswerValue
 ): QuestionGradeResult {
   const t = q.type;
+  const qIdx = q.displayIdx ?? q.idx;
 
   // 1. Single Choice, TFNG, YNNG, Single Image
   if (
@@ -55,7 +56,7 @@ export function gradeSingleQuestion(
     );
 
     return {
-      questionIdx: q.idx,
+      questionIdx: qIdx,
       isCorrect,
       score: isCorrect ? 1 : 0,
       maxScore: 1,
@@ -90,7 +91,7 @@ export function gradeSingleQuestion(
     const score = correctOpts.length > 0 ? matched / correctOpts.length : 0;
 
     return {
-      questionIdx: q.idx,
+      questionIdx: qIdx,
       isCorrect: isAllCorrect,
       score: Math.round(score * 100) / 100,
       maxScore: 1,
@@ -132,11 +133,9 @@ export function gradeSingleQuestion(
 
       let blankOk = false;
       if (userVal) {
-        // Direct string match
         if (acceptedList.some((acc) => acc && acc.trim().toLowerCase() === userVal)) {
           blankOk = true;
         } else if (regexList.length > 0) {
-          // Regex match
           for (const regStr of regexList) {
             try {
               if (regStr && new RegExp(regStr, "i").test(userVal)) {
@@ -159,7 +158,7 @@ export function gradeSingleQuestion(
     const isCorrect = correctBlanks === totalBlanks;
 
     return {
-      questionIdx: q.idx,
+      questionIdx: qIdx,
       isCorrect,
       score: Math.round((correctBlanks / totalBlanks) * 100) / 100,
       maxScore: 1,
@@ -203,7 +202,7 @@ export function gradeSingleQuestion(
     const isCorrect = correctPairs === totalPairs;
 
     return {
-      questionIdx: q.idx,
+      questionIdx: qIdx,
       isCorrect,
       score: Math.round((correctPairs / totalPairs) * 100) / 100,
       maxScore: 1,
@@ -237,7 +236,7 @@ export function gradeSingleQuestion(
     }
 
     return {
-      questionIdx: q.idx,
+      questionIdx: qIdx,
       isCorrect,
       score: isCorrect ? 1 : 0,
       maxScore: 1,
@@ -259,7 +258,7 @@ export function gradeSingleQuestion(
     }
 
     return {
-      questionIdx: q.idx,
+      questionIdx: qIdx,
       isCorrect,
       score: isCorrect ? 1 : 0,
       maxScore: 1,
@@ -270,7 +269,7 @@ export function gradeSingleQuestion(
 
   // Default fallback
   return {
-    questionIdx: q.idx,
+    questionIdx: qIdx,
     isCorrect: false,
     score: 0,
     maxScore: 1,
@@ -290,23 +289,28 @@ export function gradeExamPaper(
     }
     for (const grp of sec.questionGroups || []) {
       for (const q of grp.questions || []) {
-        if (!allQuestions.some((x) => x.idx === q.idx)) {
+        if (
+          !allQuestions.some((x) =>
+            x.id ? x.id === q.id : (x.displayIdx ?? x.idx) === (q.displayIdx ?? q.idx)
+          )
+        ) {
           allQuestions.push(q);
         }
       }
     }
   }
 
-  allQuestions.sort((a, b) => a.idx - b.idx);
+  allQuestions.sort((a, b) => (a.displayIdx ?? a.idx) - (b.displayIdx ?? b.idx));
 
   const resultsByQuestion: Record<number, QuestionGradeResult> = {};
   let totalScore = 0;
   let maxScore = 0;
 
   for (const q of allQuestions) {
-    const userAns = answers[q.idx];
+    const qIndex = q.displayIdx ?? q.idx;
+    const userAns = answers[qIndex];
     const res = gradeSingleQuestion(q, userAns);
-    resultsByQuestion[q.idx] = res;
+    resultsByQuestion[qIndex] = res;
     totalScore += res.score;
     maxScore += res.maxScore;
   }

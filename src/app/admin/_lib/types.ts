@@ -208,6 +208,7 @@ export interface InternalFlowChartNode {
 export interface InternalDeliveryQuestion {
   id?: string; // Resolved client-side from AdminQuestion
   idx: number;
+  displayIdx?: number; // Continuous 1..N sequential index across whole exam
   type: string;
   skill: string;
   difficulty: number;
