@@ -108,10 +108,12 @@ export default function ResultV2Page({
       const answerByQId = new Map<string, AttemptAnswerItem>();
       const answerByIdx = new Map<number, AttemptAnswerItem>();
       for (const a of result.answers) {
-        if (a.questionId) answerByQId.set(a.questionId, a);
+        if (a.questionId) {
+          answerByQId.set(a.questionId.toLowerCase(), a);
+          answerByQId.set(a.questionId, a);
+        }
         answerByIdx.set(a.idx, a);
       }
-
       const answersByDisp: Record<number, AttemptAnswerItem> = {};
       const gradesByDisp: Record<number, QuestionGradeResult> = {};
       const flattened: InternalDeliveryQuestion[] = [];
@@ -133,7 +135,10 @@ export default function ResultV2Page({
 
       for (const q of flattened) {
         const dIdx = q.displayIdx ?? q.idx;
-        const matchedAns = (q.id ? answerByQId.get(q.id) : null) || answerByIdx.get(q.idx);
+        const matchedAns =
+          (q.id ? answerByQId.get(q.id.toLowerCase()) : null) ||
+          (q.id ? answerByQId.get(q.id) : null) ||
+          answerByIdx.get(q.idx);
 
         if (matchedAns) {
           answersByDisp[dIdx] = matchedAns;

@@ -33,9 +33,20 @@ export async function fetchAttemptResult(attemptId: string): Promise<AttemptResu
       const idx = "idx" in item && typeof item.idx === "number" ? item.idx : 0;
       const textAnswer = "textAnswer" in item && typeof item.textAnswer === "string" ? item.textAnswer : null;
       const isCorrect = "isCorrect" in item && typeof item.isCorrect === "boolean" ? item.isCorrect : null;
-      const selectedText = "selectedAnswerText" in item && typeof item.selectedAnswerText === "string" ? item.selectedAnswerText : null;
+      const selectedText =
+        ("selectedAnswerText" in item && typeof item.selectedAnswerText === "string" ? item.selectedAnswerText : null) ||
+        ("selectedText" in item && typeof item.selectedText === "string" ? item.selectedText : null);
       const correctAnswerText = "correctAnswerText" in item && typeof item.correctAnswerText === "string" ? item.correctAnswerText : null;
-      const selectedOptionIds = "selectedOptionIds" in item && Array.isArray(item.selectedOptionIds) ? (item.selectedOptionIds as string[]) : null;
+      let selectedOptionIds = "selectedOptionIds" in item && Array.isArray(item.selectedOptionIds) ? (item.selectedOptionIds as string[]) : null;
+
+      // If selectedOptionIds is empty and textAnswer contains a UUID option ID, populate selectedOptionIds
+      if (
+        (!selectedOptionIds || selectedOptionIds.length === 0) &&
+        textAnswer &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(textAnswer.trim())
+      ) {
+        selectedOptionIds = [textAnswer.trim()];
+      }
 
       answers.push({
         questionId: qId,
@@ -51,13 +62,15 @@ export async function fetchAttemptResult(attemptId: string): Promise<AttemptResu
     }
   }
 
-  // Determine examId to fetch official delivery paper with complete answer keys
+  // Determine paper snapshot: prefer paperWithAnswers, fallback to fullSnapshot or attemptPaper
   const attemptPaper =
-    (attemptData.paper as InternalDeliveryExam) ||
+    (resultData.paperWithAnswers as InternalDeliveryExam) ||
     (resultData.fullSnapshot as InternalDeliveryExam) ||
+    (attemptData.paper as InternalDeliveryExam) ||
     null;
 
   const examId =
+    ("examId" in resultData && typeof resultData.examId === "string" ? resultData.examId : "") ||
     ("examId" in attemptData && typeof attemptData.examId === "string" ? attemptData.examId : "") ||
     (attemptPaper && typeof attemptPaper === "object" && "id" in attemptPaper && typeof attemptPaper.id === "string" ? attemptPaper.id : "");
 
@@ -71,7 +84,7 @@ export async function fetchAttemptResult(attemptId: string): Promise<AttemptResu
   }
 
   // Use deliveryPaper (which has isCorrect: true and explanations) or fallback to attemptPaper
-  let selectedPaper = deliveryPaper || attemptPaper;
+  const selectedPaper = deliveryPaper || attemptPaper;
 
   if (!selectedPaper) {
     throw new Error("Unable to load exam paper snapshot for this attempt.");
@@ -86,7 +99,9 @@ export async function fetchAttemptResult(attemptId: string): Promise<AttemptResu
 
     for (const q of allQ) {
       const matchedAns = answers.find(
-        (a) => (a.questionId && q.id && a.questionId === q.id) || a.idx === q.idx
+        (a) =>
+          (a.questionId && q.id && a.questionId.toLowerCase() === q.id.toLowerCase()) ||
+          a.idx === q.idx
       );
 
       if (matchedAns?.correctAnswerText && q.options && q.options.length > 0) {
@@ -97,7 +112,8 @@ export async function fetchAttemptResult(attemptId: string): Promise<AttemptResu
             if (
               optContent === correctText ||
               correctText.startsWith(optContent) ||
-              optContent.startsWith(correctText)
+              optContent.startsWith(correctText) ||
+              (opt.id && opt.id.toLowerCase() === correctText)
             ) {
               opt.isCorrect = true;
             } else {
@@ -111,19 +127,55 @@ export async function fetchAttemptResult(attemptId: string): Promise<AttemptResu
 
   const { enrichedExam } = enrichExamWithSequentialNumbers(selectedPaper);
 
-  const correctCount = answers.filter((a) => a.isCorrect === true).length;
-  const totalQuestion = answers.length > 0 ? answers.length : 40;
+  const rawCorrect = answers.filter((a) => a.isCorrect === true).length;
+  const correctCount = typeof resultData.correct === "number" ? resultData.correct : rawCorrect;
+  const totalQuestion =
+    typeof resultData.total === "number"
+      ? resultData.total
+      : answers.length > 0
+      ? answers.length
+      : 40;
+
+  const rawScore =
+    typeof resultData.scoreRaw === "number"
+      ? resultData.scoreRaw
+      : typeof resultData.rawScore === "number"
+      ? resultData.rawScore
+      : correctCount;
+
+  const scorePct =
+    typeof resultData.scorePct === "number"
+      ? resultData.scorePct
+      : totalQuestion > 0
+      ? Math.round((correctCount / totalQuestion) * 100)
+      : 0;
+
   const ieltsBand =
     typeof resultData.ieltsBand === "number" ? resultData.ieltsBand : 0;
 
   return {
     attemptId,
     examId: examId || undefined,
-    status: ("status" in attemptData && typeof attemptData.status === "string" ? attemptData.status : "SUBMITTED"),
-    submittedAt: ("submittedAt" in attemptData && typeof attemptData.submittedAt === "string" ? attemptData.submittedAt : null),
-    totalTime: ("timeLeftSec" in attemptData ? (attemptData.timeLeftSec as number) : null),
-    rawScore: typeof resultData.rawScore === "number" ? resultData.rawScore : correctCount,
-    scorePct: typeof resultData.scorePct === "number" ? resultData.scorePct : Math.round((correctCount / totalQuestion) * 100),
+    status:
+      typeof resultData.status === "string"
+        ? resultData.status
+        : "status" in attemptData && typeof attemptData.status === "string"
+        ? attemptData.status
+        : "SUBMITTED",
+    submittedAt:
+      typeof resultData.submittedAt === "string"
+        ? resultData.submittedAt
+        : "submittedAt" in attemptData && typeof attemptData.submittedAt === "string"
+        ? attemptData.submittedAt
+        : null,
+    totalTime:
+      typeof resultData.totalTime === "number" || typeof resultData.totalTime === "string"
+        ? resultData.totalTime
+        : "timeLeftSec" in attemptData
+        ? (attemptData.timeLeftSec as number)
+        : null,
+    rawScore,
+    scorePct,
     correctCount,
     totalQuestion,
     ieltsBand,

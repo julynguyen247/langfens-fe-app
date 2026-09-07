@@ -40,10 +40,16 @@ export function McqCard({
   return (
     <div className="space-y-3">
       {options.map((opt) => {
-        const isSelected =
-          selectedList.includes(opt.id) ||
-          selectedList.includes(opt.contentMd) ||
-          selectedList.includes(String(opt.idx));
+        const isSelected = selectedList.some((s) => {
+          const str = String(s).trim().toLowerCase();
+          return (
+            (opt.id && str === opt.id.toLowerCase()) ||
+            (opt.contentMd && str === opt.contentMd.trim().toLowerCase()) ||
+            (opt.contentMd && opt.contentMd.trim().toLowerCase().startsWith(str)) ||
+            (opt.contentMd && str.startsWith(opt.contentMd.trim().toLowerCase())) ||
+            str === String(opt.idx)
+          );
+        });
         const isAnswerCorrect = Boolean(opt.isCorrect);
 
         let borderClass = "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/70 text-slate-800";
