@@ -56,15 +56,20 @@ export function ResultNavigator({
     const isWrong = ans?.isCorrect === false;
     const isActive = activeIdx === idx;
 
-    let btnClass = "bg-slate-100 border-2 border-slate-200 text-slate-500 hover:bg-slate-200";
+    // Authentic IELTS CD button styling: rectangular button with clear status border
+    let btnClass = "bg-white border-2 border-slate-200 text-slate-400 hover:border-slate-300";
+    let indicator = null;
+
     if (isCorrect) {
-      btnClass = "bg-emerald-500 border-2 border-emerald-600 text-white font-bold shadow-xs";
+      btnClass = "bg-emerald-50/70 border-2 border-emerald-500 text-emerald-800 font-bold shadow-2xs";
+      indicator = <span className="text-[9px] text-emerald-600 leading-none">✓</span>;
     } else if (isWrong) {
-      btnClass = "bg-rose-500 border-2 border-rose-600 text-white font-bold shadow-xs";
+      btnClass = "bg-rose-50/70 border-2 border-rose-400 text-rose-800 font-bold shadow-2xs";
+      indicator = <span className="text-[9px] text-rose-500 leading-none">✕</span>;
     }
 
     if (isActive) {
-      btnClass += " ring-3 ring-[#2563EB] ring-offset-2 scale-105 z-10";
+      btnClass += " ring-2 ring-[#2563EB] ring-offset-1 z-10 scale-105";
     }
 
     return (
@@ -72,10 +77,11 @@ export function ResultNavigator({
         key={idx}
         type="button"
         onClick={() => onSelect(idx)}
-        className={`w-8 h-8 rounded-full text-xs font-mono flex items-center justify-center transition-all cursor-pointer shrink-0 ${btnClass}`}
+        className={`w-9 h-8 rounded-lg text-xs font-mono flex flex-col items-center justify-center gap-0 transition-all cursor-pointer shrink-0 ${btnClass}`}
         title={`Question ${idx}: ${isCorrect ? "Correct" : isWrong ? "Incorrect" : "Unanswered"}`}
       >
-        {idx}
+        <span className="leading-tight">{idx}</span>
+        {indicator}
       </button>
     );
   };
@@ -96,10 +102,10 @@ export function ResultNavigator({
       </button>
 
       {/* Question buttons row */}
-      <div className="flex items-center gap-4 overflow-x-auto py-2 px-1 flex-1 justify-center sm:justify-start">
+      <div className="flex items-center gap-3 overflow-x-auto py-2 px-1 flex-1 justify-center sm:justify-start">
         {sectionGroups.length > 0 ? (
           sectionGroups.map((group, gIndex) => (
-            <div key={group.partNumber} className="flex items-center gap-2 shrink-0">
+            <div key={group.partNumber} className="flex items-center gap-1.5 shrink-0">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono shrink-0 mr-1">
                 P{group.partNumber}
               </span>
@@ -138,15 +144,19 @@ export function ResultNavigator({
       {/* Legend */}
       <div className="hidden xl:flex items-center gap-4 pl-4 border-l-2 border-slate-200 shrink-0 text-xs font-medium text-slate-500">
         <div className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded-full bg-emerald-500 border border-emerald-600" />
+          <span className="w-4 h-3.5 rounded-md bg-emerald-50 border-2 border-emerald-500 text-[9px] text-emerald-600 font-bold flex items-center justify-center">
+            ✓
+          </span>
           <span className="text-slate-700 font-medium">Correct</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded-full bg-rose-500 border border-rose-600" />
+          <span className="w-4 h-3.5 rounded-md bg-rose-50 border-2 border-rose-400 text-[9px] text-rose-500 font-bold flex items-center justify-center">
+            ✕
+          </span>
           <span className="text-slate-700 font-medium">Incorrect</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded-full bg-slate-100 border-2 border-slate-200" />
+          <span className="w-4 h-3.5 rounded-md bg-white border-2 border-slate-200" />
           <span className="text-slate-700 font-medium">Unanswered</span>
         </div>
       </div>

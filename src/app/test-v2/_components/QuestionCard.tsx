@@ -175,13 +175,7 @@ export function QuestionCard({
   return (
     <div
       id={`q-${qIndex}`}
-      className={`rounded-3xl border-2 p-6 space-y-4 transition-all scroll-mt-24 shadow-2xs ${
-        isReview
-          ? isCorrect
-            ? "bg-white border-emerald-400 ring-2 ring-emerald-100"
-            : "bg-white border-rose-400 ring-2 ring-rose-100"
-          : "bg-white border-slate-200 hover:border-slate-300"
-      }`}
+      className="rounded-2xl border-2 border-slate-200 bg-white p-6 space-y-4 transition-all scroll-mt-24 shadow-2xs"
     >
       {/* Header Bar */}
       <div className="flex items-center justify-between gap-3 pb-3.5 border-b-2 border-slate-100">
