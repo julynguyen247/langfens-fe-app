@@ -18,17 +18,30 @@ export function ResultNavigator({
   onSelect,
 }: ResultNavigatorProps) {
   // If sections provided, group questions by section
+  let globalCounter = 1;
   const sectionGroups = (sections || []).map((sec, i) => {
     const indices: number[] = [];
-    for (const q of sec.questions || []) {
-      const num = q.displayIdx ?? q.idx;
-      if (!indices.includes(num)) indices.push(num);
-    }
     for (const grp of sec.questionGroups || []) {
       for (const q of grp.questions || []) {
-        const num = q.displayIdx ?? q.idx;
+        const num =
+          typeof q.displayIdx === "number" && q.displayIdx > 0
+            ? q.displayIdx
+            : typeof q.idx === "number" && q.idx > 0
+            ? q.idx
+            : globalCounter;
         if (!indices.includes(num)) indices.push(num);
+        globalCounter = Math.max(globalCounter + 1, num + 1);
       }
+    }
+    for (const q of sec.questions || []) {
+      const num =
+        typeof q.displayIdx === "number" && q.displayIdx > 0
+          ? q.displayIdx
+          : typeof q.idx === "number" && q.idx > 0
+          ? q.idx
+          : globalCounter;
+      if (!indices.includes(num)) indices.push(num);
+      globalCounter = Math.max(globalCounter + 1, num + 1);
     }
     indices.sort((a, b) => a - b);
 

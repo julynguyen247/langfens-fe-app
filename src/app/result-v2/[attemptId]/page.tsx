@@ -118,27 +118,57 @@ export default function ResultV2Page({
       const gradesByDisp: Record<number, QuestionGradeResult> = {};
       const flattened: InternalDeliveryQuestion[] = [];
 
+      let seqIndex = 1;
       for (const sec of result.paper.sections || []) {
-        for (const q of sec.questions || []) {
-          flattened.push(q);
+        if (sec.questionGroups && sec.questionGroups.length > 0) {
+          for (const grp of sec.questionGroups) {
+            for (const q of grp.questions || []) {
+              const alreadyExists = flattened.some((x) =>
+                x.id && q.id ? x.id.toLowerCase() === q.id.toLowerCase() : false
+              );
+              if (!alreadyExists) {
+                const assignedIdx =
+                  typeof q.displayIdx === "number" && q.displayIdx > 0
+                    ? q.displayIdx
+                    : typeof q.idx === "number" && q.idx > 0
+                    ? q.idx
+                    : seqIndex;
+                flattened.push({ ...q, displayIdx: assignedIdx });
+                seqIndex = Math.max(seqIndex + 1, assignedIdx + 1);
+              }
+            }
+          }
         }
-        for (const grp of sec.questionGroups || []) {
-          for (const q of grp.questions || []) {
-            if (!flattened.some((x) => x.displayIdx === q.displayIdx)) {
-              flattened.push(q);
+
+        if (sec.questions && sec.questions.length > 0) {
+          for (const q of sec.questions) {
+            const alreadyExists = flattened.some((x) =>
+              x.id && q.id ? x.id.toLowerCase() === q.id.toLowerCase() : false
+            );
+            if (!alreadyExists) {
+              const assignedIdx =
+                typeof q.displayIdx === "number" && q.displayIdx > 0
+                  ? q.displayIdx
+                  : typeof q.idx === "number" && q.idx > 0
+                  ? q.idx
+                  : seqIndex;
+              flattened.push({ ...q, displayIdx: assignedIdx });
+              seqIndex = Math.max(seqIndex + 1, assignedIdx + 1);
             }
           }
         }
       }
 
-      flattened.sort((a, b) => (a.displayIdx ?? a.idx) - (b.displayIdx ?? b.idx));
+      flattened.sort((a, b) => (a.displayIdx ?? 0) - (b.displayIdx ?? 0));
 
       for (const q of flattened) {
-        const dIdx = q.displayIdx ?? q.idx;
+        const dIdx = q.displayIdx ?? 0;
         const matchedAns =
           (q.id ? answerByQId.get(q.id.toLowerCase()) : null) ||
           (q.id ? answerByQId.get(q.id) : null) ||
-          answerByIdx.get(q.idx);
+          (typeof q.idx === "number" ? answerByIdx.get(q.idx) : null) ||
+          answerByIdx.get(dIdx) ||
+          answerByIdx.get(dIdx - 1);
 
         if (matchedAns) {
           answersByDisp[dIdx] = matchedAns;
@@ -160,7 +190,6 @@ export default function ResultV2Page({
           };
         }
       }
-
       return {
         answersByDisplayIdx: answersByDisp,
         gradeResultsByDisplayIdx: gradesByDisp,
