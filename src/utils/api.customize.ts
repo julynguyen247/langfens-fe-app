@@ -66,7 +66,9 @@ async function refreshToken(): Promise<string | null> {
       setToken(null);
       if (typeof window !== 'undefined') {
         localStorage.removeItem('access_token');
-        const isAuthPage = window.location.pathname.startsWith('/auth');
+        const isAuthPage =
+          window.location.pathname.startsWith('/auth') ||
+          window.location.pathname.startsWith('/admin');
         if (!isAuthPage) {
           window.location.href = '/auth/login';
         }
