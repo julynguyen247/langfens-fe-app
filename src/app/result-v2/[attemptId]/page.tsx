@@ -11,11 +11,11 @@ import {
   QuestionGradeResult,
   UserAnswerValue,
 } from "../_lib/types";
-import { ResultHero } from "../_components/ResultHero";
+import { ScoreReportModal } from "../_components/ScoreReportModal";
 import { ResultFilterTabs, ResultFilterType } from "../_components/ResultFilterTabs";
 import { ResultNavigator } from "../_components/ResultNavigator";
 import { PassagePanel } from "@/app/test-v2/_components/PassagePanel";
-import { QuestionCard } from "@/app/test-v2/_components/QuestionCard";
+import { ReviewQuestionCard } from "../_components/ReviewQuestionCard";
 
 function parseUserAnswer(ans?: AttemptAnswerItem): UserAnswerValue {
   if (!ans) return "";
@@ -67,7 +67,7 @@ export default function ResultV2Page({
   const [activeSectionIdx, setActiveSectionIdx] = useState(0);
   const [activeFilter, setActiveFilter] = useState<ResultFilterType>("ALL");
   const [activeQuestionIdx, setActiveQuestionIdx] = useState<number | null>(null);
-
+  const [isScoreModalOpen, setIsScoreModalOpen] = useState(false);
   const rightPanelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -231,8 +231,43 @@ export default function ResultV2Page({
       const el = document.getElementById(`q-${qIdx}`);
       if (el) {
         el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.classList.add("ring-4", "ring-[#2563EB]/40");
+        setTimeout(() => {
+          el.classList.remove("ring-4", "ring-[#2563EB]/40");
+        }, 1500);
       }
-    }, 100);
+    }, 120);
+  };
+
+  // Locate paragraph affordance that switches section if needed
+  const handleLocateParagraph = (letter: string) => {
+    if (!result) return;
+    const upper = letter.toUpperCase();
+
+    // Find section owning this paragraph in passageMd
+    const secIdx = result.paper.sections.findIndex((sec) => {
+      return (
+        sec.passageMd?.includes(`[${upper}]`) ||
+        sec.passageMd?.includes(`Paragraph ${upper}`)
+      );
+    });
+
+    if (secIdx >= 0 && secIdx !== activeSectionIdx) {
+      setActiveSectionIdx(secIdx);
+    }
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const paraEl = document.getElementById(`para-${upper}`);
+        if (paraEl) {
+          paraEl.scrollIntoView({ behavior: "smooth", block: "center" });
+          paraEl.classList.add("ring-3", "ring-amber-400", "bg-amber-100/70");
+          setTimeout(() => {
+            paraEl.classList.remove("ring-3", "ring-amber-400", "bg-amber-100/70");
+          }, 2000);
+        }
+      });
+    });
   };
 
   if (loading) {
@@ -270,35 +305,76 @@ export default function ResultV2Page({
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-[#F8F9FA] text-slate-900 overflow-hidden font-sans select-none">
       {/* Top Header */}
+      {/* Authentic IELTS Top Header */}
       <header className="h-16 border-b-2 border-slate-200 bg-white/95 backdrop-blur-md px-6 flex items-center justify-between shrink-0 shadow-xs z-30">
         <div className="flex items-center gap-4">
           <button
             type="button"
             onClick={() => router.push("/admin/exams")}
-            className="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition border border-transparent hover:border-slate-200"
+            className="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition border border-transparent hover:border-slate-200 cursor-pointer"
             title="Back to exams"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
             </svg>
           </button>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-sm text-slate-900 truncate max-w-sm">
+          <div className="flex items-center gap-3">
+            <span className="bg-[#D32F2F] text-white text-[11px] font-black px-2 py-0.5 rounded tracking-wider uppercase shrink-0">
+              IELTS
+            </span>
+            <div>
+              <span className="font-bold text-sm text-slate-900 truncate max-w-xs sm:max-w-md block">
                 {result.paper.title}
               </span>
-              <span className="px-2 py-0.5 text-[10px] font-bold rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-300 uppercase tracking-wider">
-                Reviewed
+              <span className="text-[10px] font-medium text-slate-500">
+                Official Review Mode
               </span>
             </div>
           </div>
         </div>
 
+        {/* Center/Right: Score Capsule & Actions */}
         <div className="flex items-center gap-3">
+          {/* Quick Score Capsule */}
+          <div className="hidden md:flex items-center gap-2 p-1.5 rounded-2xl bg-slate-100/80 border border-slate-200">
+            <div className="px-3 py-1 rounded-xl bg-white border border-slate-200 shadow-2xs flex items-center gap-1.5">
+              <span className="text-[10px] font-bold text-slate-400 uppercase">Band</span>
+              <span className="font-mono text-sm font-extrabold text-[#2563EB]">
+                {result.ieltsBand ? result.ieltsBand.toFixed(1) : "N/A"}
+              </span>
+            </div>
+
+            <div className="px-3 py-1 rounded-xl bg-white border border-slate-200 shadow-2xs flex items-center gap-1.5">
+              <span className="text-[10px] font-bold text-slate-400 uppercase">Score</span>
+              <span className="font-mono text-sm font-bold text-slate-800">
+                {result.correctCount} / {result.totalQuestion}
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsScoreModalOpen(true)}
+              className="px-3 py-1 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold transition flex items-center gap-1 shadow-2xs cursor-pointer"
+            >
+              <span>📊</span>
+              <span>Score Report</span>
+            </button>
+          </div>
+
+          {/* Mobile Score Report Button */}
+          <button
+            type="button"
+            onClick={() => setIsScoreModalOpen(true)}
+            className="md:hidden px-3 py-1.5 rounded-xl bg-[#2563EB] text-white text-xs font-bold transition flex items-center gap-1 shadow-xs cursor-pointer"
+          >
+            <span>📊</span>
+            <span>Band {result.ieltsBand ? result.ieltsBand.toFixed(1) : "N/A"}</span>
+          </button>
+
           {result.examId && (
             <Link
               href={`/test-v2/${result.examId}`}
-              className="px-4 py-2 text-xs font-bold rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white border-b-[3px] border-[#1E40AF] active:translate-y-0.5 shadow-xs transition-all"
+              className="px-4 py-2 text-xs font-bold rounded-xl bg-slate-900 hover:bg-slate-800 text-white transition-all shadow-xs"
             >
               Retake Exam
             </Link>
@@ -322,10 +398,8 @@ export default function ResultV2Page({
           ref={rightPanelRef}
           className="w-1/2 h-full overflow-y-auto p-6 space-y-6 select-text"
         >
-          {/* Result Hero Banner with Section Breakdown */}
-          <ResultHero result={result} answersByDisplayIdx={answersByDisplayIdx} />
-          {/* Section Heading & Filter Bar */}
-          <div className="space-y-3 pb-3 border-b-2 border-slate-200">
+          {/* Sticky Section Heading & Filter Bar */}
+          <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md p-4 rounded-2xl border-2 border-slate-200 shadow-2xs space-y-3">
             <div className="flex items-center justify-between">
               <div>
                 <span className="text-xs font-bold uppercase tracking-wider text-[#2563EB]">
@@ -367,15 +441,12 @@ export default function ResultV2Page({
                     const num = q.displayIdx ?? q.idx;
                     const ans = answersByDisplayIdx[num];
                     return (
-                      <QuestionCard
+                      <ReviewQuestionCard
                         key={q.id || num}
                         question={q}
                         value={parseUserAnswer(ans)}
-                        isFlagged={false}
-                        isReview={true}
                         gradeResult={gradeResultsByDisplayIdx[num]}
-                        onAnswerChange={() => {}}
-                        onToggleFlag={() => {}}
+                        onLocateParagraph={handleLocateParagraph}
                       />
                     );
                   })}
@@ -391,15 +462,12 @@ export default function ResultV2Page({
                 const num = q.displayIdx ?? q.idx;
                 const ans = answersByDisplayIdx[num];
                 return (
-                  <QuestionCard
+                  <ReviewQuestionCard
                     key={q.id || num}
                     question={q}
                     value={parseUserAnswer(ans)}
-                    isFlagged={false}
-                    isReview={true}
                     gradeResult={gradeResultsByDisplayIdx[num]}
-                    onAnswerChange={() => {}}
-                    onToggleFlag={() => {}}
+                    onLocateParagraph={handleLocateParagraph}
                   />
                 );
               })}
@@ -414,6 +482,14 @@ export default function ResultV2Page({
         activeIdx={activeQuestionIdx}
         sections={result.paper.sections}
         onSelect={handleSelectQuestion}
+      />
+
+      {/* Score Report Modal */}
+      <ScoreReportModal
+        isOpen={isScoreModalOpen}
+        result={result}
+        answersByDisplayIdx={answersByDisplayIdx}
+        onClose={() => setIsScoreModalOpen(false)}
       />
     </div>
   );

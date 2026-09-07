@@ -25,6 +25,7 @@ interface QuestionCardProps {
   isFlagged: boolean;
   isReview: boolean;
   gradeResult?: QuestionGradeResult;
+  reviewAction?: React.ReactNode;
   onAnswerChange: (val: UserAnswerValue) => void;
   onToggleFlag: () => void;
 }
@@ -35,6 +36,7 @@ export function QuestionCard({
   isFlagged,
   isReview,
   gradeResult,
+  reviewAction,
   onAnswerChange,
   onToggleFlag,
 }: QuestionCardProps) {
@@ -169,6 +171,7 @@ export function QuestionCard({
 
   const qIndex = question.displayIdx ?? question.idx;
 
+
   return (
     <div
       id={`q-${qIndex}`}
@@ -205,6 +208,8 @@ export function QuestionCard({
             </span>
           )}
 
+          {/* Review Action Slot */}
+          {isReview && reviewAction}
           {/* Flag Toggle Button */}
           {!isReview && (
             <button
