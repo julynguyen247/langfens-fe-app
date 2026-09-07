@@ -34,7 +34,7 @@ export async function fetchAttemptResult(attemptId: string): Promise<AttemptResu
       const textAnswer = "textAnswer" in item && typeof item.textAnswer === "string" ? item.textAnswer : null;
       const isCorrect = "isCorrect" in item && typeof item.isCorrect === "boolean" ? item.isCorrect : null;
       const selectedText = "selectedAnswerText" in item && typeof item.selectedAnswerText === "string" ? item.selectedAnswerText : null;
-      const correctText = "correctAnswerText" in item && typeof item.correctAnswerText === "string" ? item.correctAnswerText : null;
+      const correctAnswerText = "correctAnswerText" in item && typeof item.correctAnswerText === "string" ? item.correctAnswerText : null;
       const selectedOptionIds = "selectedOptionIds" in item && Array.isArray(item.selectedOptionIds) ? (item.selectedOptionIds as string[]) : null;
 
       answers.push({
@@ -45,35 +45,71 @@ export async function fetchAttemptResult(attemptId: string): Promise<AttemptResu
         textAnswer,
         isCorrect,
         selectedAnswerText: selectedText,
-        correctAnswerText: correctText,
+        correctAnswerText,
         ragFeedback: "ragFeedback" in item ? item.ragFeedback : null,
       });
     }
   }
 
-  // Extract paper
-  let rawPaper =
+  // Determine examId to fetch official delivery paper with complete answer keys
+  const attemptPaper =
     (attemptData.paper as InternalDeliveryExam) ||
     (resultData.fullSnapshot as InternalDeliveryExam) ||
     null;
 
   const examId =
     ("examId" in attemptData && typeof attemptData.examId === "string" ? attemptData.examId : "") ||
-    (rawPaper && typeof rawPaper === "object" && "id" in rawPaper && typeof rawPaper.id === "string" ? rawPaper.id : "");
+    (attemptPaper && typeof attemptPaper === "object" && "id" in attemptPaper && typeof attemptPaper.id === "string" ? attemptPaper.id : "");
 
-  if (!rawPaper && examId) {
+  let deliveryPaper: InternalDeliveryExam | null = null;
+  if (examId) {
     try {
-      rawPaper = await getExamDelivery(examId, true);
+      deliveryPaper = await getExamDelivery(examId, true);
     } catch {
       // ignore fallback error
     }
   }
 
-  if (!rawPaper) {
+  // Use deliveryPaper (which has isCorrect: true and explanations) or fallback to attemptPaper
+  let selectedPaper = deliveryPaper || attemptPaper;
+
+  if (!selectedPaper) {
     throw new Error("Unable to load exam paper snapshot for this attempt.");
   }
 
-  const { enrichedExam } = enrichExamWithSequentialNumbers(rawPaper);
+  // Ensure isCorrect is populated on all options using answers[].correctAnswerText as fallback
+  for (const sec of selectedPaper.sections || []) {
+    const allQ = [
+      ...(sec.questions || []),
+      ...(sec.questionGroups || []).flatMap((g) => g.questions || []),
+    ];
+
+    for (const q of allQ) {
+      const matchedAns = answers.find(
+        (a) => (a.questionId && q.id && a.questionId === q.id) || a.idx === q.idx
+      );
+
+      if (matchedAns?.correctAnswerText && q.options && q.options.length > 0) {
+        const correctText = matchedAns.correctAnswerText.trim().toLowerCase();
+        for (const opt of q.options) {
+          if (opt.isCorrect === undefined || opt.isCorrect === null) {
+            const optContent = opt.contentMd.trim().toLowerCase();
+            if (
+              optContent === correctText ||
+              correctText.startsWith(optContent) ||
+              optContent.startsWith(correctText)
+            ) {
+              opt.isCorrect = true;
+            } else {
+              opt.isCorrect = false;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  const { enrichedExam } = enrichExamWithSequentialNumbers(selectedPaper);
 
   const correctCount = answers.filter((a) => a.isCorrect === true).length;
   const totalQuestion = answers.length > 0 ? answers.length : 40;
