@@ -33,6 +33,10 @@ import {
   QuestionType,
 } from "@/app/admin/_lib/types";
 import { QuestionEditor } from "./_components/QuestionEditor";
+import { QuestionTypeCardPicker } from "./_components/QuestionTypeCardPicker";
+import { QuestionImporter } from "./_components/QuestionImporter";
+import { AiAuthorModal } from "./_components/AiAuthorModal";
+import { defaultSkillForType, validateSection } from "@/app/admin/_lib/validation";
 
 function extractErrorMessage(err: unknown): string {
   if (err && typeof err === "object") {
@@ -99,6 +103,20 @@ export default function AdminExamEditorPage({
   const [newQuestionSkill, setNewQuestionSkill] = useState<string>(QuestionSkill.Reading);
   const [creatingQuestion, setCreatingQuestion] = useState(false);
 
+  // Toast notifications
+  const [toast, setToast] = useState<{ text: string; kind: "success" | "error" | "info" } | null>(null);
+  const showToast = (text: string, kind: "success" | "error" | "info" = "info") => {
+    setToast({ text, kind });
+    setTimeout(() => setToast(null), 3500);
+  };
+
+  // Question search
+  const [questionSearch, setQuestionSearch] = useState("");
+
+  // Bulk import + AI author modals
+  const [importSectionId, setImportSectionId] = useState<string | null>(null);
+  const [aiSectionId, setAiSectionId] = useState<string | null>(null);
+
   const loadExam = async () => {
     try {
       setLoading(true);
@@ -144,8 +162,9 @@ export default function AdminExamEditorPage({
           imageUrl: metaDraft.ImageUrl,
         });
       }
+      showToast("Exam settings saved", "success");
     } catch (err: unknown) {
-      alert(extractErrorMessage(err));
+      showToast(extractErrorMessage(err), "error");
     } finally {
       setSavingMeta(false);
     }
@@ -155,7 +174,7 @@ export default function AdminExamEditorPage({
   const handleCreateSectionSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!sectionDraft.Title.trim()) {
-      alert("Section title is required");
+      showToast("Section title is required", "error");
       return;
     }
 
@@ -181,8 +200,9 @@ export default function AdminExamEditorPage({
       });
 
       await loadExam();
+      showToast("Section created", "success");
     } catch (err: unknown) {
-      alert(extractErrorMessage(err));
+      showToast(extractErrorMessage(err), "error");
     } finally {
       setSavingSection(false);
     }
@@ -207,8 +227,9 @@ export default function AdminExamEditorPage({
       await updateSection(editingSection.id, updateDto);
       setEditingSection(null);
       await loadExam();
+      showToast("Section updated", "success");
     } catch (err: unknown) {
-      alert(extractErrorMessage(err));
+      showToast(extractErrorMessage(err), "error");
     } finally {
       setUpdatingSection(false);
     }
@@ -216,7 +237,7 @@ export default function AdminExamEditorPage({
 
   const handleDeleteSection = async (sectionId?: string, title?: string) => {
     if (!sectionId) {
-      alert("Cannot delete section without a database ID. Please refresh.");
+      showToast("Cannot delete section without a database ID. Please refresh.", "error");
       return;
     }
 
@@ -227,8 +248,9 @@ export default function AdminExamEditorPage({
     try {
       await deleteSection(sectionId);
       await loadExam();
+      showToast("Section deleted", "success");
     } catch (err: unknown) {
-      alert(extractErrorMessage(err));
+      showToast(extractErrorMessage(err), "error");
     }
   };
 
@@ -250,15 +272,61 @@ export default function AdminExamEditorPage({
         Difficulty: 1,
         PromptMd: `Question ${nextIdx} prompt`,
         ExplanationMd: null,
+        ImageUrl: null,
       };
 
       const created = await createQuestion(upsertDto);
       setTargetSectionForNewQuestion(null);
       await loadExam();
+      showToast("Question created", "success");
     } catch (err: unknown) {
-      alert(extractErrorMessage(err));
+      showToast(extractErrorMessage(err), "error");
     } finally {
       setCreatingQuestion(false);
+    }
+  };
+
+  const handleDuplicateQuestion = async (q: InternalDeliveryQuestion) => {
+    const targetSectionId = q.sectionId;
+    if (!q.id) {
+      showToast("Question lacks database ID — refresh first", "error");
+      return;
+    }
+    if (!targetSectionId) {
+      showToast("Section context missing", "error");
+      return;
+    }
+    const section = exam?.sections.find((s) => s.id === targetSectionId);
+    if (!section) {
+      showToast("Section not found", "error");
+      return;
+    }
+    const nextIdx =
+      section.questions.length > 0
+        ? Math.max(...section.questions.map((qq) => qq.idx)) + 1
+        : 1;
+
+    try {
+      await createQuestion({
+        SectionId: targetSectionId,
+        Idx: nextIdx,
+        Type: q.type,
+        Skill: q.skill,
+        Difficulty: q.difficulty,
+        PromptMd: q.promptMd || null,
+        ExplanationMd: q.explanationMd || null,
+        ImageUrl: q.imageUrl || null,
+        BlankAcceptTexts: q.blankAcceptTexts || null,
+        BlankAcceptRegex: q.blankAcceptRegex || null,
+        MatchPairs: q.matchPairs || null,
+        OrderCorrects: q.orderCorrects || null,
+        ShortAnswerAcceptTexts: q.shortAnswerAcceptTexts || null,
+        ShortAnswerAcceptRegex: q.shortAnswerAcceptRegex || null,
+      });
+      await loadExam();
+      showToast(`Question duplicated as Q${nextIdx}`, "success");
+    } catch (err: unknown) {
+      showToast(extractErrorMessage(err), "error");
     }
   };
 
@@ -278,6 +346,7 @@ export default function AdminExamEditorPage({
       Difficulty: updatedQ.difficulty,
       PromptMd: updatedQ.promptMd || null,
       ExplanationMd: updatedQ.explanationMd || null,
+      ImageUrl: updatedQ.imageUrl || null,
       BlankAcceptTexts: updatedQ.blankAcceptTexts || null,
       BlankAcceptRegex: updatedQ.blankAcceptRegex || null,
       MatchPairs: updatedQ.matchPairs || null,
@@ -299,6 +368,8 @@ export default function AdminExamEditorPage({
               Idx: opt.idx,
               ContentMd: opt.contentMd,
               IsCorrect: Boolean(opt.isCorrect),
+              ImageUrl: opt.imageUrl ?? null,
+              AltText: opt.altText ?? null,
             });
           } catch {
             // ignore individual option update errors
@@ -311,6 +382,8 @@ export default function AdminExamEditorPage({
               Idx: opt.idx,
               ContentMd: opt.contentMd,
               IsCorrect: Boolean(opt.isCorrect),
+              ImageUrl: opt.imageUrl ?? null,
+              AltText: opt.altText ?? null,
             });
           } catch {
             // ignore
@@ -322,7 +395,7 @@ export default function AdminExamEditorPage({
 
   const handleDeleteQuestion = async (questionId?: string, idx?: number) => {
     if (!questionId) {
-      alert("Question missing database UUID. Refresh exam paper.");
+      showToast("Question missing database UUID. Refresh exam paper.", "error");
       return;
     }
 
@@ -331,8 +404,9 @@ export default function AdminExamEditorPage({
     try {
       await deleteQuestion(questionId);
       await loadExam();
+      showToast("Question deleted", "success");
     } catch (err: unknown) {
-      alert(extractErrorMessage(err));
+      showToast(extractErrorMessage(err), "error");
     }
   };
 
@@ -518,10 +592,28 @@ export default function AdminExamEditorPage({
 
       {/* Sections and Questions Area */}
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-base font-bold text-white tracking-tight">
             Sections & Question Items ({exam.sections.length})
           </h2>
+          <div className="relative">
+            <input
+              type="text"
+              value={questionSearch}
+              onChange={(e) => setQuestionSearch(e.target.value)}
+              placeholder="Search questions by prompt or explanation..."
+              className="w-72 bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+            />
+            <svg
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+            </svg>
+          </div>
         </div>
 
         {exam.sections.length === 0 ? (
@@ -542,13 +634,16 @@ export default function AdminExamEditorPage({
             >
               {/* Section Header */}
               <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-800">
-                <div className="flex items-center gap-3">
-                  <span className="w-7 h-7 rounded-lg bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-xs font-bold font-mono">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <span className="shrink-0 w-7 h-7 rounded-lg bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-xs font-bold font-mono">
                     S{section.idx}
                   </span>
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <h3 className="font-bold text-sm text-slate-100">{section.title}</h3>
-                    <div className="flex items-center gap-3 text-[11px] text-slate-500 mt-0.5">
+                    <div className="flex items-center gap-3 text-[11px] text-slate-500 mt-0.5 flex-wrap">
+                      <span className="text-slate-400">
+                        {section.questions.length} question(s)
+                      </span>
                       {section.audioUrl ? (
                         <span className="text-emerald-400 font-mono flex items-center gap-1">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
@@ -558,13 +653,48 @@ export default function AdminExamEditorPage({
                         <span className="text-slate-500 italic">No audio recording</span>
                       )}
                       {section.passageMd && (
-                        <span>Reading passage: {section.passageMd.length} chars</span>
+                        <span>Passage: {section.passageMd.length} chars</span>
                       )}
+                      {(() => {
+                        const issues = validateSection(
+                          { audioUrl: section.audioUrl, passageMd: section.passageMd },
+                          section.questions.map((q) => ({ type: q.type, skill: q.skill }))
+                        );
+                        if (issues.length === 0) return null;
+                        return (
+                          <span
+                            className={`font-semibold ${
+                              issues.some((i) => i.level === "error")
+                                ? "text-rose-400"
+                                : "text-amber-400"
+                            }`}
+                            title={issues.map((i) => i.message).join("\n")}
+                          >
+                            {issues.some((i) => i.level === "error") ? "✗" : "⚠"} {issues.length} issue(s)
+                          </span>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => section.id && setImportSectionId(section.id)}
+                    className="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/60 transition"
+                    title="Bulk import questions via JSON"
+                  >
+                    Import JSON
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => section.id && setAiSectionId(section.id)}
+                    className="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-gradient-to-r from-violet-600/30 to-fuchsia-600/30 hover:from-violet-600/40 hover:to-fuchsia-600/40 text-violet-200 border border-violet-500/40 transition"
+                    title="Generate questions with AI"
+                  >
+                    ✨ AI Author
+                  </button>
                   <button
                     type="button"
                     onClick={() => setEditingSection(section)}
@@ -631,22 +761,60 @@ export default function AdminExamEditorPage({
 
               {/* Questions list */}
               <div className="space-y-4 pt-2">
-                {section.questions.length === 0 ? (
-                  <div className="p-6 text-center rounded-xl border border-dashed border-slate-800 text-xs text-slate-500">
-                    No questions in this section yet. Click &ldquo;Add Question&rdquo; above.
-                  </div>
-                ) : (
-                  section.questions.map((question) => (
+                {(() => {
+                  const filtered = questionSearch.trim()
+                    ? section.questions.filter((q) => {
+                        const term = questionSearch.toLowerCase();
+                        const inPrompt = (q.promptMd || "").toLowerCase().includes(term);
+                        const inExpl = (q.explanationMd || "").toLowerCase().includes(term);
+                        const inType = (q.type || "").toLowerCase().includes(term);
+                        const inOptions = (q.options || []).some((o) =>
+                          (o.contentMd || "").toLowerCase().includes(term)
+                        );
+                        const inPairs = q.matchPairs
+                          ? Object.entries(q.matchPairs).some(([k, v]) => {
+                              if (k.toLowerCase().includes(term)) return true;
+                              if (Array.isArray(v) && v.some((x) => (x || "").toLowerCase().includes(term))) return true;
+                              return false;
+                            })
+                          : false;
+                        const inBlanks = q.blankAcceptTexts
+                          ? Object.values(q.blankAcceptTexts).some((arr) =>
+                              Array.isArray(arr) && arr.some((v) => (v || "").toLowerCase().includes(term))
+                            )
+                          : false;
+                        return inPrompt || inExpl || inType || inOptions || inPairs || inBlanks;
+                      })
+                    : section.questions;
+                  if (section.questions.length === 0) {
+                    return (
+                      <div className="p-6 text-center rounded-xl border border-dashed border-slate-800 text-xs text-slate-500">
+                        No questions in this section yet. Click &ldquo;Add Question&rdquo; above.
+                      </div>
+                    );
+                  }
+                  if (filtered.length === 0) {
+                    return (
+                      <div className="p-6 text-center rounded-xl border border-dashed border-slate-800 text-xs text-slate-500">
+                        No questions in this section match &ldquo;{questionSearch}&rdquo;.
+                      </div>
+                    );
+                  }
+                  return filtered.map((question) => (
                     <QuestionEditor
                       key={question.id ? `${section.id}-${question.id}-${question.idx}` : `q-${section.id}-${question.idx}`}
                       question={question}
                       sectionId={section.id || ""}
                       sectionAudioUrl={section.audioUrl}
+                      availableSections={exam?.sections
+                        .filter((s) => s.id && s.id !== section.id)
+                        .map((s) => ({ id: s.id as string, title: s.title }))}
                       onSave={(updated) => handleSaveQuestion(section.id || "", updated)}
                       onDelete={handleDeleteQuestion}
+                      onDuplicate={handleDuplicateQuestion}
                     />
-                  ))
-                )}
+                  ));
+                })()}
               </div>
             </div>
           ))
@@ -828,73 +996,62 @@ export default function AdminExamEditorPage({
         </div>
       )}
 
-      {/* Modal: New Question Type Selector */}
+      {/* Modal: New Question Type Picker */}
       {targetSectionForNewQuestion && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4">
-          <div className="w-full max-w-md rounded-2xl bg-slate-900 border border-slate-800 p-6 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h2 className="text-base font-bold text-white">Add Question</h2>
-              <button
-                onClick={() => setTargetSectionForNewQuestion(null)}
-                className="text-slate-500 hover:text-slate-300 text-lg leading-none"
-              >
-                ✕
-              </button>
-            </div>
+        <QuestionTypeCardPicker
+          initialType={newQuestionType}
+          initialSkill={newQuestionSkill}
+          onConfirm={(type, skill) => {
+            setNewQuestionType(type);
+            setNewQuestionSkill(skill);
+            handleAddQuestionToSection(targetSectionForNewQuestion);
+          }}
+          onCancel={() => setTargetSectionForNewQuestion(null)}
+        />
+      )}
 
-            <div className="mt-4 space-y-4">
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
-                  Question Type
-                </label>
-                <select
-                  value={newQuestionType}
-                  onChange={(e) => setNewQuestionType(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500"
-                >
-                  {Object.values(QuestionType).map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
-              </div>
+      {/* Modal: Bulk Import */}
+      {importSectionId && (
+        <QuestionImporter
+          sectionId={importSectionId}
+          onImported={(n) => {
+            setImportSectionId(null);
+            showToast(`Imported ${n} question(s)`, "success");
+            loadExam();
+          }}
+          onCancel={() => setImportSectionId(null)}
+        />
+      )}
 
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
-                  Skill
-                </label>
-                <select
-                  value={newQuestionSkill}
-                  onChange={(e) => setNewQuestionSkill(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500"
-                >
-                  {Object.values(QuestionSkill).map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
-              </div>
+      {/* Modal: AI Author */}
+      {aiSectionId && (
+        <AiAuthorModal
+          sectionId={aiSectionId}
+          onGenerated={(n) => {
+            setAiSectionId(null);
+            showToast(`AI generated ${n} question(s)`, "success");
+            loadExam();
+          }}
+          onCancel={() => setAiSectionId(null)}
+        />
+      )}
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setTargetSectionForNewQuestion(null)}
-                  className="px-4 py-2 text-xs font-medium text-slate-400 hover:text-slate-200 rounded-lg transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  disabled={creatingQuestion}
-                  onClick={() => handleAddQuestionToSection(targetSectionForNewQuestion)}
-                  className="px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition disabled:opacity-50"
-                >
-                  {creatingQuestion ? "Creating..." : "Create Question"}
-                </button>
-              </div>
-            </div>
+      {/* Toast notifications */}
+      {toast && (
+        <div
+          className={`fixed bottom-6 right-6 z-[60] px-4 py-2.5 rounded-xl shadow-2xl text-xs font-semibold border backdrop-blur-sm animate-in fade-in slide-in-from-bottom-4 ${
+            toast.kind === "success"
+              ? "bg-emerald-950/90 text-emerald-200 border-emerald-700"
+              : toast.kind === "error"
+                ? "bg-rose-950/90 text-rose-200 border-rose-700"
+                : "bg-slate-900/90 text-slate-200 border-slate-700"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <span>
+              {toast.kind === "success" ? "✓" : toast.kind === "error" ? "✕" : "ℹ"}
+            </span>
+            <span>{toast.text}</span>
           </div>
         </div>
       )}

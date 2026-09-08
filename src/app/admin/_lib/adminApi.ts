@@ -193,11 +193,11 @@ export async function getFullExamForEditor(examId: string): Promise<InternalDeli
       }
 
       const enrichQuestion = (q: InternalDeliveryQuestion, qIndex: number): InternalDeliveryQuestion => {
-        // Match 1:1 by sequential array index first (clean 1-to-1 pairing)
         const matched = adminQuestions[qIndex] || questionByIdx.get(q.idx);
         return {
           ...q,
           id: matched?.id || q.id,
+          sectionId: secId,
         };
       };
 

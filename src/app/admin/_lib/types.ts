@@ -135,6 +135,7 @@ export interface AdminQuestionUpsert {
   Difficulty: number;
   PromptMd?: string | null;
   ExplanationMd?: string | null;
+  ImageUrl?: string | null;
   BlankAcceptTexts?: Record<string, string[] | null> | null;
   BlankAcceptRegex?: Record<string, string[] | null> | null;
   MatchPairs?: Record<string, string[] | null> | null;
@@ -151,6 +152,7 @@ export interface AdminQuestionUpdate {
   Difficulty: number;
   PromptMd?: string | null;
   ExplanationMd?: string | null;
+  ImageUrl?: string | null;
   BlankAcceptTexts?: Record<string, string[] | null> | null;
   BlankAcceptRegex?: Record<string, string[] | null> | null;
   MatchPairs?: Record<string, string[] | null> | null;
@@ -175,6 +177,8 @@ export interface AdminOptionUpsert {
   Idx?: number;
   ContentMd: string;
   IsCorrect: boolean;
+  ImageUrl?: string | null;
+  AltText?: string | null;
 }
 
 export interface AdminOptionUpdate {
@@ -182,6 +186,8 @@ export interface AdminOptionUpdate {
   Idx?: number;
   ContentMd: string;
   IsCorrect: boolean;
+  ImageUrl?: string | null;
+  AltText?: string | null;
 }
 
 export interface AdminOptionItem {
@@ -190,6 +196,8 @@ export interface AdminOptionItem {
   idx: number;
   contentMd: string;
   isCorrect: boolean;
+  imageUrl?: string | null;
+  altText?: string | null;
 }
 
 // Internal Delivery Types (full paper structure)
@@ -198,6 +206,8 @@ export interface InternalDeliveryOption {
   idx: number;
   contentMd: string;
   isCorrect?: boolean | null;
+  imageUrl?: string | null;
+  altText?: string | null;
 }
 
 export interface InternalFlowChartNode {
@@ -209,11 +219,13 @@ export interface InternalDeliveryQuestion {
   id?: string; // Resolved client-side from AdminQuestion
   idx: number;
   displayIdx?: number; // Continuous 1..N sequential index across whole exam
+  sectionId?: string; // Resolved client-side when needed (e.g. duplicate)
   type: string;
   skill: string;
   difficulty: number;
   promptMd?: string | null;
   explanationMd?: string | null;
+  imageUrl?: string | null;
   options: InternalDeliveryOption[];
   flowChartNodes?: InternalFlowChartNode[] | null;
   blankAcceptTexts?: Record<string, string[] | null> | null;

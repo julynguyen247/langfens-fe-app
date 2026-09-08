@@ -9,17 +9,22 @@ interface BlankAcceptsEditorProps {
     texts: Record<string, string[] | null>,
     regex: Record<string, string[] | null>
   ) => void;
+  variant?: "default" | "diagram" | "map";
+  imageUrl?: string | null;
+  onImageUrlChange?: (url: string) => void;
 }
 
 export function BlankAcceptsEditor({
   blankAcceptTexts,
   blankAcceptRegex,
   onChange,
+  variant = "default",
+  imageUrl,
+  onImageUrlChange,
 }: BlankAcceptsEditorProps) {
   const texts = blankAcceptTexts || {};
   const regex = blankAcceptRegex || {};
 
-  // All unique blank keys sorted
   const keys = Array.from(
     new Set([...Object.keys(texts), ...Object.keys(regex)])
   ).sort((a, b) => {
@@ -30,6 +35,24 @@ export function BlankAcceptsEditor({
   });
 
   const [newKeyInput, setNewKeyInput] = useState("");
+
+  const heading =
+    variant === "diagram"
+      ? "Diagram Label Blanks"
+      : variant === "map"
+        ? "Map Label Blanks"
+        : "Blanks & Accepted Answers";
+
+  const helper =
+    variant === "diagram"
+      ? "Use [1], [2]… placeholders in prompt to mark each labeled part of the diagram."
+      : variant === "map"
+        ? "Use [1], [2]… placeholders in prompt to mark each labeled position on the map."
+        : "Configure accepted strings and optional regex for each blank placeholder in prompt.";
+
+  const placeholder = variant === "diagram" || variant === "map"
+    ? "e.g. chlorophyll, chloroplast"
+    : "e.g. apple, apples, an apple";
 
   const handleUpdateTexts = (key: string, rawCsv: string) => {
     const items = rawCsv
@@ -54,7 +77,6 @@ export function BlankAcceptsEditor({
   const handleAddBlank = (customKey?: string) => {
     let nextKey = customKey?.trim() || newKeyInput.trim();
     if (!nextKey) {
-      // Find lowest unused integer key starting from 1
       let i = 1;
       while (keys.includes(String(i))) {
         i++;
@@ -83,14 +105,48 @@ export function BlankAcceptsEditor({
 
   return (
     <div className="space-y-4">
+      {(variant === "diagram" || variant === "map") && onImageUrlChange && (
+        <div className="p-3 rounded-lg bg-slate-900/50 border border-slate-800 space-y-2">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+            {variant === "diagram" ? "Diagram Image" : "Map Image"}
+          </span>
+          <div className="flex items-center gap-2">
+            {imageUrl ? (
+              <img
+                src={imageUrl}
+                alt=""
+                className="w-12 h-12 rounded border border-slate-700 object-cover shrink-0"
+              />
+            ) : (
+              <div className="w-12 h-12 rounded border border-dashed border-slate-700 flex items-center justify-center text-[10px] text-slate-600 shrink-0">
+                {variant === "diagram" ? "DIAG" : "MAP"}
+              </div>
+            )}
+            <input
+              type="url"
+              value={imageUrl || ""}
+              onChange={(e) => onImageUrlChange(e.target.value)}
+              placeholder={
+                variant === "diagram"
+                  ? "https://.../diagram.png"
+                  : "https://.../map.png"
+              }
+              className="flex-1 bg-slate-950 border border-slate-800 rounded-md px-2.5 py-1.5 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500"
+            />
+          </div>
+          <p className="text-[10px] text-slate-500">
+            Candidates see this image and type answers into the [1], [2]… blanks
+            you define below.
+          </p>
+        </div>
+      )}
+
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-            Blanks & Accepted Answers
+            {heading}
           </span>
-          <p className="text-[11px] text-slate-500 mt-0.5">
-            Configure accepted strings and optional regex for each blank placeholder in prompt.
-          </p>
+          <p className="text-[11px] text-slate-500 mt-0.5">{helper}</p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -115,7 +171,6 @@ export function BlankAcceptsEditor({
         </div>
       </div>
 
-      {/* List of Blanks */}
       <div className="space-y-3">
         {keys.length === 0 ? (
           <div className="p-4 text-center rounded-lg border border-dashed border-slate-800 text-xs text-slate-500">
@@ -137,7 +192,7 @@ export function BlankAcceptsEditor({
                       Blank [{key}]
                     </span>
                     <span className="text-[11px] text-slate-500">
-                      Matches placeholder [1] or [{key}] in prompt
+                      Matches placeholder [{key}] in prompt
                     </span>
                   </div>
                   <button
@@ -152,21 +207,19 @@ export function BlankAcceptsEditor({
                   </button>
                 </div>
 
-                {/* Accepted texts */}
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-400 mb-1">
                     Accepted Text Answers (comma-separated for multiple valid spellings) *
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. apple, apples, an apple"
+                    placeholder={placeholder}
                     value={acceptedTextsList.join(", ")}
                     onChange={(e) => handleUpdateTexts(key, e.target.value)}
                     className="w-full bg-slate-950 border border-slate-800 rounded-md px-3 py-1.5 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 font-mono"
                   />
                 </div>
 
-                {/* Accepted regex */}
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-500 mb-1">
                     Optional Regex Patterns (comma-separated, e.g. ^apple(s)?$)

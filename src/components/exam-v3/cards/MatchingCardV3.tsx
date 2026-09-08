@@ -6,14 +6,43 @@ import { InternalDeliveryOption, UserAnswerValue } from "../types";
 interface MatchingCardV3Props {
   matchPairs?: Record<string, string[] | null> | null;
   options: InternalDeliveryOption[];
+  promptMd?: string | null;
   mode: "exam" | "review";
   value?: UserAnswerValue;
   onChange?: (val: UserAnswerValue) => void;
 }
 
+function countStatementsInPrompt(prompt: string | null | undefined): number {
+  if (!prompt) return 0;
+  const text = prompt.replace(/\\n/g, "\n");
+  let count = 0;
+  const re = /^\d+\.\s+/gm;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) count++;
+  return count;
+}
+
+function parseCategoriesFromPrompt(
+  prompt: string | null | undefined
+): { key: string; label: string }[] {
+  if (!prompt) return [];
+  const text = prompt.replace(/\\n/g, "\n");
+  const out: { key: string; label: string }[] = [];
+  const re = /^([A-Z])\.\s+(.+)$/gm;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    out.push({
+      key: m[1].toLowerCase(),
+      label: `${m[1]}. ${m[2].trim()}`,
+    });
+  }
+  return out;
+}
+
 export function MatchingCardV3({
   matchPairs,
   options,
+  promptMd,
   mode,
   value,
   onChange,
@@ -21,6 +50,11 @@ export function MatchingCardV3({
   const isReview = mode === "review";
   const pairs = matchPairs || {};
   const promptKeys = Object.keys(pairs).sort();
+  const fallbackCount = countStatementsInPrompt(promptMd);
+  const effectiveKeys =
+    promptKeys.length > 0
+      ? promptKeys
+      : Array.from({ length: Math.max(fallbackCount, 1) }, (_, i) => String(i));
 
   const userDict: Record<string, string> =
     value && typeof value === "object" && !Array.isArray(value)
@@ -44,24 +78,19 @@ export function MatchingCardV3({
       });
     }
   } else {
+    const seen = new Set<string>();
     for (const pKey of promptKeys) {
       const val = pairs[pKey];
       if (val && val[0]) {
         const k = val[0].toLowerCase();
-        let exists = false;
-        for (const c of choices) {
-          if (c.key === k) {
-            exists = true;
-            break;
-          }
-        }
-        if (!exists) {
-          choices.push({
-            key: k,
-            label: val[1] || val[0],
-          });
+        if (!seen.has(k)) {
+          seen.add(k);
+          choices.push({ key: k, label: val[1] || val[0] });
         }
       }
+    }
+    if (choices.length === 0) {
+      for (const c of parseCategoriesFromPrompt(promptMd)) choices.push(c);
     }
   }
 
@@ -88,7 +117,7 @@ export function MatchingCardV3({
 
       {/* Target Items List */}
       <div className="space-y-3">
-        {promptKeys.map((pKey) => {
+        {effectiveKeys.map((pKey) => {
           const userChoice = (userDict[pKey] || "").toLowerCase().trim();
           const targetPair = pairs[pKey] || [];
           const correctKey = (targetPair[0] || "").toLowerCase().trim();

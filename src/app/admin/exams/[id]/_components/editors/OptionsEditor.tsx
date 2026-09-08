@@ -8,6 +8,7 @@ interface OptionsEditorProps {
   isMultiple: boolean;
   questionType: string;
   onChange: (options: InternalDeliveryOption[]) => void;
+  enableImage?: boolean;
 }
 
 export function OptionsEditor({
@@ -15,6 +16,7 @@ export function OptionsEditor({
   isMultiple,
   questionType,
   onChange,
+  enableImage = false,
 }: OptionsEditorProps) {
   const [editingText, setEditingText] = useState<Record<number, string>>({});
 
@@ -35,6 +37,13 @@ export function OptionsEditor({
   const handleContentChange = (idx: number, content: string) => {
     const updated = options.map((opt) =>
       opt.idx === idx ? { ...opt, contentMd: content } : opt
+    );
+    onChange(updated);
+  };
+
+  const handleImageChange = (idx: number, imageUrl: string, altText: string) => {
+    const updated = options.map((opt) =>
+      opt.idx === idx ? { ...opt, imageUrl: imageUrl || undefined, altText: altText || undefined } : opt
     );
     onChange(updated);
   };
@@ -178,7 +187,7 @@ export function OptionsEditor({
               </span>
 
               {/* Content Markdown input */}
-              <div className="flex-1">
+              <div className="flex-1 space-y-1.5">
                 <input
                   type="text"
                   placeholder="Option text (Markdown supported)..."
@@ -186,6 +195,37 @@ export function OptionsEditor({
                   onChange={(e) => handleContentChange(opt.idx, e.target.value)}
                   className="w-full bg-slate-950 border border-slate-800 rounded-md px-3 py-1.5 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500"
                 />
+                {enableImage && (
+                  <div className="flex items-center gap-2 pl-1">
+                    {opt.imageUrl ? (
+                      <img
+                        src={opt.imageUrl}
+                        alt={opt.altText || ""}
+                        className="w-8 h-8 rounded border border-slate-700 object-cover shrink-0"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded border border-dashed border-slate-700 flex items-center justify-center text-[10px] text-slate-600 shrink-0">
+                        IMG
+                      </div>
+                    )}
+                    <input
+                      type="url"
+                      placeholder="Image URL (optional)"
+                      value={opt.imageUrl || ""}
+                      onChange={(e) => handleImageChange(opt.idx, e.target.value, opt.altText || "")}
+                      className="flex-1 bg-slate-950 border border-slate-800 rounded-md px-2 py-0.5 text-[11px] text-slate-300 placeholder-slate-600 focus:outline-none focus:border-indigo-500"
+                    />
+                    {opt.imageUrl && (
+                      <input
+                        type="text"
+                        placeholder="Alt text"
+                        value={opt.altText || ""}
+                        onChange={(e) => handleImageChange(opt.idx, opt.imageUrl || "", e.target.value)}
+                        className="w-24 bg-slate-950 border border-slate-800 rounded-md px-2 py-0.5 text-[11px] text-slate-300 placeholder-slate-600 focus:outline-none focus:border-indigo-500"
+                      />
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Remove button */}

@@ -119,6 +119,7 @@ export function QuestionCard({
         <MatchingCard
           matchPairs={question.matchPairs}
           options={question.options || []}
+          promptMd={question.promptMd}
           value={value}
           isReview={isReview}
           onChange={onAnswerChange}

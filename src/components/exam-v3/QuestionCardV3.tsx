@@ -111,6 +111,7 @@ export function QuestionCardV3({
         <MatchingCardV3
           matchPairs={question.matchPairs}
           options={question.options || []}
+          promptMd={question.promptMd}
           mode={mode}
           value={value}
           onChange={onAnswerChange}

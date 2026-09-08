@@ -7,35 +7,15 @@ import {
   getQuestionBankQuestions,
 } from "@/app/admin/_lib/adminApi";
 import { QuestionSkill } from "@/app/admin/_lib/types";
+import { MiniQuestionCard } from "./_components/MiniQuestionCard";
+import { QuestionBankItem } from "./_components/types";
 
 interface QuestionTypeCount {
   type: string;
   count: number;
 }
 
-interface QuestionBankOption {
-  id: string;
-  text: string;
-  isCorrect: boolean;
-  idx: number;
-}
-
-interface QuestionBankItem {
-  id: string;
-  idx: number;
-  type: string;
-  skill: string;
-  difficulty: number;
-  promptMd?: string | null;
-  explanationMd?: string | null;
-  sectionId: string;
-  sectionTitle: string;
-  examId: string;
-  examTitle: string;
-  options?: QuestionBankOption[] | null;
-}
-
-interface QuestionBankResult {
+interface QuestionBankResultLocal {
   items: QuestionBankItem[];
   totalCount: number;
   page: number;
@@ -61,11 +41,11 @@ function parseErrorMessage(err: unknown): string {
 
 export default function AdminQuestionBankPage() {
   const [selectedSkill, setSelectedSkill] = useState<string>("ALL");
-  const [types, setTypes] = useState<QuestionTypeCount[]>([]);
+  const [types, setTypes] = useState<import("./_components/types").QuestionTypeCount[]>([]);
   const [typesLoading, setTypesLoading] = useState(true);
 
   const [selectedType, setSelectedType] = useState<string | null>(null);
-  const [questionsResult, setQuestionsResult] = useState<QuestionBankResult | null>(null);
+  const [questionsResult, setQuestionsResult] = useState<QuestionBankResultLocal | null>(null);
   const [questionsLoading, setQuestionsLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [error, setError] = useState<string | null>(null);
@@ -361,6 +341,9 @@ export default function AdminQuestionBankPage() {
                       ))}
                     </div>
                   )}
+
+                  {/* Type-specific preview (replaces options-only preview when other data exists) */}
+                  <MiniQuestionCard item={item} />
                 </div>
               ))}
             </div>
