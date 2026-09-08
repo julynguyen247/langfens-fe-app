@@ -76,7 +76,7 @@ export function PassagePanel({
         <div className="flex items-center gap-2">
           {sections.map((sec, i) => (
             <button
-              key={sec.id || sec.idx || i}
+              key={`${sec.id ?? "no-id"}-${sec.idx ?? "no-idx"}-${i}`}
               type="button"
               onClick={() => onSelectSection(i)}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${

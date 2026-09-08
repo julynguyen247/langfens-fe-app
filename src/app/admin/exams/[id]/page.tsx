@@ -638,7 +638,7 @@ export default function AdminExamEditorPage({
                 ) : (
                   section.questions.map((question) => (
                     <QuestionEditor
-                      key={question.id || question.idx}
+                      key={question.id ? `${section.id}-${question.id}-${question.idx}` : `q-${section.id}-${question.idx}`}
                       question={question}
                       sectionId={section.id || ""}
                       sectionAudioUrl={section.audioUrl}

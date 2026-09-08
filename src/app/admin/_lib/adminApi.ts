@@ -182,30 +182,36 @@ export async function getFullExamForEditor(examId: string): Promise<InternalDeli
 
   const enrichedSections: InternalDeliverySection[] = (delivery.sections || []).map(
     (sec, secIndex) => {
-      const adminSec = sectionByIdx.get(sec.idx) || adminSections[secIndex];
+      const adminSec = adminSections[secIndex] || sectionByIdx.get(sec.idx);
       const secId = adminSec?.id;
 
       const adminQuestions = secId ? questionsBySectionId.get(secId) || [] : [];
+      adminQuestions.sort((a, b) => a.idx - b.idx);
       const questionByIdx = new Map<number, AdminQuestionItem>();
       for (const q of adminQuestions) {
         questionByIdx.set(q.idx, q);
       }
 
       const enrichQuestion = (q: InternalDeliveryQuestion, qIndex: number): InternalDeliveryQuestion => {
-        const matched = questionByIdx.get(q.idx) || adminQuestions[qIndex];
+        // Match 1:1 by sequential array index first (clean 1-to-1 pairing)
+        const matched = adminQuestions[qIndex] || questionByIdx.get(q.idx);
         return {
           ...q,
           id: matched?.id || q.id,
         };
       };
 
-      const enrichedQuestions = (sec.questions || []).map(enrichQuestion);
+      const rawQuestions =
+        sec.questions && sec.questions.length > 0
+          ? sec.questions
+          : (sec.questionGroups || []).flatMap((grp) => grp.questions || []);
+
+      const enrichedQuestions = rawQuestions.map(enrichQuestion);
 
       const enrichedGroups = (sec.questionGroups || []).map((grp) => ({
         ...grp,
         questions: (grp.questions || []).map(enrichQuestion),
       }));
-
       return {
         ...sec,
         id: secId || sec.id,

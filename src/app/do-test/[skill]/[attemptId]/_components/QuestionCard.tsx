@@ -100,6 +100,7 @@ export function QuestionCard({
         <CompletionCard
           blankAcceptTexts={question.blankAcceptTexts}
           blankAcceptRegex={question.blankAcceptRegex}
+          promptMd={question.promptMd}
           value={value}
           isReview={isReview}
           onChange={onAnswerChange}

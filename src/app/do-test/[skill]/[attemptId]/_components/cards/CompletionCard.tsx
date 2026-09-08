@@ -5,6 +5,7 @@ import { UserAnswerValue } from "../../_lib/types";
 interface CompletionCardProps {
   blankAcceptTexts?: Record<string, string[] | null> | null;
   blankAcceptRegex?: Record<string, string[] | null> | null;
+  promptMd?: string | null;
   value?: UserAnswerValue;
   isReview: boolean;
   onChange: (val: UserAnswerValue) => void;
@@ -12,20 +13,41 @@ interface CompletionCardProps {
 
 export function CompletionCard({
   blankAcceptTexts,
+  promptMd,
   value,
   isReview,
   onChange,
 }: CompletionCardProps) {
   const texts = blankAcceptTexts || {};
-  const blankKeys = Object.keys(texts).length > 0 ? Object.keys(texts) : ["1"];
+  let blankKeys = Object.keys(texts);
 
-  // Sort keys numerically if possible
-  blankKeys.sort((a, b) => {
-    const na = Number(a);
-    const nb = Number(b);
-    if (!isNaN(na) && !isNaN(nb)) return na - nb;
-    return a.localeCompare(b);
-  });
+  // When blankAcceptTexts is empty (e.g. during live test where answers are stripped for security):
+  if (blankKeys.length === 0) {
+    if (promptMd) {
+      // 1. Check for bracketed placeholders [0], [1], [2] or [1], [2], [3]
+      const bracketMatches = Array.from(promptMd.matchAll(/\[(\d+)\]/g)).map((m) => m[1]);
+      if (bracketMatches.length > 0) {
+        blankKeys = Array.from(new Set(bracketMatches)).sort((a, b) => Number(a) - Number(b));
+      } else {
+        // 2. Check for underscore placeholders __________
+        const underscores = promptMd.match(/_{3,}/g) || [];
+        if (underscores.length > 0) {
+          blankKeys = underscores.map((_, i) => String(i));
+        }
+      }
+    }
+  }
+
+  if (blankKeys.length === 0) {
+    blankKeys = ["0"];
+  } else {
+    blankKeys.sort((a, b) => {
+      const na = Number(a);
+      const nb = Number(b);
+      if (!isNaN(na) && !isNaN(nb)) return na - nb;
+      return a.localeCompare(b);
+    });
+  }
 
   const userDict: Record<string, string> =
     value && typeof value === "object" && !Array.isArray(value)
@@ -65,11 +87,15 @@ export function CompletionCard({
           }
         }
 
+        const displayNum = !isNaN(Number(key))
+          ? Number(key) + (blankKeys[0] === "0" ? 1 : 0)
+          : blankKeys.indexOf(key) + 1;
+
         return (
           <div key={key} className="space-y-1.5 p-3 rounded-2xl bg-slate-50/50 border border-slate-100">
             <div className="flex items-center gap-3">
               <span className="font-mono text-xs font-bold text-[#2563EB] bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-xl shrink-0">
-                Blank [{key}]
+                Blank [{displayNum}]
               </span>
 
               <div className="flex-1 relative">
@@ -78,10 +104,9 @@ export function CompletionCard({
                   disabled={isReview}
                   value={isReview && !cleanUser ? "(Unanswered)" : userVal}
                   onChange={(e) => handleInputChange(key, e.target.value)}
-                  placeholder={`Type answer for blank [${key}]...`}
+                  placeholder={`Type answer for blank [${displayNum}]...`}
                   className={`w-full rounded-xl border-2 px-4 py-2.5 text-xs sm:text-sm focus:outline-none transition-all shadow-2xs ${inputClass}`}
                 />
-
                 {isReview && (
                   <span className="absolute right-3.5 top-2.5 text-sm">
                     {isCorrect ? (

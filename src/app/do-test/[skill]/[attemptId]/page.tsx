@@ -30,6 +30,7 @@ import { Group, Panel, Separator } from "react-resizable-panels";
 import { motion } from "framer-motion";
 import WritingAssistRail from "./components/writing/WritingAssistRail";
 import type { RagFeedbackEnvelope } from "@/types/rag";
+import { TestV2Runner } from "./_components/TestV2Runner";
 
 // Material Icon Component
 function Icon({ name, className = "" }: { name: string; className?: string }) {
@@ -119,8 +120,8 @@ export default function DoTestAttemptPage() {
     );
   }
 
-  if (skill === "reading") return <ReadingScreen attemptId={attemptId} />;
-  if (skill === "listening") return <ListeningScreen attemptId={attemptId} />;
+  if (skill === "reading") return <TestV2Runner attemptId={attemptId} />;
+  if (skill === "listening") return <TestV2Runner attemptId={attemptId} />;
   if (skill === "speaking") return <SpeakingScreen attemptId={attemptId} />;
   if (skill === "writing") return <WritingScreen attemptId={attemptId} />;
 

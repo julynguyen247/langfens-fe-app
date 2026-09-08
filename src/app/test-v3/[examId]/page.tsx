@@ -1,41 +1,27 @@
 "use client";
 
-import { useEffect, useState, use, useMemo, useRef } from "react";
+import React, { useEffect, useState, use, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getExamDelivery } from "@/app/admin/_lib/adminApi";
 import {
   enrichExamWithSequentialNumbers,
   ExamGradeSummary,
   InternalDeliveryExam,
+  InternalDeliverySection,
+  InternalDeliveryQuestionGroup,
   InternalDeliveryQuestion,
+  QuestionGradeResult,
   UserAnswerValue,
-} from "../_lib/types";
+} from "@/components/exam-v3/types";
+import { fetchExamDeliveryPaper } from "../_lib/examApi";
 import { gradeExamPaper } from "../_lib/grader";
-import { TopBar } from "../_components/TopBar";
-import { PassagePanel } from "../_components/PassagePanel";
-import { QuestionCard } from "../_components/QuestionCard";
-import { QuestionNavigator } from "../_components/QuestionNavigator";
-import { ScoreModal } from "../_components/ScoreModal";
+import { ExamTopBar } from "../_components/ExamTopBar";
+import { ScoreModalV3 } from "../_components/ScoreModalV3";
+import { PassagePanelV3 } from "@/components/exam-v3/PassagePanelV3";
+import { QuestionCardV3 } from "@/components/exam-v3/QuestionCardV3";
+import { QuestionNavigatorV3 } from "@/components/exam-v3/QuestionNavigatorV3";
 
-function extractError(err: unknown): string {
-  if (err && typeof err === "object") {
-    if ("response" in err && err.response && typeof err.response === "object") {
-      const resp = err.response;
-      if ("data" in resp && resp.data && typeof resp.data === "object") {
-        const data = resp.data;
-        if ("message" in data && typeof data.message === "string") {
-          return data.message;
-        }
-      }
-    } else if ("message" in err && typeof err.message === "string") {
-      return err.message;
-    }
-  }
-  return "Failed to load test paper";
-}
-
-export default function TestV2ExamPage({
+export default function TestV3ExamPage({
   params,
 }: {
   params: Promise<{ examId: string }>;
@@ -70,15 +56,19 @@ export default function TestV2ExamPage({
       try {
         setLoading(true);
         setError(null);
-        const raw = await getExamDelivery(examId, true);
-        if (!raw) throw new Error("Exam payload empty or not found");
+        const raw = await fetchExamDeliveryPaper(examId, true);
+        if (!raw) throw new Error("Exam payload is empty or not found.");
 
         const { enrichedExam } = enrichExamWithSequentialNumbers(raw);
         setExam(enrichedExam);
         const durationSeconds = (enrichedExam.durationMin || 60) * 60;
         setTimeRemaining(durationSeconds);
       } catch (err: unknown) {
-        setError(extractError(err));
+        let msg = "Failed to load exam paper.";
+        if (err && typeof err === "object" && "message" in err && typeof err.message === "string") {
+          msg = err.message;
+        }
+        setError(msg);
       } finally {
         setLoading(false);
       }
@@ -105,7 +95,7 @@ export default function TestV2ExamPage({
     return () => clearInterval(timer);
   }, [isSubmitted, loading, exam]);
 
-  // All question indices across entire exam (1, 2, 3 ... N)
+  // All question numbers across entire exam
   const allQuestionIndices = useMemo(() => {
     if (!exam) return [];
     const list: number[] = [];
@@ -124,36 +114,22 @@ export default function TestV2ExamPage({
     return list.sort((a, b) => a - b);
   }, [exam]);
 
-  // Handle answering
-  const handleAnswerChange = (qIdx: number, val: UserAnswerValue) => {
+  const handleAnswerChange = (qIndex: number, val: UserAnswerValue) => {
     if (isSubmitted) return;
-    setAnswers((prev) => ({ ...prev, [qIdx]: val }));
+    setAnswers((prev) => ({
+      ...prev,
+      [qIndex]: val,
+    }));
   };
 
-  // Toggle question flag
-  const handleToggleFlag = (qIdx: number) => {
+  const handleToggleFlag = (qIndex: number) => {
     setFlaggedIndices((prev) =>
-      prev.includes(qIdx) ? prev.filter((i) => i !== qIdx) : [...prev, qIdx]
+      prev.includes(qIndex) ? prev.filter((i) => i !== qIndex) : [...prev, qIndex]
     );
   };
 
-  // Submit and grade
   const handleSubmitExam = () => {
-    if (!exam) return;
-
-    if (!isSubmitted) {
-      const unansweredCount =
-        allQuestionIndices.length - Object.keys(answers).length;
-      if (unansweredCount > 0) {
-        if (
-          !window.confirm(
-            `You still have ${unansweredCount} unanswered questions. Submit exam now?`
-          )
-        ) {
-          return;
-        }
-      }
-    }
+    if (!exam || isSubmitted) return;
 
     const summary = gradeExamPaper(exam, answers);
     setGradeSummary(summary);
@@ -161,29 +137,13 @@ export default function TestV2ExamPage({
     setIsScoreModalOpen(true);
   };
 
-  // Retake
-  const handleRetake = () => {
-    if (!exam) return;
-    setAnswers({});
-    setFlaggedIndices([]);
-    setIsSubmitted(false);
-    setGradeSummary(null);
-    setIsScoreModalOpen(false);
-    setTimeRemaining((exam.durationMin || 60) * 60);
-    setActiveSectionIdx(0);
-  };
-
-  // Navigation jumping
-  const handleSelectQuestion = (qIdx: number) => {
+  const handleSelectQuestion = (qIndex: number) => {
     if (!exam) return;
 
-    // Find which section contains this question
-    const secIndex = exam.sections.findIndex((sec) => {
-      const inMain = (sec.questions || []).some(
-        (q) => (q.displayIdx ?? q.idx) === qIdx
-      );
-      const inGroup = (sec.questionGroups || []).some((g) =>
-        (g.questions || []).some((q) => (q.displayIdx ?? q.idx) === qIdx)
+    const secIndex = exam.sections.findIndex((sec: InternalDeliverySection) => {
+      const inMain = (sec.questions || []).some((q: InternalDeliveryQuestion) => (q.displayIdx ?? q.idx) === qIndex);
+      const inGroup = (sec.questionGroups || []).some((g: InternalDeliveryQuestionGroup) =>
+        (g.questions || []).some((q: InternalDeliveryQuestion) => (q.displayIdx ?? q.idx) === qIndex)
       );
       return inMain || inGroup;
     });
@@ -192,33 +152,43 @@ export default function TestV2ExamPage({
       setActiveSectionIdx(secIndex);
     }
 
-    setActiveQuestionIdx(qIdx);
+    setActiveQuestionIdx(qIndex);
 
-    // Smooth scroll to card
     setTimeout(() => {
-      const el = document.getElementById(`q-${qIdx}`);
+      const el = document.getElementById(`q-${qIndex}`);
       if (el) {
         el.scrollIntoView({ behavior: "smooth", block: "center" });
       }
     }, 100);
   };
 
-  const handleExit = () => {
-    if (
-      !isSubmitted &&
-      !window.confirm("Are you sure you want to leave the test? Progress will not be saved.")
-    ) {
-      return;
+  const handleRetake = () => {
+    setAnswers({});
+    setFlaggedIndices([]);
+    setIsSubmitted(false);
+    setGradeSummary(null);
+    setIsScoreModalOpen(false);
+    if (exam) {
+      setTimeRemaining((exam.durationMin || 60) * 60);
     }
-    router.push("/admin/exams");
+  };
+
+  const handleExit = () => {
+    if (!isSubmitted) {
+      const confirmExit = window.confirm(
+        "Are you sure you want to exit? Your current test progress will be lost."
+      );
+      if (!confirmExit) return;
+    }
+    router.push("/history");
   };
 
   if (loading) {
     return (
-      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-950 text-slate-200">
-        <div className="w-12 h-12 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />
-        <p className="mt-4 text-sm font-medium tracking-wide text-slate-400">
-          Loading exam delivery paper...
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#F8F9FA] text-slate-800 font-sans">
+        <div className="w-12 h-12 border-4 border-blue-500/20 border-t-[#2563EB] rounded-full animate-spin" />
+        <p className="mt-4 text-sm font-bold text-slate-600">
+          Loading IELTS exam paper (Engine v3)...
         </p>
       </div>
     );
@@ -226,46 +196,46 @@ export default function TestV2ExamPage({
 
   if (error || !exam) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950 p-4">
-        <div className="max-w-md w-full p-6 rounded-2xl bg-rose-950/20 border border-rose-900/50 text-center space-y-4">
-          <h2 className="text-lg font-bold text-rose-400">Failed to load exam</h2>
-          <p className="text-xs text-slate-400">{error || "Exam not found"}</p>
-          <Link
-            href="/admin/exams"
-            className="inline-block px-4 py-2 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 transition"
-          >
-            Back to Exams
-          </Link>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#F8F9FA] p-4 font-sans">
+        <div className="max-w-md w-full p-8 rounded-3xl bg-white border-2 border-slate-200 shadow-xl text-center space-y-4">
+          <h2 className="text-xl font-bold text-rose-600">Failed to load exam</h2>
+          <p className="text-xs text-slate-500">{error || "Exam paper not found"}</p>
+          <div className="pt-2 flex justify-center gap-3">
+            <Link
+              href="/history"
+              className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition"
+            >
+              Back to History
+            </Link>
+          </div>
         </div>
       </div>
     );
   }
 
   const currentSection = exam.sections[activeSectionIdx] || exam.sections[0];
+  const partNum = (currentSection.idx ?? activeSectionIdx) + 1;
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-[#F8F9FA] text-slate-900 overflow-hidden font-sans select-none">
-      {/* Top Bar */}
-      <TopBar
+      {/* Top Header */}
+      <ExamTopBar
         title={exam.title}
         category={exam.category}
         timeRemainingSeconds={timeRemaining}
         isSubmitted={isSubmitted}
-        estimatedBand={gradeSummary?.estimatedBand}
-        totalScore={gradeSummary?.totalScore}
-        maxScore={gradeSummary?.maxScore}
         answeredCount={Object.keys(answers).length}
         totalQuestions={allQuestionIndices.length}
+        estimatedBand={gradeSummary?.estimatedBand}
         onOpenScoreModal={() => setIsScoreModalOpen(true)}
         onSubmitExam={handleSubmitExam}
         onExit={handleExit}
       />
 
-      {/* Main Split Screen (Passage on Left, Questions on Right) */}
-      <div className="flex-1 pt-16 pb-16 flex overflow-hidden min-h-0">
-        {/* Left Column: Passage Panel */}
+      {/* Main Split Screen */}
+      <div className="flex-1 flex overflow-hidden min-h-0">
         <div className="w-1/2 h-full flex flex-col min-w-0">
-          <PassagePanel
+          <PassagePanelV3
             sections={exam.sections}
             activeSectionIdx={activeSectionIdx}
             onSelectSection={setActiveSectionIdx}
@@ -277,38 +247,39 @@ export default function TestV2ExamPage({
           ref={rightPanelRef}
           className="w-1/2 h-full overflow-y-auto p-6 space-y-6 select-text"
         >
-          {/* Section Questions Header */}
-          <div className="pb-4 border-b-2 border-slate-200">
+          {/* Section Heading */}
+          <div className="pb-3 border-b-2 border-slate-200">
             <span className="text-xs font-bold uppercase tracking-wider text-[#2563EB]">
-              Part {currentSection.idx + 1} Questions
+              Part {partNum} Questions
             </span>
             <h3 className="text-lg font-bold text-slate-900 tracking-tight mt-0.5">
               {currentSection.title}
             </h3>
           </div>
 
-          {/* Question Groups Instructions if any */}
+          {/* Question Groups */}
           {currentSection.questionGroups &&
-            currentSection.questionGroups.map((grp) => (
+            currentSection.questionGroups.map((grp: InternalDeliveryQuestionGroup) => (
               <div key={grp.id} className="space-y-4">
-                <div className="p-5 rounded-2xl bg-blue-50/70 border-2 border-blue-200 text-xs text-slate-800 leading-relaxed font-sans shadow-xs">
+                {/* Group Instruction Banner (Admin style) */}
+                <div className="p-5 rounded-2xl bg-blue-50/80 border-2 border-blue-200 text-xs text-slate-800 leading-relaxed font-sans shadow-xs">
                   <span className="font-bold text-[#2563EB] block mb-1">
                     Questions {grp.startIdx} – {grp.endIdx} Instructions:
                   </span>
                   {grp.instructionMd}
                 </div>
-                {/* Group questions */}
-                {grp.questions.map((q) => {
+
+                {grp.questions.map((q: InternalDeliveryQuestion) => {
                   const num = q.displayIdx ?? q.idx;
                   return (
-                    <QuestionCard
+                    <QuestionCardV3
                       key={q.id || num}
                       question={q}
+                      mode={isSubmitted ? "review" : "exam"}
                       value={answers[num]}
                       isFlagged={flaggedIndices.includes(num)}
-                      isReview={isSubmitted}
                       gradeResult={gradeSummary?.resultsByQuestion[num]}
-                      onAnswerChange={(val) => handleAnswerChange(num, val)}
+                      onAnswerChange={(val: UserAnswerValue) => handleAnswerChange(num, val)}
                       onToggleFlag={() => handleToggleFlag(num)}
                     />
                   );
@@ -316,19 +287,19 @@ export default function TestV2ExamPage({
               </div>
             ))}
 
-          {/* Section root questions (ungrouped) */}
+          {/* Root Section questions (outside groups) */}
           <div className="space-y-4">
-            {currentSection.questions.map((q) => {
+            {currentSection.questions.map((q: InternalDeliveryQuestion) => {
               const num = q.displayIdx ?? q.idx;
               return (
-                <QuestionCard
+                <QuestionCardV3
                   key={q.id || num}
                   question={q}
+                  mode={isSubmitted ? "review" : "exam"}
                   value={answers[num]}
                   isFlagged={flaggedIndices.includes(num)}
-                  isReview={isSubmitted}
                   gradeResult={gradeSummary?.resultsByQuestion[num]}
-                  onAnswerChange={(val) => handleAnswerChange(num, val)}
+                  onAnswerChange={(val: UserAnswerValue) => handleAnswerChange(num, val)}
                   onToggleFlag={() => handleToggleFlag(num)}
                 />
               );
@@ -337,20 +308,35 @@ export default function TestV2ExamPage({
         </div>
       </div>
 
-      {/* Bottom Question Navigator */}
-      <QuestionNavigator
-        questionIndices={allQuestionIndices}
+      {/* Bottom Navigator */}
+      <QuestionNavigatorV3
+        totalQuestions={allQuestionIndices.length}
+        sections={exam.sections}
+        mode={isSubmitted ? "review" : "exam"}
+        activeIdx={activeQuestionIdx}
         answers={answers}
         flaggedIndices={flaggedIndices}
-        activeQuestionIdx={activeQuestionIdx}
-        isSubmitted={isSubmitted}
-        gradeResults={gradeSummary?.resultsByQuestion}
-        onSelectQuestion={handleSelectQuestion}
-        onToggleFlag={handleToggleFlag}
+        answersByDisplayIdx={
+          isSubmitted && gradeSummary
+            ? Object.fromEntries(
+                Object.entries(gradeSummary.resultsByQuestion).map(([k, r]: [string, QuestionGradeResult]) => [
+                  k,
+                  {
+                    questionId: String(k),
+                    sectionId: "",
+                    idx: Number(k),
+                    isCorrect: r.isCorrect,
+                    selectedAnswerText: typeof r.userAnswer === "string" ? r.userAnswer : "",
+                  },
+                ])
+              )
+            : {}
+        }
+        onSelect={handleSelectQuestion}
       />
 
       {/* Score Modal */}
-      <ScoreModal
+      <ScoreModalV3
         summary={gradeSummary}
         isOpen={isScoreModalOpen}
         onClose={() => setIsScoreModalOpen(false)}
