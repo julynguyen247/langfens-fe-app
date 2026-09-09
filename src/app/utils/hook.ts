@@ -2,8 +2,17 @@
 
 import { autoSaveAttempt } from "@/utils/api";
 import { useRef } from "react";
+import type { UserAnswerValue } from "@/app/do-test/[skill]/[attemptId]/_lib/types";
 
-type QA = Record<string, string>;
+type QA = Record<string, UserAnswerValue>;
+
+// Discriminator: MCQ-multiple option ids are UUIDs; FlowChart node keys are
+// slug-style strings (e.g. "a", "step-2"). Both arrive at this hook as
+// `string[]`, but the BE graders split them by field — `MultipleChoiceGrader`
+// (Grader.cs:42) reads only `SelectedOptionIds`, `FlowChartGrader`
+// (Grader.cs:333) parses `TextAnswer` as a JSON array. So we split on GUID
+// shape at the wire-format boundary.
+const GUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export function buildAnswerPayload(
   answers: QA,
@@ -12,59 +21,55 @@ export function buildAnswerPayload(
 ) {
   return {
     answers: Object.entries(answers).map(([questionId, value]) => {
-      const textAnswer = buildTextAnswer?.(questionId, value);
-      const hasText = !!textAnswer && textAnswer.trim().length > 0;
-
-      // Check if value is a JSON array (for MULTIPLE_CHOICE_MULTIPLE)
-      let parsedArray: string[] | null = null;
-      if (value && value.startsWith("[") && value.endsWith("]")) {
-        try {
-          const parsed = JSON.parse(value);
-          if (Array.isArray(parsed)) {
-            parsedArray = parsed.map(String);
-          }
-        } catch {
-          // Not valid JSON, continue with other checks
-        }
-      }
-
-      // Check if value is a valid UUID (GUID format)
-      const isValidGuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
-
-      // Determine selectedOptionIds:
-      // 1. If it's a JSON array of GUIDs, use those
-      // 2. If it's a single GUID, use that
-      // 3. Otherwise empty
       let selectedOptionIds: string[] = [];
-      if (parsedArray && parsedArray.length > 0) {
-        // Check if array contains GUIDs
-        const allGuids = parsedArray.every(v =>
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v)
-        );
+      let textAnswer: string | undefined;
+
+      if (Array.isArray(value)) {
+        const allGuids =
+          value.length > 0 && value.every((v) => GUID_RE.test(String(v)));
         if (allGuids) {
-          selectedOptionIds = parsedArray;
+          // MCQ_MULTIPLE — Spec D4: selectedOptionIds holds option UUIDs,
+          // textAnswer absent (MultipleChoiceGrader ignores TextAnswer).
+          selectedOptionIds = value.map(String);
+          textAnswer = undefined;
+        } else {
+          // FlowChart (and any other non-UUID string[]) — Spec D4: textAnswer
+          // carries a JSON-stringified ordered node list.
+          textAnswer = JSON.stringify(value.map(String));
         }
-      } else if (!hasText && value && isValidGuid) {
-        selectedOptionIds = [value];
+      } else if (value && typeof value === "object") {
+        // Record<string, string> — Completion / Matching / Label family.
+        textAnswer = JSON.stringify(value);
+      } else if (typeof value === "string") {
+        const isGuid = GUID_RE.test(value);
+        if (isGuid) {
+          // MCQ_SINGLE / TFNG / YNNG / MCQ-single-image — Spec D4: single
+          // GUID routes to selectedOptionIds, textAnswer absent.
+          selectedOptionIds = [value];
+          textAnswer = undefined;
+        } else {
+          // ShortAnswer raw text, or any other free-text answer.
+          textAnswer = value;
+        }
       }
 
-      // For non-GUID values, use textAnswer instead
-      // But if we have parsedArray of non-GUIDs, also send as textAnswer
-      let finalTextAnswer: string | undefined;
-      if (hasText) {
-        finalTextAnswer = textAnswer;
-      } else if (parsedArray && parsedArray.length > 0 && selectedOptionIds.length === 0) {
-        // Non-GUID array (like ["A", "B"]) - send as JSON string
-        finalTextAnswer = value;
-      } else if (!isValidGuid && value && !parsedArray) {
-        finalTextAnswer = value;
+      // Caller may override textAnswer (legacy flow — see page.tsx:198,
+      // TestV2Runner.tsx:166). `buildTextAnswer` keeps the (qid, string)
+      // signature on purpose: callers stringify through their own adapters.
+      const customText = buildTextAnswer?.(questionId, value as string);
+      if (
+        customText !== undefined &&
+        customText !== null &&
+        customText.length > 0
+      ) {
+        textAnswer = customText;
       }
 
       return {
         questionId,
         sectionId: buildSectionId(questionId) ?? "",
         selectedOptionIds,
-        textAnswer: finalTextAnswer,
+        textAnswer,
       };
     }),
     clientRevision: Date.now(),
