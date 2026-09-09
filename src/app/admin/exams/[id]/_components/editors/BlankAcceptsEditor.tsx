@@ -1,6 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { apisExam } from "@/utils/api.customize";
+
+function getErrorMessage(err: unknown): string {
+  if (err && typeof err === "object") {
+    if ("response" in err && err.response && typeof err.response === "object") {
+      const resp = err.response;
+      if ("data" in resp && resp.data && typeof resp.data === "object") {
+        const data = resp.data;
+        if ("message" in data && typeof data.message === "string") {
+          return data.message;
+        }
+      }
+    }
+    if ("message" in err && typeof err.message === "string") {
+      return err.message;
+    }
+  }
+  return "Upload failed";
+}
 
 interface BlankAcceptsEditorProps {
   blankAcceptTexts?: Record<string, string[] | null> | null;
@@ -35,6 +54,8 @@ export function BlankAcceptsEditor({
   });
 
   const [newKeyInput, setNewKeyInput] = useState("");
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const heading =
     variant === "diagram"
@@ -102,6 +123,48 @@ export function BlankAcceptsEditor({
     delete nextRegex[key];
     onChange(nextTexts, nextRegex);
   };
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      alert("Please choose an image file.");
+      e.target.value = "";
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert("File too large (max 5MB). Use a smaller image or paste a hosted URL.");
+      e.target.value = "";
+      return;
+    }
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      // Backend wraps responses in ApiResultDto(bool isSuccess, string message, object data).
+      // Admin FE's local ApiResult<T> uses `success`, so we declare a local shape here
+      // that matches the BE wire format exactly — keeps the editor self-contained.
+      const res = await apisExam.post<{
+        isSuccess: boolean;
+        message?: string;
+        data: { url: string };
+      }>(
+        "/admin/upload/image",
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+      const payload = res.data;
+      if (!payload?.isSuccess || !payload.data?.url) {
+        alert(payload?.message ?? "Upload failed");
+      } else {
+        onImageUrlChange?.(payload.data.url);
+      }
+    } catch (err) {
+      alert(getErrorMessage(err));
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -133,6 +196,38 @@ export function BlankAcceptsEditor({
               }
               className="flex-1 bg-slate-950 border border-slate-800 rounded-md px-2.5 py-1.5 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500"
             />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={handleFileUpload}
+              disabled={uploading}
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-md bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Upload an image file (max 5MB)"
+            >
+              {uploading ? (
+                <>
+                  <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Uploading…
+                </>
+              ) : (
+                <>
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                  </svg>
+                  Upload
+                </>
+              )}
+            </button>
           </div>
           <p className="text-[10px] text-slate-500">
             Candidates see this image and type answers into the [1], [2]… blanks
