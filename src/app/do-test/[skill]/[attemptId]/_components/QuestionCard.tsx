@@ -213,11 +213,18 @@ export function QuestionCard({
         </div>
       </div>
 
-      {/* Prompt Markdown */}
+      {/* Prompt Markdown — strip the embedded [Diagram: …] / [Map: …] label list
+          for DIAGRAM_LABEL/MAP_LABEL: CompletionCard renders those labels as a
+          word bank above the input blanks. Without the strip the raw bracket
+          syntax leaks into the prompt. */}
       {question.promptMd && (
         <div className="text-sm font-medium text-slate-900 leading-relaxed font-sans prose prose-slate max-w-none">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>
-            {question.promptMd}
+            {(question.type === QuestionType.DiagramLabel ||
+            question.type === QuestionType.MapLabel
+              ? question.promptMd.replace(/\[(Diagram|Map):\s*[^\]]+\]/gi, "")
+              : question.promptMd
+            ).trim()}
           </ReactMarkdown>
         </div>
       )}

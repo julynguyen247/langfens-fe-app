@@ -35,11 +35,25 @@ export function CompletionCard({
         const underscores = promptMd.match(/_{3,}/g) || [];
         if (underscores.length > 0) {
           blankKeys = underscores.map((_, i) => String(i));
+        } else {
+          // 3. DIAGRAM_LABEL/MAP_LABEL: prompt carries "[Diagram: a, b, c, d]" — one
+          // blank per label. Used by ReadingSeeder for q13 (DIAGRAM_LABEL) where the
+          // live exam snapshot strips BlankAcceptTexts (security), so the promptMd
+          // is the only place left to infer blank count.
+          const labelListMatch = promptMd.match(/\[(Diagram|Map):\s*([^\]]+)\]/i);
+          if (labelListMatch) {
+            const labels = labelListMatch[2]
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean);
+            if (labels.length > 0) {
+              blankKeys = labels.map((_, i) => String(i));
+            }
+          }
         }
       }
     }
   }
-
   if (blankKeys.length === 0) {
     blankKeys = ["0"];
   } else {
@@ -50,6 +64,21 @@ export function CompletionCard({
       return a.localeCompare(b);
     });
   }
+
+  // Parse word bank labels from "[Diagram: a, b, c, d]" / "[Map: a, b, c, d]" in
+  // promptMd. Used by DIAGRAM_LABEL/MAP_LABEL — the live exam snapshot strips
+  // BlankAcceptTexts (security), so the promptMd is the only place left to
+  // surface the label list to the candidate (IELTS-style word bank above
+  // numbered input blanks).
+  const wordBank: string[] = (() => {
+    if (!promptMd) return [];
+    const m = promptMd.match(/\[(Diagram|Map):\s*([^\]]+)\]/i);
+    if (!m) return [];
+    return m[2]
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+  })();
 
   const userDict: Record<string, string> =
     value && typeof value === "object" && !Array.isArray(value)
@@ -74,6 +103,24 @@ export function CompletionCard({
             className="max-w-full max-h-96 rounded-lg border border-slate-200"
             loading="lazy"
           />
+        </div>
+      )}
+
+      {wordBank.length > 0 && (
+        <div className="mb-4 p-3 rounded-2xl bg-blue-50/40 border border-blue-200">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-blue-700 mb-2">
+            Word List — Choose from:
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {wordBank.map((label, i) => (
+              <span
+                key={i}
+                className="px-3 py-1.5 text-xs font-medium bg-white border border-blue-300 text-slate-800 rounded-lg shadow-2xs"
+              >
+                {label}
+              </span>
+            ))}
+          </div>
         </div>
       )}
 
