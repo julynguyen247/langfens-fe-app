@@ -5,6 +5,7 @@ import {
   InternalDeliveryOption,
   InternalDeliveryQuestion,
   QuestionSkill,
+  QuestionType,
 } from "@/app/admin/_lib/types";
 import { OptionsEditor } from "./editors/OptionsEditor";
 import { BlankAcceptsEditor } from "./editors/BlankAcceptsEditor";
@@ -21,10 +22,17 @@ import { QUESTION_TYPE_REGISTRY, getMeta } from "@/app/admin/_lib/questionTypeRe
 import {
   aggregateIssues,
   defaultSkillForType,
+  validateBlankKeyFormat,
   validateBlanks,
+  validateDifficultyBounds,
   validateFlowChart,
+  validateImageUrlRequired,
+  validateMatchingHeadingPrompt,
   validateMatchPairs,
+  validateMcqIsCorrectCount,
+  validateOptionsLength,
   validateShortAnswer,
+  validateShortAnswerSubQuestionCount,
   validateTypeSkill,
   ValidationIssue,
 } from "@/app/admin/_lib/validation";
@@ -87,9 +95,34 @@ export function QuestionEditor({
   const issues: ValidationIssue[] = useMemo(() => {
     const out: ValidationIssue[] = [];
     out.push(...validateTypeSkill(draft.type, draft.skill));
+    out.push(...validateMcqIsCorrectCount(draft.options || [], draft.type));
+    out.push(...validateOptionsLength(draft.options || [], draft.type));
 
     const t = draft.type;
     const ed = QUESTION_TYPE_REGISTRY[t]?.editorKind;
+
+    if (t === QuestionType.MatchingHeading) {
+      out.push(...validateMatchingHeadingPrompt(draft.promptMd));
+    }
+    if (t === QuestionType.ShortAnswer) {
+      out.push(
+        ...validateShortAnswerSubQuestionCount(draft.promptMd, draft.shortAnswerAcceptTexts || [])
+      );
+    }
+    if (
+      t === QuestionType.DiagramLabel ||
+      t === QuestionType.MapLabel ||
+      t === QuestionType.MultipleChoiceSingleImage
+    ) {
+      out.push(...validateImageUrlRequired(t, draft.imageUrl));
+    }
+    out.push(...validateDifficultyBounds(draft.difficulty));
+    if (ed === "blanks") {
+      out.push(
+        ...validateBlankKeyFormat(t, Object.keys(draft.blankAcceptTexts || {}))
+      );
+    }
+
 
     if (
       ed === "match-pairs" ||
@@ -150,6 +183,15 @@ export function QuestionEditor({
       if (hasMissingAudio) {
         setSaveMessage({
           text: "Listening questions require an Audio URL on the parent section before saving.",
+          isError: true,
+        });
+        setIsSaving(false);
+        return;
+      }
+
+      if (hasErrors) {
+        setSaveMessage({
+          text: `Cannot save — ${issues.filter((i) => i.level === "error").length} validation error(s)`,
           isError: true,
         });
         setIsSaving(false);

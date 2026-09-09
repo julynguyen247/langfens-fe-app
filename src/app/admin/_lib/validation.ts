@@ -1,4 +1,4 @@
-import { QuestionSkill } from "./types";
+import { QuestionSkill, QuestionType } from "./types";
 import { QUESTION_TYPE_REGISTRY, QuestionTypeMeta, getMeta } from "./questionTypeRegistry";
 
 export interface ValidationIssue {
@@ -182,6 +182,199 @@ export function validateFlowChart(payload: FlowChartPayload): ValidationIssue[] 
   }
   return issues;
 }
+
+export function validateMcqIsCorrectCount(
+  options: { isCorrect?: boolean | null }[],
+  type: string
+): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  const correct = options.filter((o) => o.isCorrect === true).length;
+  if (type === QuestionType.MultipleChoiceSingle || type === QuestionType.MultipleChoiceSingleImage) {
+    if (correct !== 1) {
+      issues.push({
+        level: "error",
+        field: "options.isCorrect",
+        message: `Single-choice question needs exactly 1 correct option (found ${correct}).`,
+      });
+    }
+  } else if (type === QuestionType.MultipleChoiceMultiple) {
+    if (correct < 1) {
+      issues.push({
+        level: "error",
+        field: "options.isCorrect",
+        message: `Multi-choice question needs at least 1 correct option.`,
+      });
+    }
+  } else if (type === QuestionType.TrueFalseNotGiven || type === QuestionType.YesNoNotGiven) {
+    if (correct !== 1) {
+      issues.push({
+        level: "error",
+        field: "options.isCorrect",
+        message: `${type} needs exactly 1 correct option.`,
+      });
+    }
+  }
+
+  return issues;
+}
+
+export function validateOptionsLength(
+  options: { isCorrect?: boolean | null }[],
+  type: string
+): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  const len = options.length;
+
+  if (type === QuestionType.MultipleChoiceSingle || type === QuestionType.MultipleChoiceSingleImage) {
+    if (len < 2) {
+      issues.push({
+        level: "error",
+        field: "options",
+        message: `Multiple choice needs at least 2 options.`,
+      });
+    } else if (len > 4) {
+      issues.push({
+        level: "warning",
+        field: "options",
+        message: `Single-choice question has ${len} options; recommended maximum is 4.`,
+      });
+    }
+  } else if (type === QuestionType.MultipleChoiceMultiple) {
+    if (len < 2) {
+      issues.push({
+        level: "error",
+        field: "options",
+        message: `Multiple choice needs at least 2 options.`,
+      });
+    } else if (len > 6) {
+      issues.push({
+        level: "warning",
+        field: "options",
+        message: `Multi-choice question has ${len} options; recommended maximum is 6.`,
+      });
+    }
+  } else if (type === QuestionType.TrueFalseNotGiven || type === QuestionType.YesNoNotGiven) {
+    if (len !== 3) {
+      issues.push({
+        level: "error",
+        field: "options",
+        message: `${type} needs exactly 3 options.`,
+      });
+    }
+  }
+
+  return issues;
+}
+
+export function validateMatchingHeadingPrompt(promptMd?: string | null): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  const text = (promptMd ?? "").trim();
+  if (!text) {
+    issues.push({
+      level: "error",
+      field: "promptMd",
+      message: `Matching heading prompt should start with roman numerals (i, ii, A, B...) and list at least one heading.`,
+    });
+    return issues;
+  }
+  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter((l) => l.length > 0);
+  const hasRomanOrLetterPrefix = lines.some((l) => /^[ivxlcdmA-Z]+\.\s/.test(l));
+  if (!hasRomanOrLetterPrefix) {
+    issues.push({
+      level: "error",
+      field: "promptMd",
+      message: `Matching heading prompt should start with roman numerals (i, ii, A, B...) for at least one line.`,
+    });
+  }
+  return issues;
+}
+
+export function validateShortAnswerSubQuestionCount(
+  promptMd?: string | null,
+  shortAnswerAcceptTexts?: string[] | null
+): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  const texts = shortAnswerAcceptTexts ?? [];
+  const prompt = promptMd ?? "";
+  const matches = prompt.match(/\b\d+\b/g);
+  const detected = matches ? new Set(matches).size : 0;
+  if (detected === 0) return issues;
+  if (texts.length !== detected) {
+    issues.push({
+      level: "warning",
+      field: "shortAnswerAcceptTexts",
+      message: `Prompt suggests ${detected} sub-question(s) but ${texts.length} accepted text(s) provided.`,
+    });
+  }
+  return issues;
+}
+
+export function validateImageUrlRequired(
+  type: string,
+  imageUrl?: string | null
+): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  const requiresImage =
+    type === QuestionType.DiagramLabel ||
+    type === QuestionType.MapLabel ||
+    type === QuestionType.MultipleChoiceSingleImage;
+  if (!requiresImage) return issues;
+  if (!imageUrl || !imageUrl.trim()) {
+    issues.push({
+      level: "error",
+      field: "imageUrl",
+      message: `${type} requires an imageUrl.`,
+    });
+  }
+  return issues;
+}
+
+export function validateDifficultyBounds(difficulty?: number | null): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  if (difficulty === undefined || difficulty === null) return issues;
+  if (typeof difficulty !== "number" || !Number.isFinite(difficulty)) {
+    issues.push({
+      level: "warning",
+      field: "difficulty",
+      message: `Difficulty must be a number in [1, 5].`,
+    });
+    return issues;
+  }
+  if (difficulty < 1 || difficulty > 5) {
+    issues.push({
+      level: "warning",
+      field: "difficulty",
+      message: `Difficulty ${difficulty} out of range [1, 5].`,
+    });
+  }
+  return issues;
+}
+
+export function validateBlankKeyFormat(type: string, keys: string[]): ValidationIssue[] {
+  const completionFamily: Record<string, true> = {
+    [QuestionType.SummaryCompletion]: true,
+    [QuestionType.TableCompletion]: true,
+    [QuestionType.NoteCompletion]: true,
+    [QuestionType.FormCompletion]: true,
+    [QuestionType.SentenceCompletion]: true,
+    [QuestionType.DiagramLabel]: true,
+    [QuestionType.MapLabel]: true,
+    [QuestionType.FlowChart]: true,
+  };
+  if (!completionFamily[type]) return [];
+  const issues: ValidationIssue[] = [];
+  for (const key of keys) {
+    if (!/^\d+$/.test(key) && !/^blank-q\d+$/.test(key)) {
+      issues.push({
+        level: "error",
+        field: `blanks.${key}`,
+        message: `Blank key "${key}" should be numeric ("0", "1", ...) or "blank-q<N>".`,
+      });
+    }
+  }
+  return issues;
+}
+
 
 export function aggregateIssues(...lists: ValidationIssue[][]): ValidationIssue[] {
   return lists.flat();
