@@ -6,6 +6,7 @@ interface CompletionCardProps {
   blankAcceptTexts?: Record<string, string[] | null> | null;
   blankAcceptRegex?: Record<string, string[] | null> | null;
   promptMd?: string | null;
+  imageUrl?: string | null;
   value?: UserAnswerValue;
   isReview: boolean;
   onChange: (val: UserAnswerValue) => void;
@@ -14,6 +15,7 @@ interface CompletionCardProps {
 export function CompletionCard({
   blankAcceptTexts,
   promptMd,
+  imageUrl,
   value,
   isReview,
   onChange,
@@ -63,7 +65,19 @@ export function CompletionCard({
   };
 
   return (
-    <div className="space-y-4">
+    <>
+      {imageUrl && (
+        <div className="mb-4 flex justify-center">
+          <img
+            src={imageUrl}
+            alt="Question diagram"
+            className="max-w-full max-h-96 rounded-lg border border-slate-200"
+            loading="lazy"
+          />
+        </div>
+      )}
+
+      <div className="space-y-4">
       {blankKeys.map((key) => {
         const userVal = userDict[key] || "";
         const accepted = texts[key] || [];
@@ -134,5 +148,6 @@ export function CompletionCard({
         );
       })}
     </div>
+    </>
   );
 }

@@ -100,6 +100,7 @@ export function QuestionCard({
           blankAcceptTexts={question.blankAcceptTexts}
           blankAcceptRegex={question.blankAcceptRegex}
           promptMd={question.promptMd}
+          imageUrl={question.imageUrl ?? null}
           value={value}
           isReview={isReview}
           onChange={onAnswerChange}
