@@ -1,12 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
-  InternalDeliveryOption,
   InternalDeliveryQuestion,
-  QuestionGradeResult,
   QuestionType,
   UserAnswerValue,
 } from "../_lib/types";
@@ -22,9 +19,6 @@ interface QuestionCardProps {
   question: InternalDeliveryQuestion;
   value?: UserAnswerValue;
   isFlagged: boolean;
-  isReview: boolean;
-  gradeResult?: QuestionGradeResult;
-  reviewAction?: React.ReactNode;
   onAnswerChange: (val: UserAnswerValue) => void;
   onToggleFlag: () => void;
 }
@@ -33,14 +27,9 @@ export function QuestionCard({
   question,
   value,
   isFlagged,
-  isReview,
-  gradeResult,
-  reviewAction,
   onAnswerChange,
   onToggleFlag,
 }: QuestionCardProps) {
-  const [showExplanation, setShowExplanation] = useState(true);
-
   const renderBody = () => {
     const t = question.type;
 
@@ -53,7 +42,6 @@ export function QuestionCard({
           options={question.options || []}
           isMultiple={false}
           value={value}
-          isReview={isReview}
           onChange={onAnswerChange}
         />
       );
@@ -65,7 +53,6 @@ export function QuestionCard({
           options={question.options || []}
           isMultiple={true}
           value={value}
-          isReview={isReview}
           onChange={onAnswerChange}
         />
       );
@@ -80,7 +67,6 @@ export function QuestionCard({
           questionType={t}
           options={question.options || []}
           value={value}
-          isReview={isReview}
           onChange={onAnswerChange}
         />
       );
@@ -102,7 +88,6 @@ export function QuestionCard({
           promptMd={question.promptMd}
           imageUrl={question.imageUrl ?? null}
           value={value}
-          isReview={isReview}
           onChange={onAnswerChange}
         />
       );
@@ -121,7 +106,6 @@ export function QuestionCard({
           options={question.options || []}
           promptMd={question.promptMd}
           value={value}
-          isReview={isReview}
           onChange={onAnswerChange}
         />
       );
@@ -130,9 +114,7 @@ export function QuestionCard({
     if (t === QuestionType.ShortAnswer) {
       return (
         <ShortAnswerCard
-          shortAnswerAcceptTexts={question.shortAnswerAcceptTexts}
           value={value}
-          isReview={isReview}
           onChange={onAnswerChange}
         />
       );
@@ -143,7 +125,6 @@ export function QuestionCard({
         <FlowChartCard
           orderCorrects={question.orderCorrects}
           value={value}
-          isReview={isReview}
           onChange={onAnswerChange}
         />
       );
@@ -155,8 +136,6 @@ export function QuestionCard({
       </div>
     );
   };
-
-  const isCorrect = isReview && gradeResult?.isCorrect;
 
   const qIndex = question.displayIdx ?? question.idx;
 
@@ -178,38 +157,21 @@ export function QuestionCard({
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Review Score Pill */}
-          {isReview && gradeResult && (
-            <span
-              className={`px-3 py-1 text-xs font-mono font-bold rounded-lg border ${
-                isCorrect
-                  ? "bg-emerald-50 text-emerald-700 border-emerald-300"
-                  : "bg-rose-50 text-rose-700 border-rose-300"
-              }`}
-            >
-              {gradeResult.score} / {gradeResult.maxScore}
-            </span>
-          )}
-
-          {/* Review Action Slot */}
-          {isReview && reviewAction}
           {/* Flag Toggle Button */}
-          {!isReview && (
-            <button
-              type="button"
-              onClick={onToggleFlag}
-              className={`p-1.5 rounded-xl border-2 transition active:translate-y-0.5 ${
-                isFlagged
-                  ? "bg-rose-50 border-rose-300 text-rose-500 shadow-2xs"
-                  : "bg-white border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-slate-50"
-              }`}
-              title={isFlagged ? "Remove Flag" : "Flag for review"}
-            >
-              <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                <path d="M5 21V4h9l.4 2H20v10h-7l-.4-2H7v7H5z" />
-              </svg>
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={onToggleFlag}
+            className={`p-1.5 rounded-xl border-2 transition active:translate-y-0.5 ${
+              isFlagged
+                ? "bg-rose-50 border-rose-300 text-rose-500 shadow-2xs"
+                : "bg-white border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+            }`}
+            title={isFlagged ? "Remove Flag" : "Flag for review"}
+          >
+            <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+              <path d="M5 21V4h9l.4 2H20v10h-7l-.4-2H7v7H5z" />
+            </svg>
+          </button>
         </div>
       </div>
 
@@ -231,38 +193,6 @@ export function QuestionCard({
 
       {/* Interactive question card */}
       <div>{renderBody()}</div>
-
-      {/* Optional Explanation toggle (only if real explanation exists) */}
-      {isReview && Boolean(question.explanationMd?.trim()) && (
-        <div className="pt-3 border-t-2 border-slate-100">
-          <button
-            type="button"
-            onClick={() => setShowExplanation(!showExplanation)}
-            className="flex items-center gap-1.5 text-xs font-bold text-[#2563EB] hover:text-[#1D4ED8] transition cursor-pointer"
-          >
-            <span>{showExplanation ? "Hide Explanation" : "View Explanation"}</span>
-            <svg
-              className={`w-3.5 h-3.5 transform transition-transform ${
-                showExplanation ? "rotate-180" : ""
-              }`}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2.5}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-
-          {showExplanation && (
-            <div className="mt-2.5 p-4 rounded-2xl bg-amber-50/70 border-2 border-amber-200 text-xs text-slate-800 leading-relaxed prose prose-slate max-w-none shadow-2xs">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {question.explanationMd}
-              </ReactMarkdown>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }

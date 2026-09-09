@@ -145,7 +145,6 @@ export function AdminQuestionPreview({
             matchPairs={question.matchPairs}
             options={augmentedOpts}
             value={value as never}
-            isReview={false}
             onChange={(v) => setValue(v)}
           />
         </div>

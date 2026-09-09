@@ -360,8 +360,24 @@ export function TestV2Runner({ attemptId }: { attemptId: string }) {
     }
     router.replace(`/history`);
   };
+  // After submit: show a full-screen spinner instead of the test UI between
+  // submit click and the /attempts/<id> route taking over. ResultV3Review on
+  // the new route renders its own spinner, so the spinner-to-spinner handoff
+  // is seamless. All hooks above this point are unconditional, so adding a
+  // conditional return here does not violate the Rules of Hooks.
+  if (isSubmitted) {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#F8F9FA] text-slate-800 font-sans">
+        <div className="w-12 h-12 border-4 border-blue-500/20 border-t-[#2563EB] rounded-full animate-spin" />
+        <p className="mt-4 text-sm font-bold text-slate-600">
+          Submitting your test...
+        </p>
+      </div>
+    );
+  }
 
-  if (!attempt || !exam) {
+
+   if (!attempt || !exam) {
     return (
       <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#F8F9FA] text-slate-800 font-sans">
         <p className="text-sm font-bold text-slate-600 mb-4">
@@ -439,7 +455,6 @@ export function TestV2Runner({ attemptId }: { attemptId: string }) {
                       question={q}
                       value={answers[num]}
                       isFlagged={flaggedIndices.includes(num)}
-                      isReview={isSubmitted}
                       onAnswerChange={(val) => handleAnswerChange(num, val)}
                       onToggleFlag={() => handleToggleFlag(num)}
                     />
@@ -458,7 +473,6 @@ export function TestV2Runner({ attemptId }: { attemptId: string }) {
                   question={q}
                   value={answers[num]}
                   isFlagged={flaggedIndices.includes(num)}
-                  isReview={isSubmitted}
                   onAnswerChange={(val) => handleAnswerChange(num, val)}
                   onToggleFlag={() => handleToggleFlag(num)}
                 />

@@ -7,7 +7,6 @@ interface MatchingCardProps {
   options: InternalDeliveryOption[];
   promptMd?: string | null;
   value?: UserAnswerValue;
-  isReview: boolean;
   onChange: (val: UserAnswerValue) => void;
 }
 
@@ -43,7 +42,6 @@ export function MatchingCard({
   options,
   promptMd,
   value,
-  isReview,
   onChange,
 }: MatchingCardProps) {
   const pairs = matchPairs || {};
@@ -60,7 +58,6 @@ export function MatchingCard({
       : {};
 
   const handleSelect = (promptKey: string, selectedGradingKey: string) => {
-    if (isReview) return;
     const next = { ...userDict, [promptKey]: selectedGradingKey };
     onChange(next);
   };
@@ -116,24 +113,11 @@ export function MatchingCard({
       <div className="space-y-3">
         {effectiveKeys.map((pKey) => {
           const userChoice = (userDict[pKey] || "").toLowerCase();
-          const targetPair = pairs[pKey] || [];
-          const correctKey = (targetPair[0] || "").toLowerCase();
-          const correctLabel = targetPair[1] || targetPair[0] || "";
-
-          const isMatchCorrect = isReview && userChoice && userChoice === correctKey;
-          const hasAnswered = Boolean(userChoice);
-
-          let borderClass = "border-slate-200 bg-white";
-          if (isReview) {
-            borderClass = isMatchCorrect
-              ? "border-emerald-500 bg-emerald-50/50"
-              : "border-rose-500 bg-rose-50/50";
-          }
 
           return (
             <div
               key={pKey}
-              className={`p-4 rounded-2xl border-2 space-y-2 transition-all shadow-2xs ${borderClass}`}
+              className="p-4 rounded-2xl border-2 border-slate-200 bg-white space-y-2 transition-all shadow-2xs"
             >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5">
@@ -145,46 +129,19 @@ export function MatchingCard({
 
                 <div className="flex items-center gap-2">
                   <select
-                    disabled={isReview}
                     value={userChoice}
                     onChange={(e) => handleSelect(pKey, e.target.value)}
-                    className={`bg-white border-2 rounded-xl px-3.5 py-2 text-xs font-medium text-slate-800 focus:outline-none focus:border-[#2563EB] min-w-48 shadow-2xs ${
-                      isReview
-                        ? isMatchCorrect
-                          ? "border-emerald-500 text-emerald-900 font-bold bg-emerald-50"
-                          : "border-rose-500 text-rose-900 font-bold bg-rose-50"
-                        : "border-slate-300"
-                    }`}
+                    className="bg-white border-2 border-slate-300 rounded-xl px-3.5 py-2 text-xs font-medium text-slate-800 focus:outline-none focus:border-[#2563EB] min-w-48 shadow-2xs"
                   >
-                    <option value="">{isReview && !hasAnswered ? "(Unanswered)" : "-- Select choice --"}</option>
+                    <option value="">-- Select choice --</option>
                     {choices.map((c) => (
                       <option key={c.key} value={c.key}>
                         [{c.key}] {c.label}
                       </option>
                     ))}
                   </select>
-
-                  {isReview && (
-                    <span className="text-xs">
-                      {isMatchCorrect ? (
-                        <span className="text-emerald-600 font-bold text-sm">✓</span>
-                      ) : (
-                        <span className="text-rose-600 font-bold text-sm">✕</span>
-                      )}
-                    </span>
-                  )}
                 </div>
               </div>
-
-              {/* Review Mode: Inline correct answer display */}
-              {isReview && !isMatchCorrect && (
-                <div className="pt-2 border-t border-rose-200 text-xs flex items-center gap-2">
-                  <span className="text-emerald-700 font-bold">✓ Correct match:</span>
-                  <span className="font-mono text-emerald-900 font-bold bg-emerald-100/60 px-2 py-0.5 rounded border border-emerald-300">
-                    [{correctKey}] {correctLabel}
-                  </span>
-                </div>
-              )}
             </div>
           );
         })}
