@@ -224,6 +224,9 @@ export interface InternalDeliveryQuestion {
   promptMd?: string | null;
   explanationMd?: string | null;
   imageUrl?: string | null;
+  groupId?: string | null;
+  modelAnswers?: string[] | null;
+  wordList?: string[] | null;
   options: InternalDeliveryOption[];
   flowChartNodes?: InternalFlowChartNode[] | null;
   blankAcceptTexts?: Record<string, string[] | null> | null;

@@ -15,6 +15,10 @@ type ApiQuestion = {
   explanationMd?: string;
   options?: ApiOption[];
   flowChartNodes?: { key: string; label: string }[];
+  imageUrl?: string | null;
+  modelAnswers?: string[] | null;
+  wordList?: string[] | null;
+  groupId?: string | null;
 };
 
 function normalizeOptionLabel(contentMd: string): string {
@@ -88,6 +92,10 @@ export function mapApiQuestionToUi(q: ApiQuestion): Question {
     backendType: q.type,
     uiKind,
     explanationMd: q.explanationMd,
+    imageUrl: q.imageUrl ?? null,
+    modelAnswers: q.modelAnswers ?? null,
+    wordList: q.wordList ?? null,
+    groupId: q.groupId ?? null,
   };
 
   // choice single

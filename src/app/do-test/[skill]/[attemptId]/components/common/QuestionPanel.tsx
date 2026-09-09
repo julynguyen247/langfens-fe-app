@@ -73,6 +73,10 @@ export type Question = {
   headings?: { key: string; text: string }[];
   explanationMd?: string;
   idx?: number;
+  imageUrl?: string | null;
+  modelAnswers?: string[] | null;
+  wordList?: string[] | null;
+  groupId?: string | null;
 };
 
 // Markdown components for instructions
