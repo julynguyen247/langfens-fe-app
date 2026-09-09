@@ -119,8 +119,7 @@ export function gradeExamPaper(
       t === QuestionType.FormCompletion ||
       t === QuestionType.SentenceCompletion ||
       t === QuestionType.DiagramLabel ||
-      t === QuestionType.MapLabel ||
-      t === QuestionType.FlowChartCompletion
+      t === QuestionType.MapLabel
     ) {
       const blanks = q.blankAcceptTexts || {};
       const blankKeys = Object.keys(blanks).length > 0 ? Object.keys(blanks) : ["1"];

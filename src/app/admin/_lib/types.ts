@@ -49,7 +49,6 @@ export const QuestionType = {
   FormCompletion: "FORM_COMPLETION",
   SentenceCompletion: "SENTENCE_COMPLETION",
   ShortAnswer: "SHORT_ANSWER",
-  AudioResponse: "AUDIO_RESPONSE",
   DiagramLabel: "DIAGRAM_LABEL",
   MapLabel: "MAP_LABEL",
   MatchingHeading: "MATCHING_HEADING",
@@ -58,7 +57,6 @@ export const QuestionType = {
   MatchingEndings: "MATCHING_ENDINGS",
   Classification: "CLASSIFICATION",
   FlowChart: "FLOW_CHART",
-  FlowChartCompletion: "FLOW_CHART_COMPLETION",
 } as const;
 
 export type QuestionTypeEnum = (typeof QuestionType)[keyof typeof QuestionType];

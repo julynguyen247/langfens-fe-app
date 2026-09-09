@@ -126,8 +126,7 @@ export function QuestionCardV3({
       t === QuestionType.FormCompletion ||
       t === QuestionType.SentenceCompletion ||
       t === QuestionType.DiagramLabel ||
-      t === QuestionType.MapLabel ||
-      t === QuestionType.FlowChartCompletion
+      t === QuestionType.MapLabel
     ) {
       return (
         <CompletionCardV3
@@ -248,7 +247,7 @@ export function QuestionCardV3({
       </div>
 
       {/* Prompt Markdown */}
-      {question.promptMd && question.type !== QuestionType.FlowChartCompletion && (
+      {question.promptMd && (
         <div className="text-sm font-medium text-slate-900 leading-relaxed font-sans prose prose-slate max-w-none">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>
             {question.promptMd}

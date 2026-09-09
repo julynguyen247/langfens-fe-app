@@ -108,8 +108,7 @@ export function gradeSingleQuestion(
     t === QuestionType.FormCompletion ||
     t === QuestionType.SentenceCompletion ||
     t === QuestionType.DiagramLabel ||
-    t === QuestionType.MapLabel ||
-    t === QuestionType.FlowChartCompletion
+    t === QuestionType.MapLabel
   ) {
     const texts = q.blankAcceptTexts || {};
     const regex = q.blankAcceptRegex || {};

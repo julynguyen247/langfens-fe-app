@@ -215,10 +215,7 @@ export function validateSection(
 ): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const hasListening = questions.some(
-    (q) => q.skill?.toUpperCase() === "LISTENING" && q.type !== "AUDIO_RESPONSE"
-  );
-  const hasSpeaking = questions.some(
-    (q) => q.type === "AUDIO_RESPONSE"
+    (q) => q.skill?.toUpperCase() === "LISTENING"
   );
   if (hasListening && !section.audioUrl?.trim()) {
     issues.push({
@@ -232,13 +229,6 @@ export function validateSection(
       level: "warning",
       field: "questions",
       message: "Section has no questions yet.",
-    });
-  }
-  if (hasSpeaking && questions.length > 4) {
-    issues.push({
-      level: "info",
-      field: "questions",
-      message: "Speaking sections typically have 1-3 questions.",
     });
   }
   return issues;

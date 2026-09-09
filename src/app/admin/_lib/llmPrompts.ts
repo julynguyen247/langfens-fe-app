@@ -184,23 +184,6 @@ ${STRICT_JSON_INSTRUCTION}`,
       `Source:\n"""\n${passage}\n"""\n\nGenerate ${n} FLOW_CHART question(s) with 3-5 sequential steps. Output JSON array.`,
   },
 
-  AUDIO_RESPONSE: {
-    system: `You are an IELTS Speaking content author. Generate speaking cue card prompts.
-
-JSON shape:
-{
-  "type": "AUDIO_RESPONSE",
-  "skill": "SPEAKING",
-  "difficulty": 2-3,
-  "promptMd": "Describe a memorable journey.\\n- Where you went\\n- Who you went with\\n- What you did"
-}
-
-promptMd MUST have main question on first line + bullet points after.
-
-${STRICT_JSON_INSTRUCTION}`,
-    userTemplate: (passage, n) =>
-      `Topic hint: ${passage}\n\nGenerate ${n} SPEAKING cue card(s). Output JSON array.`,
-  },
 };
 
 export function getLlmPrompt(type: string): LlmPromptTemplate | null {

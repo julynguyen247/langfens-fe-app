@@ -626,60 +626,6 @@ export const QUESTION_SCHEMAS: Record<string, QuestionSchema> = {
     ],
   },
 
-  [QuestionType.FlowChartCompletion]: {
-    type: QuestionType.FlowChartCompletion,
-    label: "Flow Chart Completion",
-    description: "Flow chart with blanks inside steps.",
-    requiredFields: [...commonFields, "OrderCorrects", "BlankAcceptTexts"],
-    optionalFields: [...optionalCommon],
-    jsonShape: `{
-  "type": "FLOW_CHART_COMPLETION",
-  "skill": "LISTENING",
-  "difficulty": 3,
-  "promptMd": "Complete the flow chart by ordering steps and filling blanks.",
-  "orderCorrects": ["step-1", "step-2"],
-  "blankAcceptTexts": { "0": ["value-1"], "1": ["value-2"] }
-}`,
-    examplePayload: {
-      type: "FLOW_CHART_COMPLETION",
-      skill: "LISTENING",
-      difficulty: 3,
-      promptMd: "Complete the flow chart by ordering steps and filling blanks.",
-      orderCorrects: ["step-1", "step-2"],
-      blankAcceptTexts: { "0": ["value-1"], "1": ["value-2"] },
-    },
-    constraints: [
-      "Both OrderCorrects and BlankAcceptTexts are required",
-      "orderCorrects ≥ 2 unique steps",
-      "blankAcceptTexts keys match placeholder indices",
-    ],
-  },
-
-  [QuestionType.AudioResponse]: {
-    type: QuestionType.AudioResponse,
-    label: "Speaking / Audio Response",
-    description: "Speaking task — candidate records voice, AI grades.",
-    requiredFields: [...commonFields],
-    optionalFields: [...optionalCommon],
-    jsonShape: `{
-  "type": "AUDIO_RESPONSE",
-  "skill": "SPEAKING",
-  "difficulty": 2,
-  "promptMd": "Describe a memorable journey.\\n- Where you went\\n- Who you went with\\n- What you did",
-  "explanationMd": "AI grading notes..."
-}`,
-    examplePayload: {
-      type: "AUDIO_RESPONSE",
-      skill: "SPEAKING",
-      difficulty: 2,
-      promptMd: "Describe a memorable journey.\n- Where you went\n- Who you went with\n- What you did",
-      explanationMd: "AI grading notes...",
-    },
-    constraints: [
-      "skill MUST be SPEAKING (otherwise warning)",
-      "promptMd should have main question on first line + bullet points after",
-    ],
-  },
 };
 
 export function getSchema(type: string): QuestionSchema {

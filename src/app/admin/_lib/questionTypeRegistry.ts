@@ -11,8 +11,7 @@ export type EditorKind =
   | "matching-features"
   | "matching-endings"
   | "short-answer"
-  | "flow-chart"
-  | "audio-response";
+  | "flow-chart";
 
 export type QuestionCategory =
   | "mcq"
@@ -224,26 +223,6 @@ export const QUESTION_TYPE_REGISTRY: Record<string, QuestionTypeMeta> = {
     editorKind: "flow-chart",
     skillHints: [QuestionSkill.Listening],
     defaultDifficulty: 3,
-  },
-  [QuestionType.FlowChartCompletion]: {
-    type: QuestionType.FlowChartCompletion,
-    label: "Flow Chart Completion",
-    shortLabel: "Flow + Blanks",
-    description: "Flow chart with blanks inside steps.",
-    category: "ordering",
-    editorKind: "flow-chart",
-    skillHints: [QuestionSkill.Listening],
-    defaultDifficulty: 3,
-  },
-  [QuestionType.AudioResponse]: {
-    type: QuestionType.AudioResponse,
-    label: "Speaking / Audio Response",
-    shortLabel: "Audio",
-    description: "Speaking task — candidate records voice and is graded by AI.",
-    category: "speaking",
-    editorKind: "audio-response",
-    skillHints: [QuestionSkill.Speaking],
-    defaultDifficulty: 2,
   },
 };
 

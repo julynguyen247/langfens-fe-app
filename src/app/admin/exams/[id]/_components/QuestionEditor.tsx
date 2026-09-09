@@ -11,12 +11,10 @@ import { BlankAcceptsEditor } from "./editors/BlankAcceptsEditor";
 import { MatchPairsEditor } from "./editors/MatchPairsEditor";
 import { ShortAnswerEditor } from "./editors/ShortAnswerEditor";
 import { FlowChartEditor } from "./editors/FlowChartEditor";
-import { AudioResponseEditor } from "./editors/AudioResponseEditor";
 import { MatchingHeadingEditor } from "./editors/MatchingHeadingEditor";
 import { MatchingInformationEditor } from "./editors/MatchingInformationEditor";
 import { MatchingFeaturesEditor } from "./editors/MatchingFeaturesEditor";
 import { MatchingEndingsEditor } from "./editors/MatchingEndingsEditor";
-import { FlowChartCompletionEditor } from "./editors/FlowChartCompletionEditor";
 import { AdminQuestionPreview } from "@/components/admin/preview/AdminQuestionPreview";
 import { QuestionExporter } from "./QuestionExporter";
 import { QUESTION_TYPE_REGISTRY, getMeta } from "@/app/admin/_lib/questionTypeRegistry";
@@ -395,26 +393,6 @@ export function QuestionEditor({
         <FlowChartEditor
           orderCorrects={draft.orderCorrects}
           onChange={handleFlowChartChange}
-        />
-      );
-    }
-    if (t === "FLOW_CHART_COMPLETION") {
-      return (
-        <FlowChartCompletionEditor
-          orderCorrects={draft.orderCorrects}
-          blankAcceptTexts={draft.blankAcceptTexts}
-          blankAcceptRegex={draft.blankAcceptRegex}
-          onOrderChange={handleFlowChartChange}
-          onBlanksChange={handleBlanksChange}
-        />
-      );
-    }
-    if (t === "AUDIO_RESPONSE") {
-      return (
-        <AudioResponseEditor
-          promptMd={draft.promptMd}
-          explanationMd={draft.explanationMd}
-          onPromptChange={handlePromptChange}
         />
       );
     }

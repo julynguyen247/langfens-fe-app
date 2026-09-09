@@ -193,8 +193,7 @@ export function MiniQuestionCard({ item }: MiniQuestionCardProps) {
       t === QuestionType.FormCompletion ||
       t === QuestionType.SentenceCompletion ||
       t === QuestionType.DiagramLabel ||
-      t === QuestionType.MapLabel ||
-      t === QuestionType.FlowChartCompletion
+      t === QuestionType.MapLabel
     ) {
       return <MiniCompletion item={item} />;
     }
@@ -203,14 +202,6 @@ export function MiniQuestionCard({ item }: MiniQuestionCardProps) {
     }
     if (t === QuestionType.ShortAnswer) {
       return <MiniShortAnswer item={item} />;
-    }
-    if (t === QuestionType.AudioResponse) {
-      return (
-        <div className="text-[11px] text-indigo-300 italic pt-1 flex items-center gap-1">
-          <span>🎙</span>
-          <span>Speaking task — graded by AI service</span>
-        </div>
-      );
     }
     return null;
   };

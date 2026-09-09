@@ -16,7 +16,6 @@ import { CompletionCard } from "./cards/CompletionCard";
 import { MatchingCard } from "./cards/MatchingCard";
 import { ShortAnswerCard } from "./cards/ShortAnswerCard";
 import { FlowChartCard } from "./cards/FlowChartCard";
-import { FlowChartCompletionCard } from "./cards/FlowChartCompletionCard";
 
 
 interface QuestionCardProps {
@@ -138,19 +137,6 @@ export function QuestionCard({
       );
     }
 
-    if (t === QuestionType.FlowChartCompletion) {
-      return (
-        <FlowChartCompletionCard
-          promptMd={question.promptMd}
-          blankAcceptTexts={question.blankAcceptTexts}
-          blankAcceptRegex={question.blankAcceptRegex}
-          value={value}
-          isReview={isReview}
-          onChange={onAnswerChange}
-        />
-      );
-    }
-
     if (t === QuestionType.FlowChart) {
       return (
         <FlowChartCard
@@ -227,16 +213,11 @@ export function QuestionCard({
       </div>
 
       {/* Prompt Markdown */}
-      {question.promptMd && question.type !== QuestionType.FlowChartCompletion && (
+      {question.promptMd && (
         <div className="text-sm font-medium text-slate-900 leading-relaxed font-sans prose prose-slate max-w-none">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>
             {question.promptMd}
           </ReactMarkdown>
-        </div>
-      )}
-      {question.type === QuestionType.FlowChartCompletion && (
-        <div className="text-sm font-bold text-slate-900 leading-relaxed font-sans">
-          Complete the flow chart below by filling in the missing words for each stage:
         </div>
       )}
 

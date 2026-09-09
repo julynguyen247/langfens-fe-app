@@ -158,8 +158,7 @@ export function AdminQuestionPreview({
       t === QuestionType.FormCompletion ||
       t === QuestionType.SentenceCompletion ||
       t === QuestionType.DiagramLabel ||
-      t === QuestionType.MapLabel ||
-      t === QuestionType.FlowChartCompletion
+      t === QuestionType.MapLabel
     ) {
       return (
         <CompletionCardV3
@@ -188,9 +187,6 @@ export function AdminQuestionPreview({
           onChange={(v) => setValue(v)}
         />
       );
-    }
-    if (t === QuestionType.AudioResponse) {
-      return <NoPreview label="Speaking task — audio recording flow not previewed" />;
     }
     return <NoPreview label={`No preview for type: ${t}`} />;
   };
