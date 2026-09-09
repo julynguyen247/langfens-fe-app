@@ -77,7 +77,7 @@ export function enrichExamWithSequentialNumbers(exam: InternalDeliveryExam): {
   let counter = 1;
   const allQuestions: InternalDeliveryQuestion[] = [];
 
-  const enrichedSections: InternalDeliverySection[] = (exam.sections || []).map((sec: InternalDeliverySection) => {
+  const enrichedSections: InternalDeliverySection[] = (exam.sections || []).map((sec: InternalDeliverySection, sIdx: number) => {
     const enrichQ = (q: InternalDeliveryQuestion): InternalDeliveryQuestion => {
       const displayIdx = counter++;
       const enriched: InternalDeliveryQuestion = { ...q, displayIdx };
@@ -93,11 +93,11 @@ export function enrichExamWithSequentialNumbers(exam: InternalDeliveryExam): {
 
     return {
       ...sec,
+      idx: typeof sec.idx === "number" ? sec.idx : sIdx,
       questions: enrichedQuestions,
       questionGroups: enrichedGroups,
     };
   });
-
   return {
     enrichedExam: {
       ...exam,

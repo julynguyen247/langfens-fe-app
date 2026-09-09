@@ -93,24 +93,35 @@ export function ResultV3Review({ attemptId }: { attemptId: string }) {
   const rightPanelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    let cancelled = false;
+    const startedAt = Date.now();
+
     async function load() {
       try {
         setLoading(true);
         setError(null);
         const data = await fetchAttemptResult(attemptId);
+        if (cancelled) return;
         setResult(data);
       } catch (err: unknown) {
+        if (cancelled) return;
         let msg = "Failed to load attempt results";
         if (err && typeof err === "object" && "message" in err && typeof err.message === "string") {
           msg = err.message;
         }
         setError(msg);
       } finally {
-        setLoading(false);
+        if (cancelled) return;
+        const elapsed = Date.now() - startedAt;
+        const remaining = Math.max(0, 800 - elapsed);
+        setTimeout(() => {
+          if (!cancelled) setLoading(false);
+        }, remaining);
       }
     }
 
     load();
+    return () => { cancelled = true; };
   }, [attemptId]);
 
   // Index answers by question ID and sequential display index
