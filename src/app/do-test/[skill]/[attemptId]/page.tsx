@@ -8,9 +8,9 @@ import Image from "next/image";
 import PassageView from "./components/reading/PassageView";
 import YouTubePlayer from "./components/listening/YouTubePlayer";
 import QuestionPanel, {
-  Question as UiQuestion,
   QuestionUiKind,
 } from "./components/common/QuestionPanel";
+import type { Question as UiQuestion } from "@/types/question.type";
 import { useAttemptStore } from "@/app/store/useAttemptStore";
 import { useUserStore } from "@/app/store/userStore";
 import { useLoadingStore } from "@/app/store/loading";

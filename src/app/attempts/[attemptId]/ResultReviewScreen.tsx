@@ -4,9 +4,9 @@ import React, { useMemo } from "react";
 import { Group, Panel } from "react-resizable-panels";
 import PassageView from "../../do-test/[skill]/[attemptId]/components/reading/PassageView";
 import QuestionPanel, {
-  Question,
   ReviewResult,
 } from "../../do-test/[skill]/[attemptId]/components/common/QuestionPanel";
+import type { Question } from "@/types/question.type";
 import type { RagFeedbackEnvelope } from "@/types/rag";
 
 const UUID_RE =

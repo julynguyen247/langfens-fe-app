@@ -8,6 +8,7 @@ import { AttemptQuestionGroup } from "@/app/store/useAttemptStore";
 import { QuestionComponentRegistry, RawQuestion } from "../QuestionComponentRegistry";
 import { QuestionFeedbackPanel } from "../QuestionFeedbackPanel";
 import type { RagFeedbackEnvelope } from "@/types/rag";
+import type { Question } from "@/types/question.type";
 
 type Choice = { value: string; label: string };
 type QA = Record<string, string>;
@@ -60,24 +61,6 @@ export type QuestionUiKind =
   | "matching_heading_select"
   | "summary_completion"
   | "matching_information";
-
-export type Question = {
-  id: string;
-  stem: string;
-  backendType: BackendQuestionType;
-  uiKind: QuestionUiKind;
-  forices?: Array<string | Choice>;
-  placeholder?: string;
-  order?: string;
-  flowChartNodes?: { key: string; label: string }[];
-  headings?: { key: string; text: string }[];
-  explanationMd?: string;
-  idx?: number;
-  imageUrl?: string | null;
-  modelAnswers?: string[] | null;
-  wordList?: string[] | null;
-  groupId?: string | null;
-};
 
 // Markdown components for instructions
 const instructionComponents = {
