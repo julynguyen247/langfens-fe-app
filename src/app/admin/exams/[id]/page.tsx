@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   getFullExamForEditor,
+  getQuestionsBySection,
+  getSectionsByExam,
   updateExam,
   createSection,
   updateSection,
@@ -20,6 +22,7 @@ import {
   AdminExamUpdate,
   AdminQuestionUpdate,
   AdminQuestionUpsert,
+  AdminSectionItem,
   AdminSectionUpdate,
   AdminSectionUpsert,
   ExamCategory,
@@ -137,6 +140,73 @@ export default function AdminExamEditorPage({
     } finally {
       setLoading(false);
     }
+  };
+
+
+  // Scoped refetch for a single section: co-fetches the section's
+  // question rows (DB UUIDs + idx + prompt + skill + type + difficulty
+  // + explanation) AND the section-row metadata (title, instructions,
+  // passage, audio, transcript) via `getSectionsByExam`, then splices
+  // both into the existing `exam` snapshot. Avoids re-fetching the
+  // entire delivery snapshot, so other sections' open question cards
+  // don't collapse / flicker. Delivery-only fields (options, blank/match/
+  // short-answer payloads, imageUrl, groupId, displayIdx, flowChartNodes,
+  // modelAnswers, wordList) are preserved on each question row via the
+  // spread of the existing record since neither admin endpoint returns
+  // them. Pure pass-through: re-throws on failure so the caller can
+  // surface exactly one error toast.
+  const loadSection = async (sectionId: string): Promise<void> => {
+    const [freshQuestions, adminSections] = await Promise.all([
+      getQuestionsBySection(sectionId),
+      getSectionsByExam(examId),
+    ]);
+    setExam((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        sections: prev.sections.map((s) => {
+          if (s.id !== sectionId) return s;
+          const matchingAdminSection = adminSections.find(
+            (a) => a.id === sectionId
+          );
+          const merged = freshQuestions.map((q) => {
+            const existing = s.questions.find(
+              (eq) => eq.id === q.id || eq.idx === q.idx
+            );
+            return {
+              ...(existing ?? {}),
+              id: q.id,
+              sectionId: q.sectionId,
+              idx: q.idx,
+              type: q.type,
+              skill: q.skill,
+              difficulty: q.difficulty,
+              promptMd: q.promptMd ?? null,
+              explanationMd: q.explanationMd ?? null,
+              options: existing?.options ?? [],
+            };
+          });
+          if (!matchingAdminSection) {
+            return { ...s, questions: merged };
+          }
+          return {
+            ...s,
+            title: matchingAdminSection.title,
+            instructionsMd:
+              matchingAdminSection.instructionsMd ??
+              s.instructionsMd ??
+              null,
+            passageMd:
+              matchingAdminSection.passageMd ?? s.passageMd ?? null,
+            audioUrl:
+              matchingAdminSection.audioUrl ?? s.audioUrl ?? null,
+            transcriptMd:
+              matchingAdminSection.transcriptMd ?? s.transcriptMd ?? null,
+            questions: merged,
+          };
+        }),
+      };
+    });
   };
 
   useEffect(() => {
@@ -334,62 +404,76 @@ export default function AdminExamEditorPage({
     sectionId: string,
     updatedQ: InternalDeliveryQuestion
   ) => {
-    if (!updatedQ.id) {
-      throw new Error("Question lacks database UUID. Refresh exam paper.");
-    }
+    try {
+      if (!updatedQ.id) {
+        throw new Error("Question lacks database UUID. Refresh exam paper.");
+      }
 
-    const updateDto: AdminQuestionUpdate = {
-      SectionId: sectionId,
-      Idx: updatedQ.idx,
-      Type: updatedQ.type,
-      Skill: updatedQ.skill,
-      Difficulty: updatedQ.difficulty,
-      PromptMd: updatedQ.promptMd || null,
-      ExplanationMd: updatedQ.explanationMd || null,
-      ImageUrl: updatedQ.imageUrl || null,
-      BlankAcceptTexts: updatedQ.blankAcceptTexts || null,
-      BlankAcceptRegex: updatedQ.blankAcceptRegex || null,
-      MatchPairs: updatedQ.matchPairs || null,
-      OrderCorrects: updatedQ.orderCorrects || null,
-      ShortAnswerAcceptTexts: updatedQ.shortAnswerAcceptTexts || null,
-      ShortAnswerAcceptRegex: updatedQ.shortAnswerAcceptRegex || null,
-    };
+      const updateDto: AdminQuestionUpdate = {
+        SectionId: sectionId,
+        Idx: updatedQ.idx,
+        Type: updatedQ.type,
+        Skill: updatedQ.skill,
+        Difficulty: updatedQ.difficulty,
+        PromptMd: updatedQ.promptMd || null,
+        ExplanationMd: updatedQ.explanationMd || null,
+        ImageUrl: updatedQ.imageUrl || null,
+        BlankAcceptTexts: updatedQ.blankAcceptTexts || null,
+        BlankAcceptRegex: updatedQ.blankAcceptRegex || null,
+        MatchPairs: updatedQ.matchPairs || null,
+        OrderCorrects: updatedQ.orderCorrects || null,
+        ShortAnswerAcceptTexts: updatedQ.shortAnswerAcceptTexts || null,
+        ShortAnswerAcceptRegex: updatedQ.shortAnswerAcceptRegex || null,
+      };
 
-    await updateQuestion(updatedQ.id, updateDto);
+      await updateQuestion(updatedQ.id, updateDto);
 
-    // If question has options (MCQ / Heading choices), persist option rows
-    if (updatedQ.options && updatedQ.options.length > 0) {
-      for (const opt of updatedQ.options) {
-        if (opt.id && !opt.id.startsWith("temp-") && !opt.id.startsWith("preset-")) {
-          // update existing
-          try {
-            await updateOption(opt.id, {
-              QuestionId: updatedQ.id,
-              Idx: opt.idx,
-              ContentMd: opt.contentMd,
-              IsCorrect: Boolean(opt.isCorrect),
-              ImageUrl: opt.imageUrl ?? null,
-              AltText: opt.altText ?? null,
-            });
-          } catch {
-            // ignore individual option update errors
-          }
-        } else {
-          // create new
-          try {
-            await createOption({
-              QuestionId: updatedQ.id,
-              Idx: opt.idx,
-              ContentMd: opt.contentMd,
-              IsCorrect: Boolean(opt.isCorrect),
-              ImageUrl: opt.imageUrl ?? null,
-              AltText: opt.altText ?? null,
-            });
-          } catch {
-            // ignore
+      // If question has options (MCQ / Heading choices), persist option rows
+      if (updatedQ.options && updatedQ.options.length > 0) {
+        for (const opt of updatedQ.options) {
+          if (opt.id && !opt.id.startsWith("temp-") && !opt.id.startsWith("preset-")) {
+            // update existing
+            try {
+              await updateOption(opt.id, {
+                QuestionId: updatedQ.id,
+                Idx: opt.idx,
+                ContentMd: opt.contentMd,
+                IsCorrect: Boolean(opt.isCorrect),
+                ImageUrl: opt.imageUrl ?? null,
+                AltText: opt.altText ?? null,
+              });
+            } catch {
+              // ignore individual option update errors
+            }
+          } else {
+            // create new
+            try {
+              await createOption({
+                QuestionId: updatedQ.id,
+                Idx: opt.idx,
+                ContentMd: opt.contentMd,
+                IsCorrect: Boolean(opt.isCorrect),
+                ImageUrl: opt.imageUrl ?? null,
+                AltText: opt.altText ?? null,
+              });
+            } catch {
+              // ignore
+            }
           }
         }
       }
+
+
+      // User-spec ordering: success toast first, then scoped refetch.
+      // `loadSection` rethrows on failure — the outer catch surfaces a
+      // single error toast and replaces the success toast immediately
+      // (showToast does an immediate setState, no queue). Re-throw so
+      // QuestionEditor.handleSave's in-card error message also fires.
+      showToast(`Question #${updatedQ.idx} saved`, "success");
+      await loadSection(sectionId);
+    } catch (err: unknown) {
+      showToast(extractErrorMessage(err), "error");
+      throw err;
     }
   };
 
