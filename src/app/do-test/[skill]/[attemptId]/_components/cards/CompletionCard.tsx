@@ -21,36 +21,55 @@ export function CompletionCard({
   const texts = blankAcceptTexts || {};
   let blankKeys = Object.keys(texts);
 
-  // When blankAcceptTexts is empty (e.g. during live test where answers are stripped for security):
-  if (blankKeys.length === 0) {
-    if (promptMd) {
-      // 1. Check for bracketed placeholders [0], [1], [2] or [1], [2], [3]
-      const bracketMatches = Array.from(promptMd.matchAll(/\[(\d+)\]/g)).map((m) => m[1]);
-      if (bracketMatches.length > 0) {
-        blankKeys = Array.from(new Set(bracketMatches)).sort((a, b) => Number(a) - Number(b));
-      } else {
-        // 2. Check for underscore placeholders __________
-        const underscores = promptMd.match(/_{3,}/g) || [];
-        if (underscores.length > 0) {
-          blankKeys = underscores.map((_, i) => String(i));
-        } else {
-          // 3. DIAGRAM_LABEL/MAP_LABEL: prompt carries "[Diagram: a, b, c, d]" — one
-          // blank per label. Used by ReadingSeeder for q13 (DIAGRAM_LABEL) where the
-          // live exam snapshot strips BlankAcceptTexts (security), so the promptMd
-          // is the only place left to infer blank count.
-          const labelListMatch = promptMd.match(/\[(Diagram|Map):\s*([^\]]+)\]/i);
-          if (labelListMatch) {
-            const labels = labelListMatch[2]
-              .split(",")
-              .map((s) => s.trim())
-              .filter(Boolean);
-            if (labels.length > 0) {
-              blankKeys = labels.map((_, i) => String(i));
-            }
-          }
+  // When blankAcceptTexts is empty (e.g. during live test where answers are
+  // stripped for security): derive blank keys from the promptMd.
+  //
+  // Phase 2 (S32) cutover — the legacy `___` underscore fallback was
+  // retired alongside the DB migration. The DB now ships every
+  // completion-family question in `[N]` bracket format (no underscores),
+  // so this card only has to handle:
+  //   (a) `[1] [2] [3]` — ordinal blanks in the prompt body
+  //   (b) `[Diagram: a, b, c, d]` / `[Map: ...]` — word-bank list for
+  //       DIAGRAM_LABEL / MAP_LABEL (live-snapshot path where BlankAccepts
+  //       are stripped for security)
+  if (blankKeys.length === 0 && promptMd) {
+    // 1. Bracketed ordinal placeholders — `[1] [2] [3]`.
+    const bracketMatches = Array.from(promptMd.matchAll(/\[(\d+)\]/g)).map(
+      (m) => m[1],
+    );
+    if (bracketMatches.length > 0) {
+      blankKeys = Array.from(new Set(bracketMatches)).sort(
+        (a, b) => Number(a) - Number(b),
+      );
+    } else {
+      // 2. `[Diagram: a, b, c, d]` / `[Map: ...]` word-bank marker. One
+      // blank per label.
+      const labelListMatch = promptMd.match(/\[(Diagram|Map):\s*([^\]]+)\]/i);
+      if (labelListMatch) {
+        const labels = labelListMatch[2]
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+        if (labels.length > 0) {
+          blankKeys = labels.map((_, i) => String(i));
         }
       }
     }
+  }
+  // 3. Dev-only safety log: if a completion-family question arrives with
+  // no BlankAccepts AND no `[N]` AND no Diagram/Map marker, the prompt
+  // likely escaped the S32 DB migration. Surface it in DevTools so the
+  // regression is spotted immediately rather than silently rendering a
+  // single empty input.
+  if (
+    blankKeys.length === 0 &&
+    process.env.NODE_ENV === "development" &&
+    typeof console !== "undefined"
+  ) {
+    console.warn(
+      "[CompletionCard] no blank keys derived from promptMd; check that the row uses `[N]` placeholders or a `[Diagram/Map: ...]` word-bank marker.",
+      { promptMd: promptMd?.slice(0, 200) },
+    );
   }
   if (blankKeys.length === 0) {
     blankKeys = ["0"];
