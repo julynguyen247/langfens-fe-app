@@ -9,43 +9,10 @@ import { QuestionComponentRegistry, RawQuestion } from "../QuestionComponentRegi
 import { QuestionFeedbackPanel } from "../QuestionFeedbackPanel";
 import type { RagFeedbackEnvelope } from "@/types/rag";
 import type { Question } from "@/types/question.type";
+import { deriveUiKind } from "@/lib/deriveUiKind";
 
 type Choice = { value: string; label: string };
 type QA = Record<string, string>;
-
-// Map BackendQuestionType → uiKind for dispatch decisions
-function deriveUiKind(type: string): string {
-  switch (type) {
-    case "TRUE_FALSE_NOT_GIVEN":
-    case "YES_NO_NOT_GIVEN":
-    case "MULTIPLE_CHOICE_SINGLE":
-    case "MULTIPLE_CHOICE_SINGLE_IMAGE":
-    case "CLASSIFICATION":
-      return "forice_single";
-    case "MULTIPLE_CHOICE_MULTIPLE":
-      return "forice_multiple";
-    case "FORM_COMPLETION":
-    case "NOTE_COMPLETION":
-    case "SENTENCE_COMPLETION":
-    case "SUMMARY_COMPLETION":
-    case "TABLE_COMPLETION":
-    case "SHORT_ANSWER":
-    case "DIAGRAM_LABEL":
-    case "MAP_LABEL":
-      return "completion";
-    case "MATCHING_FEATURES":
-    case "MATCHING_ENDINGS":
-      return "matching_letter";
-    case "MATCHING_HEADING":
-      return "matching_heading";
-    case "MATCHING_INFORMATION":
-      return "matching_information";
-    case "FLOW_CHART":
-      return "flow_chart";
-    default:
-      return "completion";
-  }
-}
 
 export type BackendQuestionType = string;
 

@@ -44,6 +44,8 @@ export type QuestionProps = {
 /**
  * Direct BackendQuestionType → Component registry.
  * Replaces the QuestionUiKind / mapApiQuestionToUi indirection.
+ * UI dispatch now uses deriveUiKind from `@/lib/deriveUiKind` for
+ * the uiKind value the QuestionPanel consumes.
  */
 export const QuestionComponentRegistry: Record<
   string,

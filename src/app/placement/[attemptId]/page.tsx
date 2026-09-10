@@ -9,8 +9,8 @@ import { useAttemptStore } from "@/app/store/useAttemptStore";
 import { useUserStore } from "@/app/store/userStore";
 import { autoSaveAttempt, submitAttempt, uploadFile } from "@/utils/api";
 import { useDebouncedAutoSave } from "@/app/utils/hook";
-import { mapApiQuestionToUi } from "@/lib/mapApiQuestionToUi";
-import { BackendQuestionType } from "@/types/question.type";
+import { deriveUiKind, isWordListBlank } from "@/lib/deriveUiKind";
+import type { BackendQuestionType, Question as UiQuestion } from "@/types/question.type";
 import ListeningAudioBar from "../../do-test/[skill]/[attemptId]/components/listening/ListeningAudioBar";
 import QuestionPanel from "../../do-test/[skill]/[attemptId]/components/common/QuestionPanel";
 import PassageView from "../../do-test/[skill]/[attemptId]/components/reading/PassageView";
@@ -44,6 +44,61 @@ function formatTime(totalSeconds: number) {
   const m = Math.floor(totalSeconds / 60);
   const s = totalSeconds % 60;
   return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+}
+
+/**
+ * Local Question builder — replaces the deleted `mapApiQuestionToUi`
+ * wrapper. Uses the canonical `deriveUiKind` + `isWordListBlank`
+ * helpers from `@/lib/deriveUiKind`. The MATCHING_INFORMATION
+ * sub-dispatch (matching_information vs matching_paragraph) lives
+ * inline here.
+ */
+function buildQuestion(q: any): UiQuestion {
+  const uiKind =
+    q.type === "MATCHING_INFORMATION"
+      ? isWordListBlank(q.promptMd ?? "")
+        ? "matching_information"
+        : "matching_paragraph"
+      : deriveUiKind(q.type);
+
+  const base: UiQuestion = {
+    id: q.id,
+    idx: q.idx,
+    stem: q.promptMd,
+    backendType: q.type,
+    uiKind,
+    explanationMd: q.explanationMd,
+    imageUrl: q.imageUrl ?? null,
+    modelAnswers: q.modelAnswers ?? null,
+    wordList: q.wordList ?? null,
+    groupId: q.groupId ?? null,
+  };
+
+  if (uiKind === "forice_single" || uiKind === "forice_multiple") {
+    return {
+      ...base,
+      forices: (q.options ?? []).map((opt: any) => ({
+        value: opt.id,
+        label: String(opt.contentMd).replace(/^[A-Z]\.\s+/, ""),
+      })),
+    };
+  }
+
+  if (uiKind === "flow_chart") {
+    return { ...base, flowChartNodes: q.flowChartNodes ?? [] };
+  }
+
+  if (uiKind === "matching_heading" && q.options?.length) {
+    return {
+      ...base,
+      forices: q.options.map((opt: any) => ({
+        value: String(opt.contentMd).split(".")[0].trim(),
+        label: opt.contentMd,
+      })),
+    };
+  }
+
+  return base;
 }
 
 export default function MultiSkillAttemptPage() {
@@ -195,7 +250,7 @@ export default function MultiSkillAttemptPage() {
       readingQuestionsApi
         .slice()
         .sort((a: any, b: any) => a.idx - b.idx)
-        .map((q: any) => mapApiQuestionToUi(q)),
+        .map((q: any) => buildQuestion(q)),
     [readingQuestionsApi]
   );
 
@@ -204,7 +259,7 @@ export default function MultiSkillAttemptPage() {
       listeningQuestionsApi
         .slice()
         .sort((a: any, b: any) => a.idx - b.idx)
-        .map((q: any) => mapApiQuestionToUi(q)),
+        .map((q: any) => buildQuestion(q)),
     [listeningQuestionsApi]
   );
 
