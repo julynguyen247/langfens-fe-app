@@ -4,9 +4,6 @@ import React, { memo, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
 import QuestionStatusBar from "../common/QuestionStatusBar";
 import WorkbookCard from "../common/WorkbookCard";
-// @ts-expect-error - WorkbookInput module is missing in this checkout (Sprint 4 follow-up:
-// sibling files MapLabelCard/FormCompletionCard/NoteCompletionCard/TableCompletionCard share
-// the same pre-existing broken import). DiagramLabelCard intentionally mirrors MapLabelCard.
 import WorkbookInput from "../common/WorkbookInput";
 
 type Props = {
@@ -150,7 +147,7 @@ const DiagramLabelCard = memo(function DiagramLabelCard({
               numberLabel={p.number}
               partLabel={p.name || undefined}
               value={values[idx] ?? ""}
-              onChange={(v: string) => onChange(idx, v)}
+              onChange={(v) => onChange(idx, v)}
               placeholder="Type your answer here"
               ariaLabel={`Diagram part ${p.name || p.number}`}
               showTypeHint
