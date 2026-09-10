@@ -10,6 +10,7 @@ import FlowChartCard from "./reading/FlowChartCard";
 import MatchingInformation from "./reading/WordListCompletionCard";
 import ClassificationCard from "./reading/ClassificationCard";
 import FillInBlankCard from "./reading/FillInBlankCard";
+import MultiChoiceImageCard from "./reading/MultiChoiceImageCard";
 
 /** Raw question shape from API */
 export type RawQuestion = {
@@ -105,10 +106,12 @@ export const QuestionComponentRegistry: Record<
       label: opt.contentMd.replace(/^[A-Z]\.\s+/, ""),
     }));
     return (
-      <QuestionCard
-        question={{ id: question.id, stem: question.stem ?? question.promptMd ?? "", forices }}
+      <MultiChoiceImageCard
+        id={question.id}
+        stem={question.stem ?? question.promptMd ?? ""}
         selected={selected}
         onSelect={onSelect!}
+        forices={forices}
       />
     );
   }) as React.FC<QuestionProps>,
