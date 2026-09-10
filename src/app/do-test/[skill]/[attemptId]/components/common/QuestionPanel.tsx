@@ -345,7 +345,21 @@ const QuestionPanel = memo(function QuestionPanel({
                 <TargetComponent
                   question={rawQ}
                   selected={value}
-                  onSelect={(_, v) => handleAnswer(q.id, v)}
+                  onSelect={(_, v) => {
+                    // Sanity check (G24): single-choice types (TFNG/YNNG/CLASSIFICATION)
+                    // must receive the option GUID, not label text. Wire format Spec D4.
+                    if (
+                      process.env.NODE_ENV === "development" &&
+                      v &&
+                      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v)
+                    ) {
+                      console.warn(
+                        `[QuestionPanel] Non-GUID value="${v}" for questionId=${q.id}. ` +
+                          `Single-choice types (TFNG/YNNG/CLASSIFICATION/MCQ single) must send the option's GUID.`
+                      );
+                    }
+                    handleAnswer(q.id, v);
+                  }}
                 />
               );
             } else if (
