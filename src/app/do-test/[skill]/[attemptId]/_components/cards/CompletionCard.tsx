@@ -19,7 +19,17 @@ export function CompletionCard({
   onChange,
 }: CompletionCardProps) {
   const texts = blankAcceptTexts || {};
-  let blankKeys = Object.keys(texts);
+  // Sprint 3: Object.keys preserves insertion order, which may be non-numeric
+  // (Admin UI typing order) or non-monotonic (seeder order). Sort numerically
+  // so rendering + grading agree on blank order independent of dict insertion.
+  // Kept as `let` because the fallback branch below (promptMd regex parse)
+  // reassigns blankKeys when BlankAccepts is stripped.
+  let blankKeys = Object.keys(texts).sort((a, b) => {
+    const na = Number(a);
+    const nb = Number(b);
+    if (!Number.isNaN(na) && !Number.isNaN(nb)) return na - nb;
+    return String(a).localeCompare(String(b));
+  });
 
   // When blankAcceptTexts is empty (e.g. during live test where answers are
   // stripped for security): derive blank keys from the promptMd.
@@ -32,18 +42,38 @@ export function CompletionCard({
   //   (b) `[Diagram: a, b, c, d]` / `[Map: ...]` — word-bank list for
   //       DIAGRAM_LABEL / MAP_LABEL (live-snapshot path where BlankAccepts
   //       are stripped for security)
+  //
+  // Sprint 3 hotfix: blankKeys must be 0-indexed to match the BE's
+  // `BlankAcceptTexts` dictionary key convention. Previously the card
+  // derived keys from `\[(\d+)\]` literally, producing 1-indexed
+  // keys ("1","2","3"). The user typed into input 0 (key="1") and the
+  // stored payload became `{"1":"..."}` — which the BE then compared
+  // against `texts["0"]` (0-indexed) and missed entirely. The result
+  // was an off-by-one grading bug visible on the review screen.
+  // Use positional 0-indexed keys so the live-test wire format and the
+  // BE's grading index match.
   if (blankKeys.length === 0 && promptMd) {
     // 1. Bracketed ordinal placeholders — `[1] [2] [3]`.
-    const bracketMatches = Array.from(promptMd.matchAll(/\[(\d+)\]/g)).map(
-      (m) => m[1],
-    );
+    //    We use positional 0-indexed keys (NOT the literal `[N]` digits)
+    //    so the rendered inputs and the BE's BlankAcceptTexts keys agree.
+    const bracketMatches = Array.from(promptMd.matchAll(/\[(\d+)\]/g));
     if (bracketMatches.length > 0) {
-      blankKeys = Array.from(new Set(bracketMatches)).sort(
-        (a, b) => Number(a) - Number(b),
-      );
+      // Dedupe by the matched position so duplicate `[N]` markers (rare
+      // but possible in scrambled prompts like `[1] [3] [2]`) only count
+      // once. Sort by appearance order so the rendered input order
+      // matches the prompt's visual order.
+      const seen = new Set<number>();
+      const ordered: number[] = [];
+      for (const m of bracketMatches) {
+        if (m.index === undefined) continue;
+        if (seen.has(m.index)) continue;
+        seen.add(m.index);
+        ordered.push(ordered.length);
+      }
+      blankKeys = ordered.map(String);
     } else {
       // 2. `[Diagram: a, b, c, d]` / `[Map: ...]` word-bank marker. One
-      // blank per label.
+      // blank per label, 0-indexed.
       const labelListMatch = promptMd.match(/\[(Diagram|Map):\s*([^\]]+)\]/i);
       if (labelListMatch) {
         const labels = labelListMatch[2]

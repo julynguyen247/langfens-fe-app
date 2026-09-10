@@ -20,57 +20,7 @@ import { ResultFilterTabsV3 } from "./ResultFilterTabsV3";
 import { PassagePanelV3 } from "@/components/exam-v3/PassagePanelV3";
 import { QuestionCardV3 } from "@/components/exam-v3/QuestionCardV3";
 import { QuestionNavigatorV3 } from "@/components/exam-v3/QuestionNavigatorV3";
-
-function parseUserAnswer(ans?: AttemptAnswerItem): UserAnswerValue {
-  if (!ans) return "";
-
-  if (ans.selectedOptionIds && ans.selectedOptionIds.length > 0) {
-    return ans.selectedOptionIds;
-  }
-
-  const raw = ans.textAnswer?.trim() || "";
-
-  // Legacy format (pre-TestV2Runner): multi-line string with newline-separated
-  // positional answers, e.g. "asdas\nasdas" for SENTENCE_COMPLETION /
-  // FORM_COMPLETION / matching. Split into a positional dict keyed by 0-indexed
-  // string keys so the value shape matches the new JSON format
-  // ({"0": ..., "1": ...}) that the runner writes today. Single-line
-  // strings fall through unchanged (no false-positive splitting).
-  if (raw.includes("\n") && !raw.startsWith("{") && !raw.startsWith("[")) {
-    const lines = raw.split("\n").map((l) => l.trim()).filter(Boolean);
-    if (lines.length > 1) {
-      const dict: Record<string, string> = {};
-      lines.forEach((line, i) => {
-        dict[String(i)] = line;
-      });
-      return dict;
-    }
-  }
-
-  if (raw.startsWith("{") && raw.endsWith("}")) {
-    try {
-      const parsed = JSON.parse(raw);
-      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-        return parsed as Record<string, string>;
-      }
-    } catch {
-      // ignore
-    }
-  }
-
-  if (raw.startsWith("[") && raw.endsWith("]")) {
-    try {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) {
-        return parsed as string[];
-      }
-    } catch {
-      // ignore
-    }
-  }
-
-  return ans.selectedAnswerText || raw;
-}
+import { parseUserAnswer } from "./parseUserAnswer";
 
 /**
  * Result-v3 review UI for an attempt: split-screen paper (PassagePanelV3
