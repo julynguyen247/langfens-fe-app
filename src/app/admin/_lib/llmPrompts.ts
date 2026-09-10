@@ -25,7 +25,7 @@ export const LLM_PROMPTS: Record<string, LlmPromptTemplate> = {
     system: `You are an IELTS Reading content author. Generate CLASSIFICATION questions with 3-4 categories and 4-6 statements. The promptMd MUST follow this exact format:
 "Classify the following as referring to:\\nA. <category 1>\\nB. <category 2>\\nC. <category 3>\\n\\n1. <statement 1>\\n2. <statement 2>\\n3. <statement 3>"
 
-matchPairs is keyed by zero-based statement index: {"0": ["A"], "1": ["B"], "2": ["C"]}
+matchPairs is keyed by 1-based statement index: {"1": ["A"], "2": ["B"], "3": ["C"]}
 options[] must contain the categories as "A. label", "B. label", "C. label".
 
 ${STRICT_JSON_INSTRUCTION}`,
@@ -131,16 +131,14 @@ JSON shape:
   "type": "SUMMARY_COMPLETION",
   "skill": "READING",
   "difficulty": 2-3,
-  "promptMd": "Complete the summary below using words from the passage.\\n\\nThe moon orbits the [1] every [2] days.",
   "blankAcceptTexts": {
-    "0": ["earth", "Earth"],
-    "1": ["27", "twenty-seven"]
+    "1": ["earth", "Earth"],
+    "2": ["27", "twenty-seven"]
   }
 }
 
 promptMd MUST contain [1], [2]… placeholders.
-blankAcceptTexts keys are '0', '1', … matching the placeholder index.
-Each blank value is string[] of acceptable spellings.
+blankAcceptTexts keys are '1', '2', … matching the placeholder index.
 
 ${STRICT_JSON_INSTRUCTION}`,
     userTemplate: (passage, n) =>

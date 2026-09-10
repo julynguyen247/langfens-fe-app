@@ -42,38 +42,29 @@ export function CompletionCard({
   //   (b) `[Diagram: a, b, c, d]` / `[Map: ...]` — word-bank list for
   //       DIAGRAM_LABEL / MAP_LABEL (live-snapshot path where BlankAccepts
   //       are stripped for security)
-  //
-  // Sprint 3 hotfix: blankKeys must be 0-indexed to match the BE's
-  // `BlankAcceptTexts` dictionary key convention. Previously the card
-  // derived keys from `\[(\d+)\]` literally, producing 1-indexed
-  // keys ("1","2","3"). The user typed into input 0 (key="1") and the
-  // stored payload became `{"1":"..."}` — which the BE then compared
-  // against `texts["0"]` (0-indexed) and missed entirely. The result
-  // was an off-by-one grading bug visible on the review screen.
-  // Use positional 0-indexed keys so the live-test wire format and the
-  // BE's grading index match.
+
+  // Sprint 3 fix: blankKeys equal the literal digit from the prompt's `[N]`
+  // placeholder, so typing into "Blank [1]" stores `{"1":"..."}` and the BE
+  // grader looks up `BlankAcceptTexts["1"]` directly. The convention is
+  // end-to-end 1-indexed (prompt digit = dict key).
   if (blankKeys.length === 0 && promptMd) {
     // 1. Bracketed ordinal placeholders — `[1] [2] [3]`.
-    //    We use positional 0-indexed keys (NOT the literal `[N]` digits)
-    //    so the rendered inputs and the BE's BlankAcceptTexts keys agree.
+    //    Use the literal digit (1-indexed) so prompt and dict keys agree.
     const bracketMatches = Array.from(promptMd.matchAll(/\[(\d+)\]/g));
     if (bracketMatches.length > 0) {
-      // Dedupe by the matched position so duplicate `[N]` markers (rare
-      // but possible in scrambled prompts like `[1] [3] [2]`) only count
-      // once. Sort by appearance order so the rendered input order
-      // matches the prompt's visual order.
-      const seen = new Set<number>();
-      const ordered: number[] = [];
+      // De-dupe by literal digit so duplicate `[N]` markers collapse.
+      const seen = new Set<string>();
+      const ordered: string[] = [];
       for (const m of bracketMatches) {
-        if (m.index === undefined) continue;
-        if (seen.has(m.index)) continue;
-        seen.add(m.index);
-        ordered.push(ordered.length);
+        const digit = m[1];
+        if (seen.has(digit)) continue;
+        seen.add(digit);
+        ordered.push(digit);
       }
-      blankKeys = ordered.map(String);
+      blankKeys = ordered.sort((a, b) => Number(a) - Number(b));
     } else {
       // 2. `[Diagram: a, b, c, d]` / `[Map: ...]` word-bank marker. One
-      // blank per label, 0-indexed.
+      // blank per label, 1-indexed.
       const labelListMatch = promptMd.match(/\[(Diagram|Map):\s*([^\]]+)\]/i);
       if (labelListMatch) {
         const labels = labelListMatch[2]
@@ -81,7 +72,7 @@ export function CompletionCard({
           .map((s) => s.trim())
           .filter(Boolean);
         if (labels.length > 0) {
-          blankKeys = labels.map((_, i) => String(i));
+          blankKeys = labels.map((_, i) => String(i + 1));
         }
       }
     }
@@ -102,7 +93,7 @@ export function CompletionCard({
     );
   }
   if (blankKeys.length === 0) {
-    blankKeys = ["0"];
+    blankKeys = ["1"];
   } else {
     blankKeys.sort((a, b) => {
       const na = Number(a);
@@ -175,7 +166,7 @@ export function CompletionCard({
           const userVal = userDict[key] || "";
 
           const displayNum = !isNaN(Number(key))
-            ? Number(key) + (blankKeys[0] === "0" ? 1 : 0)
+            ? Number(key)
             : blankKeys.indexOf(key) + 1;
 
           return (

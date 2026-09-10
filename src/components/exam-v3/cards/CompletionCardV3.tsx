@@ -32,14 +32,14 @@ export function CompletionCardV3({
       } else {
         const underscores = promptMd.match(/_{3,}/g) || [];
         if (underscores.length > 0) {
-          blankKeys = underscores.map((_, i) => String(i));
+          blankKeys = underscores.map((_, i) => String(i + 1));
         }
       }
     }
   }
 
   if (blankKeys.length === 0) {
-    blankKeys = ["0"];
+    blankKeys = ["1"];
   } else {
     blankKeys.sort((a, b) => {
       const na = Number(a);

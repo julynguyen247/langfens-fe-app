@@ -368,7 +368,7 @@ export function validateBlankKeyFormat(type: string, keys: string[]): Validation
       issues.push({
         level: "error",
         field: `blanks.${key}`,
-        message: `Blank key "${key}" should be numeric ("0", "1", ...).`,
+        message: `Blank key "${key}" should be numeric ("1", "2", ...).`,
       });
     }
   }

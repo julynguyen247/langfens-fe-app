@@ -7,9 +7,9 @@ import {
  * Convert an AttemptAnswerItem into a render-ready UserAnswerValue.
  *
  * Wire-format conventions on the BE (CompletionGrader JSON path, S31 validator,
- * seeder) are 0-indexed: "Blank [1]" reads `userDict["0"]`. The legacy
+ * seeder) are 1-indexed: "Blank [1]" reads `userDict["1"]`. The legacy
  * pre-TestV2Runner multi-line wire format uses one line per blank, also
- * 0-indexed to match the active data path. JSON-shaped answers are preserved as-is.
+ * 1-indexed to match the active data path. JSON-shaped answers are preserved as-is.
  */
 export function parseUserAnswer(ans?: AttemptAnswerItem): UserAnswerValue {
   if (!ans) return "";
@@ -31,7 +31,7 @@ export function parseUserAnswer(ans?: AttemptAnswerItem): UserAnswerValue {
     if (lines.length > 1) {
       const dict: Record<string, string> = {};
       lines.forEach((line, i) => {
-        dict[String(i)] = line;
+        dict[String(i + 1)] = line;
       });
       return dict;
     }

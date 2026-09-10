@@ -15,21 +15,21 @@ const ans = (overrides: Partial<AttemptAnswerItem>): AttemptAnswerItem => ({
 } as AttemptAnswerItem);
 
 describe.skip("parseUserAnswer", () => {
-  it("multiline: 2 lines → 0-indexed dict {0, 1}", () => {
+  it("multiline: 2 lines → 1-indexed dict {1, 2}", () => {
     const out = parseUserAnswer(ans({ textAnswer: "cortisol\nnucleus accumbens" }));
-    expect(out).toEqual({ 0: "cortisol", 1: "nucleus accumbens" });
+    expect(out).toEqual({ 1: "cortisol", 2: "nucleus accumbens" });
   });
 
-  it("multiline: 3 lines → 0-indexed dict {0, 1, 2}", () => {
+  it("multiline: 3 lines → 1-indexed dict {1, 2, 3}", () => {
     const out = parseUserAnswer(ans({ textAnswer: "a\nb\nc" }));
-    expect(out).toEqual({ 0: "a", 1: "b", 2: "c" });
+    expect(out).toEqual({ 1: "a", 2: "b", 3: "c" });
   });
 
-  it("JSON object: preserved as 0-indexed dict", () => {
+  it("JSON object: preserved as 1-indexed dict", () => {
     const out = parseUserAnswer(
-      ans({ textAnswer: '{"0": "cortisol", "1": "nucleus accumbens"}' }),
+      ans({ textAnswer: '{"1": "cortisol", "2": "nucleus accumbens"}' }),
     );
-    expect(out).toEqual({ 0: "cortisol", 1: "nucleus accumbens" });
+    expect(out).toEqual({ 1: "cortisol", 2: "nucleus accumbens" });
   });
 
   it("single-line plaintext: returned as-is", () => {

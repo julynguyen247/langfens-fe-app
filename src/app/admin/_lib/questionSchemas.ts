@@ -190,8 +190,8 @@ export const QUESTION_SCHEMAS: Record<string, QuestionSchema> = {
   "difficulty": 2,
   "promptMd": "Complete the summary:\\n\\nThe moon orbits the [1] every [2] days.",
   "blankAcceptTexts": {
-    "0": ["earth", "Earth"],
-    "1": ["27", "twenty-seven"]
+    "1": ["earth", "Earth"],
+    "2": ["27", "twenty-seven"]
   }
 }`,
     examplePayload: {
@@ -200,13 +200,13 @@ export const QUESTION_SCHEMAS: Record<string, QuestionSchema> = {
       difficulty: 2,
       promptMd: "Complete the summary:\n\nThe moon orbits the [1] every [2] days.",
       blankAcceptTexts: {
-        "0": ["earth", "Earth"],
-        "1": ["27", "twenty-seven"],
+        "1": ["earth", "Earth"],
+        "2": ["27", "twenty-seven"],
       },
     },
     constraints: [
       "promptMd should contain ___ placeholders OR numbered list",
-      "blankAcceptTexts keys must match placeholder indices (e.g. '0', '1'…)",
+      "blankAcceptTexts keys must match placeholder indices (e.g. '1', '2'…)",
       "each blank value can be string[] (multiple acceptable spellings)",
     ],
   },
@@ -222,14 +222,14 @@ export const QUESTION_SCHEMAS: Record<string, QuestionSchema> = {
   "skill": "READING",
   "difficulty": 3,
   "promptMd": "Complete the table:\\n\\n| Year | Sales |\\n|------|-------|\\n| 2020 | [1]   |",
-  "blankAcceptTexts": { "0": ["100", "one hundred"] }
+  "blankAcceptTexts": { "1": ["100", "one hundred"] }
 }`,
     examplePayload: {
       type: "TABLE_COMPLETION",
       skill: "READING",
       difficulty: 3,
       promptMd: "Complete the table:\n\n| Year | Sales |\n|------|-------|\n| 2020 | [1]   |",
-      blankAcceptTexts: { "0": ["100", "one hundred"] },
+      blankAcceptTexts: { "1": ["100", "one hundred"] },
     },
     constraints: [
       "promptMd typically contains a markdown table with ___ cells",
@@ -248,14 +248,14 @@ export const QUESTION_SCHEMAS: Record<string, QuestionSchema> = {
   "skill": "LISTENING",
   "difficulty": 2,
   "promptMd": "Notes:\\n- Type: [1]\\n- Capacity: [2] people",
-  "blankAcceptTexts": { "0": ["workshop"], "1": ["20"] }
+  "blankAcceptTexts": { "1": ["workshop"], "2": ["20"] }
 }`,
     examplePayload: {
       type: "NOTE_COMPLETION",
       skill: "LISTENING",
       difficulty: 2,
       promptMd: "Notes:\n- Type: [1]\n- Capacity: [2] people",
-      blankAcceptTexts: { "0": ["workshop"], "1": ["20"] },
+      blankAcceptTexts: { "1": ["workshop"], "2": ["20"] },
     },
     constraints: ["Same as SummaryCompletion."],
   },
@@ -270,11 +270,11 @@ export const QUESTION_SCHEMAS: Record<string, QuestionSchema> = {
   "type": "FORM_COMPLETION",
   "skill": "LISTENING",
   "difficulty": 2,
-  "promptMd": "Application Form\\n\\nName: [1]\nDate: [2]\nRoom: [3]",
+  "promptMd": "Application Form\\n\\nName: [1]\\nDate: [2]\\nRoom: [3]",
   "blankAcceptTexts": {
-    "0": ["Rachel Torres", "Torres"],
-    "1": ["15 September"],
-    "2": ["single"]
+    "1": ["Rachel Torres", "Torres"],
+    "2": ["15 September"],
+    "3": ["single"]
   }
 }`,
     examplePayload: {
@@ -283,9 +283,9 @@ export const QUESTION_SCHEMAS: Record<string, QuestionSchema> = {
       difficulty: 2,
       promptMd: "Application Form\n\nName: [1]\nDate: [2]\nRoom: [3]",
       blankAcceptTexts: {
-        "0": ["Rachel Torres", "Torres"],
-        "1": ["15 September"],
-        "2": ["single"],
+        "1": ["Rachel Torres", "Torres"],
+        "2": ["15 September"],
+        "3": ["single"],
       },
     },
     constraints: ["Same as SummaryCompletion."],
@@ -300,16 +300,15 @@ export const QUESTION_SCHEMAS: Record<string, QuestionSchema> = {
     jsonShape: `{
   "type": "SENTENCE_COMPLETION",
   "skill": "READING",
-  "difficulty": 2,
   "promptMd": "1. Listening to music reduces [1] levels.\\n2. The brain's [2] manages emotion.",
-  "blankAcceptTexts": { "0": ["cortisol"], "1": ["nucleus accumbens"] }
+  "blankAcceptTexts": { "1": ["cortisol"], "2": ["nucleus accumbens"] }
 }`,
     examplePayload: {
       type: "SENTENCE_COMPLETION",
       skill: "READING",
       difficulty: 2,
       promptMd: "1. Listening to music reduces [1] levels.\n2. The brain's [2] manages emotion.",
-      blankAcceptTexts: { "0": ["cortisol"], "1": ["nucleus accumbens"] },
+      blankAcceptTexts: { "1": ["cortisol"], "2": ["nucleus accumbens"] },
     },
     constraints: ["Same as SummaryCompletion."],
   },
@@ -355,7 +354,7 @@ export const QUESTION_SCHEMAS: Record<string, QuestionSchema> = {
   "difficulty": 3,
   "promptMd": "Label the diagram below with [1], [2]…",
   "imageUrl": "https://.../diagram.png",
-  "blankAcceptTexts": { "0": ["chloroplast"], "1": ["nucleus"] }
+  "blankAcceptTexts": { "1": ["chloroplast"], "2": ["nucleus"] }
 }`,
     examplePayload: {
       type: "DIAGRAM_LABEL",
@@ -363,7 +362,7 @@ export const QUESTION_SCHEMAS: Record<string, QuestionSchema> = {
       difficulty: 3,
       promptMd: "Label the diagram below with [1], [2]…",
       imageUrl: "https://.../diagram.png",
-      blankAcceptTexts: { "0": ["chloroplast"], "1": ["nucleus"] },
+      blankAcceptTexts: { "1": ["chloroplast"], "2": ["nucleus"] },
     },
     constraints: [
       "imageUrl is required for DIAGRAM_LABEL",
@@ -384,7 +383,7 @@ export const QUESTION_SCHEMAS: Record<string, QuestionSchema> = {
   "difficulty": 3,
   "promptMd": "Label positions [1] through [2] on the map.",
   "imageUrl": "https://.../map.png",
-  "blankAcceptTexts": { "0": ["library"], "1": ["park"] }
+  "blankAcceptTexts": { "1": ["library"], "2": ["park"] }
 }`,
     examplePayload: {
       type: "MAP_LABEL",
