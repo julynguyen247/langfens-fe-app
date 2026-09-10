@@ -102,16 +102,25 @@ function packBlanks(values: string[]): string {
   return cleaned.join("\n");
 }
 
-// Clean raw answer strings like "feature-q1: D / D" -> "D"
+// Clean raw answer strings like "feature-q1: D / D" -> "D".
+// Explicit, named prefix tokens only (case-insensitive). Intentionally
+// NOT stripping arbitrary "Word: rest" prefixes — those may be part of
+// the answer itself (G15 fix; removes the previous `/^[\w-]+:\s*/`
+// greedy regex that would strip legitimate `Reason:` / `Title:` /
+// `Username:` prefixes).
 function cleanAnswer(s: string | undefined): string {
   if (!s) return "";
   let clean = String(s)
     .replace(/blank[-_]\w+:\s*/gi, "")
     .replace(/label[-_ ]*\w*:\s*/gi, "")
+    .replace(/step[-_ ]*\w*:\s*/gi, "")
+    .replace(/node[-_ ]*\w*:\s*/gi, "")
     .replace(/^feature[-_]?q?\d*:\s*/i, "")
     .replace(/^q\d+:\s*/i, "")
-    .replace(/^(heading|item|answer|key)[-_]?\d*:\s*/gi, "")
-    .replace(/^[\w-]+:\s*/, "")
+    .replace(
+      /^(heading|item|answer|key|option|part|section|paragraph|info|flow)[-_]?\d*:\s*/gi,
+      ""
+    )
     .trim();
   // Handle "D / D" patterns - take first value
   if (clean.includes(" / ")) {

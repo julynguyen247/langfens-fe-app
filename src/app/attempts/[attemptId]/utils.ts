@@ -79,7 +79,10 @@ export function cleanAnswer(s: string) {
     .replace(/^feature[-_]?q?\d*:\s*/i, "")
     .replace(/^q\d+:\s*/i, "")
     .replace(/^(heading|item|answer|key|option)[-_]?\d*:\s*/gi, "")
-    .replace(/^[\w-]+:\s*/, "")
+    // REMOVED G15: /^[\w-]+:\s*/ — greedy regex stripped legitimate
+    // "Word: rest" prefixes (e.g. "Reason: I learned" → "I learned").
+    // Allowlist above covers the canonical admin-supplied prefixes;
+    // anything else is left intact as part of the answer.
     .replace(/\s+/g, " ")
     .trim();
 
