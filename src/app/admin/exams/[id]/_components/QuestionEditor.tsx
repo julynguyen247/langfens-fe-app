@@ -31,6 +31,7 @@ import {
   validateMatchPairs,
   validateMcqIsCorrectCount,
   validateOptionsLength,
+  validatePromptBlanksCoverage,
   validateShortAnswer,
   validateShortAnswerSubQuestionCount,
   validateTypeSkill,
@@ -64,6 +65,10 @@ export function QuestionEditor({
   const [draft, setDraft] = useState<InternalDeliveryQuestion>(question);
   const initialRef = useRef<InternalDeliveryQuestion>(question);
 
+  // S31: ref forwarded to the prompt textarea so BlankAcceptsEditor's
+  // "Insert Blank at Cursor" button can read selectionStart/End and restore
+  // the cursor after React commits the new promptMd (C5/C7).
+  const promptRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
     setDraft(question);
     initialRef.current = question;
@@ -120,6 +125,9 @@ export function QuestionEditor({
     if (ed === "blanks") {
       out.push(
         ...validateBlankKeyFormat(t, Object.keys(draft.blankAcceptTexts || {}))
+      );
+      out.push(
+        ...validatePromptBlanksCoverage(t, draft.promptMd, Object.keys(draft.blankAcceptTexts || {}))
       );
     }
 
@@ -394,6 +402,9 @@ export function QuestionEditor({
           blankAcceptTexts={draft.blankAcceptTexts}
           blankAcceptRegex={draft.blankAcceptRegex}
           onChange={handleBlanksChange}
+          promptMd={draft.promptMd}
+          onPromptChange={handlePromptChange}
+          promptTextareaRef={promptRef}
         />
       );
     }
@@ -406,6 +417,9 @@ export function QuestionEditor({
           variant="diagram"
           imageUrl={draft.imageUrl}
           onImageUrlChange={handleImageUrlChange}
+          promptMd={draft.promptMd}
+          onPromptChange={handlePromptChange}
+          promptTextareaRef={promptRef}
         />
       );
     }
@@ -418,6 +432,9 @@ export function QuestionEditor({
           variant="map"
           imageUrl={draft.imageUrl}
           onImageUrlChange={handleImageUrlChange}
+          promptMd={draft.promptMd}
+          onPromptChange={handlePromptChange}
+          promptTextareaRef={promptRef}
         />
       );
     }
@@ -678,6 +695,7 @@ export function QuestionEditor({
                     Prompt & Question Stem (Markdown) *
                   </label>
                   <textarea
+                    ref={promptRef}
                     rows={3}
                     placeholder="Question prompt, text with blanks [1], or instructions..."
                     value={draft.promptMd || ""}

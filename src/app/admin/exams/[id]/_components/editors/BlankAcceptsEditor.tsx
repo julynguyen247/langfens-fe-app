@@ -31,6 +31,12 @@ interface BlankAcceptsEditorProps {
   variant?: "default" | "diagram" | "map";
   imageUrl?: string | null;
   onImageUrlChange?: (url: string) => void;
+  // S31 — Click-to-Add Blank UX: lets the editor insert "[N]" into the host
+  // QuestionEditor's prompt textarea at the cursor position, then add a matching
+  // blank entry in the same React batch.
+  promptMd?: string | null;
+  onPromptChange?: (newPrompt: string) => void;
+  promptTextareaRef?: React.RefObject<HTMLTextAreaElement | null>;
 }
 
 export function BlankAcceptsEditor({
@@ -40,6 +46,9 @@ export function BlankAcceptsEditor({
   variant = "default",
   imageUrl,
   onImageUrlChange,
+  promptMd,
+  onPromptChange,
+  promptTextareaRef,
 }: BlankAcceptsEditorProps) {
   const texts = blankAcceptTexts || {};
   const regex = blankAcceptRegex || {};
@@ -114,6 +123,57 @@ export function BlankAcceptsEditor({
     const nextRegex = { ...regex, [nextKey]: null };
     setNewKeyInput("");
     onChange(nextTexts, nextRegex);
+  };
+
+  // S31: pick the smallest positive integer not already in `keys`. Falls back
+  // to "1" when no numeric keys exist (E5). Used by both handleAddBlank (when
+  // newKeyInput is empty) and handleInsertBlankAtCursor (cursor-based insert).
+  const pickNextKey = (existingKeys: string[]): string => {
+    let i = 1;
+    while (existingKeys.includes(String(i))) {
+      i++;
+    }
+    return String(i);
+  };
+
+  const handleInsertBlankAtCursor = () => {
+    const textarea = promptTextareaRef?.current;
+    if (!textarea || !onPromptChange) return; // E1: button is also disabled, but defensive
+
+    const currentPrompt = promptMd ?? ""; // E2: null/undefined → ""
+    const start = textarea.selectionStart ?? 0;
+    const end = textarea.selectionEnd ?? start; // E3: collapse if undefined
+
+    const nextKey = pickNextKey(keys);
+    if (keys.includes(nextKey)) {
+      // E4: defensive — pickNextKey already guarantees uniqueness, but guard
+      // against future regressions / external state mutation.
+      alert(`Blank [${nextKey}] already exists`);
+      return;
+    }
+
+    const insertion = `[${nextKey}]`;
+    const newPrompt = currentPrompt.slice(0, start) + insertion + currentPrompt.slice(end);
+    const newCursor = start + insertion.length; // E11
+
+    // C1: batch both updates in the same React event handler so the parent's
+    // draft state stays consistent (promptMd + blankAcceptTexts in one render).
+    const nextTexts = { ...texts, [nextKey]: [""] };
+    const nextRegex = { ...regex, [nextKey]: null };
+    onChange(nextTexts, nextRegex);
+    onPromptChange(newPrompt);
+
+    // C5: restore cursor position AFTER React re-renders the textarea with the
+    // new promptMd. setTimeout(0) defers past the commit so selectionStart is
+    // applied to the freshly controlled value.
+    if (typeof window !== "undefined") {
+      window.setTimeout(() => {
+        const el = promptTextareaRef?.current;
+        if (!el) return;
+        el.focus();
+        el.setSelectionRange(newCursor, newCursor);
+      }, 0);
+    }
   };
 
   const handleRemoveBlank = (key: string) => {
@@ -236,15 +296,15 @@ export function BlankAcceptsEditor({
         </div>
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-            {heading}
-          </span>
-          <p className="text-[11px] text-slate-500 mt-0.5">{helper}</p>
-        </div>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+              {heading}
+            </span>
+            <p className="text-[11px] text-slate-500 mt-0.5">{helper}</p>
+          </div>
 
-        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
           <input
             type="text"
             placeholder="Blank key (e.g. 1)"
@@ -263,8 +323,24 @@ export function BlankAcceptsEditor({
             </svg>
             Add Blank
           </button>
+          <button
+            type="button"
+            onClick={handleInsertBlankAtCursor}
+            disabled={!promptTextareaRef?.current || !onPromptChange}
+            title={
+              !promptTextareaRef?.current || !onPromptChange
+                ? "Click the prompt textarea first to set cursor position"
+                : "Insert [N] at cursor in the prompt and add a matching blank entry"
+            }
+            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-200 border border-emerald-500/40 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 9l3-3 9 9-3 3M5 19h4M3 21h18" />
+            </svg>
+            Insert Blank at Cursor
+          </button>
+         </div>
         </div>
-      </div>
 
       <div className="space-y-3">
         {keys.length === 0 ? (
