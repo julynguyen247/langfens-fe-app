@@ -2,8 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
 import { getQuestionTypes } from "@/utils/api";
+import type { SkillId } from "./practice/colors";
+import { PracticeCard } from "./practice/PracticeCard";
+import { PracticeToolbar, type SortKey } from "./practice/PracticeToolbar";
+import { SkeletonPracticeCard } from "./practice/SkeletonPracticeCard";
 
 export type PracticeItem = {
   id: string;
@@ -19,6 +22,14 @@ export type PracticeItem = {
   slug: string;
   durationMin?: number;
   questionTypes?: string[];
+  // Optional metadata the redesigned card surfaces ONLY when the real item
+  // provides it. No fabrication.
+  totalQuestions?: number;
+  passages?: number;
+  sections?: number;
+  source?: string;
+  lastScore?: number;
+  createdAt?: string;
 };
 
 export type PracticeBankProps = {
@@ -33,74 +44,83 @@ export type PracticeBankProps = {
 
 type QuestionType = { type: string; count: number };
 
-const QUESTION_TYPE_LABELS: Record<string, string> = {
-  TRUE_FALSE_NOT_GIVEN: "True/False/NG",
-  YES_NO_NOT_GIVEN: "Yes/No/NG",
-  MCQ_SINGLE: "Multiple Choice",
-  MCQ_MULTIPLE: "Multiple Selection",
-  MULTIPLE_CHOICE_SINGLE: "Multiple Choice",
-  MULTIPLE_CHOICE_MULTIPLE: "Multiple Selection",
-  MATCHING_HEADING: "Matching Headings",
-  MATCHING_INFORMATION: "Matching Info",
-  MATCHING_FEATURES: "Matching Features",
-  SUMMARY_COMPLETION: "Gap Filling",
-  TABLE_COMPLETION: "Table Completion",
-  SENTENCE_COMPLETION: "Sentence Completion",
-  DIAGRAM_LABEL: "Diagram Label",
-  SHORT_ANSWER: "Short Answer",
-  MAP_LABEL: "Map Label",
-};
+function compareBySortKey(a: PracticeItem, b: PracticeItem, key: SortKey): number {
+  // For each key, extract an optional comparable value plus a "has value" flag
+  // so missing-data items sink to the end of the list.
+  let aHas = false;
+  let bHas = false;
+  let aN: number | undefined;
+  let bN: number | undefined;
+  let aS: string | undefined;
+  let bS: string | undefined;
 
-// Skill-based filter chip colors using CSS variables
-const SKILL_CHIP_COLORS: Record<
-  string,
-  { activeBg: string; activeText: string; activeBorder: string }
-> = {
-  reading: {
-    activeBg: "var(--skill-reading-light)",
-    activeText: "var(--skill-reading)",
-    activeBorder: "var(--skill-reading-border)",
-  },
-  listening: {
-    activeBg: "var(--skill-listening-light)",
-    activeText: "var(--skill-listening)",
-    activeBorder: "var(--skill-listening-border)",
-  },
-  writing: {
-    activeBg: "var(--skill-writing-light)",
-    activeText: "var(--skill-writing)",
-    activeBorder: "var(--skill-writing-border)",
-  },
-  speaking: {
-    activeBg: "var(--skill-speaking-light)",
-    activeText: "var(--skill-speaking)",
-    activeBorder: "var(--skill-speaking-border)",
-  },
-};
+  if (key === "newest") {
+    if (a.createdAt) {
+      const t = Date.parse(a.createdAt);
+      if (!Number.isNaN(t)) {
+        aN = t;
+        aHas = true;
+      }
+    }
+    if (b.createdAt) {
+      const t = Date.parse(b.createdAt);
+      if (!Number.isNaN(t)) {
+        bN = t;
+        bHas = true;
+      }
+    }
+  } else if (key === "most_attempted") {
+    if (typeof a.attempts === "number") {
+      aN = a.attempts;
+      aHas = true;
+    }
+    if (typeof b.attempts === "number") {
+      bN = b.attempts;
+      bHas = true;
+    }
+  } else if (key === "shortest") {
+    if (typeof a.durationMin === "number" && a.durationMin >= 1) {
+      aN = a.durationMin;
+      aHas = true;
+    }
+    if (typeof b.durationMin === "number" && b.durationMin >= 1) {
+      bN = b.durationMin;
+      bHas = true;
+    }
+  } else {
+    // by_type
+    const ap = a.questionTypes?.[0] ?? a.tags?.[0];
+    if (ap) {
+      aS = ap.toLowerCase();
+      aHas = true;
+    }
+    const bp = b.questionTypes?.[0] ?? b.tags?.[0];
+    if (bp) {
+      bS = bp.toLowerCase();
+      bHas = true;
+    }
+  }
 
-function SkeletonCard() {
-  return (
-    <div className="animate-pulse rounded-[2rem] bg-white border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] p-6">
-      <div className="flex items-center gap-2 mb-4">
-        <div className="h-5 bg-[var(--border)] rounded-full w-20" />
-        <div className="h-5 bg-[var(--border)] rounded-full w-16" />
-      </div>
-      <div className="h-6 bg-[var(--border)] rounded-full w-full mb-3" />
-      <div className="h-6 bg-[var(--border)] rounded-full w-3/4 mb-4" />
-      <div className="flex gap-1 mb-4">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="w-3 h-3 bg-[var(--border)] rounded-full" />
-        ))}
-      </div>
-      <div className="h-3 bg-[var(--border)] rounded-full w-full mb-4" />
-      <div className="h-10 bg-[var(--border)] rounded-full w-32" />
-    </div>
-  );
+  // Items without a value sink to the end; original order otherwise.
+  if (aHas && !bHas) return -1;
+  if (!aHas && bHas) return 1;
+  if (!aHas && !bHas) return 0;
+
+  if (key === "newest") {
+    return (bN as number) - (aN as number);
+  }
+  if (key === "most_attempted" || key === "shortest") {
+    return (aN as number) - (bN as number);
+  }
+  // by_type: alphabetical
+  const as = aS as string;
+  const bs = bS as string;
+  return as < bs ? -1 : as > bs ? 1 : 0;
 }
 
 export default function PracticeBank({
   items,
-  pageSize = 12,
+  pageSize = 9,
   className = "",
   userId,
   skill,
@@ -115,8 +135,15 @@ export default function PracticeBank({
   const [questionTypes, setQuestionTypes] = useState<QuestionType[]>([]);
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [showFilter, setShowFilter] = useState(false);
+  const [sort, setSort] = useState<SortKey>("newest");
 
-  const chipColors = SKILL_CHIP_COLORS[skill] || SKILL_CHIP_COLORS.reading;
+  const skillId: SkillId =
+    skill === "reading" ||
+    skill === "listening" ||
+    skill === "writing" ||
+    skill === "speaking"
+      ? skill
+      : "reading";
 
   useEffect(() => {
     if (onQuestionTypesChange) {
@@ -140,14 +167,20 @@ export default function PracticeBank({
     fetchTypes();
   }, [skill]);
 
+  const sorted = useMemo(() => {
+    const arr = [...(items ?? [])];
+    arr.sort((a, b) => compareBySortKey(a, b, sort));
+    return arr;
+  }, [items, sort]);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return (items ?? []).filter((it) => {
+    return sorted.filter((it) => {
       if (!q) return true;
       const hay = `${it.title} ${it.summary}`.toLowerCase();
       return hay.includes(q);
     });
-  }, [items, query]);
+  }, [sorted, query]);
 
   const total = filtered.length;
   const maxPage = Math.max(1, Math.ceil(total / pageSize));
@@ -162,353 +195,63 @@ export default function PracticeBank({
     router.push(`/do-test/${skill}/start/${item.id}`);
   }
 
-  function getDifficulty(id: string): number {
-    const hash = id.split("").reduce((a, b) => {
-      a = (a << 5) - a + b.charCodeAt(0);
-      return a & a;
-    }, 0);
-    return (Math.abs(hash) % 5) + 1;
-  }
-
-  function getProgress(id: string): number {
-    const hash = id.split("").reduce((a, b) => {
-      a = (a << 5) - a + b.charCodeAt(0);
-      return a & a;
-    }, 0);
-    return Math.abs(hash % 101);
-  }
-
-  function getQuestionCount(id: string): number {
-    const hash = id.split("").reduce((a, b) => {
-      a = (a << 5) - a + b.charCodeAt(0);
-      return a & a;
-    }, 0);
-    return (Math.abs(hash) % 35) + 10;
-  }
-
   return (
     <section className={`w-full ${className}`}>
-      {/* Search & Toolbar */}
-      <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="relative flex-1 max-w-xl">
-          <input
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setPage(1);
-            }}
-            placeholder="Search quests..."
-            className="w-full rounded-full border-[2px] border-[var(--border)] bg-white py-3 pl-5 pr-4 text-sm outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20 text-[var(--foreground)] transition placeholder:text-[var(--text-muted)]"
-            style={{ fontFamily: "var(--font-heading)" }}
-          />
-        </div>
+      <PracticeToolbar
+        skill={skillId}
+        query={query}
+        onQueryChange={(q) => {
+          setQuery(q);
+          setPage(1);
+        }}
+        showFilter={showFilter}
+        onShowFilter={setShowFilter}
+        selectedTypes={selectedTypes}
+        onSelectedTypesChange={(t) => {
+          setSelectedTypes(t);
+          setPage(1);
+        }}
+        questionTypes={questionTypes}
+        sort={sort}
+        onSortChange={setSort}
+        total={total}
+        visible={pageItems.length}
+      />
 
-        <div className="flex items-center gap-3">
-          {questionTypes.length > 0 && (
-            <button
-              onClick={() => setShowFilter(!showFilter)}
-              className={`rounded-full px-5 py-2.5 text-sm font-bold flex items-center gap-2 transition-all duration-150 ${
-                showFilter || selectedTypes.length > 0
-                  ? "bg-[var(--primary)] text-white border-b-[3px] border-[var(--primary-dark)]"
-                  : "bg-white border-[2px] border-[var(--border)] text-[var(--text-body)] hover:border-[var(--primary)]"
-              }`}
-              style={{ fontFamily: "var(--font-heading)" }}
-            >
-              Filter
-              {selectedTypes.length > 0 && (
-                <span className="bg-white/20 px-1.5 rounded-full text-xs">
-                  {selectedTypes.length}
-                </span>
-              )}
-            </button>
-          )}
-
-          <button
-            className="rounded-full px-5 py-2.5 text-sm font-bold bg-white border-[2px] border-[var(--border)] text-[var(--text-body)] hover:border-[var(--primary)] flex items-center gap-2 transition-colors"
-            style={{ fontFamily: "var(--font-heading)" }}
-          >
-            Sort: Newest
-          </button>
-        </div>
-      </div>
-
-      {/* Filter Chips Panel */}
-      <AnimatePresence>
-        {showFilter && questionTypes.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="overflow-hidden mb-6"
-          >
-            <div className="p-5 bg-white rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)]">
-              <div className="flex items-center justify-between mb-4">
-                <span
-                  className="text-sm font-bold text-[var(--foreground)]"
-                  style={{ fontFamily: "var(--font-heading)" }}
-                >
-                  Filter by question type
-                </span>
-                {selectedTypes.length > 0 && (
-                  <button
-                    onClick={() => setSelectedTypes([])}
-                    className="text-xs font-bold text-[var(--destructive)] hover:text-red-600"
-                    style={{ fontFamily: "var(--font-heading)" }}
-                  >
-                    Clear all
-                  </button>
-                )}
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {questionTypes.map((qt) => {
-                  const isActive = selectedTypes.includes(qt.type);
-                  return (
-                    <button
-                      key={qt.type}
-                      onClick={() => {
-                        setSelectedTypes((prev) =>
-                          prev.includes(qt.type)
-                            ? prev.filter((t) => t !== qt.type)
-                            : [...prev, qt.type]
-                        );
-                        setPage(1);
-                      }}
-                      className="rounded-full px-3 py-2 text-xs font-bold border-[2px] transition-all duration-150"
-                      style={{
-                        backgroundColor: isActive
-                          ? chipColors.activeBg
-                          : "white",
-                        color: isActive
-                          ? chipColors.activeText
-                          : "var(--text-body)",
-                        borderColor: isActive
-                          ? chipColors.activeBorder
-                          : "var(--border)",
-                        fontFamily: "var(--font-heading)",
-                      }}
-                    >
-                      {QUESTION_TYPE_LABELS[qt.type] || qt.type}
-                      <span className="ml-1.5 opacity-70">({qt.count})</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Active Filter Chips Pills (when filter panel is closed) */}
-      {selectedTypes.length > 0 && !showFilter && (
-        <div className="mb-6 flex flex-wrap gap-2 items-center">
-          <span
-            className="text-xs text-[var(--text-muted)]"
-            style={{ fontFamily: "var(--font-heading)" }}
-          >
-            Active filters:
-          </span>
-          {selectedTypes.map((type) => (
-            <span
-              key={type}
-              className="rounded-full px-3 py-1 text-xs font-bold flex items-center gap-1 border-[2px]"
-              style={{
-                backgroundColor: chipColors.activeBg,
-                color: chipColors.activeText,
-                borderColor: chipColors.activeBorder,
-                fontFamily: "var(--font-heading)",
-              }}
-            >
-              {QUESTION_TYPE_LABELS[type] || type}
-              <button
-                onClick={() =>
-                  setSelectedTypes((prev) => prev.filter((t) => t !== type))
-                }
-                className="ml-1 font-bold hover:opacity-70"
-                style={{ color: chipColors.activeText }}
-              >
-                x
-              </button>
-            </span>
-          ))}
-        </div>
-      )}
-
-      {/* Results Count */}
-      <div className="mb-4 text-sm text-[var(--text-muted)]">
-        Showing{" "}
-        <span
-          className="font-bold text-[var(--foreground)]"
-          style={{ fontFamily: "var(--font-mono)" }}
-        >
-          {pageItems.length}
-        </span>{" "}
-        of{" "}
-        <span
-          className="font-bold text-[var(--foreground)]"
-          style={{ fontFamily: "var(--font-mono)" }}
-        >
-          {total}
-        </span>{" "}
-        quests
-      </div>
-
-      {/* Quest Cards Grid */}
+      {/* Cards grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {loading ? (
-          Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
+          Array.from({ length: 6 }).map((_, i) => <SkeletonPracticeCard key={i} />)
         ) : (
-          pageItems.map((it, index) => {
-            const difficulty = getDifficulty(it.id);
-            const progress = getProgress(it.id);
-            const questionCount = getQuestionCount(it.id);
-            const types = it.questionTypes || it.tags || [];
-            // For writing tasks, the data has examType=1/2 — surface it as a meaningful chip
-            // instead of the first generic tag (e.g. "ielts").
-            const examType = (it as any).examType as number | undefined;
-            const examTypeLabel =
-              examType === 1 ? "Task 1" : examType === 2 ? "Task 2" : null;
-            const primaryType = examTypeLabel
-              ?? (types[0] ? (QUESTION_TYPE_LABELS[types[0]] || types[0]) : null);
-
-            return (
-              <motion.article
-                key={it.id}
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.03, duration: 0.4, ease: "easeOut" }}
-                onClick={() => handleGoToExam(it)}
-                className="group relative cursor-pointer bg-white border-[3px] border-[var(--border)] rounded-[2rem] shadow-[0_4px_0_rgba(0,0,0,0.08)] hover:-translate-y-[3px] hover:border-[var(--primary)] hover:shadow-[0_6px_0_rgba(0,0,0,0.08)] transition-all duration-150 h-full flex flex-col overflow-hidden"
-              >
-                {/* Hero: image (or colored fallback) with title overlay */}
-                <div className="relative aspect-[16/10] bg-[var(--background)]">
-                  {it.imageUrl ? (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img
-                      src={it.imageUrl}
-                      alt={it.title}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div
-                      className="w-full h-full flex items-center justify-center"
-                      style={{ backgroundColor: chipColors.activeBg }}
-                    >
-                      <span
-                        className="text-4xl font-extrabold"
-                        style={{
-                          color: chipColors.activeText,
-                          fontFamily: "var(--font-heading)",
-                        }}
-                      >
-                        {it.title?.charAt(0)?.toUpperCase() ?? "?"}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Bottom gradient for legible title */}
-                  <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/65 via-black/30 to-transparent pointer-events-none" />
-
-                  {/* Primary type chip (top-left) */}
-                  {primaryType && (
-                    <div className="absolute top-3 left-3">
-                      <span
-                        className="rounded-full px-2.5 py-1 text-xs font-bold backdrop-blur-sm bg-white/85 border-[2px]"
-                        style={{
-                          color: chipColors.activeText,
-                          borderColor: chipColors.activeBorder,
-                          fontFamily: "var(--font-heading)",
-                        }}
-                      >
-                        {primaryType}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Question count chip (top-right) */}
-                  <div className="absolute top-3 right-3">
-                    <span
-                      className="rounded-full px-2.5 py-1 text-xs font-bold bg-black/55 text-white backdrop-blur-sm"
-                      style={{ fontFamily: "var(--font-mono)" }}
-                    >
-                      {questionCount}q
-                    </span>
-                  </div>
-
-                  {/* Title overlay (bottom-left, on gradient) */}
-                  <div className="absolute inset-x-0 bottom-0 p-4">
-                    <h3
-                      className="font-bold text-white text-base leading-snug line-clamp-2 drop-shadow-sm"
-                      style={{ fontFamily: "var(--font-heading)" }}
-                    >
-                      {it.title}
-                    </h3>
-                  </div>
-                </div>
-
-                {/* Footer: difficulty + CTA */}
-                <div className="px-4 py-3 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2 min-w-0">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <span
-                        key={i}
-                        className="w-1.5 h-1.5 rounded-full"
-                        style={{
-                          backgroundColor:
-                            i < difficulty
-                              ? chipColors.activeBorder
-                              : "var(--border)",
-                        }}
-                      />
-                    ))}
-                    <span
-                      className="text-xs text-[var(--text-muted)] ml-1.5 truncate"
-                      style={{ fontFamily: "var(--font-heading)" }}
-                    >
-                      {progress}% done
-                    </span>
-                  </div>
-
-                  <span
-                    className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-[var(--primary)] text-white font-bold border-b-[3px] border-[var(--primary-dark)] group-hover:-translate-y-0.5 group-hover:border-b-[4px] group-active:translate-y-[2px] group-active:border-b-[2px] transition-all duration-150"
-                    aria-label="Start practice"
-                  >
-                    <span
-                      className="text-sm leading-none translate-y-[-1px]"
-                      aria-hidden
-                    >
-                      →
-                    </span>
-                  </span>
-                </div>
-
-                {/* Loading Overlay */}
-                {loadingId === it.id && (
-                  <div className="absolute inset-0 bg-white/90 flex items-center justify-center z-30 rounded-[2rem]">
-                    <div className="w-6 h-6 border-[3px] border-[var(--border)] border-t-[var(--primary)] rounded-full animate-spin" />
-                  </div>
-                )}
-              </motion.article>
-            );
-          })
+          pageItems.map((it, index) => (
+            <PracticeCard
+              key={it.id}
+              item={it}
+              index={index}
+              skill={skillId}
+              onStart={() => handleGoToExam(it)}
+              loading={loadingId === it.id}
+            />
+          ))
         )}
       </div>
 
-      {/* Empty State */}
+      {/* Empty State — keeps the existing inline pattern so the layout
+          matches the original empty card. Uses a CSS-shape "?" per the
+          no-emoji rule for new code. */}
       {!loading && total === 0 && (
         <div className="py-20 text-center">
           <div className="w-16 h-16 rounded-full bg-[var(--background)] border-[3px] border-[var(--border)] flex items-center justify-center mx-auto mb-4">
             <span
-              className="text-2xl font-bold text-[var(--text-muted)]"
-              style={{ fontFamily: "var(--font-heading)" }}
-            >
-              ?
-            </span>
+              className="block w-4 h-4 rounded-md border-[2px] border-[var(--text-muted)]"
+              aria-hidden
+            />
           </div>
           <p
             className="text-[var(--text-body)] text-lg font-semibold"
             style={{ fontFamily: "var(--font-heading)" }}
           >
-            No quests found
+            No exams found
           </p>
           <p className="text-[var(--text-muted)] text-sm mt-1">
             Try adjusting your search or filters
@@ -528,7 +271,7 @@ export default function PracticeBank({
           </button>
 
           {Array.from({ length: Math.min(5, maxPage) }, (_, i) => {
-            let pageNum;
+            let pageNum: number;
             if (maxPage <= 5) pageNum = i + 1;
             else if (currentPage <= 3) pageNum = i + 1;
             else if (currentPage >= maxPage - 2) pageNum = maxPage - 4 + i;

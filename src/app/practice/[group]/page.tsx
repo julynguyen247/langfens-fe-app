@@ -5,7 +5,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import { getPublicExams, getWritingExams, getSpeakingExams, getExamsByQuestionType } from "@/utils/api";
 import { useUserStore } from "@/app/store/userStore";
 import PracticeBank, { PracticeItem } from "@/components/PracticeBank";
-import { SkillBadge } from "@/components/ui/SkillBadge";
+import { PracticePageHeader } from "@/components/practice/PracticePageHeader";
 
 function detectSkillFromSlug(
   slug: string
@@ -182,32 +182,16 @@ export default function GroupPage() {
 
   return (
     <div className="w-full">
-      {/* Quest Board Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-3">
-          <SkillBadge skill={groupId} size="md" />
-          <span
-            className="text-sm font-semibold text-[var(--text-muted)]"
-            style={{ fontFamily: "var(--font-heading)" }}
-          >
-            Quest Board
-          </span>
-        </div>
-        <h1
-          className="text-2xl sm:text-3xl font-bold text-[var(--foreground)] mb-1"
-          style={{ fontFamily: "var(--font-heading)" }}
-        >
-          {skillMeta.title}
-        </h1>
-        <p className="text-[var(--text-muted)] text-base">
-          {skillMeta.description}
-        </p>
-      </div>
+      <PracticePageHeader
+        skill={groupId as "reading" | "listening" | "writing" | "speaking"}
+        title={skillMeta.title}
+        description={skillMeta.description}
+      />
 
       {/* Quest Cards */}
       <PracticeBank
         items={filtered}
-        pageSize={12}
+        pageSize={9}
         userId={user?.id ?? ""}
         skill={groupId}
         onQuestionTypesChange={handleQuestionTypesChange}
