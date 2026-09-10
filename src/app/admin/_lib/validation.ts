@@ -397,6 +397,20 @@ export function validatePromptBlanksCoverage(
   };
   if (!completionFamily[type]) return [];
   if (!promptMd) return [];
+
+  // S32: skip DIAGRAM_LABEL / MAP_LABEL prompts that contain the `[Diagram: ...]`
+  // or `[Map: ...]` word-bank marker. These types use `[1]` as a template
+  // placeholder in the prompt while BlankAcceptTexts keys follow the DIAGRAM/MAP
+  // callout-number convention (3-9 globally). The runtime grader for these
+  // types compares plaintext values (CompletionGrader.cs:155-162 path), so the
+  // coverage warning here is a false-positive.
+  if (
+    (type === QuestionType.DiagramLabel || type === QuestionType.MapLabel) &&
+    /\[(Diagram|Map):\s*[^\]]+\]/i.test(promptMd)
+  ) {
+    return [];
+  }
+
   const issues: ValidationIssue[] = [];
   const seen = new Set<string>();
   for (const match of promptMd.matchAll(/\[(\d+)\]/g)) {
@@ -411,6 +425,7 @@ export function validatePromptBlanksCoverage(
   }
   return issues;
 }
+
 
 
 export function aggregateIssues(...lists: ValidationIssue[][]): ValidationIssue[] {
