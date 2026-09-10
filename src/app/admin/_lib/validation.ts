@@ -364,11 +364,11 @@ export function validateBlankKeyFormat(type: string, keys: string[]): Validation
   if (!completionFamily[type]) return [];
   const issues: ValidationIssue[] = [];
   for (const key of keys) {
-    if (!/^\d+$/.test(key) && !/^blank-q\d+$/.test(key)) {
+    if (!/^\d+$/.test(key)) {
       issues.push({
         level: "error",
         field: `blanks.${key}`,
-        message: `Blank key "${key}" should be numeric ("0", "1", ...) or "blank-q<N>".`,
+        message: `Blank key "${key}" should be numeric ("0", "1", ...).`,
       });
     }
   }
