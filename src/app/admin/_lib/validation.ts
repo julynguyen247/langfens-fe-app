@@ -375,6 +375,43 @@ export function validateBlankKeyFormat(type: string, keys: string[]): Validation
   return issues;
 }
 
+// S31: warn (NOT error) when promptMd contains "[N]" placeholders that have no
+// matching entry in blankAcceptTexts. Applies only to the completion family
+// (matches validateBlankKeyFormat's set, so the two checks stay in sync).
+// Returns array empty when promptMd is null/undefined or has no bracketed
+// numbers. De-duplicates repeated "[N]" mentions — one issue per missing key.
+export function validatePromptBlanksCoverage(
+  type: string,
+  promptMd: string | null | undefined,
+  blankKeys: string[]
+): ValidationIssue[] {
+  const completionFamily: Record<string, true> = {
+    [QuestionType.SummaryCompletion]: true,
+    [QuestionType.TableCompletion]: true,
+    [QuestionType.NoteCompletion]: true,
+    [QuestionType.FormCompletion]: true,
+    [QuestionType.SentenceCompletion]: true,
+    [QuestionType.DiagramLabel]: true,
+    [QuestionType.MapLabel]: true,
+    [QuestionType.FlowChart]: true,
+  };
+  if (!completionFamily[type]) return [];
+  if (!promptMd) return [];
+  const issues: ValidationIssue[] = [];
+  const seen = new Set<string>();
+  for (const match of promptMd.matchAll(/\[(\d+)\]/g)) {
+    const key = match[1];
+    if (blankKeys.includes(key) || seen.has(key)) continue;
+    seen.add(key);
+    issues.push({
+      level: "warning",
+      field: "promptMd",
+      message: `promptMd references "[${key}]" but no blank entry with key "${key}" is defined. Add it via "Insert Blank at Cursor" or "Add Blank".`,
+    });
+  }
+  return issues;
+}
+
 
 export function aggregateIssues(...lists: ValidationIssue[][]): ValidationIssue[] {
   return lists.flat();
