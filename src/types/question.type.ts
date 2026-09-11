@@ -39,6 +39,7 @@ type Choice = { value: string; label: string };
 
 export interface QuestionData {
   id: string;
+  /** 1-based question ordinal within section or exam (1..N) */
   idx: number;
   type: string;
   stem: string;
@@ -72,6 +73,7 @@ export type Question = {
   flowChartNodes?: { key: string; label: string }[];
   headings?: { key: string; text: string }[];
   explanationMd?: string;
+  /** 1-based question ordinal within section or exam (1..N) */
   idx?: number;
   imageUrl?: string | null;
   modelAnswers?: string[] | null;
