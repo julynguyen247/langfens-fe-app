@@ -10,10 +10,14 @@ export interface QuestionSchema {
   jsonShape: string;
   constraints: string[];
 }
-
+/**
+ * Invariant: All ordinals across the platform are strictly 1-indexed.
+ * - Idx: 1-based ordinal (1, 2, 3...)
+ * - BlankAcceptTexts: 1-based keys ("1", "2"...)
+ * - Options: idx >= 1
+ */
 const commonFields = ["SectionId", "Idx", "Type", "Skill", "Difficulty", "PromptMd"];
 const optionalCommon = ["ExplanationMd", "ImageUrl"];
-
 export const QUESTION_SCHEMAS: Record<string, QuestionSchema> = {
   [QuestionType.MultipleChoiceSingle]: {
     type: QuestionType.MultipleChoiceSingle,
@@ -452,8 +456,8 @@ export const QUESTION_SCHEMAS: Record<string, QuestionSchema> = {
   "difficulty": 3,
   "promptMd": "14. Which paragraph mentions X?\\n15. Which paragraph describes Y?",
   "matchPairs": {
-    "0": ["B", "Question 14 text"],
-    "1": ["A", "Question 15 text"]
+    "1": ["B", "Question 14 text"],
+    "2": ["A", "Question 15 text"]
   }
 }`,
     examplePayload: {
@@ -462,12 +466,12 @@ export const QUESTION_SCHEMAS: Record<string, QuestionSchema> = {
       difficulty: 3,
       promptMd: "14. Which paragraph mentions X?\n15. Which paragraph describes Y?",
       matchPairs: {
-        "0": ["B", "Question 14 text"],
-        "1": ["A", "Question 15 text"],
+        "1": ["B", "Question 14 text"],
+        "2": ["A", "Question 15 text"],
       },
     },
     constraints: [
-      "matchPairs keys = zero-based question index strings ('0', '1', …)",
+      "matchPairs keys = 1-based question index strings ('1', '2', …)",
       "matchPairs values[0] = paragraph letter (A-H)",
     ],
   },
@@ -488,8 +492,8 @@ export const QUESTION_SCHEMAS: Record<string, QuestionSchema> = {
     { "contentMd": "B. Criticised the theory" }
   ],
   "matchPairs": {
-    "0": ["A", "The speaker"],
-    "1": ["B", "The researcher"]
+    "1": ["A", "The speaker"],
+    "2": ["B", "The researcher"]
   }
 }`,
     examplePayload: {
@@ -502,13 +506,13 @@ export const QUESTION_SCHEMAS: Record<string, QuestionSchema> = {
         { contentMd: "B. Criticised the theory" },
       ],
       matchPairs: {
-        "0": ["A", "The speaker"],
-        "1": ["B", "The researcher"],
+        "1": ["A", "The speaker"],
+        "2": ["B", "The researcher"],
       },
     },
     constraints: [
       "options[] = feature list (A-H)",
-      "matchPairs keys = zero-based item index ('0', '1', …)",
+      "matchPairs keys = 1-based item index ('1', '2', …)",
       "features can be reused across items",
     ],
   },
@@ -529,8 +533,8 @@ export const QUESTION_SCHEMAS: Record<string, QuestionSchema> = {
     { "contentMd": "B. the ice began to melt." }
   ],
   "matchPairs": {
-    "0": ["A", "Despite the rain,"],
-    "1": ["B", "As the temperature rose,"]
+    "1": ["A", "Despite the rain,"],
+    "2": ["B", "As the temperature rose,"]
   }
 }`,
     examplePayload: {
@@ -543,13 +547,13 @@ export const QUESTION_SCHEMAS: Record<string, QuestionSchema> = {
         { contentMd: "B. the ice began to melt." },
       ],
       matchPairs: {
-        "0": ["A", "Despite the rain,"],
-        "1": ["B", "As the temperature rose,"],
+        "1": ["A", "Despite the rain,"],
+        "2": ["B", "As the temperature rose,"],
       },
     },
     constraints: [
       "options[] = endings pool (A-H)",
-      "matchPairs keys = zero-based beginning index",
+      "matchPairs keys = 1-based beginning index ('1', '2', …)",
       "endings can only be used once (one-to-one)",
     ],
   },
@@ -571,9 +575,9 @@ export const QUESTION_SCHEMAS: Record<string, QuestionSchema> = {
     { "contentMd": "C. musical training" }
   ],
   "matchPairs": {
-    "0": ["C"],
-    "1": ["B"],
-    "2": ["A"]
+    "1": ["C"],
+    "2": ["B"],
+    "3": ["A"]
   }
 }`,
     examplePayload: {
@@ -587,14 +591,14 @@ export const QUESTION_SCHEMAS: Record<string, QuestionSchema> = {
         { contentMd: "C. musical training" },
       ],
       matchPairs: {
-        "0": ["C"],
-        "1": ["B"],
-        "2": ["A"],
+        "1": ["C"],
+        "2": ["B"],
+        "3": ["A"],
       },
     },
     constraints: [
       "promptMd MUST contain 'A. label', 'B. label' for categories and '1. text', '2. text' for statements",
-      "matchPairs keys = zero-based statement index ('0', '1', …)",
+      "matchPairs keys = 1-based statement index ('1', '2', …)",
       "matchPairs values[0] = category letter (A, B, C…)",
     ],
   },

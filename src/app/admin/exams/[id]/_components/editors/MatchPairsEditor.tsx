@@ -177,7 +177,7 @@ export function MatchPairsEditor({
 
   const handleAddTarget = () => {
     const nextIdx =
-      targets.length > 0 ? Math.max(...targets.map((t) => t.idx)) + 1 : 0;
+      targets.length > 0 ? Math.max(...targets.map((t) => t.idx)) + 1 : 1;
     const key = String(nextIdx);
     onChange({ ...pairs, [key]: [""] }, options);
   };
