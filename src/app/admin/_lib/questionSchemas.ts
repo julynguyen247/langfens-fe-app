@@ -391,7 +391,7 @@ export const QUESTION_SCHEMAS: Record<string, QuestionSchema> = {
       difficulty: 3,
       promptMd: "Label positions [1] through [2] on the map.",
       imageUrl: "https://.../map.png",
-      blankAcceptTexts: { "0": ["library"], "1:": ["park"] },
+      blankAcceptTexts: { "1": ["library"], "2": ["park"] },
     },
     constraints: [
       "imageUrl is required for MAP_LABEL",
