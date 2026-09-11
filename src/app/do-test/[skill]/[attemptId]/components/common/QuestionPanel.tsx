@@ -12,6 +12,9 @@ import type { Question } from "@/types/question.type";
 import { deriveUiKind } from "@/lib/deriveUiKind";
 import { cleanAnswer } from "@/lib/cleanAnswer";
 
+import { UnsupportedQuestionCard } from "../../_components/cards/UnsupportedQuestionCard";
+
+const seenWarnTypes = new Set<string>();
 type Choice = { value: string; label: string };
 type QA = Record<string, string>;
 
@@ -323,6 +326,12 @@ const QuestionPanel = memo(function QuestionPanel({
                 />
               );
             }
+          } else {
+            if (!seenWarnTypes.has(q.backendType)) {
+              console.warn(`Unsupported question type: ${q.backendType}`);
+              seenWarnTypes.add(q.backendType);
+            }
+            questionContent = <UnsupportedQuestionCard backendType={q.backendType} />;
           }
 
           const review = reviewMap[q.id];
