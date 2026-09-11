@@ -14,7 +14,7 @@ const ans = (overrides: Partial<AttemptAnswerItem>): AttemptAnswerItem => ({
   ...overrides,
 } as AttemptAnswerItem);
 
-describe.skip("parseUserAnswer", () => {
+describe("parseUserAnswer", () => {
   it("multiline: 2 lines → 1-indexed dict {1, 2}", () => {
     const out = parseUserAnswer(ans({ textAnswer: "cortisol\nnucleus accumbens" }));
     expect(out).toEqual({ 1: "cortisol", 2: "nucleus accumbens" });

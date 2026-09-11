@@ -22,7 +22,7 @@ function sortBlankKeys(raw: string[]): string[] {
   });
 }
 
-describe.skip("CompletionCard blankKeys sort (Sprint 3)", () => {
+describe("CompletionCard blankKeys sort (Sprint 3)", () => {
   it("sorts non-monotonic numeric dict keys into ascending order", () => {
     const input = Object.keys({ "5": "a", "3": "b", "1": "c" });
     expect(sortBlankKeys(input)).toEqual(["1", "3", "5"]);
