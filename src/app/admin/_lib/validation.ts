@@ -426,6 +426,55 @@ export function validatePromptBlanksCoverage(
   return issues;
 }
 
+// Sprint 7 Phase 10: error (not warning) when BlankAcceptTexts keys are NOT
+// present as `[N]` markers in PromptMd. This is the reverse direction of
+// validatePromptBlanksCoverage (which warns on prompt-only references).
+// Together they form a 2-way parity check: every blank must be referenced
+// in the prompt, and every `[N]` marker in the prompt must have a blank.
+export function validatePromptBlankParity(
+  type: string,
+  promptMd: string | null | undefined,
+  blankKeys: string[]
+): ValidationIssue[] {
+  const completionFamily: Record<string, true> = {
+    [QuestionType.SummaryCompletion]: true,
+    [QuestionType.TableCompletion]: true,
+    [QuestionType.NoteCompletion]: true,
+    [QuestionType.FormCompletion]: true,
+    [QuestionType.SentenceCompletion]: true,
+    [QuestionType.DiagramLabel]: true,
+    [QuestionType.MapLabel]: true,
+    [QuestionType.FlowChart]: true,
+  };
+  if (!completionFamily[type]) return [];
+  if (!promptMd) return [];
+  if (blankKeys.length === 0) return [];
+
+  // Skip DIAGRAM/MAP word-bank markers (covered by validatePromptBlanksCoverage).
+  if (
+    (type === QuestionType.DiagramLabel || type === QuestionType.MapLabel) &&
+    /\[(Diagram|Map):\s*[^\]]+\]/i.test(promptMd)
+  ) {
+    return [];
+  }
+
+  // Extract `[N]` markers from prompt.
+  const inPrompt = new Set<string>();
+  for (const m of promptMd.matchAll(/\[(\d+)\]/g)) inPrompt.add(m[1]);
+
+  const issues: ValidationIssue[] = [];
+  for (const key of blankKeys) {
+    if (!inPrompt.has(key)) {
+      issues.push({
+        level: "error",
+        field: "promptMd",
+        message: `promptMd is missing the "[${key}]" placeholder required by BlankAcceptTexts key "${key}". Add it via the editor's "Insert Blank at Cursor" button.`,
+      });
+    }
+  }
+  return issues;
+}
+
 
 
 export function aggregateIssues(...lists: ValidationIssue[][]): ValidationIssue[] {
