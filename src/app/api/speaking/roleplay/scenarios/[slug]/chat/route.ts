@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import axios from "axios";
 import { apisAi } from "@/utils/api.customize";
 
 export async function POST(
@@ -7,10 +8,12 @@ export async function POST(
 ) {
   try {
     const { slug } = await params;
-    const body = await request.json();
-    const { message, history } = body;
+    const body: unknown = await request.json();
+    const typedBody = body && typeof body === "object" ? (body as { message?: unknown; history?: unknown }) : null;
+    const message = typeof typedBody?.message === "string" ? typedBody.message : undefined;
+    const history = typedBody?.history;
 
-    if (!message || typeof message !== "string") {
+    if (!message) {
       return NextResponse.json(
         { error: "Message is required" },
         { status: 400 }
@@ -22,18 +25,15 @@ export async function POST(
       { message, history }
     );
 
-    if (!response.ok) {
-      console.error("[RoleplayChat] AI service error:", response.status);
-      return NextResponse.json(
-        { error: "Failed to get response" },
-        { status: response.status }
-      );
-    }
-
-    const data = await response.json();
-    return NextResponse.json(data);
-  } catch (error) {
+    return NextResponse.json(response.data);
+  } catch (error: unknown) {
     console.error("[RoleplayChat] Error:", error);
+    if (axios.isAxiosError(error)) {
+      const status = error.response?.status || 500;
+      const errorData = error.response?.data as { error?: string } | undefined;
+      const message = errorData?.error || "Failed to get response";
+      return NextResponse.json({ error: message }, { status });
+    }
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
