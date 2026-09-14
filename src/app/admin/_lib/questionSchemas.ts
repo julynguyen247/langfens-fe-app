@@ -9,6 +9,7 @@ export interface QuestionSchema {
   examplePayload: Record<string, unknown>;
   jsonShape: string;
   constraints: string[];
+  systemProse?: string;
 }
 /**
  * Invariant: All ordinals across the platform are strictly 1-indexed.
@@ -50,6 +51,19 @@ export const QUESTION_SCHEMAS: Record<string, QuestionSchema> = {
       "options[] must have exactly 1 with isCorrect=true (single answer)",
       "options[].contentMd should follow 'A. text', 'B. text' convention",
     ],
+    systemProse: `You are an IELTS content author. Generate MULTIPLE_CHOICE_SINGLE questions with exactly 1 correct option.
+
+JSON shape:
+{
+  "type": "MULTIPLE_CHOICE_SINGLE",
+  "skill": "READING",
+  "difficulty": 1-3,
+  "promptMd": "Question stem?",
+  "options": [
+    { "contentMd": "A. First option", "isCorrect": false },
+    { "contentMd": "B. Second option", "isCorrect": true }
+  ]
+}`,
   },
 
   [QuestionType.MultipleChoiceMultiple]: {
@@ -82,6 +96,19 @@ export const QUESTION_SCHEMAS: Record<string, QuestionSchema> = {
       "options[] must have 2+ with isCorrect=true",
       "options[].contentMd should follow 'A. text'...'H. text' convention",
     ],
+    systemProse: `You are an IELTS content author. Generate MULTIPLE_CHOICE_MULTIPLE questions (e.g. "Choose THREE letters A-H").
+
+JSON shape:
+{
+  "type": "MULTIPLE_CHOICE_MULTIPLE",
+  "skill": "READING",
+  "difficulty": 3-4,
+  "promptMd": "Which THREE of the following are mentioned?",
+  "options": [
+    { "contentMd": "A. Item 1", "isCorrect": true },
+    { "contentMd": "B. Item 2", "isCorrect": false }
+  ]
+}`,
   },
 
   [QuestionType.TrueFalseNotGiven]: {
@@ -116,6 +143,20 @@ export const QUESTION_SCHEMAS: Record<string, QuestionSchema> = {
       "options[] must contain exactly 3 items: True, False, Not Given",
       "exactly 1 must be isCorrect=true",
     ],
+    systemProse: `You are an IELTS Reading content author. Generate TRUE_FALSE_NOT_GIVEN questions.
+
+JSON shape:
+{
+  "type": "TRUE_FALSE_NOT_GIVEN",
+  "skill": "READING",
+  "difficulty": 2-3,
+  "promptMd": "Statement to evaluate.",
+  "options": [
+    { "contentMd": "True", "isCorrect": true },
+    { "contentMd": "False", "isCorrect": false },
+    { "contentMd": "Not Given", "isCorrect": false }
+  ]
+}`,
   },
 
   [QuestionType.YesNoNotGiven]: {
@@ -213,6 +254,21 @@ export const QUESTION_SCHEMAS: Record<string, QuestionSchema> = {
       "blankAcceptTexts keys must match placeholder indices (e.g. '1', '2'…)",
       "each blank value can be string[] (multiple acceptable spellings)",
     ],
+    systemProse: `You are an IELTS content author. Generate SUMMARY_COMPLETION questions.
+
+JSON shape:
+{
+  "type": "SUMMARY_COMPLETION",
+  "skill": "READING",
+  "difficulty": 2-3,
+  "blankAcceptTexts": {
+    "1": ["earth", "Earth"],
+    "2": ["27", "twenty-seven"]
+  }
+}
+
+promptMd MUST contain [1], [2]… placeholders.
+blankAcceptTexts keys are '1', '2', … matching the placeholder index.`,
   },
 
   [QuestionType.TableCompletion]: {
@@ -344,6 +400,16 @@ export const QUESTION_SCHEMAS: Record<string, QuestionSchema> = {
       "shortAnswerAcceptRegex uses .NET regex syntax",
       "at least one of texts/regex must be non-empty",
     ],
+    systemProse: `You are an IELTS content author. Generate SHORT_ANSWER questions (no choices, free text).
+
+JSON shape:
+{
+  "type": "SHORT_ANSWER",
+  "skill": "READING",
+  "difficulty": 2-3,
+  "promptMd": "What percentage...?",
+  "shortAnswerAcceptTexts": ["15", "fifteen", "15%"]
+}`,
   },
 
   [QuestionType.DiagramLabel]: {
@@ -442,6 +508,28 @@ export const QUESTION_SCHEMAS: Record<string, QuestionSchema> = {
       "matchPairs values[0] = heading Roman numeral",
       "options[] = heading pool (i, ii, iii…)",
     ],
+    systemProse: `You are an IELTS Reading content author. Generate MATCHING_HEADING questions: choose a heading for each paragraph.
+
+JSON shape:
+{
+  "type": "MATCHING_HEADING",
+  "skill": "READING",
+  "difficulty": 2-4,
+  "promptMd": "Choose a heading for each paragraph.",
+  "options": [
+    { "contentMd": "i. The Early Years" },
+    { "contentMd": "ii. The Modern Period" }
+  ],
+  "matchPairs": {
+    "A": ["i", "Paragraph A excerpt"],
+    "B": ["ii", "Paragraph B excerpt"]
+  }
+}
+
+matchPairs keys are paragraph letters (A, B, C, …).
+matchPairs values[0] is the Roman numeral heading (i, ii, iii).
+options[] is the heading pool.
+promptMd should include the passage (or reference it).`,
   },
 
   [QuestionType.MatchingInformation]: {
@@ -601,6 +689,11 @@ export const QUESTION_SCHEMAS: Record<string, QuestionSchema> = {
       "matchPairs keys = 1-based statement index ('1', '2', …)",
       "matchPairs values[0] = category letter (A, B, C…)",
     ],
+    systemProse: `You are an IELTS Reading content author. Generate CLASSIFICATION questions with 3-4 categories and 4-6 statements. The promptMd MUST follow this exact format:
+"Classify the following as referring to:\nA. <category 1>\nB. <category 2>\nC. <category 3>\n\n1. <statement 1>\n2. <statement 2>\n3. <statement 3>"
+
+matchPairs is keyed by 1-based statement index: {"1": ["A"], "2": ["B"], "3": ["C"]}
+options[] must contain the categories as "A. label", "B. label", "C. label".`,
   },
 
   [QuestionType.FlowChart]: {
@@ -627,6 +720,19 @@ export const QUESTION_SCHEMAS: Record<string, QuestionSchema> = {
       "orderCorrects must be slug-like (lowercase, hyphenated)",
       "must have at least 2 unique steps",
     ],
+    systemProse: `You are an IELTS content author. Generate FLOW_CHART questions (order steps).
+
+JSON shape:
+{
+  "type": "FLOW_CHART",
+  "skill": "LISTENING",
+  "difficulty": 3,
+  "promptMd": "Complete the flow chart below.",
+  "orderCorrects": ["step-one", "step-two", "step-three"]
+}
+
+orderCorrects must be slug-like (lowercase, hyphens).
+Must have 2-6 unique steps.`,
   },
 
 };
