@@ -191,6 +191,22 @@ JSON shape:
       "options[] must contain exactly 3 items: Yes, No, Not Given",
       "exactly 1 must be isCorrect=true",
     ],
+    systemProse: `You are an IELTS Reading content author. Generate YES_NO_NOT_GIVEN questions (opinion vs facts).
+
+JSON shape:
+{
+  "type": "YES_NO_NOT_GIVEN",
+  "skill": "READING",
+  "difficulty": 2-3,
+  "promptMd": "Statement to evaluate.",
+  "options": [
+    { "contentMd": "Yes", "isCorrect": true },
+    { "contentMd": "No", "isCorrect": false },
+    { "contentMd": "Not Given", "isCorrect": false }
+  ]
+}
+
+Each statement requires the candidate to decide if the author's opinion matches: Yes (author agrees), No (author disagrees), Not Given (no opinion stated).`,
   },
 
   [QuestionType.MultipleChoiceSingleImage]: {
@@ -221,6 +237,21 @@ JSON shape:
       "options[].imageUrl is recommended for image-based MCQ",
       "options[].altText is required when imageUrl is set (a11y)",
     ],
+    systemProse: `You are an IELTS content author. Generate MULTIPLE_CHOICE_SINGLE_IMAGE questions with an image context and exactly 1 correct option.
+
+JSON shape:
+{
+  "type": "MULTIPLE_CHOICE_SINGLE_IMAGE",
+  "skill": "LISTENING",
+  "difficulty": 2-3,
+  "promptMd": "Which image matches the description?",
+  "options": [
+    { "contentMd": "A. Option 1", "imageUrl": "https://.../1.png", "altText": "...", "isCorrect": true },
+    { "contentMd": "B. Option 2", "imageUrl": "https://.../2.png", "altText": "...", "isCorrect": false }
+  ]
+}
+
+Exactly 1 option must be isCorrect=true.`,
   },
 
   [QuestionType.SummaryCompletion]: {
@@ -295,6 +326,18 @@ blankAcceptTexts keys are '1', '2', … matching the placeholder index.`,
       "promptMd typically contains a markdown table with ___ cells",
       "blankAcceptTexts keys match placeholder indices",
     ],
+    systemProse: `You are an IELTS Reading content author. Generate TABLE_COMPLETION questions: fill in blanks in a table from the passage.
+
+JSON shape:
+{
+  "type": "TABLE_COMPLETION",
+  "skill": "READING",
+  "difficulty": 2-3,
+  "promptMd": "Complete the table:\\n\\n| Year | Sales |\\n|------|-------|\\n| 2020 | [1]   |",
+  "blankAcceptTexts": { "1": ["100"] }
+}
+
+blankAcceptTexts keys match [N] placeholder indices in promptMd.`,
   },
 
   [QuestionType.NoteCompletion]: {
@@ -318,6 +361,18 @@ blankAcceptTexts keys are '1', '2', … matching the placeholder index.`,
       blankAcceptTexts: { "1": ["workshop"], "2": ["20"] },
     },
     constraints: ["Same as SummaryCompletion."],
+    systemProse: `You are an IELTS content author. Generate NOTE_COMPLETION questions: fill in blanks in notes from the passage.
+
+JSON shape:
+{
+  "type": "NOTE_COMPLETION",
+  "skill": "LISTENING",
+  "difficulty": 2-3,
+  "promptMd": "Notes:\\n- Type: [1]\\n- Capacity: [2] people",
+  "blankAcceptTexts": { "1": ["workshop"], "2": ["20"] }
+}
+
+blankAcceptTexts keys match [N] placeholder indices in promptMd.`,
   },
 
   [QuestionType.FormCompletion]: {
@@ -349,6 +404,18 @@ blankAcceptTexts keys are '1', '2', … matching the placeholder index.`,
       },
     },
     constraints: ["Same as SummaryCompletion."],
+    systemProse: `You are an IELTS content author. Generate FORM_COMPLETION questions: fill in a form with key facts from the passage.
+
+JSON shape:
+{
+  "type": "FORM_COMPLETION",
+  "skill": "LISTENING",
+  "difficulty": 2-3,
+  "promptMd": "Application Form\\n\\nName: [1]\\nDate: [2]",
+  "blankAcceptTexts": { "1": ["Rachel Torres"], "2": ["15 September"] }
+}
+
+blankAcceptTexts keys match [N] placeholder indices in promptMd.`,
   },
 
   [QuestionType.SentenceCompletion]: {
@@ -371,6 +438,18 @@ blankAcceptTexts keys are '1', '2', … matching the placeholder index.`,
       blankAcceptTexts: { "1": ["cortisol"], "2": ["nucleus accumbens"] },
     },
     constraints: ["Same as SummaryCompletion."],
+    systemProse: `You are an IELTS Reading content author. Generate SENTENCE_COMPLETION questions: complete sentences with words from the passage.
+
+JSON shape:
+{
+  "type": "SENTENCE_COMPLETION",
+  "skill": "READING",
+  "difficulty": 2-3,
+  "promptMd": "1. Listening to music reduces [1] levels.\\n2. The brain's [2] manages emotion.",
+  "blankAcceptTexts": { "1": ["cortisol"], "2": ["nucleus accumbens"] }
+}
+
+blankAcceptTexts keys match [N] placeholder indices in promptMd. Answers are 1-3 words from the passage.`,
   },
 
   [QuestionType.ShortAnswer]: {
@@ -412,6 +491,7 @@ JSON shape:
 }`,
   },
 
+// Remove duplicate DiagramLabel constraint + duplicate MapLabel block
   [QuestionType.DiagramLabel]: {
     type: QuestionType.DiagramLabel,
     label: "Diagram Label",
@@ -439,6 +519,19 @@ JSON shape:
       "promptMd should describe what to label (or be empty)",
       "blankAcceptTexts keys match placeholder indices",
     ],
+    systemProse: `You are an IELTS content author. Generate DIAGRAM_LABEL questions: label parts of a diagram from the passage.
+
+JSON shape:
+{
+  "type": "DIAGRAM_LABEL",
+  "skill": "LISTENING",
+  "difficulty": 2-3,
+  "promptMd": "Label the diagram below with [1], [2]…",
+  "imageUrl": "https://.../diagram.png",
+  "blankAcceptTexts": { "1": ["chloroplast"], "2": ["nucleus"] }
+}
+
+imageUrl is required. blankAcceptTexts keys match [N] placeholder indices in promptMd.`,
   },
 
   [QuestionType.MapLabel]: {
@@ -467,6 +560,19 @@ JSON shape:
       "imageUrl is required for MAP_LABEL",
       "blankAcceptTexts keys match placeholder indices",
     ],
+    systemProse: `You are an IELTS content author. Generate MAP_LABEL questions: label locations on a map from the passage.
+
+JSON shape:
+{
+  "type": "MAP_LABEL",
+  "skill": "LISTENING",
+  "difficulty": 2-3,
+  "promptMd": "Label positions [1] through [2] on the map.",
+  "imageUrl": "https://.../map.png",
+  "blankAcceptTexts": { "1": ["library"], "2": ["park"] }
+}
+
+imageUrl is required. blankAcceptTexts keys match [N] placeholder indices in promptMd.`,
   },
 
   [QuestionType.MatchingHeading]: {
@@ -562,6 +668,25 @@ promptMd should include the passage (or reference it).`,
       "matchPairs keys = 1-based question index strings ('1', '2', …)",
       "matchPairs values[0] = paragraph letter (A-H)",
     ],
+    systemProse: `You are an IELTS Reading content author. Generate MATCHING_INFORMATION questions: match statements to the paragraph that contains the relevant information.
+
+JSON shape:
+{
+  "type": "MATCHING_INFORMATION",
+  "skill": "READING",
+  "difficulty": 2-3,
+  "promptMd": "Which paragraph contains the following information?",
+  "options": [
+    { "contentMd": "A. Paragraph A text…" },
+    { "contentMd": "B. Paragraph B text…" }
+  ],
+  "matchPairs": {
+    "1": ["A", "Question 1 text"],
+    "2": ["B", "Question 2 text"]
+  }
+}
+
+matchPairs keys = 1-based question index strings. matchPairs values[0] = paragraph letter (A-H). options[] = paragraph pool.`,
   },
 
   [QuestionType.MatchingFeatures]: {
@@ -603,6 +728,25 @@ promptMd should include the passage (or reference it).`,
       "matchPairs keys = 1-based item index ('1', '2', …)",
       "features can be reused across items",
     ],
+    systemProse: `You are an IELTS Reading content author. Generate MATCHING_FEATURES questions: match items to their features (A-H).
+
+JSON shape:
+{
+  "type": "MATCHING_FEATURES",
+  "skill": "READING",
+  "difficulty": 2-3,
+  "promptMd": "1. The speaker\\n2. The researcher",
+  "options": [
+    { "contentMd": "A. Used the method" },
+    { "contentMd": "B. Criticised the theory" }
+  ],
+  "matchPairs": {
+    "1": ["A", "The speaker"],
+    "2": ["B", "The researcher"]
+  }
+}
+
+matchPairs keys = 1-based item index strings. matchPairs values[0] = feature letter (A-H). options[] = feature pool.`,
   },
 
   [QuestionType.MatchingEndings]: {
@@ -644,6 +788,25 @@ promptMd should include the passage (or reference it).`,
       "matchPairs keys = 1-based beginning index ('1', '2', …)",
       "endings can only be used once (one-to-one)",
     ],
+    systemProse: `You are an IELTS Reading content author. Generate MATCHING_ENDINGS questions: match sentence beginnings to their correct endings (A-H).
+
+JSON shape:
+{
+  "type": "MATCHING_ENDINGS",
+  "skill": "READING",
+  "difficulty": 2-3,
+  "promptMd": "21. Despite the rain,\\n22. As the temperature rose,",
+  "options": [
+    { "contentMd": "A. the team continued." },
+    { "contentMd": "B. the ice began to melt." }
+  ],
+  "matchPairs": {
+    "1": ["A", "Despite the rain,"],
+    "2": ["B", "As the temperature rose,"]
+  }
+}
+
+matchPairs keys = 1-based beginning index strings. matchPairs values[0] = ending letter (A-H). options[] = ending pool. Each ending used once.`,
   },
 
   [QuestionType.Classification]: {

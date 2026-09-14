@@ -63,6 +63,40 @@ export function buildUserPrompt(
     case "FLOW_CHART":
       return `Source:\n"""\n${passage}\n"""\n\nGenerate ${count} FLOW_CHART question(s) with 3-5 sequential steps. Output JSON array.`;
 
+    // --- Phase 2: 11 new cases ---
+    case "MULTIPLE_CHOICE_SINGLE_IMAGE":
+      return `Passage:\n"""\n${passage}\n"""\n\nGenerate ${count} MULTIPLE_CHOICE_SINGLE_IMAGE question(s). Each is based on an image in the passage and has 4 options (A, B, C, D). Exactly 1 option isCorrect=true. Output JSON array.`;
+
+    case "YES_NO_NOT_GIVEN":
+      return `Passage:\n"""\n${passage}\n"""\n\nGenerate ${count} YES/NO/NOT GIVEN statement(s). Each statement must be carefully constructed so the candidate must distinguish between "Yes" (confirmed by passage), "No" (contradicted by passage), and "Not Given" (neither confirmed nor contradicted). Output JSON array.`;
+
+    case "TABLE_COMPLETION":
+      return `Passage:\n"""\n${passage}\n"""\n\nGenerate ${count} TABLE_COMPLETION question(s). Each presents a table with blanks to fill from the passage. Output JSON array.`;
+
+    case "NOTE_COMPLETION":
+      return `Passage:\n"""\n${passage}\n"""\n\nGenerate ${count} NOTE_COMPLETION question(s). Each presents notes with blanks corresponding to information from the passage. Output JSON array.`;
+
+    case "FORM_COMPLETION":
+      return `Passage:\n"""\n${passage}\n"""\n\nGenerate ${count} FORM_COMPLETION question(s). Each presents a form with fields to complete from the passage. Output JSON array.`;
+
+    case "SENTENCE_COMPLETION":
+      return `Passage:\n"""\n${passage}\n"""\n\nGenerate ${count} SENTENCE_COMPLETION question(s). Each sentence has one or more blanks to fill with correct answers from the passage. Output JSON array.`;
+
+    case "DIAGRAM_LABEL":
+      return `Passage:\n"""\n${passage}\n"""\n\nGenerate ${count} DIAGRAM_LABEL question(s). Each requires labeling a diagram with information drawn from the passage. Output JSON array.`;
+
+    case "MAP_LABEL":
+      return `Passage:\n"""\n${passage}\n"""\n\nGenerate ${count} MAP_LABEL question(s). Each requires labeling locations on a map based on information in the passage. Output JSON array.`;
+
+    case "MATCHING_INFORMATION":
+      return `Passage:\n"""\n${passage}\n"""\n\nGenerate ${count} MATCHING_INFORMATION question(s). Each requires matching statements to paragraphs or sections of the passage. Output JSON array.`;
+
+    case "MATCHING_FEATURES":
+      return `Passage:\n"""\n${passage}\n"""\n\nGenerate ${count} MATCHING_FEATURES question(s). Each requires matching features or characteristics as described in the passage. Output JSON array.`;
+
+    case "MATCHING_ENDINGS":
+      return `Passage:\n"""\n${passage}\n"""\n\nGenerate ${count} MATCHING_ENDINGS question(s). Each requires selecting the correct sentence endings from options provided. Output JSON array.`;
+
     default:
       throw new Error(`buildUserPrompt: unknown type "${type}"`);
   }
