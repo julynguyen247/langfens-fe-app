@@ -124,6 +124,8 @@ export function QuestionCard({
       return (
         <FlowChartCard
           orderCorrects={question.orderCorrects}
+          blankAcceptTexts={question.blankAcceptTexts}
+          promptMd={question.promptMd}
           value={value}
           onChange={onAnswerChange}
         />
