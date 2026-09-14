@@ -168,6 +168,17 @@ export interface AdminQuestionItem {
   difficulty: number;
   promptMd?: string | null;
   explanationMd?: string | null;
+  imageUrl?: string | null;
+  groupId?: string | null;
+  modelAnswers?: string[] | null;
+  wordList?: string[] | null;
+  orderCorrects?: string[] | null;
+  shortAnswerAcceptTexts?: string[] | null;
+  shortAnswerAcceptRegex?: string[] | null;
+  blankAcceptTexts?: Record<string, string[] | null> | null;
+  blankAcceptRegex?: Record<string, string[] | null> | null;
+  matchPairs?: Record<string, string[] | null> | null;
+  options?: AdminOptionItem[];
 }
 
 export interface AdminOptionUpsert {

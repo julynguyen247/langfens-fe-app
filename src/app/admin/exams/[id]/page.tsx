@@ -170,11 +170,9 @@ export default function AdminExamEditorPage({
             (a) => a.id === sectionId
           );
           const merged = freshQuestions.map((q) => {
-            const existing = s.questions.find(
-              (eq) => eq.id === q.id || eq.idx === q.idx
-            );
+            // Carry over OrderCorrects, BlankAcceptTexts, etc. so admin preview
+            // and editor see full question data, not just the rendered subset.
             return {
-              ...(existing ?? {}),
               id: q.id,
               sectionId: q.sectionId,
               idx: q.idx,
@@ -183,7 +181,17 @@ export default function AdminExamEditorPage({
               difficulty: q.difficulty,
               promptMd: q.promptMd ?? null,
               explanationMd: q.explanationMd ?? null,
-              options: existing?.options ?? [],
+              imageUrl: q.imageUrl ?? null,
+              groupId: q.groupId ?? null,
+              modelAnswers: q.modelAnswers ?? null,
+              wordList: q.wordList ?? null,
+              orderCorrects: q.orderCorrects ?? null,
+              shortAnswerAcceptTexts: q.shortAnswerAcceptTexts ?? null,
+              shortAnswerAcceptRegex: q.shortAnswerAcceptRegex ?? null,
+              blankAcceptTexts: q.blankAcceptTexts ?? null,
+              blankAcceptRegex: q.blankAcceptRegex ?? null,
+              matchPairs: q.matchPairs ?? null,
+              options: q.options ?? [],
             };
           });
           if (!matchingAdminSection) {
