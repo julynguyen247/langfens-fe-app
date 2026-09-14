@@ -1,6 +1,7 @@
 "use client";
 
 import { UserAnswerValue } from "../../_lib/types";
+import { parseBracketedBlanks } from "../../../../_lib/parseBlankTokens";
 
 interface CompletionCardProps {
   blankAcceptTexts?: Record<string, string[] | null> | null;
@@ -49,19 +50,11 @@ export function CompletionCard({
   // end-to-end 1-indexed (prompt digit = dict key).
   if (blankKeys.length === 0 && promptMd) {
     // 1. Bracketed ordinal placeholders — `[1] [2] [3]`.
-    //    Use the literal digit (1-indexed) so prompt and dict keys agree.
-    const bracketMatches = Array.from(promptMd.matchAll(/\[(\d+)\]/g));
-    if (bracketMatches.length > 0) {
-      // De-dupe by literal digit so duplicate `[N]` markers collapse.
-      const seen = new Set<string>();
-      const ordered: string[] = [];
-      for (const m of bracketMatches) {
-        const digit = m[1];
-        if (seen.has(digit)) continue;
-        seen.add(digit);
-        ordered.push(digit);
-      }
-      blankKeys = ordered.sort((a, b) => Number(a) - Number(b));
+    //    Use the shared parseBracketedBlanks utility (1-indexed) so prompt
+    //    and dict keys agree. Sprint 7 Phase 10.
+    const bracketKeys = parseBracketedBlanks(promptMd);
+    if (bracketKeys.length > 0) {
+      blankKeys = bracketKeys;
     } else {
       // 2. `[Diagram: a, b, c, d]` / `[Map: ...]` word-bank marker. One
       // blank per label, 1-indexed.
@@ -77,23 +70,22 @@ export function CompletionCard({
       }
     }
   }
-  // 3. Dev-only safety log: if a completion-family question arrives with
-  // no BlankAccepts AND no `[N]` AND no Diagram/Map marker, the prompt
-  // likely escaped the S32 DB migration. Surface it in DevTools so the
-  // regression is spotted immediately rather than silently rendering a
-  // single empty input.
-  if (
-    blankKeys.length === 0 &&
-    process.env.NODE_ENV === "development" &&
-    typeof console !== "undefined"
-  ) {
-    console.warn(
-      "[CompletionCard] no blank keys derived from promptMd; check that the row uses `[N]` placeholders or a `[Diagram/Map: ...]` word-bank marker.",
-      { promptMd: promptMd?.slice(0, 200) },
-    );
-  }
+  // 3. Render contract enforcement (Sprint 7 Phase 10): if a completion-family
+  // question arrives with no BlankAccepts AND no `[N]` AND no Diagram/Map
+  // marker, the prompt likely escaped the S32 DB migration. Throw in production
+  // so the regression surfaces immediately; warn in dev for friendlier DX.
   if (blankKeys.length === 0) {
-    blankKeys = ["1"];
+    if (process.env.NODE_ENV === "development") {
+      console.warn(
+        "[CompletionCard] no blank keys derived from promptMd; check that the row uses `[N]` placeholders or a `[Diagram/Map: ...]` word-bank marker.",
+        { promptMd: promptMd?.slice(0, 200) },
+      );
+      blankKeys = ["1"];
+    } else {
+      throw new Error(
+        "[CompletionCard] render contract violated: PromptMd has no [N] placeholders and no [Diagram/Map: ...] word-bank marker. This question was rejected at save time by Sprint 7 Phase 10 validation; investigate data integrity.",
+      );
+    }
   } else {
     blankKeys.sort((a, b) => {
       const na = Number(a);
