@@ -69,7 +69,7 @@ export function AiAuthorModal({ sectionId, onGenerated, onCancel }: AiAuthorModa
             SectionId: sectionId,
             Type: String(obj.type || type).toUpperCase(),
             Skill: String(obj.skill || "READING").toUpperCase(),
-            Difficulty: Number(obj.difficulty ?? typeMeta.defaultDifficulty),
+            Difficulty: Math.max(1, Math.min(5, Number(obj.difficulty ?? typeMeta.defaultDifficulty))),
             PromptMd: String(obj.promptMd || ""),
             ExplanationMd: typeof obj.explanationMd === "string" ? obj.explanationMd : null,
             ImageUrl: typeof obj.imageUrl === "string" ? obj.imageUrl : null,
