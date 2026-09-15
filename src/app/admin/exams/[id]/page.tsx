@@ -125,7 +125,36 @@ export default function AdminExamEditorPage({
       setLoading(true);
       setError(null);
       const data = await getFullExamForEditor(examId);
-      setExam(data);
+      // Sprint 7 Phase 10 follow-up: getExamDelivery sanitizes OrderCorrects,
+      // BlankAcceptTexts, etc. so the initial render lacks answer-key fields.
+      // Re-fetch each section's questions (which return full fields from
+      // /admin/question/by-section) and overlay them onto the delivery.
+      const sectionsWithFullQuestions = await Promise.all(
+        (data.sections || []).map(async (sec) => {
+          const fresh = await getQuestionsBySection(sec.id || "").catch(() => []);
+          return {
+            ...sec,
+            questions: (sec.questions || []).map((q) => {
+              const full = fresh.find((f) => f.id === q.id);
+              return {
+                ...q,
+                orderCorrects: full?.orderCorrects ?? (q as any).orderCorrects ?? null,
+                shortAnswerAcceptTexts: full?.shortAnswerAcceptTexts ?? null,
+                shortAnswerAcceptRegex: full?.shortAnswerAcceptRegex ?? null,
+                blankAcceptTexts: full?.blankAcceptTexts ?? null,
+                blankAcceptRegex: full?.blankAcceptRegex ?? null,
+                matchPairs: full?.matchPairs ?? null,
+                imageUrl: full?.imageUrl ?? null,
+                groupId: full?.groupId ?? null,
+                modelAnswers: full?.modelAnswers ?? null,
+                wordList: full?.wordList ?? null,
+              };
+            }),
+          };
+        })
+      );
+      const withFull = { ...data, sections: sectionsWithFullQuestions };
+      setExam(withFull);
       setMetaDraft({
         Title: data.title || "",
         DescriptionMd: data.descriptionMd || "",
