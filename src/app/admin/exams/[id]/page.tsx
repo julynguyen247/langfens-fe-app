@@ -135,10 +135,12 @@ export default function AdminExamEditorPage({
           return {
             ...sec,
             questions: (sec.questions || []).map((q) => {
-              const full = fresh.find((f) => f.id === q.id);
+              // Delivery snapshot uses internal PaperJson Guid; admin endpoint
+              // returns admin DB UUID. Match by (sectionId, idx) instead.
+              const full = fresh.find((f) => f.sectionId === q.sectionId && f.idx === q.idx);
               return {
                 ...q,
-                orderCorrects: full?.orderCorrects ?? (q as any).orderCorrects ?? null,
+                orderCorrects: full?.orderCorrects ?? null,
                 shortAnswerAcceptTexts: full?.shortAnswerAcceptTexts ?? null,
                 shortAnswerAcceptRegex: full?.shortAnswerAcceptRegex ?? null,
                 blankAcceptTexts: full?.blankAcceptTexts ?? null,
