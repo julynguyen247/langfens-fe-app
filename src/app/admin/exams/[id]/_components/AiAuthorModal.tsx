@@ -6,13 +6,24 @@ import { QUESTION_TYPE_REGISTRY, listByCategory } from "@/app/admin/_lib/questio
 import { getLlmPrompt } from "@/app/admin/_lib/llmPrompts";
 import { getSchema } from "@/app/admin/_lib/questionSchemas";
 import { AiConfig, DEFAULT_AI_CONFIG, callAi, tryParseLlmJson, isAiConfigured } from "@/app/admin/_lib/aiConfig";
-import { createQuestion } from "@/app/admin/_lib/adminApi";
+import { createQuestion, createOption } from "@/app/admin/_lib/adminApi";
 import { validateQuestionPayload } from "@/app/admin/_lib/validation";
 
 interface AiAuthorModalProps {
   sectionId: string;
   onGenerated?: (count: number) => void;
   onCancel: () => void;
+}
+
+interface ParsedAuthorOption {
+  idx: number;
+  contentMd: string;
+  isCorrect: boolean;
+}
+
+interface ParsedAuthorQuestion {
+  upsert: AdminQuestionUpsert;
+  options?: ParsedAuthorOption[];
 }
 
 export function AiAuthorModal({ sectionId, onGenerated, onCancel }: AiAuthorModalProps) {
@@ -23,7 +34,7 @@ export function AiAuthorModal({ sectionId, onGenerated, onCancel }: AiAuthorModa
   const [config] = useState<AiConfig>(DEFAULT_AI_CONFIG);
   const [generating, setGenerating] = useState(false);
   const [resultText, setResultText] = useState<string | null>(null);
-  const [parsedQuestions, setParsedQuestions] = useState<AdminQuestionUpsert[] | null>(null);
+  const [parsedQuestions, setParsedQuestions] = useState<ParsedAuthorQuestion[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [savedCount, setSavedCount] = useState(0);
@@ -75,9 +86,16 @@ export function AiAuthorModal({ sectionId, onGenerated, onCancel }: AiAuthorModa
       if (!parsed) {
         setError("LLM output could not be parsed as JSON. See response below.");
       } else {
-        const enriched: AdminQuestionUpsert[] = parsed.map((q) => {
+        const enriched: ParsedAuthorQuestion[] = parsed.map((q) => {
           const obj = (q as Record<string, unknown>) || {};
-          return {
+          const rawOptions = Array.isArray(obj.options) ? obj.options : [];
+          const mappedOptions: ParsedAuthorOption[] = rawOptions.map((o: Record<string, unknown>, idx: number) => ({
+            idx: typeof o.idx === "number" ? o.idx : idx + 1,
+            contentMd: String(o.contentMd || o.text || ""),
+            isCorrect: Boolean(o.isCorrect),
+          }));
+
+          const upsert: AdminQuestionUpsert = {
             SectionId: sectionId,
             Type: String(obj.type || type).toUpperCase(),
             Skill: String(obj.skill || "READING").toUpperCase(),
@@ -85,17 +103,23 @@ export function AiAuthorModal({ sectionId, onGenerated, onCancel }: AiAuthorModa
             PromptMd: String(obj.promptMd || ""),
             ExplanationMd: typeof obj.explanationMd === "string" ? obj.explanationMd : null,
             ImageUrl: typeof obj.imageUrl === "string" ? obj.imageUrl : null,
-            Options: undefined,
             MatchPairs: obj.matchPairs as AdminQuestionUpsert["MatchPairs"],
             BlankAcceptTexts: obj.blankAcceptTexts as AdminQuestionUpsert["BlankAcceptTexts"],
+            BlankAcceptRegex: obj.blankAcceptRegex as AdminQuestionUpsert["BlankAcceptRegex"],
             OrderCorrects: obj.orderCorrects as AdminQuestionUpsert["OrderCorrects"],
             ShortAnswerAcceptTexts: obj.shortAnswerAcceptTexts as AdminQuestionUpsert["ShortAnswerAcceptTexts"],
             ShortAnswerAcceptRegex: obj.shortAnswerAcceptRegex as AdminQuestionUpsert["ShortAnswerAcceptRegex"],
           };
+
+          return {
+            upsert,
+            options: mappedOptions.length > 0 ? mappedOptions : undefined,
+          };
         });
+
         const validationErrors: string[] = [];
         for (let i = 0; i < enriched.length; i++) {
-          const eq = enriched[i];
+          const { upsert: eq, options: optList } = enriched[i];
           const issues = validateQuestionPayload({
             type: eq.Type,
             skill: eq.Skill,
@@ -103,6 +127,7 @@ export function AiAuthorModal({ sectionId, onGenerated, onCancel }: AiAuthorModa
             promptMd: eq.PromptMd,
             explanationMd: eq.ExplanationMd,
             imageUrl: eq.ImageUrl,
+            options: optList,
             blankAcceptTexts: eq.BlankAcceptTexts,
             blankAcceptRegex: eq.BlankAcceptRegex,
             matchPairs: eq.MatchPairs,
@@ -133,8 +158,18 @@ export function AiAuthorModal({ sectionId, onGenerated, onCancel }: AiAuthorModa
     setSaving(true);
     let saved = 0;
     try {
-      for (const q of parsedQuestions) {
-        await createQuestion(q);
+      for (const item of parsedQuestions) {
+        const created = await createQuestion(item.upsert);
+        if (created?.id && item.options && item.options.length > 0) {
+          for (const opt of item.options) {
+            await createOption({
+              QuestionId: created.id,
+              Idx: opt.idx,
+              ContentMd: opt.contentMd,
+              IsCorrect: opt.isCorrect,
+            });
+          }
+        }
         saved++;
         setSavedCount(saved);
       }
@@ -285,11 +320,14 @@ export function AiAuthorModal({ sectionId, onGenerated, onCancel }: AiAuthorModa
                 ✓ Parsed {parsedQuestions.length} question(s) — review then save
               </div>
               <div className="space-y-1.5 max-h-40 overflow-y-auto">
-                {parsedQuestions.map((q, i) => (
+                {parsedQuestions.map((item, i) => (
                   <div key={i} className="text-[11px] text-emerald-200/80 flex items-center gap-2">
                     <span className="font-mono">#{i + 1}</span>
-                    <span className="font-bold">{q.Type}</span>
-                    <span className="truncate flex-1">{(q.PromptMd || "").slice(0, 80)}…</span>
+                    <span className="font-bold">{item.upsert.Type}</span>
+                    <span className="truncate flex-1">{(item.upsert.PromptMd || "").slice(0, 80)}…</span>
+                    {item.options && (
+                      <span className="text-slate-400 text-[10px]">({item.options.length} options)</span>
+                    )}
                   </div>
                 ))}
               </div>
