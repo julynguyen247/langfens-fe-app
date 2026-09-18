@@ -7,6 +7,7 @@ import { getLlmPrompt } from "@/app/admin/_lib/llmPrompts";
 import { getSchema } from "@/app/admin/_lib/questionSchemas";
 import { AiConfig, DEFAULT_AI_CONFIG, callAi, tryParseLlmJson, isAiConfigured } from "@/app/admin/_lib/aiConfig";
 import { createQuestion } from "@/app/admin/_lib/adminApi";
+import { validateQuestionPayload } from "@/app/admin/_lib/validation";
 
 interface AiAuthorModalProps {
   sectionId: string;
@@ -34,7 +35,11 @@ export function AiAuthorModal({ sectionId, onGenerated, onCancel }: AiAuthorModa
 
   const handleGenerate = async () => {
     if (!configured) {
-      setError("AI not configured. Set NEXT_PUBLIC_AI_API_KEY in .env.local");
+      setError(
+        config.provider === "server-proxy"
+          ? "AI endpoint not configured. Set NEXT_PUBLIC_AI_SERVICE_URL or NEXT_PUBLIC_GATEWAY_URL."
+          : "AI not configured. Set NEXT_PUBLIC_AI_API_KEY in .env.local"
+      );
       return;
     }
     if (!prompt) {
@@ -57,7 +62,14 @@ export function AiAuthorModal({ sectionId, onGenerated, onCancel }: AiAuthorModa
         difficulty: String(typeMeta.defaultDifficulty),
         extra: extraContext,
       });
-      const text = await callAi(config, prompt.system, userPrompt);
+      const text = await callAi(config, prompt.system, userPrompt, {
+        type,
+        skill: "READING",
+        count,
+        difficulty: Math.max(1, Math.min(5, Number(typeMeta.defaultDifficulty) || 3)),
+        passage: passage.trim(),
+        extraContext: extraContext.trim(),
+      });
       setResultText(text);
       const parsed = tryParseLlmJson(text);
       if (!parsed) {
@@ -81,6 +93,32 @@ export function AiAuthorModal({ sectionId, onGenerated, onCancel }: AiAuthorModa
             ShortAnswerAcceptRegex: obj.shortAnswerAcceptRegex as AdminQuestionUpsert["ShortAnswerAcceptRegex"],
           };
         });
+        const validationErrors: string[] = [];
+        for (let i = 0; i < enriched.length; i++) {
+          const eq = enriched[i];
+          const issues = validateQuestionPayload({
+            type: eq.Type,
+            skill: eq.Skill,
+            difficulty: eq.Difficulty,
+            promptMd: eq.PromptMd,
+            explanationMd: eq.ExplanationMd,
+            imageUrl: eq.ImageUrl,
+            blankAcceptTexts: eq.BlankAcceptTexts,
+            blankAcceptRegex: eq.BlankAcceptRegex,
+            matchPairs: eq.MatchPairs,
+            orderCorrects: eq.OrderCorrects,
+            shortAnswerAcceptTexts: eq.ShortAnswerAcceptTexts,
+            shortAnswerAcceptRegex: eq.ShortAnswerAcceptRegex,
+          });
+          for (const iss of issues) {
+            if (iss.level === "error") {
+              validationErrors.push(`Q#${i + 1} [${iss.field}]: ${iss.message}`);
+            }
+          }
+        }
+        if (validationErrors.length > 0) {
+          setError(`Generated question(s) failed validation:\n${validationErrors.join("\n")}`);
+        }
         setParsedQuestions(enriched);
       }
     } catch (e) {
@@ -91,20 +129,22 @@ export function AiAuthorModal({ sectionId, onGenerated, onCancel }: AiAuthorModa
   };
 
   const handleSaveAll = async () => {
-    if (!parsedQuestions) return;
+    if (!parsedQuestions || parsedQuestions.length === 0) return;
     setSaving(true);
-    let ok = 0;
-    for (const q of parsedQuestions) {
-      try {
+    let saved = 0;
+    try {
+      for (const q of parsedQuestions) {
         await createQuestion(q);
-        ok++;
-      } catch (e) {
-        console.error("Save failed:", e);
+        saved++;
+        setSavedCount(saved);
       }
+      onGenerated?.(saved);
+      onCancel();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Save failed");
+    } finally {
+      setSaving(false);
     }
-    setSavedCount(ok);
-    setSaving(false);
-    if (ok > 0 && onGenerated) onGenerated(ok);
   };
 
   return (
@@ -126,9 +166,19 @@ export function AiAuthorModal({ sectionId, onGenerated, onCancel }: AiAuthorModa
 
         {!configured && (
           <div className="mx-6 mt-4 p-3 rounded-md bg-amber-950/30 border border-amber-900/40 text-xs text-amber-200">
-            ⚠ AI is not configured. Set <code className="px-1 bg-slate-800 rounded">NEXT_PUBLIC_AI_API_KEY</code> in
-            <code className="px-1 bg-slate-800 rounded">.env.local</code> to enable generation.
-            The schema reference below is still available for manual authoring.
+            ⚠ AI is not configured.{" "}
+            {config.provider === "server-proxy" ? (
+              <>
+                Set <code className="px-1 bg-slate-800 rounded">NEXT_PUBLIC_GATEWAY_URL</code> or{" "}
+                <code className="px-1 bg-slate-800 rounded">NEXT_PUBLIC_AI_SERVICE_URL</code> to enable generation.
+              </>
+            ) : (
+              <>
+                Set <code className="px-1 bg-slate-800 rounded">NEXT_PUBLIC_AI_API_KEY</code> in{" "}
+                <code className="px-1 bg-slate-800 rounded">.env.local</code> to enable generation.
+              </>
+            )}
+            {" "}The schema reference below is still available for manual authoring.
           </div>
         )}
 
@@ -213,7 +263,7 @@ export function AiAuthorModal({ sectionId, onGenerated, onCancel }: AiAuthorModa
           </details>
 
           {error && (
-            <div className="p-3 rounded-md bg-rose-950/30 border border-rose-900/40 text-xs text-rose-300">
+            <div className="p-3 rounded-md bg-rose-950/30 border border-rose-900/40 text-xs text-rose-300 whitespace-pre-wrap">
               {error}
             </div>
           )}
