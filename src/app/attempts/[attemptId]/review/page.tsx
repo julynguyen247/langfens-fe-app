@@ -2,9 +2,9 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getAttemptResult } from "@/utils/api";
-import { useAttemptStore } from "@/app/store/useAttemptStore";
-import { ReadingScreen } from "../../../do-test/[skill]/[attemptId]/page";
+import { getAttemptResult } from "@/services/attempts";
+import { useAttemptStore } from "@/stores/useAttemptStore";
+import { ReadingScreen } from "../../../do-test/[skill]/[attemptId]/screens/ReadingScreen";
 import { motion } from "framer-motion";
 import type { RagFeedbackEnvelope } from "@/types/rag";
 

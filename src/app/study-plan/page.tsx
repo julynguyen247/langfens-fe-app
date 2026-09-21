@@ -3,11 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import {
-  createStudyGoal,
-  getStudyProgress,
-  deleteStudyGoal,
-} from "@/utils/api";
+import { createStudyGoal, getStudyProgress, deleteStudyGoal } from "@/services/studyPlan";
 
 type StudyGoal = {
   id: string;

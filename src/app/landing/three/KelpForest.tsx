@@ -6,17 +6,10 @@ import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import type { DeviceTier } from "@/app/components/effects/useDeviceCapability";
 import { cameraYRef } from "./OceanEnvironment";
+import { seededRandom } from "@/app/landing/lib/seededRandom";
 
 interface KelpForestProps {
   tier: DeviceTier;
-}
-
-function seededRandom(seed: number) {
-  let s = seed;
-  return () => {
-    s = (s * 16807 + 0) % 2147483647;
-    return (s - 1) / 2147483646;
-  };
 }
 
 /* ------------------------------------------------------------------ */

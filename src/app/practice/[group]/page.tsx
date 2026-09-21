@@ -2,8 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
-import { getPublicExams, getWritingExams, getSpeakingExams, getExamsByQuestionType } from "@/utils/api";
-import { useUserStore } from "@/app/store/userStore";
+import { getPublicExams, getExamsByQuestionType } from "@/services/exams";
+import { getWritingExams } from "@/services/writing";
+import { getSpeakingExams } from "@/services/speaking";
+import { useUserStore } from "@/stores/userStore";
 import PracticeBank, { PracticeItem } from "@/components/PracticeBank";
 import { SkillBadge } from "@/components/ui/SkillBadge";
 

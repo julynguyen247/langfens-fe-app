@@ -3,9 +3,9 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { register } from "@/utils/api";
-import { useLoadingStore } from "@/app/store/loading";
-import PenguinLottie from "@/components/PenguinLottie";
+import { register } from "@/services/auth";
+import { useLoadingStore } from "@/stores/loading";
+import { AuthBrandPanel } from "../components/AuthBrandPanel";
 import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -93,27 +93,7 @@ export default function Register() {
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
       {/* Left Panel - Branding */}
-      <div className="lg:w-[40%] bg-[var(--primary-light)] flex flex-col items-center justify-center py-8 px-6 lg:py-0 lg:min-h-screen">
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="flex flex-col items-center"
-        >
-          <div className="w-20 h-20 lg:w-32 lg:h-32">
-            <PenguinLottie />
-          </div>
-          <h2
-            className="text-2xl lg:text-3xl font-bold text-[var(--primary-dark)] mt-4 text-center"
-            style={{ fontFamily: "var(--font-heading)" }}
-          >
-            Langfens
-          </h2>
-          <p className="text-sm lg:text-base text-[var(--text-body)] mt-2 text-center max-w-xs">
-            Start your IELTS journey with Langfens
-          </p>
-        </motion.div>
-      </div>
+      <AuthBrandPanel description={"Start your IELTS journey with Langfens"} />
 
       {/* Right Panel - Form */}
       <div className="lg:w-[60%] bg-[var(--background)] flex items-center justify-center px-4 py-10 lg:py-0 lg:min-h-screen">

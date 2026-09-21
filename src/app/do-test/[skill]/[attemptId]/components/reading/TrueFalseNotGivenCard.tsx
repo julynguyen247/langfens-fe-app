@@ -1,120 +1,39 @@
 "use client";
 
-import React, { memo, useMemo } from "react";
-import ReactMarkdown from "react-markdown";
-
-interface TrueFalseNotGivenCardProps {
-  id: string;
-  stem: string;
-  value: string;
-  onChange: (value: "TRUE" | "FALSE" | "NOT_GIVEN") => void;
-  isReviewMode?: boolean;
-}
+import { memo } from "react";
+import {
+  StatementChoiceCard,
+  type StatementChoiceCardProps,
+  type StatementOption,
+} from "./StatementChoiceCard";
 
 type SelectionValue = "TRUE" | "FALSE" | "NOT_GIVEN";
 
-const OPTIONS: { value: SelectionValue; label: string; shortLabel: string }[] = [
-  { value: "TRUE", label: "TRUE", shortLabel: "T" },
-  { value: "FALSE", label: "FALSE", shortLabel: "F" },
-  { value: "NOT_GIVEN", label: "NOT GIVEN", shortLabel: "NG" },
+const OPTIONS: readonly StatementOption<SelectionValue>[] = [
+  {
+    value: "TRUE",
+    label: "TRUE",
+    aliases: ["TRUE", "T"],
+    selectedClassName: "bg-[var(--skill-speaking)] text-white border-[var(--skill-speaking-border)] ring-2 ring-[var(--skill-speaking)]/30",
+  },
+  {
+    value: "FALSE",
+    label: "FALSE",
+    aliases: ["FALSE", "F"],
+    selectedClassName: "bg-[var(--destructive)] text-white border-[var(--destructive)] ring-2 ring-[var(--destructive)]/30",
+  },
+  {
+    value: "NOT_GIVEN",
+    label: "NOT GIVEN",
+    aliases: ["NOT_GIVEN", "NG", "NOTGIVEN"],
+    selectedClassName: "bg-[var(--primary)] text-white border-[var(--primary-dark)] ring-2 ring-[var(--primary)]/30",
+  },
 ];
 
-// Memoized markdown components
-const markdownComponents = {
-  p: ({ node, ...props }: any) => (
-    <span className="whitespace-pre-wrap" {...props} />
-  ),
-};
-
-/**
- * Specialized question card for True/False/Not Given questions.
- * Displays three large, tappable buttons for selection.
- */
-const TrueFalseNotGivenCard = memo(function TrueFalseNotGivenCard({
-  id,
-  stem,
-  value,
-  onChange,
-  isReviewMode = false,
-}: TrueFalseNotGivenCardProps) {
-  const selectedValue = useMemo(() => {
-    if (!value) return null;
-    const upper = value.toUpperCase();
-    if (upper === "TRUE" || upper === "T") return "TRUE";
-    if (upper === "FALSE" || upper === "F") return "FALSE";
-    if (upper === "NOT_GIVEN" || upper === "NG" || upper === "NOTGIVEN") return "NOT_GIVEN";
-    return null;
-  }, [value]);
-
-  const getOptionClass = (optionValue: SelectionValue) => {
-    const isSelected = selectedValue === optionValue;
-
-    if (isSelected) {
-      switch (optionValue) {
-        case "TRUE":
-          return "bg-[var(--skill-speaking)] text-white border-[var(--skill-speaking-border)] ring-2 ring-[var(--skill-speaking)]/30";
-        case "FALSE":
-          return "bg-[var(--destructive)] text-white border-[var(--destructive)] ring-2 ring-[var(--destructive)]/30";
-        case "NOT_GIVEN":
-          return "bg-[var(--primary)] text-white border-[var(--primary-dark)] ring-2 ring-[var(--primary)]/30";
-      }
-    }
-
-    return "bg-[var(--card)] text-[var(--text-body)] border-[var(--border)] hover:border-[var(--primary)] hover:bg-[var(--primary-light)]/30";
-  };
-
-  return (
-    <div className="rounded-[2rem] bg-[var(--card)] border-[3px] border-[var(--border)] p-5 shadow-[0_4px_0_rgba(0,0,0,0.08)]">
-      {/* Question Stem */}
-      <div className="font-medium text-[var(--foreground)] mb-5 leading-relaxed">
-        <ReactMarkdown components={markdownComponents}>
-          {stem}
-        </ReactMarkdown>
-      </div>
-
-      {/* Selection Buttons */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        {OPTIONS.map((option) => (
-          <button
-            key={option.value}
-            onClick={() => onChange(option.value)}
-            disabled={isReviewMode}
-            className={`
-              flex-1 py-4 px-6 rounded-xl border-[3px] font-bold text-base
-              transition-all duration-200 flex items-center justify-center gap-3
-              ${getOptionClass(option.value)}
-              ${isReviewMode ? "cursor-not-allowed opacity-80" : "cursor-pointer active:scale-[0.98]"}
-            `}
-            aria-pressed={selectedValue === option.value}
-            aria-label={`Select ${option.label}`}
-          >
-            {/* Checkmark for selected */}
-            {selectedValue === option.value && (
-              <span className="w-5 h-5 rounded-full bg-white/30 flex items-center justify-center">
-                <svg
-                  className="w-3 h-3 text-white"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={3}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              </span>
-            )}
-            <span>{option.label}</span>
-          </button>
-        ))}
-      </div>
-
-      {/* Helper text */}
-      {!selectedValue && !isReviewMode && (
-        <p className="mt-3 text-xs text-[var(--text-muted)] text-center">
-          Tap to select your answer
-        </p>
-      )}
-    </div>
-  );
+const TrueFalseNotGivenCard = memo(function TrueFalseNotGivenCard(
+  props: StatementChoiceCardProps<SelectionValue>
+) {
+  return <StatementChoiceCard {...props} options={OPTIONS} />;
 });
 
 export default TrueFalseNotGivenCard;

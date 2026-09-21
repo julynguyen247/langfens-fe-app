@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { lookupDictionary, suggestDictionary } from "@/utils/api";
+import { lookupDictionary, suggestDictionary } from "@/services/dictionary";
 
 type Tab = "dictionary" | "translate";
 

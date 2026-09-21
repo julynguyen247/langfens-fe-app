@@ -3,29 +3,21 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
-import {
-  getAttempt,
-  getMe,
-  getPublicExams,
-  startAttempt,
-  getPlacementStatus,
-  getWritingHistory,
-  getSpeakingHistory,
-  getAnalyticsSummary,
-  getGamificationStats,
-  getLeaderboard,
-  getAchievements,
-} from "@/utils/api";
-import { useAttemptStore } from "../store/useAttemptStore";
-import { useLoadingStore } from "../store/loading";
+import { getAttempt, startAttempt, getPlacementStatus } from "@/services/attempts";
+import { getMe } from "@/services/auth";
+import { getPublicExams } from "@/services/exams";
+import { getWritingHistory } from "@/services/writing";
+import { getSpeakingHistory } from "@/services/speaking";
+import { getAnalyticsSummary } from "@/services/analytics";
+import { getGamificationStats, getLeaderboard, getAchievements } from "@/services/gamification";
+import { useAttemptStore } from "@/stores/useAttemptStore";
+import { useLoadingStore } from "@/stores/loading";
 import {
   mapSpeakingHistoryToAttempt,
   mapWritingHistoryToAttempt,
   normalizeAttemptItem,
 } from "./components/utils";
-
 import { EmptyState } from "@/components/ui/EmptyState";
-
 import { HeroDashboard } from "./components/HeroDashboard";
 import { SkillProgressGrid } from "./components/SkillProgressGrid";
 import { StatsRow } from "./components/StatsRow";
@@ -35,51 +27,14 @@ import { LeaderboardWidget } from "./components/LeaderboardWidget";
 import { AchievementsWidget } from "./components/AchievementsWidget";
 import { ContinueLearning } from "./components/ContinueLearning";
 import { RecentActivityTimeline } from "./components/RecentActivityTimeline";
-
 // ====================================
 // TYPES
 // ====================================
-import type {
-  Attempt,
-  PlacementStatus,
-  Skill,
-  GamificationStats,
-  Achievement,
-  LeaderboardEntry,
-  ActivityItem,
-  SkillProgress,
-} from "./types";
+import type { Attempt, PlacementStatus } from "./types";
 
-// ====================================
-// SKELETON COMPONENTS
-// ====================================
-function SkeletonCard({ className = "" }: { className?: string }) {
-  return (
-    <div
-      className={`bg-[var(--border)] animate-pulse rounded-[2rem] ${className}`}
-    />
-  );
-}
-
-// ====================================
-// ANIMATION VARIANTS
-// ====================================
-const staggerContainer = {
-  hidden: { opacity: 1 },
-  show: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1, delayChildren: 0.1 },
-  },
-};
-
-const fadeInUp = {
-  hidden: { opacity: 0, y: 16 },
-  show: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.4, ease: "easeOut" as const },
-  },
-};
+import { buildAttemptUrl } from "./attemptNavigation";
+import { fadeInUp, staggerContainer } from "./dashboardVariants";
+import { SkeletonCard } from "./components/SkeletonCard";
 
 // ====================================
 // MAIN PAGE COMPONENT
@@ -583,13 +538,3 @@ export default function Home() {
     </div>
   );
 }
-
-// ====================================
-// HELPER FUNCTIONS
-// ====================================
-function buildAttemptUrl(a: Attempt) {
-  if (a.skill === "Writing") return `/attempts/${a.id}?source=writing`;
-  if (a.skill === "Speaking") return `/attempts/${a.id}?source=speaking`;
-  return `/attempts/${a.id}?source=attempt`;
-}
-

@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { completeLesson } from "@/utils/api";
-import { useUserStore } from "@/app/store/userStore";
+import { completeLesson } from "@/services/courses";
+import { useUserStore } from "@/stores/userStore";
 
 type TranscriptLine = { t: number; text: string }; // seconds
 type Resource = { label: string; href: string; type?: "file" | "link" };

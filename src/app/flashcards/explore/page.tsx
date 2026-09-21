@@ -1,18 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getPublicHandler, getUserSubscriptions } from "@/utils/api";
+import { getPublicHandler, getUserSubscriptions } from "@/services/vocabulary";
 import { useRouter } from "next/navigation";
-import DeckCard from "./components/DeckCard";
-import { useUserStore } from "@/app/store/userStore";
-
-type PublicDeck = {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  status: string;
-};
+import DeckCard, { type PublicDeck } from "./components/DeckCard";
+import { useUserStore } from "@/stores/userStore";
 
 export default function ExploreDecksPage() {
   const router = useRouter();
@@ -139,7 +131,7 @@ export default function ExploreDecksPage() {
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {filteredDecks.map((deck) => (
-              <DeckCard key={deck.id} deck={deck as any} />
+              <DeckCard key={deck.id} deck={deck} />
             ))}
           </div>
         )}

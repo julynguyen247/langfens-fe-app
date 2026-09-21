@@ -1,11 +1,11 @@
 "use client";
 
-import { getMe, logout } from "@/utils/api";
+import { getMe, logout } from "@/services/auth";
 import { removeTokenCookie } from "@/utils/cookie";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { useUserStore } from "@/app/store/userStore";
+import { useUserStore } from "@/stores/userStore";
 import { NotificationBell } from "./NotificationBell";
 
 const NAV_ITEMS = [

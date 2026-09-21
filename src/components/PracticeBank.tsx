@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { getQuestionTypes } from "@/utils/api";
+import { getQuestionTypes } from "@/services/exams";
 
 export type PracticeItem = {
   id: string;
