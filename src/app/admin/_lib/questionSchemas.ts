@@ -281,7 +281,7 @@ Exactly 1 option must be isCorrect=true.`,
       },
     },
     constraints: [
-      "promptMd should contain ___ placeholders OR numbered list",
+      "promptMd should contain [N] placeholders OR numbered list",
       "blankAcceptTexts keys must match placeholder indices (e.g. '1', '2'…)",
       "each blank value can be string[] (multiple acceptable spellings)",
     ],
@@ -323,7 +323,7 @@ blankAcceptTexts keys are '1', '2', … matching the placeholder index.`,
       blankAcceptTexts: { "1": ["100", "one hundred"] },
     },
     constraints: [
-      "promptMd typically contains a markdown table with ___ cells",
+      "promptMd typically contains a markdown table with [N] cells",
       "blankAcceptTexts keys match placeholder indices",
     ],
     systemProse: `You are an IELTS Reading content author. Generate TABLE_COMPLETION questions: fill in blanks in a table from the passage.
