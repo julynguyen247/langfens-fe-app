@@ -2,7 +2,8 @@
 
 import { useState, useEffect, createContext, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { lookupDictionary, createNote } from "@/utils/api";
+import { lookupDictionary } from "@/services/dictionary";
+import { createNote } from "@/services/notes";
 
 export type ToolMode = "highlight" | "notes" | "vocabulary" | null;
 

@@ -9,8 +9,8 @@ import {
   type RoleplayTurnMessage,
   type RoleplayFeedback,
   type RoleplayTurnWithSpeechResponse,
-} from "@/utils/api";
-import { useUserStore } from "@/app/store/userStore";
+} from "@/services/roleplay";
+import { useUserStore } from "@/stores/userStore";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import AudioRecorderBar from "./AudioRecorderBar";
 

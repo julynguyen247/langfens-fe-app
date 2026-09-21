@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { createDeckCard } from "@/utils/api";
+import { createDeckCard } from "@/services/vocabulary";
 
 export default function AddCardForm({
   deckId,

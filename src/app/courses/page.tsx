@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { getCourses } from "@/utils/api";
+import { getCourses } from "@/services/courses";
 import { Button } from "@/components/ui/button";
 
 type Course = {

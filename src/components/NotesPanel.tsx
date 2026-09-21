@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { getNotes, updateNote, deleteNote } from "@/utils/api";
+import { getNotes, updateNote, deleteNote } from "@/services/notes";
 import { Spinner } from "@/components/ui/spinner";
 
 type Note = {

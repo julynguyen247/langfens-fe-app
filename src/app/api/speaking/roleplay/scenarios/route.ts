@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import axios from "axios";
+import { NextResponse } from "next/server";
 import { apisAi } from "@/utils/api.customize";
 
 export async function GET() {
@@ -9,21 +10,13 @@ export async function GET() {
       },
     });
 
-    if (!response.ok) {
-      console.error("[RoleplayScenarios] AI service error:", response.status);
-      return NextResponse.json(
-        { error: "Failed to fetch scenarios" },
-        { status: response.status }
-      );
-    }
-
-    const data = await response.json();
-    return NextResponse.json(data);
+    return NextResponse.json(response.data);
   } catch (error) {
     console.error("[RoleplayScenarios] Fetch error:", error);
+    const status = axios.isAxiosError(error) ? error.response?.status : undefined;
     return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
+      { error: status ? "Failed to fetch scenarios" : "Internal server error" },
+      { status: status ?? 500 }
     );
   }
 }

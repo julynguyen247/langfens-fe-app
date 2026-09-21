@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Script from "next/script";
 import { useRouter, useSearchParams } from "next/navigation";
-import { loginWithGoogle } from "@/utils/api";
+import { loginWithGoogle } from "@/services/auth";
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!;
 

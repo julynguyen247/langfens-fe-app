@@ -3,8 +3,10 @@
 import { useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { startAttempt, startWritingExam, startSpeakingExam } from "@/utils/api";
-import { useAttemptStore } from "@/app/store/useAttemptStore";
+import { startAttempt } from "@/services/attempts";
+import { startWritingExam } from "@/services/writing";
+import { startSpeakingExam } from "@/services/speaking";
+import { useAttemptStore } from "@/stores/useAttemptStore";
 import { SkillBadge } from "@/components/ui/SkillBadge";
 
 type Skill = "reading" | "listening" | "writing" | "speaking";

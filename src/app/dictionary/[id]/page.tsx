@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import { getDictionaryDetails } from "@/utils/api";
+import { getDictionaryDetails } from "@/services/dictionary";
 import { motion } from "framer-motion";
+import { speakWord } from "@/lib/speech";
 
 type Pronunciation = {
   region: string | null;
@@ -35,19 +36,6 @@ type DictionaryDetails = {
   senses: Sense[];
   vietnamese: string[];
 };
-
-// =============================================
-// AUDIO HELPER (Web Speech API)
-// =============================================
-function speakWord(word: string, region: "UK" | "US" = "UK") {
-  if (typeof window === "undefined" || !window.speechSynthesis) return;
-
-  const utterance = new SpeechSynthesisUtterance(word);
-  utterance.lang = region === "UK" ? "en-GB" : "en-US";
-  utterance.rate = 0.9;
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(utterance);
-}
 
 export default function DictionaryDetailPage() {
   const params = useParams<{ id: string }>();

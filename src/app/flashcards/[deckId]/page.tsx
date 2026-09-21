@@ -12,8 +12,8 @@ import {
   getDueFlashcards,
   reviewFlashcard,
   getFlashcardProgress,
-} from "@/utils/api";
-import { useUserStore } from "@/app/store/userStore";
+} from "@/services/vocabulary";
+import { useUserStore } from "@/stores/userStore";
 
 type ApiCard = {
   id: string;

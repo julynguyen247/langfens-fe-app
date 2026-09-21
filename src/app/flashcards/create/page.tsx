@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createDeck, createDeckCard } from "@/utils/api";
-import { useUserStore } from "@/app/store/userStore";
+import { createDeck, createDeckCard } from "@/services/vocabulary";
+import { useUserStore } from "@/stores/userStore";
 
 function slugify(input: string) {
   return input

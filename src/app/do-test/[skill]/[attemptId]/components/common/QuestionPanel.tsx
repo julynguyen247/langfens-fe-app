@@ -4,7 +4,7 @@ import React, { memo, useEffect, useMemo, useState, useCallback, useRef } from "
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import BookmarkButton from "@/components/BookmarkButton";
-import { AttemptQuestionGroup } from "@/app/store/useAttemptStore";
+import { AttemptQuestionGroup } from "@/stores/useAttemptStore";
 import { QuestionComponentRegistry, RawQuestion } from "../QuestionComponentRegistry";
 import { QuestionFeedbackPanel } from "../QuestionFeedbackPanel";
 import type { RagFeedbackEnvelope } from "@/types/rag";

@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
-import {
-  getAttemptResult,
-  getWritingHistoryById,
-  getSpeakingHistoryById,
-} from "@/utils/api";
+import { getAttemptResult } from "@/services/attempts";
+import { getWritingHistoryById } from "@/services/writing";
+import { getSpeakingHistoryById } from "@/services/speaking";
 import type {
   PageSource,
   AttemptResult,

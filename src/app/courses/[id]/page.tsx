@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { getCourseBySlug } from "@/utils/api";
-import { useUserStore } from "@/app/store/userStore";
+import { getCourseBySlug } from "@/services/courses";
+import { useUserStore } from "@/stores/userStore";
 import ReactMarkdown from "react-markdown";
 
 type Lesson = {
