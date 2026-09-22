@@ -180,6 +180,15 @@ export function validateFlowChart(payload: FlowChartPayload): ValidationIssue[] 
       message: "Duplicate steps detected. Each step must be unique.",
     });
   }
+  for (const step of orders) {
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(step ?? "")) {
+      issues.push({
+        level: "error",
+        field: "orderCorrects",
+        message: `Step "${step}" must be a lowercase slug (e.g. "collect-raw-materials").`,
+      });
+    }
+  }
   return issues;
 }
 
@@ -311,7 +320,8 @@ export function validateShortAnswerSubQuestionCount(
 
 export function validateImageUrlRequired(
   type: string,
-  imageUrl?: string | null
+  imageUrl?: string | null,
+  options?: { imageUrl?: string | null }[] | null
 ): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const requiresImage =
@@ -319,6 +329,22 @@ export function validateImageUrlRequired(
     type === QuestionType.MapLabel ||
     type === QuestionType.MultipleChoiceSingleImage;
   if (!requiresImage) return issues;
+
+  if (type === QuestionType.MultipleChoiceSingleImage) {
+    const hasQuestionImage = Boolean(imageUrl && imageUrl.trim());
+    const hasOptionImages = Boolean(
+      options && options.length > 0 && options.some((o) => o.imageUrl && o.imageUrl.trim())
+    );
+    if (!hasQuestionImage && !hasOptionImages) {
+      issues.push({
+        level: "error",
+        field: "imageUrl",
+        message: `${type} requires an imageUrl on the question or image options.`,
+      });
+    }
+    return issues;
+  }
+
   if (!imageUrl || !imageUrl.trim()) {
     issues.push({
       level: "error",
@@ -359,9 +385,7 @@ export function validateBlankKeyFormat(type: string, keys: string[]): Validation
     [QuestionType.SentenceCompletion]: true,
     [QuestionType.DiagramLabel]: true,
     [QuestionType.MapLabel]: true,
-    [QuestionType.FlowChart]: true,
   };
-  if (!completionFamily[type]) return [];
   const issues: ValidationIssue[] = [];
   for (const key of keys) {
     if (!/^\d+$/.test(key)) {
@@ -393,24 +417,16 @@ export function validatePromptBlanksCoverage(
     [QuestionType.SentenceCompletion]: true,
     [QuestionType.DiagramLabel]: true,
     [QuestionType.MapLabel]: true,
-    [QuestionType.FlowChart]: true,
   };
   if (!completionFamily[type]) return [];
   if (!promptMd) return [];
 
-  // S32: skip DIAGRAM_LABEL / MAP_LABEL prompts that contain the `[Diagram: ...]`
-  // or `[Map: ...]` word-bank marker. These types use `[1]` as a template
-  // placeholder in the prompt while BlankAcceptTexts keys follow the DIAGRAM/MAP
-  // callout-number convention (3-9 globally). The runtime grader for these
-  // types compares plaintext values (CompletionGrader.cs:155-162 path), so the
-  // coverage warning here is a false-positive.
   if (
     (type === QuestionType.DiagramLabel || type === QuestionType.MapLabel) &&
     /\[(Diagram|Map):\s*[^\]]+\]/i.test(promptMd)
   ) {
     return [];
   }
-
   const issues: ValidationIssue[] = [];
   const seen = new Set<string>();
   for (const match of promptMd.matchAll(/\[(\d+)\]/g)) {
@@ -444,7 +460,6 @@ export function validatePromptBlankParity(
     [QuestionType.SentenceCompletion]: true,
     [QuestionType.DiagramLabel]: true,
     [QuestionType.MapLabel]: true,
-    [QuestionType.FlowChart]: true,
   };
   if (!completionFamily[type]) return [];
   if (!promptMd) return [];
@@ -457,8 +472,6 @@ export function validatePromptBlankParity(
   ) {
     return [];
   }
-
-  // Extract `[N]` markers from prompt.
   const inPrompt = new Set<string>();
   for (const m of promptMd.matchAll(/\[(\d+)\]/g)) inPrompt.add(m[1]);
 
@@ -475,10 +488,267 @@ export function validatePromptBlankParity(
   return issues;
 }
 
+/**
+ * Enforce parity for MATCHING question types:
+ * Every key in MatchPairs must be referenced as a numbered item (e.g. "1. ", "2. ")
+ * in PromptMd, or as a detected paragraph range for MATCHING_HEADING.
+ * Ensures the candidate actually has statements/paragraphs to match against during exams.
+ */
+export function validateMatchingPromptParity(
+  type: string,
+  promptMd: string | null | undefined,
+  matchPairKeys: string[]
+): ValidationIssue[] {
+  const matchingFamily: Record<string, true> = {
+    [QuestionType.MatchingHeading]: true,
+    [QuestionType.MatchingInformation]: true,
+    [QuestionType.MatchingFeatures]: true,
+    [QuestionType.MatchingEndings]: true,
+    [QuestionType.Classification]: true,
+  };
 
+  if (!matchingFamily[type]) return [];
+  if (!promptMd || matchPairKeys.length === 0) return [];
 
+  const text = promptMd.replace(/\\n/g, "\n");
+  const inPrompt = new Set<string>();
+
+  const numberedRe = /^(\d+)[\.\)]\s+/gm;
+  let m: RegExpExecArray | null;
+  while ((m = numberedRe.exec(text)) !== null) {
+    inPrompt.add(m[1]);
+  }
+
+  if (type === QuestionType.MatchingHeading) {
+    const headingParaMatch = text.match(
+      /(?:five|six|seven|eight|nine|ten|\d+)\s+paragraphs[,\s]+(?:1[–-](\d+)|([A-Z])[–-]([A-Z]))/i
+    );
+    if (headingParaMatch) {
+      if (headingParaMatch[1]) {
+        const total = parseInt(headingParaMatch[1], 10);
+        for (let i = 1; i <= total; i++) inPrompt.add(String(i));
+      } else if (headingParaMatch[2] && headingParaMatch[3]) {
+        const start = headingParaMatch[2].charCodeAt(0);
+        const end = headingParaMatch[3].charCodeAt(0);
+        let idx = 1;
+        for (let c = start; c <= end; c++, idx++) inPrompt.add(String(idx));
+      }
+    }
+  }
+
+  const issues: ValidationIssue[] = [];
+  for (const key of matchPairKeys) {
+    if (!inPrompt.has(key)) {
+      issues.push({
+        level: "error",
+        field: "promptMd",
+        message: `PromptMd is missing the numbered item "${key}." corresponding to MatchPairs key "${key}". List each item to be matched in PromptMd (e.g. "1. First statement").`,
+      });
+    }
+  }
+
+  return issues;
+}
 export function aggregateIssues(...lists: ValidationIssue[][]): ValidationIssue[] {
   return lists.flat();
+}
+
+export interface QuestionValidationPayload {
+  type: string;
+  skill?: string | null;
+  difficulty?: number | null;
+  promptMd?: string | null;
+  explanationMd?: string | null;
+  imageUrl?: string | null;
+  options?: { idx?: number; contentMd: string; isCorrect?: boolean | null; imageUrl?: string | null; altText?: string | null }[] | null;
+  blankAcceptTexts?: Record<string, string[] | null> | null;
+  blankAcceptRegex?: Record<string, string[] | null> | null;
+  matchPairs?: Record<string, string[] | null> | null;
+  orderCorrects?: string[] | null;
+  shortAnswerAcceptTexts?: string[] | null;
+  shortAnswerAcceptRegex?: string[] | null;
+}
+
+/**
+ * Authoritative pipeline validator for any question payload.
+ * Enforces strict, type-specific invariants for all IELTS question types (Q1 - Q19).
+ * Used by QuestionEditor, QuestionImporter, and AiAuthorModal.
+ */
+export function validateQuestionPayload(q: QuestionValidationPayload): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  const t = q.type;
+
+  if (!t || !QUESTION_TYPE_REGISTRY[t]) {
+    issues.push({
+      level: "error",
+      field: "type",
+      message: `Unknown question type "${t}".`,
+    });
+    return issues;
+  }
+
+  // Common metadata validation
+  issues.push(...validateTypeSkill(t, q.skill || ""));
+  issues.push(...validateDifficultyBounds(q.difficulty));
+  issues.push(...validateImageUrlRequired(t, q.imageUrl, q.options));
+
+  // Prompt must not be empty
+  if (!q.promptMd || !q.promptMd.trim()) {
+    issues.push({
+      level: "error",
+      field: "promptMd",
+      message: "Prompt Markdown is required.",
+    });
+  }
+
+  const options = q.options || [];
+  const blanks = q.blankAcceptTexts || {};
+  const blankKeys = Object.keys(blanks);
+  const matchPairs = q.matchPairs || {};
+  const matchKeys = Object.keys(matchPairs);
+  const orders = q.orderCorrects || [];
+  const shortAnswers = q.shortAnswerAcceptTexts || [];
+
+  switch (t) {
+    // ── Q1: Single choice ───────────────────────────────────────────────
+    case QuestionType.MultipleChoiceSingle:
+    case QuestionType.MultipleChoiceSingleImage: {
+      issues.push(...validateMcqIsCorrectCount(options, t));
+      issues.push(...validateOptionsLength(options, t));
+      if (blankKeys.length > 0) {
+        issues.push({ level: "error", field: "blankAcceptTexts", message: `${t}: BlankAcceptTexts must be empty.` });
+      }
+      if (matchKeys.length > 0) {
+        issues.push({ level: "error", field: "matchPairs", message: `${t}: MatchPairs must be empty.` });
+      }
+      if (orders.length > 0) {
+        issues.push({ level: "error", field: "orderCorrects", message: `${t}: OrderCorrects must be empty.` });
+      }
+      if (shortAnswers.length > 0) {
+        issues.push({ level: "error", field: "shortAnswerAcceptTexts", message: `${t}: ShortAnswerAcceptTexts must be empty.` });
+      }
+      break;
+    }
+
+    // ── Q2: True / False / Not Given ─────────────────────────────────────
+    case QuestionType.TrueFalseNotGiven: {
+      issues.push(...validateMcqIsCorrectCount(options, t));
+      if (options.length !== 3) {
+        issues.push({ level: "error", field: "options", message: `${t} requires exactly 3 options (True, False, Not Given).` });
+      }
+      const allowed = new Set(["true", "false", "not given"]);
+      for (const opt of options) {
+        if (!allowed.has(opt.contentMd.trim().toLowerCase())) {
+          issues.push({ level: "error", field: "options", message: `Invalid option "${opt.contentMd}". Only True, False, Not Given allowed.` });
+        }
+      }
+      if (blankKeys.length > 0) issues.push({ level: "error", field: "blankAcceptTexts", message: `${t}: BlankAcceptTexts must be empty.` });
+      if (matchKeys.length > 0) issues.push({ level: "error", field: "matchPairs", message: `${t}: MatchPairs must be empty.` });
+      if (orders.length > 0) issues.push({ level: "error", field: "orderCorrects", message: `${t}: OrderCorrects must be empty.` });
+      break;
+    }
+
+    // ── Q8: Yes / No / Not Given ─────────────────────────────────────────
+    case QuestionType.YesNoNotGiven: {
+      issues.push(...validateMcqIsCorrectCount(options, t));
+      if (options.length !== 3) {
+        issues.push({ level: "error", field: "options", message: `${t} requires exactly 3 options (Yes, No, Not Given).` });
+      }
+      const allowed = new Set(["yes", "no", "not given"]);
+      for (const opt of options) {
+        if (!allowed.has(opt.contentMd.trim().toLowerCase())) {
+          issues.push({ level: "error", field: "options", message: `Invalid option "${opt.contentMd}". Only Yes, No, Not Given allowed.` });
+        }
+      }
+      if (blankKeys.length > 0) issues.push({ level: "error", field: "blankAcceptTexts", message: `${t}: BlankAcceptTexts must be empty.` });
+      if (matchKeys.length > 0) issues.push({ level: "error", field: "matchPairs", message: `${t}: MatchPairs must be empty.` });
+      if (orders.length > 0) issues.push({ level: "error", field: "orderCorrects", message: `${t}: OrderCorrects must be empty.` });
+      break;
+    }
+
+    // ── Multiple Choice Multiple ──────────────────────────────────────────
+    case QuestionType.MultipleChoiceMultiple: {
+      issues.push(...validateMcqIsCorrectCount(options, t));
+      issues.push(...validateOptionsLength(options, t));
+      if (blankKeys.length > 0) issues.push({ level: "error", field: "blankAcceptTexts", message: `${t}: BlankAcceptTexts must be empty.` });
+      if (matchKeys.length > 0) issues.push({ level: "error", field: "matchPairs", message: `${t}: MatchPairs must be empty.` });
+      if (orders.length > 0) issues.push({ level: "error", field: "orderCorrects", message: `${t}: OrderCorrects must be empty.` });
+      break;
+    }
+
+    // ── Q3, Q4: Completion Family (Sentence, Table, Summary, Note, Form) ──
+    case QuestionType.SentenceCompletion:
+    case QuestionType.TableCompletion:
+    case QuestionType.SummaryCompletion:
+    case QuestionType.NoteCompletion:
+    case QuestionType.FormCompletion:
+    case QuestionType.DiagramLabel:
+    case QuestionType.MapLabel: {
+      issues.push(...validateBlanks({ blankAcceptTexts: q.blankAcceptTexts, blankAcceptRegex: q.blankAcceptRegex, type: t }));
+      issues.push(...validateBlankKeyFormat(t, blankKeys));
+      issues.push(...validatePromptBlankParity(t, q.promptMd, blankKeys));
+      issues.push(...validatePromptBlanksCoverage(t, q.promptMd, blankKeys));
+
+      if (t === QuestionType.TableCompletion && q.promptMd && !q.promptMd.includes("|")) {
+        issues.push({ level: "warning", field: "promptMd", message: "TABLE_COMPLETION prompt should contain a markdown table (|---|)." });
+      }
+
+      if (matchKeys.length > 0) issues.push({ level: "error", field: "matchPairs", message: `${t}: MatchPairs must be empty.` });
+      if (orders.length > 0) issues.push({ level: "error", field: "orderCorrects", message: `${t}: OrderCorrects must be empty.` });
+      if (shortAnswers.length > 0) issues.push({ level: "error", field: "shortAnswerAcceptTexts", message: `${t}: ShortAnswerAcceptTexts must be empty.` });
+      break;
+    }
+
+    // ── Q5: Flow Chart (Process Sequencing) ────────────────────────────────
+    case QuestionType.FlowChart: {
+      issues.push(...validateFlowChart({ orderCorrects: q.orderCorrects, type: t }));
+      if (blankKeys.length > 0) {
+        issues.push({ level: "error", field: "blankAcceptTexts", message: `${t}: BlankAcceptTexts must be empty. FLOW_CHART is process sequencing, not fill-in-the-blank.` });
+      }
+      if (matchKeys.length > 0) issues.push({ level: "error", field: "matchPairs", message: `${t}: MatchPairs must be empty.` });
+      if (shortAnswers.length > 0) issues.push({ level: "error", field: "shortAnswerAcceptTexts", message: `${t}: ShortAnswerAcceptTexts must be empty.` });
+      break;
+    }
+
+    // ── Q6, Q7, Q9, Q10: Matching Family ─────────────────────────────────
+    case QuestionType.MatchingHeading:
+    case QuestionType.MatchingInformation:
+    case QuestionType.MatchingFeatures:
+    case QuestionType.MatchingEndings:
+    case QuestionType.Classification: {
+      issues.push(
+        ...validateMatchPairs({
+          matchPairs: q.matchPairs,
+          options: options.map((o, idx) => ({
+            idx: o.idx ?? idx + 1,
+            contentMd: o.contentMd,
+          })),
+          type: t,
+        })
+      );
+      issues.push(...validateMatchingPromptParity(t, q.promptMd, matchKeys));
+      if (t === QuestionType.MatchingHeading) {
+        issues.push(...validateMatchingHeadingPrompt(q.promptMd));
+      }
+
+      if (blankKeys.length > 0) issues.push({ level: "error", field: "blankAcceptTexts", message: `${t}: BlankAcceptTexts must be empty.` });
+      if (orders.length > 0) issues.push({ level: "error", field: "orderCorrects", message: `${t}: OrderCorrects must be empty.` });
+      if (shortAnswers.length > 0) issues.push({ level: "error", field: "shortAnswerAcceptTexts", message: `${t}: ShortAnswerAcceptTexts must be empty.` });
+      break;
+    }
+
+    // ── Short Answer ──────────────────────────────────────────────────────
+    case QuestionType.ShortAnswer: {
+      issues.push(...validateShortAnswer({ shortAnswerAcceptTexts: q.shortAnswerAcceptTexts, shortAnswerAcceptRegex: q.shortAnswerAcceptRegex, type: t }));
+      issues.push(...validateShortAnswerSubQuestionCount(q.promptMd, shortAnswers));
+      if (blankKeys.length > 0) issues.push({ level: "error", field: "blankAcceptTexts", message: `${t}: BlankAcceptTexts must be empty.` });
+      if (matchKeys.length > 0) issues.push({ level: "error", field: "matchPairs", message: `${t}: MatchPairs must be empty.` });
+      if (orders.length > 0) issues.push({ level: "error", field: "orderCorrects", message: `${t}: OrderCorrects must be empty.` });
+      break;
+    }
+  }
+
+  return issues;
 }
 
 export function validateSectionIdxUniqueness(

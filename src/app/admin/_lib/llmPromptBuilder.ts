@@ -50,46 +50,33 @@ export function buildUserPrompt(
   // Per-type user template strings — verbatim from the existing llmPrompts.ts entries.
   switch (type) {
     case "CLASSIFICATION":
-      return `Passage:\n"""\n${passage}\n"""\n\nGenerate ${count} CLASSIFICATION question(s). Each should have 3-4 categories and 4-6 statements derived from the passage. Output JSON array of ${count} question(s).`
-      + PROMPT_FORMAT_CONTRACT;
+      return `Passage:\n"""\n${passage}\n"""\n\nGenerate ${count} CLASSIFICATION question(s). Each should have 3-4 categories and 4-6 statements derived from the passage. Output JSON array of ${count} question(s).`;
 
     case "MATCHING_HEADING":
-      return `Passage:\n"""\n${passage}\n"""\n\nGenerate ${count} MATCHING_HEADING question(s) covering all paragraphs. Output JSON array.`
-      + PROMPT_FORMAT_CONTRACT;
+      return `Passage:\n"""\n${passage}\n"""\n\nGenerate ${count} MATCHING_HEADING question(s) covering all paragraphs. Output JSON array.`;
 
     case "MULTIPLE_CHOICE_SINGLE":
-      return `Passage:\n"""\n${passage}\n"""\n\nGenerate ${count} MCQ (single answer) question(s) with 4 options each (A, B, C, D). Exactly 1 option isCorrect=true. Output JSON array.`
-      + PROMPT_FORMAT_CONTRACT;
+      return `Passage:\n"""\n${passage}\n"""\n\nGenerate ${count} MCQ (single answer) question(s) with 4 options each (A, B, C, D). Exactly 1 option isCorrect=true. Output JSON array.`;
 
     case "MULTIPLE_CHOICE_MULTIPLE":
-      return `Passage:\n"""\n${passage}\n"""\n\nGenerate ${count} MCQ (multiple answer) question(s) with 5-8 options each. 2-4 options are isCorrect=true. Output JSON array.`
-      + PROMPT_FORMAT_CONTRACT;
+      return `Passage:\n"""\n${passage}\n"""\n\nGenerate ${count} MCQ (multiple answer) question(s) with 5-8 options each. 2-4 options are isCorrect=true. Output JSON array.`;
 
     case "TRUE_FALSE_NOT_GIVEN":
-      return `Passage:\n"""\n${passage}\n"""\n\nGenerate ${count} TRUE/FALSE/NOT GIVEN statement(s). Each must be ambiguous between "False" and "Not Given" so candidate must read carefully. Output JSON array.`
-      + PROMPT_FORMAT_CONTRACT;
-
+      return `Passage:\n"""\n${passage}\n"""\n\nGenerate ${count} TRUE/FALSE/NOT GIVEN statement(s). Each must be ambiguous between "False" and "Not Given" so candidate must read carefully. Output JSON array.`;
     case "SUMMARY_COMPLETION":
       return `Passage:\n"""\n${passage}\n"""\n\nGenerate ${count} SUMMARY_COMPLETION question(s) with 2-4 blanks each. Output JSON array.`
       + PROMPT_FORMAT_CONTRACT;
 
     case "SHORT_ANSWER":
-      return `Passage:\n"""\n${passage}\n"""\n\nGenerate ${count} SHORT_ANSWER question(s). Provide 1-3 acceptable answers each. Output JSON array.`
-      + PROMPT_FORMAT_CONTRACT;
-
+      return `Passage:\n"""\n${passage}\n"""\n\nGenerate ${count} SHORT_ANSWER question(s). Provide 1-3 acceptable answers each. Output JSON array.`;
     case "FLOW_CHART":
-      return `Source:\n"""\n${passage}\n"""\n\nGenerate ${count} FLOW_CHART question(s) with 3-5 sequential steps. Output JSON array.`
-      + PROMPT_FORMAT_CONTRACT;
-
+      return `Source:\n"""\n${passage}\n"""\n\nGenerate ${count} FLOW_CHART question(s). Each question presents 3-5 sequential process steps from the passage to be ordered chronologically. In promptMd, clearly describe the process and list available steps (A, B, C, D) separated by blank lines. Set orderCorrects to the list of step slugs in the correct chronological order (lowercase, hyphenated, e.g. ["collect-materials", "soak-fibres", "press-sheets"]). Do not include [N] blanks or BlankAcceptTexts. Output JSON array.`;
     // --- Phase 2: 11 new cases ---
     case "MULTIPLE_CHOICE_SINGLE_IMAGE":
-      return `Passage:\n"""\n${passage}\n"""\n\nGenerate ${count} MULTIPLE_CHOICE_SINGLE_IMAGE question(s). Each is based on an image in the passage and has 4 options (A, B, C, D). Exactly 1 option isCorrect=true. Output JSON array.`
-      + PROMPT_FORMAT_CONTRACT;
+      return `Passage:\n"""\n${passage}\n"""\n\nGenerate ${count} MULTIPLE_CHOICE_SINGLE_IMAGE question(s). Each is based on an image in the passage and has 4 options (A, B, C, D). Exactly 1 option isCorrect=true. Output JSON array.`;
 
     case "YES_NO_NOT_GIVEN":
-      return `Passage:\n"""\n${passage}\n"""\n\nGenerate ${count} YES/NO/NOT GIVEN statement(s). Each statement must be carefully constructed so the candidate must distinguish between "Yes" (confirmed by passage), "No" (contradicted by passage), and "Not Given" (neither confirmed nor contradicted). Output JSON array.`
-      + PROMPT_FORMAT_CONTRACT;
-
+      return `Passage:\n"""\n${passage}\n"""\n\nGenerate ${count} YES/NO/NOT GIVEN statement(s). Each statement must be carefully constructed so the candidate must distinguish between "Yes" (confirmed by passage), "No" (contradicted by passage), and "Not Given" (neither confirmed nor contradicted). Output JSON array.`;
     case "TABLE_COMPLETION":
       return `Passage:\n"""\n${passage}\n"""\n\nGenerate ${count} TABLE_COMPLETION question(s). Each presents a table with blanks to fill from the passage. Output JSON array.`
       + PROMPT_FORMAT_CONTRACT;
@@ -115,16 +102,14 @@ export function buildUserPrompt(
       + PROMPT_FORMAT_CONTRACT;
 
     case "MATCHING_INFORMATION":
-      return `Passage:\n"""\n${passage}\n"""\n\nGenerate ${count} MATCHING_INFORMATION question(s). Each requires matching statements to paragraphs or sections of the passage. Output JSON array.`
-      + PROMPT_FORMAT_CONTRACT;
+      return `Passage:\n"""\n${passage}\n"""\n\nGenerate ${count} MATCHING_INFORMATION question(s). Each requires matching statements to paragraphs or sections of the passage. Output JSON array.`;
 
     case "MATCHING_FEATURES":
-      return `Passage:\n"""\n${passage}\n"""\n\nGenerate ${count} MATCHING_FEATURES question(s). Each requires matching features or characteristics as described in the passage. Output JSON array.`
-      + PROMPT_FORMAT_CONTRACT;
+      return `Passage:\n"""\n${passage}\n"""\n\nGenerate ${count} MATCHING_FEATURES question(s). Each requires matching features or characteristics as described in the passage. Output JSON array.`;
 
     case "MATCHING_ENDINGS":
-      return `Passage:\n"""\n${passage}\n"""\n\nGenerate ${count} MATCHING_ENDINGS question(s). Each requires selecting the correct sentence endings from options provided. Output JSON array.`
-      + PROMPT_FORMAT_CONTRACT;
+      return `Passage:\n"""\n${passage}\n"""\n\nGenerate ${count} MATCHING_ENDINGS question(s). Each requires selecting the correct sentence endings from options provided. Output JSON array.`;
+
     default:
       throw new Error(`buildUserPrompt: unknown type "${type}"`);
   }

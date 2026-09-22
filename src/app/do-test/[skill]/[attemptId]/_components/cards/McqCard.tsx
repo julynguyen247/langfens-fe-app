@@ -75,9 +75,17 @@ export function McqCard({
               ) : null}
             </div>
 
-            {/* Option text */}
-            <div className="flex-1 text-xs sm:text-sm leading-relaxed font-sans">
-              {opt.contentMd}
+            {/* Option text & image */}
+            <div className="flex-1 text-xs sm:text-sm leading-relaxed font-sans space-y-2">
+              {opt.imageUrl && (
+                <img
+                  src={opt.imageUrl}
+                  alt={opt.altText || opt.contentMd || "Option image"}
+                  className="max-h-48 rounded-xl border border-slate-200 object-contain bg-slate-50"
+                  loading="lazy"
+                />
+              )}
+              {opt.contentMd ? <div>{opt.contentMd}</div> : null}
             </div>
           </button>
         );

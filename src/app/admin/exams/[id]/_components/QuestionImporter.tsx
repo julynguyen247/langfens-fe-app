@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { AdminQuestionUpsert } from "@/app/admin/_lib/types";
 import { QUESTION_TYPE_REGISTRY } from "@/app/admin/_lib/questionTypeRegistry";
 import { createQuestion } from "@/app/admin/_lib/adminApi";
-
+import { validateQuestionPayload } from "@/app/admin/_lib/validation";
 interface QuestionImporterProps {
   sectionId: string;
   onImported?: (count: number) => void;
@@ -122,6 +122,27 @@ function validateAndCoerce(raw: unknown, index: number, sectionId: string): Pars
     ShortAnswerAcceptTexts: shortAnswerAcceptTexts,
     ShortAnswerAcceptRegex: shortAnswerAcceptRegex,
   };
+  const issues = validateQuestionPayload({
+    type,
+    skill,
+    difficulty,
+    promptMd,
+    explanationMd: upsert.ExplanationMd,
+    imageUrl: upsert.ImageUrl,
+    options: options,
+    blankAcceptTexts: upsert.BlankAcceptTexts,
+    blankAcceptRegex: upsert.BlankAcceptRegex,
+    matchPairs: upsert.MatchPairs,
+    orderCorrects: upsert.OrderCorrects,
+    shortAnswerAcceptTexts: upsert.ShortAnswerAcceptTexts,
+    shortAnswerAcceptRegex: upsert.ShortAnswerAcceptRegex,
+  });
+
+  for (const issue of issues) {
+    if (issue.level === "error") {
+      errors.push(`[${issue.field}] ${issue.message}`);
+    }
+  }
 
   return {
     raw: obj,

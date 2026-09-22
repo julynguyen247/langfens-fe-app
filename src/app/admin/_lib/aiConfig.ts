@@ -1,3 +1,4 @@
+import { getToken } from "@/utils/cookie";
 export type AiProvider = "server-proxy" | "anthropic" | "openai" | "google";
 
 export interface AiConfig {
@@ -56,9 +57,15 @@ export async function callAi(
       ? `${base}/v1/autogen/questions`
       : `${base}/api/v1/autogen/questions`;
 
+    const token = typeof window !== "undefined" ? getToken() : null;
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
     const res = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({
         type: context?.type ?? "MULTIPLE_CHOICE_SINGLE",
         skill: context?.skill ?? "READING",

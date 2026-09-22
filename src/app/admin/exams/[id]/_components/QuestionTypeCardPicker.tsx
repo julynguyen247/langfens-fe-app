@@ -12,7 +12,10 @@ import {
 interface QuestionTypeCardPickerProps {
   initialType: string;
   initialSkill: string;
+  hasSectionPassage?: boolean;
+  sectionTitle?: string;
   onConfirm: (type: string, skill: string) => void;
+  onConfirmAiGenerate?: (type: string, skill: string) => void;
   onCancel: () => void;
 }
 
@@ -89,7 +92,10 @@ function TypeCard({
 export function QuestionTypeCardPicker({
   initialType,
   initialSkill,
+  hasSectionPassage,
+  sectionTitle,
   onConfirm,
+  onConfirmAiGenerate,
   onCancel,
 }: QuestionTypeCardPickerProps) {
   const [selectedType, setSelectedType] = useState<string>(initialType);
@@ -113,9 +119,7 @@ export function QuestionTypeCardPicker({
 
   const handlePick = (meta: QuestionTypeMeta) => {
     setSelectedType(meta.type);
-    if (meta.skillHints.length === 1) {
-      setSkill(meta.skillHints[0]);
-    } else if (!meta.skillHints.includes(skill)) {
+    if (meta.skillHints.length > 0 && !meta.skillHints.includes(skill)) {
       setSkill(meta.skillHints[0]);
     }
   };
@@ -125,50 +129,54 @@ export function QuestionTypeCardPicker({
       <div className="w-full max-w-3xl rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 shrink-0">
           <div>
-            <h2 className="text-base font-bold text-white">Choose Question Type</h2>
+            <h2 className="text-base font-bold text-white flex items-center gap-2">
+              <span>Choose Question Type</span>
+              {sectionTitle && (
+                <span className="text-xs font-normal text-slate-400">
+                  for &ldquo;{sectionTitle}&rdquo;
+                </span>
+              )}
+            </h2>
             <p className="text-xs text-slate-400 mt-0.5">
-              Pick how candidates will answer this question.
+              Select an IELTS question format from the 19 standard types.
             </p>
           </div>
           <button
             onClick={onCancel}
-            className="text-slate-500 hover:text-slate-300 text-xl leading-none"
+            className="text-slate-500 hover:text-slate-300 text-xl"
             aria-label="Close"
           >
             ✕
           </button>
         </div>
 
-        <div className="px-6 py-3 border-b border-slate-800/60 shrink-0">
-          <div className="flex items-center gap-2 overflow-x-auto">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mr-1 shrink-0">
-              Skill:
-            </span>
-            {["ALL", ...Object.values(QuestionSkill)].map((s) => (
-              <button
-                key={s}
-                onClick={() => setSkillFilter(s)}
-                className={`px-2.5 py-1 text-[11px] font-semibold rounded-md transition shrink-0 ${
-                  skillFilter === s
-                    ? "bg-indigo-600 text-white"
-                    : "bg-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-700"
-                }`}
-              >
-                {s}
-              </button>
-            ))}
-          </div>
+        <div className="px-6 py-2.5 border-b border-slate-800/60 bg-slate-950/40 shrink-0 flex items-center gap-1.5 overflow-x-auto">
+          <span className="text-[11px] font-semibold text-slate-400 mr-2">Filter skill:</span>
+          {["ALL", "READING", "LISTENING", "SPEAKING", "WRITING"].map((filter) => (
+            <button
+              key={filter}
+              type="button"
+              onClick={() => setSkillFilter(filter)}
+              className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition ${
+                skillFilter === filter
+                  ? "bg-indigo-600 text-white"
+                  : "bg-slate-800/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800"
+              }`}
+            >
+              {filter}
+            </button>
+          ))}
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
           {filteredCategories.length === 0 ? (
-            <div className="p-8 text-center text-xs text-slate-500">
-              No question types match this skill filter.
+            <div className="text-center py-12 text-slate-500 text-xs">
+              No question types match the filter &ldquo;{skillFilter}&rdquo;.
             </div>
           ) : (
             filteredCategories.map(({ cat, items }) => (
               <div key={cat}>
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center gap-2 mb-2.5">
                   <span className="text-sm">{CATEGORY_ICONS[cat]}</span>
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
                     {CATEGORY_LABELS[cat]}
@@ -216,21 +224,51 @@ export function QuestionTypeCardPicker({
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800/60">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="px-4 py-2 text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={() => onConfirm(selectedType, skill)}
-              className="px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 transition active:scale-95"
-            >
-              Create Question
-            </button>
+          <div className="flex items-center justify-between pt-2 border-t border-slate-800/60">
+            <div className="text-[11px] text-slate-500 hidden sm:block">
+              {hasSectionPassage && onConfirmAiGenerate ? (
+                <span>Generate questions from section passage, or create a blank template.</span>
+              ) : (
+                <span>Choose question type and skill to create.</span>
+              )}
+            </div>
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+              <button
+                type="button"
+                onClick={onCancel}
+                className="px-4 py-2 text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition"
+              >
+                Cancel
+              </button>
+              {hasSectionPassage && onConfirmAiGenerate ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => onConfirm(selectedType, skill)}
+                    className="px-3.5 py-2 text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition"
+                  >
+                    Create Blank Question
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onConfirmAiGenerate(selectedType, skill)}
+                    className="px-4 py-2 text-xs font-semibold rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-lg shadow-indigo-600/30 transition active:scale-95 flex items-center gap-1.5"
+                    title="Generates question content and options from the section passage for preview before saving."
+                  >
+                    <span>✨</span>
+                    <span>Generate with AI Preview</span>
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => onConfirm(selectedType, skill)}
+                  className="px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 transition active:scale-95"
+                >
+                  Create Question
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>

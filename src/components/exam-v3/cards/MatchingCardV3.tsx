@@ -12,14 +12,117 @@ interface MatchingCardV3Props {
   onChange?: (val: UserAnswerValue) => void;
 }
 
-function countStatementsInPrompt(prompt: string | null | undefined): number {
-  if (!prompt) return 0;
-  const text = prompt.replace(/\\n/g, "\n");
-  let count = 0;
-  const re = /^\d+\.\s+/gm;
+interface MatchingTarget {
+  key: string;
+  label: string;
+}
+
+function normalizeMatchPairs(raw: unknown): Record<string, string[]> {
+  const result: Record<string, string[]> = {};
+  if (!raw) return result;
+
+  if (Array.isArray(raw)) {
+    for (const item of raw) {
+      if (item && typeof item === "object") {
+        const key =
+          "promptKey" in item && typeof item.promptKey === "string"
+            ? item.promptKey
+            : "";
+        const values =
+          "acceptedValues" in item && Array.isArray(item.acceptedValues)
+            ? item.acceptedValues
+            : [];
+        if (key) {
+          result[key] = values as string[];
+        }
+      }
+    }
+    return result;
+  }
+
+  if (typeof raw === "object") {
+    for (const [k, v] of Object.entries(raw)) {
+      if (Array.isArray(v)) {
+        result[k] = v as string[];
+      }
+    }
+  }
+
+  return result;
+}
+
+function parseTargets(
+  promptMd: string | null | undefined,
+  matchPairs?: unknown
+): MatchingTarget[] {
+  const targets: MatchingTarget[] = [];
+  const text = (promptMd || "").replace(/\\n/g, "\n");
+  const normalizedPairs = normalizeMatchPairs(matchPairs);
+
+  if (Object.keys(normalizedPairs).length > 0) {
+    const keys = Object.keys(normalizedPairs).sort((a, b) => {
+      const na = Number(a);
+      const nb = Number(b);
+      if (!Number.isNaN(na) && !Number.isNaN(nb)) return na - nb;
+      return a.localeCompare(b);
+    });
+    for (const k of keys) {
+      const pair = normalizedPairs[k];
+      const label = pair && pair.length > 1 && pair[1] ? pair[1] : `Item ${k}`;
+      targets.push({ key: k, label });
+    }
+    return targets;
+  }
+
+  const numberedRe = /^(\d+)[\.\)]\s+(.+)$/gm;
   let m: RegExpExecArray | null;
-  while ((m = re.exec(text)) !== null) count++;
-  return count;
+  while ((m = numberedRe.exec(text)) !== null) {
+    targets.push({
+      key: m[1],
+      label: m[2].trim(),
+    });
+  }
+
+  if (targets.length > 0) return targets;
+
+  const headingParaMatch = text.match(
+    /(?:five|six|seven|eight|nine|ten|\d+)\s+paragraphs[,\s]+(?:1[–-](\d+)|([A-Z])[–-]([A-Z]))/i
+  );
+  if (headingParaMatch) {
+    if (headingParaMatch[1]) {
+      const total = parseInt(headingParaMatch[1], 10);
+      for (let i = 1; i <= total; i++) {
+        targets.push({ key: String(i), label: `Paragraph ${i}` });
+      }
+    } else if (headingParaMatch[2] && headingParaMatch[3]) {
+      const start = headingParaMatch[2].charCodeAt(0);
+      const end = headingParaMatch[3].charCodeAt(0);
+      let idx = 1;
+      for (let c = start; c <= end; c++, idx++) {
+        targets.push({
+          key: String(idx),
+          label: `Paragraph ${String.fromCharCode(c)}`,
+        });
+      }
+    }
+    if (targets.length > 0) return targets;
+  }
+
+  const rangeMatch = text.match(
+    /(?:initiatives?|statements?|sentences?|beginnings?|groups?|items?|questions?|paragraphs?)?\s*\(?\b(\d+)[–-](\d+)\b\)?/i
+  );
+  if (rangeMatch) {
+    const start = parseInt(rangeMatch[1], 10);
+    const end = parseInt(rangeMatch[2], 10);
+    if (end > start && end - start < 20) {
+      for (let i = start; i <= end; i++) {
+        targets.push({ key: String(i), label: `Item ${i}` });
+      }
+      if (targets.length > 0) return targets;
+    }
+  }
+
+  return [{ key: "1", label: "Item 1" }];
 }
 
 function parseCategoriesFromPrompt(
@@ -31,10 +134,7 @@ function parseCategoriesFromPrompt(
   const re = /^([A-Z])\.\s+(.+)$/gm;
   let m: RegExpExecArray | null;
   while ((m = re.exec(text)) !== null) {
-    out.push({
-      key: m[1].toLowerCase(),
-      label: `${m[1]}. ${m[2].trim()}`,
-    });
+    out.push({ key: m[1], label: m[2].trim() });
   }
   return out;
 }
@@ -48,19 +148,13 @@ export function MatchingCardV3({
   onChange,
 }: MatchingCardV3Props) {
   const isReview = mode === "review";
-  const pairs = matchPairs || {};
-  const promptKeys = Object.keys(pairs).sort();
-  const fallbackCount = countStatementsInPrompt(promptMd);
-  const effectiveKeys =
-    promptKeys.length > 0
-      ? promptKeys
-      : Array.from({ length: Math.max(fallbackCount, 1) }, (_, i) => String(i));
+  const pairs = normalizeMatchPairs(matchPairs);
+  const targets = parseTargets(promptMd, matchPairs);
 
   const userDict: Record<string, string> =
     value && typeof value === "object" && !Array.isArray(value)
       ? (value as Record<string, string>)
       : {};
-
   const handleSelect = (pKey: string, choiceKey: string) => {
     if (isReview || !onChange) return;
     const next = { ...userDict, [pKey]: choiceKey };
@@ -79,6 +173,7 @@ export function MatchingCardV3({
     }
   } else {
     const seen = new Set<string>();
+    const promptKeys = Object.keys(pairs).sort();
     for (const pKey of promptKeys) {
       const val = pairs[pKey];
       if (val && val[0]) {
@@ -117,14 +212,18 @@ export function MatchingCardV3({
 
       {/* Target Items List */}
       <div className="space-y-3">
-        {effectiveKeys.map((pKey) => {
+        {targets.map((target) => {
+          const pKey = target.key;
           const userChoice = (userDict[pKey] || "").toLowerCase().trim();
           const targetPair = pairs[pKey] || [];
           const correctKey = (targetPair[0] || "").toLowerCase().trim();
-          const correctLabel = targetPair[1] || targetPair[0] || "";
+          const correctLabel = targetPair[1] || targetPair[0] || target.label;
 
           const isMatchCorrect = Boolean(userChoice && userChoice === correctKey);
           const hasAnswered = Boolean(userChoice);
+          const selectedVal =
+            choices.find((c) => c.key.toLowerCase() === userChoice.toLowerCase())?.key ||
+            userChoice;
 
           if (!isReview) {
             // Exam Mode: Selector
@@ -133,25 +232,29 @@ export function MatchingCardV3({
                 key={pKey}
                 className="p-4 rounded-2xl border-2 border-slate-200 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs"
               >
-                <div className="flex items-center gap-2.5">
-                  <span className="font-mono text-xs font-bold text-[#2563EB] bg-blue-50 border border-blue-200 px-3 py-1 rounded-xl">
-                    Target [{pKey}]
+                <div className="flex items-start sm:items-center gap-2.5 min-w-0 flex-1">
+                  <span className="font-mono text-xs font-bold text-[#2563EB] bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-xl shrink-0">
+                    {target.key}
                   </span>
-                  <span className="text-xs font-bold text-slate-700">Choose match:</span>
+                  <span className="text-xs font-semibold text-slate-800">
+                    {target.label}
+                  </span>
                 </div>
 
-                <select
-                  value={userChoice}
-                  onChange={(e) => handleSelect(pKey, e.target.value)}
-                  className="bg-white border-2 border-slate-300 rounded-xl px-3.5 py-2 text-xs font-medium text-slate-800 focus:outline-none focus:border-[#2563EB] min-w-48 shadow-2xs cursor-pointer"
-                >
-                  <option value="">-- Select option --</option>
-                  {choices.map((c) => (
-                    <option key={c.key} value={c.key}>
-                      [{c.key}] {c.label}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex items-center gap-2 shrink-0">
+                  <select
+                    value={selectedVal}
+                    onChange={(e) => handleSelect(pKey, e.target.value)}
+                    className="bg-white border-2 border-slate-300 rounded-xl px-3.5 py-2 text-xs font-medium text-slate-800 focus:outline-none focus:border-[#2563EB] min-w-48 shadow-2xs cursor-pointer"
+                  >
+                    <option value="">-- Select option --</option>
+                    {choices.map((c) => (
+                      <option key={c.key} value={c.key}>
+                        [{c.key}] {c.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             );
           }
@@ -188,11 +291,13 @@ export function MatchingCardV3({
               className={`p-4 rounded-2xl border-2 space-y-3 transition-all ${borderStyle}`}
             >
               <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2.5">
-                  <span className="font-mono text-xs font-bold text-[#2563EB] bg-blue-50 border border-blue-200 px-3 py-1 rounded-xl">
-                    Target [{pKey}]
+                <div className="flex items-start sm:items-center gap-2.5 min-w-0 flex-1">
+                  <span className="font-mono text-xs font-bold text-[#2563EB] bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-xl shrink-0">
+                    {target.key}
                   </span>
-                  <span className="text-xs font-bold text-slate-700">Matched to</span>
+                  <span className="text-xs font-semibold text-slate-800">
+                    {target.label}
+                  </span>
                 </div>
 
                 {statusBadge}

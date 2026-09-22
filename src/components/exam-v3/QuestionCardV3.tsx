@@ -155,13 +155,13 @@ export function QuestionCardV3({
       return (
         <FlowChartCardV3
           orderCorrects={question.orderCorrects}
+          flowChartNodes={question.flowChartNodes}
           mode={mode}
           value={value}
           onChange={onAnswerChange}
         />
       );
     }
-
     return (
       <div className="p-3 text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-xl">
         Question type: {t}

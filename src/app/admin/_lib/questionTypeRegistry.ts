@@ -51,7 +51,7 @@ export const QUESTION_TYPE_REGISTRY: Record<string, QuestionTypeMeta> = {
     description: "Single answer accompanied by an image (rare).",
     category: "mcq",
     editorKind: "options",
-    skillHints: [QuestionSkill.Listening],
+    skillHints: [QuestionSkill.Reading, QuestionSkill.Listening],
     defaultDifficulty: 3,
   },
   [QuestionType.TrueFalseNotGiven]: {
@@ -121,7 +121,7 @@ export const QUESTION_TYPE_REGISTRY: Record<string, QuestionTypeMeta> = {
     description: "Fill a form-style layout with key facts.",
     category: "completion",
     editorKind: "blanks",
-    skillHints: [QuestionSkill.Listening],
+    skillHints: [QuestionSkill.Listening, QuestionSkill.Reading],
     defaultDifficulty: 2,
   },
   [QuestionType.SentenceCompletion]: {
@@ -161,7 +161,7 @@ export const QUESTION_TYPE_REGISTRY: Record<string, QuestionTypeMeta> = {
     description: "Label positions on a map.",
     category: "completion",
     editorKind: "blanks",
-    skillHints: [QuestionSkill.Listening],
+    skillHints: [QuestionSkill.Listening, QuestionSkill.Reading],
     defaultDifficulty: 3,
   },
   [QuestionType.MatchingHeading]: {
@@ -221,7 +221,7 @@ export const QUESTION_TYPE_REGISTRY: Record<string, QuestionTypeMeta> = {
     description: "Order steps in a flow chart sequence.",
     category: "ordering",
     editorKind: "flow-chart",
-    skillHints: [QuestionSkill.Listening],
+    skillHints: [QuestionSkill.Reading, QuestionSkill.Listening],
     defaultDifficulty: 3,
   },
 };

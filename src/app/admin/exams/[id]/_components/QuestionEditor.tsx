@@ -19,19 +19,21 @@ import { MatchingEndingsEditor } from "./editors/MatchingEndingsEditor";
 import { AdminQuestionPreview } from "@/components/admin/preview/AdminQuestionPreview";
 import { QuestionExporter } from "./QuestionExporter";
 import { QUESTION_TYPE_REGISTRY, getMeta } from "@/app/admin/_lib/questionTypeRegistry";
+import { generateQuestionsFromPassage } from "@/app/admin/_lib/questionGeneration";
 import {
   aggregateIssues,
-  defaultSkillForType,
   validateBlankKeyFormat,
   validateBlanks,
   validateDifficultyBounds,
   validateFlowChart,
   validateImageUrlRequired,
   validateMatchingHeadingPrompt,
+  validateMatchingPromptParity,
   validateMatchPairs,
   validateMcqIsCorrectCount,
   validateOptionsLength,
   validatePromptBlanksCoverage,
+  validateQuestionPayload,
   validateShortAnswer,
   validateShortAnswerSubQuestionCount,
   validateTypeSkill,
@@ -41,6 +43,7 @@ import {
 interface QuestionEditorProps {
   question: InternalDeliveryQuestion;
   sectionId: string;
+  sectionPassageMd?: string | null;
   sectionAudioUrl?: string | null;
   availableSections?: { id: string; title: string }[];
   onSave: (updated: InternalDeliveryQuestion) => Promise<void>;
@@ -51,6 +54,7 @@ interface QuestionEditorProps {
 export function QuestionEditor({
   question,
   sectionId,
+  sectionPassageMd,
   sectionAudioUrl,
   availableSections,
   onSave,
@@ -59,6 +63,7 @@ export function QuestionEditor({
 }: QuestionEditorProps) {
   const [isOpen, setIsOpen] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isAiGenerating, setIsAiGenerating] = useState(false);
   const [saveMessage, setSaveMessage] = useState<{ text: string; isError: boolean } | null>(null);
   const [showPreview, setShowPreview] = useState(false);
 
@@ -87,97 +92,30 @@ export function QuestionEditor({
     return () => window.removeEventListener("keydown", handler);
   });
 
-  const meta = useMemo(() => getMeta(draft.type), [draft.type]);
-
   const isDirty = useMemo(() => {
     return JSON.stringify(draft) !== JSON.stringify(initialRef.current);
   }, [draft]);
 
-  const hasMissingAudio =
-    draft.skill?.toUpperCase() === QuestionSkill.Listening.toUpperCase() &&
-    (!sectionAudioUrl || !sectionAudioUrl.trim());
+  const meta = getMeta(draft.type);
+  const isListening = draft.skill === QuestionSkill.Listening;
+  const hasMissingAudio = isListening && !sectionAudioUrl;
 
   const issues: ValidationIssue[] = useMemo(() => {
-    const out: ValidationIssue[] = [];
-    out.push(...validateTypeSkill(draft.type, draft.skill));
-    out.push(...validateMcqIsCorrectCount(draft.options || [], draft.type));
-    out.push(...validateOptionsLength(draft.options || [], draft.type));
-
-    const t = draft.type;
-    const ed = QUESTION_TYPE_REGISTRY[t]?.editorKind;
-
-    if (t === QuestionType.MatchingHeading) {
-      out.push(...validateMatchingHeadingPrompt(draft.promptMd));
-    }
-    if (t === QuestionType.ShortAnswer) {
-      out.push(
-        ...validateShortAnswerSubQuestionCount(draft.promptMd, draft.shortAnswerAcceptTexts || [])
-      );
-    }
-    if (
-      t === QuestionType.DiagramLabel ||
-      t === QuestionType.MapLabel ||
-      t === QuestionType.MultipleChoiceSingleImage
-    ) {
-      out.push(...validateImageUrlRequired(t, draft.imageUrl));
-    }
-    out.push(...validateDifficultyBounds(draft.difficulty));
-    if (ed === "blanks") {
-      out.push(
-        ...validateBlankKeyFormat(t, Object.keys(draft.blankAcceptTexts || {}))
-      );
-      out.push(
-        ...validatePromptBlanksCoverage(t, draft.promptMd, Object.keys(draft.blankAcceptTexts || {}))
-      );
-    }
-
-
-    if (
-      ed === "match-pairs" ||
-      ed === "matching-heading" ||
-      ed === "matching-information" ||
-      ed === "matching-features" ||
-      ed === "matching-endings"
-    ) {
-      out.push(
-        ...validateMatchPairs({
-          matchPairs: draft.matchPairs,
-          options: draft.options || [],
-          type: t,
-        })
-      );
-    } else if (ed === "classification") {
-      out.push(
-        ...validateMatchPairs({
-          matchPairs: draft.matchPairs,
-          options: draft.options || [],
-          type: t,
-        })
-      );
-    } else if (
-      ed === "blanks" ||
-      ed === "flow-chart"
-    ) {
-      out.push(
-        ...validateBlanks({
-          blankAcceptTexts: draft.blankAcceptTexts,
-          blankAcceptRegex: draft.blankAcceptRegex,
-          type: t,
-        })
-      );
-      if (ed === "flow-chart" && draft.orderCorrects) {
-        out.push(...validateFlowChart({ orderCorrects: draft.orderCorrects, type: t }));
-      }
-    } else if (ed === "short-answer") {
-      out.push(
-        ...validateShortAnswer({
-          shortAnswerAcceptTexts: draft.shortAnswerAcceptTexts,
-          shortAnswerAcceptRegex: draft.shortAnswerAcceptRegex,
-          type: t,
-        })
-      );
-    }
-    return out;
+    return validateQuestionPayload({
+      type: draft.type,
+      skill: draft.skill,
+      difficulty: draft.difficulty,
+      promptMd: draft.promptMd,
+      explanationMd: draft.explanationMd,
+      imageUrl: draft.imageUrl,
+      options: draft.options,
+      blankAcceptTexts: draft.blankAcceptTexts,
+      blankAcceptRegex: draft.blankAcceptRegex,
+      matchPairs: draft.matchPairs,
+      orderCorrects: draft.orderCorrects,
+      shortAnswerAcceptTexts: draft.shortAnswerAcceptTexts,
+      shortAnswerAcceptRegex: draft.shortAnswerAcceptRegex,
+    });
   }, [draft]);
 
   const hasErrors = issues.some((i) => i.level === "error");
@@ -228,6 +166,85 @@ export function QuestionEditor({
       setSaveMessage({ text: msg, isError: true });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleAiPopulate = async () => {
+    const passage = sectionPassageMd?.trim();
+    if (!passage) return;
+
+    const hasCustomContent =
+      (draft.promptMd &&
+        draft.promptMd.trim() !== "" &&
+        !draft.promptMd.startsWith(`Question ${draft.idx} prompt`)) ||
+      isDirty;
+
+    if (hasCustomContent) {
+      const confirmed = window.confirm(
+        "Replace current question draft with AI-generated content from section passage?"
+      );
+      if (!confirmed) return;
+    }
+
+    setIsAiGenerating(true);
+    try {
+      const result = await generateQuestionsFromPassage({
+        type: draft.type,
+        skill: draft.skill,
+        passage,
+        count: 1,
+        difficulty: draft.difficulty,
+        sectionId,
+      });
+
+      if (!result.questions || result.questions.length === 0) {
+        throw new Error("No question generated by AI.");
+      }
+
+      const eq = result.questions[0];
+      const existingOptions = draft.options || [];
+      const mappedOptions: InternalDeliveryOption[] = (eq.options || []).map((opt, optIdx) => {
+        const existing = existingOptions[optIdx];
+        const reuseId = existing?.id && !existing.id.startsWith("temp-") && !existing.id.startsWith("preset-")
+          ? existing.id
+          : `preset-${draft.id || "new"}-${opt.idx || optIdx + 1}`;
+        return {
+          id: reuseId,
+          questionId: draft.id || "",
+          idx: opt.idx,
+          contentMd: opt.contentMd,
+          isCorrect: opt.isCorrect,
+          imageUrl: opt.imageUrl ?? null,
+          altText: opt.altText ?? null,
+        };
+      });
+
+      setDraft((prev) => ({
+        ...prev,
+        promptMd: eq.upsert.PromptMd || "",
+        explanationMd: eq.upsert.ExplanationMd ?? null,
+        imageUrl: eq.upsert.ImageUrl ?? prev.imageUrl ?? null,
+        blankAcceptTexts: eq.upsert.BlankAcceptTexts ?? null,
+        blankAcceptRegex: eq.upsert.BlankAcceptRegex ?? null,
+        matchPairs: eq.upsert.MatchPairs ?? null,
+        orderCorrects: eq.upsert.OrderCorrects ?? null,
+        shortAnswerAcceptTexts: eq.upsert.ShortAnswerAcceptTexts ?? null,
+        shortAnswerAcceptRegex: eq.upsert.ShortAnswerAcceptRegex ?? null,
+        options: mappedOptions,
+      }));
+
+      setSaveMessage({
+        text: "✨ Populated draft from section passage! Review and save (Ctrl+S).",
+        isError: false,
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "AI generation failed";
+      setSaveMessage({
+        text: `AI generation failed: ${msg}`,
+        isError: true,
+      });
+    } finally {
+      setIsAiGenerating(false);
     }
   };
 
@@ -558,6 +575,28 @@ export function QuestionEditor({
             </svg>
             {showPreview ? "Hide" : "Preview"}
           </button>
+
+          {sectionPassageMd && (
+            <button
+              type="button"
+              disabled={isAiGenerating || isSaving}
+              onClick={handleAiPopulate}
+              className="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-gradient-to-r from-violet-600/30 to-fuchsia-600/30 hover:from-violet-600/40 hover:to-fuchsia-600/40 text-violet-200 border border-violet-500/40 transition flex items-center gap-1.5 disabled:opacity-50"
+              title="Auto-fill question content from section passage with AI"
+            >
+              {isAiGenerating ? (
+                <>
+                  <span className="w-3.5 h-3.5 border-2 border-violet-300/30 border-t-violet-300 rounded-full animate-spin" />
+                  <span>Generating...</span>
+                </>
+              ) : (
+                <>
+                  <span>✨</span>
+                  <span>AI Auto-fill</span>
+                </>
+              )}
+            </button>
+          )}
 
           {onDuplicate && (
             <button

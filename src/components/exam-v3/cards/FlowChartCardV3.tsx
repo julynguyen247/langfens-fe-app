@@ -5,24 +5,49 @@ import { UserAnswerValue } from "../types";
 
 interface FlowChartCardV3Props {
   orderCorrects?: string[] | null;
+  flowChartNodes?: Array<{ key: string; label: string }> | null;
   mode: "exam" | "review";
   value?: UserAnswerValue;
   onChange?: (val: UserAnswerValue) => void;
 }
+function isStructuredSteps(val: unknown): val is { steps: string[] } {
+  return (
+    typeof val === "object" &&
+    val !== null &&
+    "steps" in val &&
+    Array.isArray(val.steps)
+  );
+}
 
 export function FlowChartCardV3({
   orderCorrects,
+  flowChartNodes,
   mode,
   value,
   onChange,
 }: FlowChartCardV3Props) {
   const isReview = mode === "review";
-  const corrects = (orderCorrects || []).filter((x): x is string => Boolean(x));
+  const corrects = (
+    orderCorrects && orderCorrects.length > 0
+      ? orderCorrects
+      : flowChartNodes?.map((n) => n.key) || []
+  ).filter((x): x is string => Boolean(x));
+
   const userOrder: string[] = Array.isArray(value)
     ? (value as string[])
+    : isStructuredSteps(value)
+    ? value.steps
     : typeof value === "string" && value
     ? [value]
     : [];
+  const norm = (s: string) =>
+    s.toLowerCase().replace(/[-_]/g, " ").replace(/\s+/g, " ").trim();
+
+  const getLabel = (k: string) => {
+    const n = (flowChartNodes || []).find((node) => node.key === k);
+    if (n?.label) return n.label;
+    return k.replace(/-/g, " ");
+  };
 
   const handleStepChange = (idx: number, text: string) => {
     if (isReview || !onChange) return;
@@ -63,7 +88,7 @@ export function FlowChartCardV3({
             }
 
             // Review Mode
-            const isMatch = userStep.toLowerCase().trim() === step.toLowerCase().trim();
+            const isMatch = norm(userStep) === norm(step);
 
             return (
               <div
@@ -83,12 +108,12 @@ export function FlowChartCardV3({
                   <div className="text-xs font-medium text-slate-800">
                     <div>
                       <span className="font-bold text-slate-500 mr-2">Expected:</span>
-                      <span className="font-semibold text-slate-900">{step}</span>
+                      <span className="font-semibold text-slate-900 capitalize">{getLabel(step)}</span>
                     </div>
                     {userStep && !isMatch && (
                       <div className="mt-1 text-rose-700">
                         <span className="font-bold mr-2">Your answer:</span>
-                        <span className="line-through">{userStep}</span>
+                        <span className="line-through capitalize">{getLabel(userStep)}</span>
                       </div>
                     )}
                   </div>

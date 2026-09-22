@@ -181,6 +181,7 @@ export function AdminQuestionPreview({
       return (
         <FlowChartCardV3
           orderCorrects={question.orderCorrects}
+          flowChartNodes={question.flowChartNodes}
           mode="exam"
           value={value as never}
           onChange={(v) => setValue(v)}

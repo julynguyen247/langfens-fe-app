@@ -40,6 +40,7 @@ import { QuestionTypeCardPicker } from "./_components/QuestionTypeCardPicker";
 import { QuestionImporter } from "./_components/QuestionImporter";
 import { AiAuthorModal } from "./_components/AiAuthorModal";
 import { defaultSkillForType, validateSection } from "@/app/admin/_lib/validation";
+import { resolveSectionPassage } from "@/app/admin/_lib/questionGeneration";
 
 function extractErrorMessage(err: unknown): string {
   if (err && typeof err === "object") {
@@ -118,7 +119,14 @@ export default function AdminExamEditorPage({
 
   // Bulk import + AI author modals
   const [importSectionId, setImportSectionId] = useState<string | null>(null);
-  const [aiSectionId, setAiSectionId] = useState<string | null>(null);
+  const [aiModalConfig, setAiModalConfig] = useState<{
+    sectionId: string;
+    sectionTitle: string;
+    sectionPassage: string;
+    initialType?: string;
+    initialSkill?: string;
+    autoGenerate?: boolean;
+  } | null>(null);
 
   const loadExam = async () => {
     try {
@@ -364,7 +372,11 @@ export default function AdminExamEditorPage({
   };
 
   // ── Question Actions ───────────────────────────────────────────────────────
-  const handleAddQuestionToSection = async (sectionId: string) => {
+  const handleAddQuestionToSection = async (
+    sectionId: string,
+    overrideType?: string,
+    overrideSkill?: string
+  ) => {
     try {
       setCreatingQuestion(true);
       const targetSec = exam?.sections.find((s) => s.id === sectionId);
@@ -373,11 +385,14 @@ export default function AdminExamEditorPage({
           ? Math.max(...targetSec.questions.map((q) => q.idx)) + 1
           : 1;
 
+      const qType = overrideType || newQuestionType;
+      const qSkill = overrideSkill || newQuestionSkill;
+
       const upsertDto: AdminQuestionUpsert = {
         SectionId: sectionId,
         Idx: nextIdx,
-        Type: newQuestionType,
-        Skill: newQuestionSkill,
+        Type: qType,
+        Skill: qSkill,
         Difficulty: 1,
         PromptMd: `Question ${nextIdx} prompt`,
         ExplanationMd: null,
@@ -466,6 +481,23 @@ export default function AdminExamEditorPage({
       };
 
       await updateQuestion(updatedQ.id, updateDto);
+
+      // Delete any options that were removed
+      const originalQ = exam?.sections
+        .flatMap((s) => s.questions)
+        .find((q) => q.id === updatedQ.id);
+      const originalOptions = originalQ?.options || [];
+      const currentOptionIds = new Set((updatedQ.options || []).map((o) => o.id).filter(Boolean));
+
+      for (const oldOpt of originalOptions) {
+        if (oldOpt.id && !currentOptionIds.has(oldOpt.id) && !oldOpt.id.startsWith("temp-") && !oldOpt.id.startsWith("preset-")) {
+          try {
+            await deleteOption(oldOpt.id);
+          } catch {
+            // ignore
+          }
+        }
+      }
 
       // If question has options (MCQ / Heading choices), persist option rows
       if (updatedQ.options && updatedQ.options.length > 0) {
@@ -812,7 +844,17 @@ export default function AdminExamEditorPage({
                   </button>
                   <button
                     type="button"
-                    onClick={() => section.id && setAiSectionId(section.id)}
+                    onClick={() => {
+                      if (!section.id) return;
+                      setAiModalConfig({
+                        sectionId: section.id,
+                        sectionTitle: section.title,
+                        sectionPassage: resolveSectionPassage(section),
+                        initialType: "CLASSIFICATION",
+                        initialSkill: section.audioUrl ? "LISTENING" : "READING",
+                        autoGenerate: false,
+                      });
+                    }}
                     className="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-gradient-to-r from-violet-600/30 to-fuchsia-600/30 hover:from-violet-600/40 hover:to-fuchsia-600/40 text-violet-200 border border-violet-500/40 transition"
                     title="Generate questions with AI"
                   >
@@ -928,6 +970,7 @@ export default function AdminExamEditorPage({
                       key={question.id ? `${section.id}-${question.id}-${question.idx}` : `q-${section.id}-${question.idx}`}
                       question={question}
                       sectionId={section.id || ""}
+                      sectionPassageMd={resolveSectionPassage(section) || null}
                       sectionAudioUrl={section.audioUrl}
                       availableSections={exam?.sections
                         .filter((s) => s.id && s.id !== section.id)
@@ -1120,18 +1163,36 @@ export default function AdminExamEditorPage({
       )}
 
       {/* Modal: New Question Type Picker */}
-      {targetSectionForNewQuestion && (
-        <QuestionTypeCardPicker
-          initialType={newQuestionType}
-          initialSkill={newQuestionSkill}
-          onConfirm={(type, skill) => {
-            setNewQuestionType(type);
-            setNewQuestionSkill(skill);
-            handleAddQuestionToSection(targetSectionForNewQuestion);
-          }}
-          onCancel={() => setTargetSectionForNewQuestion(null)}
-        />
-      )}
+      {targetSectionForNewQuestion && (() => {
+        const targetSec = exam?.sections.find((s) => s.id === targetSectionForNewQuestion);
+        const passage = resolveSectionPassage(targetSec);
+        return (
+          <QuestionTypeCardPicker
+            initialType={newQuestionType}
+            initialSkill={newQuestionSkill}
+            hasSectionPassage={Boolean(passage.trim())}
+            sectionTitle={targetSec?.title}
+            onConfirm={(type, skill) => {
+              setNewQuestionType(type);
+              setNewQuestionSkill(skill);
+              handleAddQuestionToSection(targetSectionForNewQuestion, type, skill);
+            }}
+            onConfirmAiGenerate={(type, skill) => {
+              const secId = targetSectionForNewQuestion;
+              setTargetSectionForNewQuestion(null);
+              setAiModalConfig({
+                sectionId: secId,
+                sectionTitle: targetSec?.title || "",
+                sectionPassage: passage,
+                initialType: type,
+                initialSkill: skill,
+                autoGenerate: true,
+              });
+            }}
+            onCancel={() => setTargetSectionForNewQuestion(null)}
+          />
+        );
+      })()}
 
       {/* Modal: Bulk Import */}
       {importSectionId && (
@@ -1147,15 +1208,20 @@ export default function AdminExamEditorPage({
       )}
 
       {/* Modal: AI Author */}
-      {aiSectionId && (
+      {aiModalConfig && (
         <AiAuthorModal
-          sectionId={aiSectionId}
+          sectionId={aiModalConfig.sectionId}
+          sectionTitle={aiModalConfig.sectionTitle}
+          sectionPassage={aiModalConfig.sectionPassage}
+          initialType={aiModalConfig.initialType}
+          initialSkill={aiModalConfig.initialSkill}
+          autoGenerate={aiModalConfig.autoGenerate}
           onGenerated={(n) => {
-            setAiSectionId(null);
+            setAiModalConfig(null);
             showToast(`AI generated ${n} question(s)`, "success");
             loadExam();
           }}
-          onCancel={() => setAiSectionId(null)}
+          onCancel={() => setAiModalConfig(null)}
         />
       )}
 

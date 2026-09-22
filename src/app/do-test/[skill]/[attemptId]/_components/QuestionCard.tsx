@@ -125,6 +125,7 @@ export function QuestionCard({
         <FlowChartCard
           orderCorrects={question.orderCorrects}
           blankAcceptTexts={question.blankAcceptTexts}
+          flowChartNodes={question.flowChartNodes}
           promptMd={question.promptMd}
           value={value}
           onChange={onAnswerChange}
@@ -180,18 +181,83 @@ export function QuestionCard({
       {/* Prompt Markdown — strip the embedded [Diagram: …] / [Map: …] label list
           for DIAGRAM_LABEL/MAP_LABEL: CompletionCard renders those labels as a
           word bank above the input blanks. Without the strip the raw bracket
-          syntax leaks into the prompt. */}
-      {question.promptMd && (
-        <div className="text-sm font-medium text-slate-900 leading-relaxed font-sans prose prose-slate max-w-none">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>
-            {(question.type === QuestionType.DiagramLabel ||
-            question.type === QuestionType.MapLabel
-              ? question.promptMd.replace(/\[(Diagram|Map):\s*[^\]]+\]/gi, "")
-              : question.promptMd
-            ).trim()}
-          </ReactMarkdown>
-        </div>
-      )}
+          syntax leaks into the prompt.
+          For Matching types the promptMd often includes a raw "List of Headings: i. ... ii. ..."
+          paragraph — MatchingCard already renders the choices box so we strip
+          that paragraph here to avoid duplication and the wall-of-text problem. */}
+      {question.promptMd && (() => {
+        const isMatching =
+          question.type === QuestionType.MatchingHeading ||
+          question.type === QuestionType.MatchingInformation ||
+          question.type === QuestionType.MatchingFeatures ||
+          question.type === QuestionType.MatchingEndings ||
+          question.type === QuestionType.Classification;
+
+        const isDiagramMap =
+          question.type === QuestionType.DiagramLabel ||
+          question.type === QuestionType.MapLabel;
+
+        const isFlowChart = question.type === QuestionType.FlowChart;
+
+        let md = question.promptMd;
+
+        // Unescape literal \n stored in DB as a two-char sequence
+        md = md.replace(/\\n/g, "\n");
+
+        // Strip [Diagram/Map: ...] word-bank marker for diagram/map types
+        if (isDiagramMap) {
+          md = md.replace(/\[(Diagram|Map):\s*[^\]]+\]/gi, "");
+        }
+
+        // For Matching types: strip the "List of Headings: …" paragraph since
+        // MatchingCard already shows the choices box.
+        if (isMatching) {
+          const lohi = md.indexOf("List of Headings:");
+          if (lohi !== -1) md = md.slice(0, lohi);
+        }
+
+        // For FlowChart: strip the "Available steps: A. … B. …" list and
+        // the trailing "Arrange steps …" instruction — FlowChartCard renders
+        // the draggable tiles itself.
+        if (isFlowChart) {
+          const avail = md.search(/Available steps[:\s]/i);
+          if (avail !== -1) md = md.slice(0, avail);
+          const arrange = md.search(/Arrange (the )?steps?\s/i);
+          if (arrange !== -1) md = md.slice(0, arrange);
+        }
+
+        // Ensure single \n becomes double \n so ReactMarkdown renders proper
+        // paragraph breaks — BUT:
+        //   • table rows (lines starting with "|") must stay consecutive
+        //   • lines inside fenced code blocks (``` ... ```) must stay consecutive
+        {
+          const lines = md.split("\n");
+          const out: string[] = [];
+          let inFence = false;
+          for (let i = 0; i < lines.length; i++) {
+            const cur = lines[i];
+            if (cur.trimStart().startsWith("```")) inFence = !inFence;
+            out.push(cur);
+            if (i < lines.length - 1 && !inFence) {
+              const curT = cur.trimStart();
+              const nxtT = lines[i + 1].trimStart();
+              if (!curT.startsWith("|") && !nxtT.startsWith("|")) {
+                out.push("");
+              }
+            }
+          }
+          md = out.join("\n");
+        }
+
+        md = md.trim();
+        if (!md) return null;
+
+        return (
+          <div className="text-sm font-medium text-slate-900 leading-relaxed font-sans prose prose-slate max-w-none">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{md}</ReactMarkdown>
+          </div>
+        );
+      })()}
 
       {/* Interactive question card */}
       <div>{renderBody()}</div>

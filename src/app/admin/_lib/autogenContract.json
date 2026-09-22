@@ -1,0 +1,974 @@
+{
+  "version": 1,
+  "sourceExamId": "11111111-1111-1111-1111-111111111111",
+  "sourceQuestionCount": 25,
+  "sourceTypeCount": 18,
+  "supplementalTypes": [
+    "SUMMARY_COMPLETION"
+  ],
+  "globalConstraints": [
+    "Use the requested type, skill and integer difficulty. Question type does not imply LISTENING; all source exam examples are READING.",
+    "Create original questions grounded only in the supplied passage. Examples show the wire format, not content to copy.",
+    "Use only answer fields relevant to the question type; omit unrelated answer families.",
+    "Options use positive indices; booleans are JSON true/false, never strings."
+  ],
+  "constraints": {
+    "CLASSIFICATION": [
+      "Include a non-empty options[] choice pool; label each contentMd with its grading key (A., B. or i., ii.).",
+      "matchPairs keys are positive numeric strings matching numbered items in promptMd; they need not start at 1.",
+      "Each matchPairs value starts with an accepted key from options[]. Include a display label as value[1] for MATCHING_*; it is optional for CLASSIFICATION.",
+      "Every item to be matched must be visible in promptMd without revealing its answer."
+    ],
+    "DIAGRAM_LABEL": [
+      "blankAcceptTexts is a non-empty dictionary of positive numeric keys to non-empty string arrays.",
+      "Every blank uses canonical [N] markers matching the answer dictionary exactly. Keys may continue paper-wide numbering; do not renumber them unnecessarily.",
+      "Do not emit underscores, spaced brackets or blank-q placeholders.",
+      "An imageUrl at question level is required. Reuse a supplied image asset; never invent an image URL. Existing [Diagram: ...]/[Map: ...] word-bank markers are supported."
+    ],
+    "FLOW_CHART": [
+      "FLOW_CHART is process sequencing, not fill-in-the-blank.",
+      "orderCorrects contains at least two distinct lowercase hyphenated step slugs in the correct order.",
+      "promptMd describes the task and lists available steps as A., B., C. in shuffled order. Do not reveal the correct sequence.",
+      "Do not include [N] blanks, blankAcceptTexts or matchPairs. Delivery generates shuffled flowChartNodes from orderCorrects."
+    ],
+    "FORM_COMPLETION": [
+      "blankAcceptTexts is a non-empty dictionary of positive numeric keys to non-empty string arrays.",
+      "Every blank uses canonical [N] markers matching the answer dictionary exactly. Keys may continue paper-wide numbering; do not renumber them unnecessarily.",
+      "Do not emit underscores, spaced brackets or blank-q placeholders."
+    ],
+    "MAP_LABEL": [
+      "blankAcceptTexts is a non-empty dictionary of positive numeric keys to non-empty string arrays.",
+      "Every blank uses canonical [N] markers matching the answer dictionary exactly. Keys may continue paper-wide numbering; do not renumber them unnecessarily.",
+      "Do not emit underscores, spaced brackets or blank-q placeholders.",
+      "An imageUrl at question level is required. Reuse a supplied image asset; never invent an image URL. Existing [Diagram: ...]/[Map: ...] word-bank markers are supported."
+    ],
+    "MATCHING_ENDINGS": [
+      "Include a non-empty options[] choice pool; label each contentMd with its grading key (A., B. or i., ii.).",
+      "matchPairs keys are positive numeric strings matching numbered items in promptMd; they need not start at 1.",
+      "Each matchPairs value starts with an accepted key from options[]. Include a display label as value[1] for MATCHING_*; it is optional for CLASSIFICATION.",
+      "Every item to be matched must be visible in promptMd without revealing its answer."
+    ],
+    "MATCHING_FEATURES": [
+      "Include a non-empty options[] choice pool; label each contentMd with its grading key (A., B. or i., ii.).",
+      "matchPairs keys are positive numeric strings matching numbered items in promptMd; they need not start at 1.",
+      "Each matchPairs value starts with an accepted key from options[]. Include a display label as value[1] for MATCHING_*; it is optional for CLASSIFICATION.",
+      "Every item to be matched must be visible in promptMd without revealing its answer."
+    ],
+    "MATCHING_HEADING": [
+      "Include a non-empty options[] choice pool; label each contentMd with its grading key (A., B. or i., ii.).",
+      "matchPairs keys are positive numeric strings matching numbered items in promptMd; they need not start at 1.",
+      "Each matchPairs value starts with an accepted key from options[]. Include a display label as value[1] for MATCHING_*; it is optional for CLASSIFICATION.",
+      "Every item to be matched must be visible in promptMd without revealing its answer.",
+      "List paragraph targets as numbered items and include the Roman-numeral heading pool in promptMd and options[]."
+    ],
+    "MATCHING_INFORMATION": [
+      "Include a non-empty options[] choice pool; label each contentMd with its grading key (A., B. or i., ii.).",
+      "matchPairs keys are positive numeric strings matching numbered items in promptMd; they need not start at 1.",
+      "Each matchPairs value starts with an accepted key from options[]. Include a display label as value[1] for MATCHING_*; it is optional for CLASSIFICATION.",
+      "Every item to be matched must be visible in promptMd without revealing its answer."
+    ],
+    "MULTIPLE_CHOICE_MULTIPLE": [
+      "Include at least two options with boolean isCorrect values and non-empty contentMd.",
+      "At least two correct options."
+    ],
+    "MULTIPLE_CHOICE_SINGLE": [
+      "Include at least two options with boolean isCorrect values and non-empty contentMd.",
+      "Exactly one correct option."
+    ],
+    "MULTIPLE_CHOICE_SINGLE_IMAGE": [
+      "Include at least two options with boolean isCorrect values and non-empty contentMd.",
+      "Exactly one correct option.",
+      "Images belong to options[].imageUrl with non-empty altText. A question-level imageUrl is optional when all options have images. Use supplied image assets, never invented URLs."
+    ],
+    "NOTE_COMPLETION": [
+      "blankAcceptTexts is a non-empty dictionary of positive numeric keys to non-empty string arrays.",
+      "Every blank uses canonical [N] markers matching the answer dictionary exactly. Keys may continue paper-wide numbering; do not renumber them unnecessarily.",
+      "Do not emit underscores, spaced brackets or blank-q placeholders."
+    ],
+    "SENTENCE_COMPLETION": [
+      "blankAcceptTexts is a non-empty dictionary of positive numeric keys to non-empty string arrays.",
+      "Every blank uses canonical [N] markers matching the answer dictionary exactly. Keys may continue paper-wide numbering; do not renumber them unnecessarily.",
+      "Do not emit underscores, spaced brackets or blank-q placeholders."
+    ],
+    "SHORT_ANSWER": [
+      "shortAnswerAcceptTexts contains at least one non-empty accepted answer."
+    ],
+    "SUMMARY_COMPLETION": [
+      "blankAcceptTexts is a non-empty dictionary of positive numeric keys to non-empty string arrays.",
+      "Every blank uses canonical [N] markers matching the answer dictionary exactly. Keys may continue paper-wide numbering; do not renumber them unnecessarily.",
+      "Do not emit underscores, spaced brackets or blank-q placeholders."
+    ],
+    "TABLE_COMPLETION": [
+      "blankAcceptTexts is a non-empty dictionary of positive numeric keys to non-empty string arrays.",
+      "Every blank uses canonical [N] markers matching the answer dictionary exactly. Keys may continue paper-wide numbering; do not renumber them unnecessarily.",
+      "Do not emit underscores, spaced brackets or blank-q placeholders."
+    ],
+    "TRUE_FALSE_NOT_GIVEN": [
+      "Exactly three distinct options labelled True, False, Not Given; exactly one isCorrect=true.",
+      "The answer must be unambiguous and grounded in the source passage."
+    ],
+    "YES_NO_NOT_GIVEN": [
+      "Exactly three distinct options labelled Yes, No, Not Given; exactly one isCorrect=true.",
+      "The answer must be unambiguous and grounded in the source passage."
+    ]
+  },
+  "examples": [
+    {
+      "sourceQuestion": 1,
+      "question": {
+        "type": "MULTIPLE_CHOICE_SINGLE",
+        "skill": "READING",
+        "difficulty": 2,
+        "promptMd": "Before the invention of paper, which of the following materials was NOT commonly used for writing?",
+        "options": [
+          {
+            "idx": 1,
+            "contentMd": "A. Papyrus and parchment",
+            "isCorrect": false
+          },
+          {
+            "idx": 2,
+            "contentMd": "B. Clay tablets and bamboo",
+            "isCorrect": false
+          },
+          {
+            "idx": 3,
+            "contentMd": "C. Papyrus, parchment, clay tablets and bamboo",
+            "isCorrect": true
+          },
+          {
+            "idx": 4,
+            "contentMd": "D. Animal skins and wood",
+            "isCorrect": false
+          }
+        ]
+      }
+    },
+    {
+      "sourceQuestion": 2,
+      "question": {
+        "type": "TRUE_FALSE_NOT_GIVEN",
+        "skill": "READING",
+        "difficulty": 2,
+        "promptMd": "Cai Lun was the first person to produce paper from wood pulp.",
+        "options": [
+          {
+            "idx": 1,
+            "contentMd": "True",
+            "isCorrect": true
+          },
+          {
+            "idx": 2,
+            "contentMd": "False",
+            "isCorrect": false
+          },
+          {
+            "idx": 3,
+            "contentMd": "Not Given",
+            "isCorrect": false
+          }
+        ]
+      }
+    },
+    {
+      "sourceQuestion": 3,
+      "question": {
+        "type": "SENTENCE_COMPLETION",
+        "skill": "READING",
+        "difficulty": 2,
+        "promptMd": "Complete the sentences.\nWrite ONE OR TWO WORDS from the passage for each answer.\n\n3. The earliest paper was produced in China during the [3] Dynasty.\n4. Arab armies acquired papermaking knowledge after defeating Chinese soldiers along the [4] in the 8th century.\n5. The Fourdrinier machine enabled paper to be made continuously from [5] rather than by hand.",
+        "blankAcceptTexts": {
+          "3": [
+            "Han"
+          ],
+          "4": [
+            "Silk Road"
+          ],
+          "5": [
+            "wood pulp"
+          ]
+        }
+      }
+    },
+    {
+      "sourceQuestion": 4,
+      "question": {
+        "type": "TABLE_COMPLETION",
+        "skill": "READING",
+        "difficulty": 3,
+        "promptMd": "Complete the table below.\nWrite ONE OR TWO WORDS from the passage for each answer.\n\n| Period | Region | Raw Material Used | Quality Issues |\n|--------|--------|-------------------|----------------|\n| 8th–12th century | Arab world and Europe | [6] | Lower quality than Chinese |\n| Early 19th century | Europe | Wood pulp | [7] |",
+        "blankAcceptTexts": {
+          "6": [
+            "linen and cotton rags",
+            "cotton",
+            "linen and cotton"
+          ],
+          "7": [
+            "acidic",
+            "degrades fast",
+            "becomes acidic",
+            "faster degradation"
+          ]
+        }
+      }
+    },
+    {
+      "sourceQuestion": 5,
+      "question": {
+        "type": "FLOW_CHART",
+        "skill": "READING",
+        "difficulty": 2,
+        "promptMd": "The flow chart below illustrates the traditional papermaking process invented by Cai Lun as described in the passage.\n\n```\n┌─────────────────────────────────────────────────────────────┐\n│                           STAGE 1                           │\n│   Collect raw materials such as rags, hemp, and fishnets    │\n└──────────────────────────────┬──────────────────────────────┘\n                               │\n                               ▼\n┌─────────────────────────────────────────────────────────────┐\n│                           STAGE 2                           │\n│          Soak the raw fibres in water to soften them        │\n└──────────────────────────────┬──────────────────────────────┘\n                               │\n                               ▼\n┌─────────────────────────────────────────────────────────────┐\n│                           STAGE 3                           │\n│         Press the fibres together into a fibrous mat        │\n└──────────────────────────────┬──────────────────────────────┘\n                               │\n                               ▼\n┌─────────────────────────────────────────────────────────────┐\n│                           STAGE 4                           │\n│             Dry the resulting sheets in the sun             │\n└─────────────────────────────────────────────────────────────┘\n```\n\nLook at the four steps of the papermaking process below and put them into the correct chronological order:\n\nAvailable steps:\n\nA. Soak the raw fibres in water to soften them\n\nB. Dry the resulting sheets in the sun\n\nC. Collect raw materials such as rags, hemp, and fishnets\n\nD. Press the fibres together into a fibrous mat\n\nArrange steps in the correct chronological order:",
+        "orderCorrects": [
+          "collect-raw-materials-such-as-rags-hemp-and-fishnets",
+          "soak-the-raw-fibres-in-water-to-soften-them",
+          "press-the-fibres-together-into-a-fibrous-mat",
+          "dry-the-resulting-sheets-in-the-sun"
+        ]
+      }
+    },
+    {
+      "sourceQuestion": 6,
+      "question": {
+        "type": "MATCHING_HEADING",
+        "skill": "READING",
+        "difficulty": 3,
+        "promptMd": "The reading passage has five paragraphs, 1–5.\nChoose the correct heading for each paragraph from the list of headings below.\n\nList of Headings:\ni. How museum purposes have changed over time\nii. The economic model of major international exhibitions\niii. Digital technology and its effect on visitor experience\niv. Disputes over the ownership of cultural artefacts\nv. Museums as neighbourhood service centres\nvi. The difference between local visitors and tourists\nvii. Funding challenges for smaller cultural institutions\n\nParagraphs:\n1. Paragraph 1\n2. Paragraph 2\n3. Paragraph 3\n4. Paragraph 4\n5. Paragraph 5",
+        "matchPairs": {
+          "1": [
+            "i",
+            "How museum purposes have changed over time"
+          ],
+          "2": [
+            "ii",
+            "The economic model of major international exhibitions"
+          ],
+          "3": [
+            "iii",
+            "Digital technology and its effect on visitor experience"
+          ],
+          "4": [
+            "iv",
+            "Disputes over the ownership of cultural artefacts"
+          ],
+          "5": [
+            "v",
+            "Museums as neighbourhood service centres"
+          ]
+        },
+        "options": [
+          {
+            "idx": 1,
+            "contentMd": "i. How museum purposes have changed over time",
+            "isCorrect": false
+          },
+          {
+            "idx": 2,
+            "contentMd": "ii. The economic model of major international exhibitions",
+            "isCorrect": false
+          },
+          {
+            "idx": 3,
+            "contentMd": "iii. Digital technology and its effect on visitor experience",
+            "isCorrect": false
+          },
+          {
+            "idx": 4,
+            "contentMd": "iv. Disputes over the ownership of cultural artefacts",
+            "isCorrect": false
+          },
+          {
+            "idx": 5,
+            "contentMd": "v. Museums as neighbourhood service centres",
+            "isCorrect": false
+          },
+          {
+            "idx": 6,
+            "contentMd": "vi. The difference between local visitors and tourists",
+            "isCorrect": false
+          },
+          {
+            "idx": 7,
+            "contentMd": "vii. Funding challenges for smaller cultural institutions",
+            "isCorrect": false
+          }
+        ]
+      }
+    },
+    {
+      "sourceQuestion": 7,
+      "question": {
+        "type": "MATCHING_INFORMATION",
+        "skill": "READING",
+        "difficulty": 3,
+        "promptMd": "The reading passage has five paragraphs, A–E.\nWhich paragraph contains the following information?\n\nWrite the correct letter, A–E, on your answer sheet.\nNB You may use any letter more than once.\n\nQuestions 1–4:\n1. Commercial pressures and blockbuster exhibitions\n2. Technology reshaping the museum experience\n3. Ethical complexities of colonial-era collections\n4. Community outreach and social programmes",
+        "matchPairs": {
+          "1": [
+            "B",
+            "Commercial pressures and blockbuster exhibitions"
+          ],
+          "2": [
+            "C",
+            "Technology reshaping the museum experience"
+          ],
+          "3": [
+            "D",
+            "Ethical complexities of colonial-era collections"
+          ],
+          "4": [
+            "E",
+            "Community outreach and social programmes"
+          ]
+        },
+        "options": [
+          {
+            "idx": 1,
+            "contentMd": "A. Paragraph A",
+            "isCorrect": false
+          },
+          {
+            "idx": 2,
+            "contentMd": "B. Paragraph B",
+            "isCorrect": false
+          },
+          {
+            "idx": 3,
+            "contentMd": "C. Paragraph C",
+            "isCorrect": false
+          },
+          {
+            "idx": 4,
+            "contentMd": "D. Paragraph D",
+            "isCorrect": false
+          },
+          {
+            "idx": 5,
+            "contentMd": "E. Paragraph E",
+            "isCorrect": false
+          }
+        ]
+      }
+    },
+    {
+      "sourceQuestion": 8,
+      "question": {
+        "type": "YES_NO_NOT_GIVEN",
+        "skill": "READING",
+        "difficulty": 2,
+        "promptMd": "All museums are now required to return objects taken during the colonial period.",
+        "options": [
+          {
+            "idx": 1,
+            "contentMd": "Yes",
+            "isCorrect": true
+          },
+          {
+            "idx": 2,
+            "contentMd": "No",
+            "isCorrect": false
+          },
+          {
+            "idx": 3,
+            "contentMd": "Not Given",
+            "isCorrect": false
+          }
+        ]
+      }
+    },
+    {
+      "sourceQuestion": 9,
+      "question": {
+        "type": "MATCHING_FEATURES",
+        "skill": "READING",
+        "difficulty": 3,
+        "promptMd": "Look at the following museum initiatives and the list of features below.\nMatch each initiative (1–4) with the correct feature (A–E).\nNote: One feature will NOT be matched.\n\nInitiatives:\n1. Blockbuster exhibitions\n2. Digital technology\n3. Repatriation debates\n4. Community programmes",
+        "matchPairs": {
+          "1": [
+            "A",
+            "Blockbuster exhibitions"
+          ],
+          "2": [
+            "E",
+            "Digital technology"
+          ],
+          "3": [
+            "B",
+            "Repatriation debates"
+          ],
+          "4": [
+            "C",
+            "Community programmes"
+          ]
+        },
+        "options": [
+          {
+            "idx": 1,
+            "contentMd": "A. Generates significant income",
+            "isCorrect": false
+          },
+          {
+            "idx": 2,
+            "contentMd": "B. Raises ethical questions about ownership",
+            "isCorrect": false
+          },
+          {
+            "idx": 3,
+            "contentMd": "C. Includes non-cultural activities such as language classes",
+            "isCorrect": false
+          },
+          {
+            "idx": 4,
+            "contentMd": "D. Involves borrowing objects from other countries",
+            "isCorrect": false
+          },
+          {
+            "idx": 5,
+            "contentMd": "E. Makes use of digital devices and software",
+            "isCorrect": false
+          }
+        ]
+      }
+    },
+    {
+      "sourceQuestion": 10,
+      "question": {
+        "type": "MATCHING_ENDINGS",
+        "skill": "READING",
+        "difficulty": 3,
+        "promptMd": "Complete each sentence with the correct ending, A–F, below.\nWrite the correct letter on your answer sheet.\n\nSentence beginnings:\n1. While blockbuster exhibitions attract large numbers of visitors…\n2. When a museum shares a high-resolution digital image online…\n3. Revenue from commercial activities can be reinvested…\n4. Modern museums increasingly see themselves as having…",
+        "matchPairs": {
+          "1": [
+            "A",
+            "While blockbuster exhibitions attract large numbers of visitors…"
+          ],
+          "2": [
+            "B",
+            "When a museum shares a high-resolution digital image online…"
+          ],
+          "3": [
+            "C",
+            "Revenue from commercial activities can be reinvested…"
+          ],
+          "4": [
+            "D",
+            "Modern museums increasingly see themselves as having…"
+          ]
+        },
+        "options": [
+          {
+            "idx": 1,
+            "contentMd": "A. …the crowds they draw can overshadow the museum's educational mission",
+            "isCorrect": false
+          },
+          {
+            "idx": 2,
+            "contentMd": "B. …raise questions about what it means to 'possess' a work of art",
+            "isCorrect": false
+          },
+          {
+            "idx": 3,
+            "contentMd": "C. …which can then be used to support the institution's core activities",
+            "isCorrect": false
+          },
+          {
+            "idx": 4,
+            "contentMd": "D. …a responsibility to serve the local community beyond tourism",
+            "isCorrect": false
+          },
+          {
+            "idx": 5,
+            "contentMd": "E. …the digital version has been shared freely with other institutions",
+            "isCorrect": false
+          },
+          {
+            "idx": 6,
+            "contentMd": "F. …which can only be resolved through international agreements",
+            "isCorrect": false
+          }
+        ]
+      }
+    },
+    {
+      "sourceQuestion": 11,
+      "question": {
+        "type": "DIAGRAM_LABEL",
+        "skill": "READING",
+        "difficulty": 2,
+        "promptMd": "Label the diagram using words from the passage.\n\n[Diagram: Vertical Farm System — showing stacked growing shelves, LED lights, hydroponic pipes, and a climate control panel]",
+        "imageUrl": "https://placehold.co/600x400/png?text=Vertical+Farm+System",
+        "blankAcceptTexts": {
+          "1": [
+            "LED lights",
+            "LED"
+          ],
+          "2": [
+            "hydroponic pipes",
+            "hydroponic system",
+            "hydroponics"
+          ],
+          "3": [
+            "climate control",
+            "climate control panel"
+          ],
+          "4": [
+            "stacked layers",
+            "stacked growing shelves",
+            "growing shelves"
+          ]
+        }
+      }
+    },
+    {
+      "sourceQuestion": 12,
+      "question": {
+        "type": "FLOW_CHART",
+        "skill": "READING",
+        "difficulty": 2,
+        "promptMd": "Look at the four steps of the vertical farming process below and put them in the correct chronological order.\n\nAvailable steps:\n\nA. LED lights simulate natural sunlight\n\nB. Sensors monitor plant health in real time\n\nC. Hydroponic systems deliver nutrients to plant roots\n\nD. Workers harvest and package the produce for supermarkets\n\nArrange steps in the correct chronological order:",
+        "orderCorrects": [
+          "led-lights-simulate-natural-sunlight",
+          "hydroponic-systems-deliver-nutrients",
+          "sensors-monitor-plant-health",
+          "workers-harvest-and-package"
+        ]
+      }
+    },
+    {
+      "sourceQuestion": 13,
+      "question": {
+        "type": "SHORT_ANSWER",
+        "skill": "READING",
+        "difficulty": 2,
+        "promptMd": "What city was home to Green City Farms, a former textile factory converted into a vertical farm?",
+        "shortAnswerAcceptTexts": [
+          "Detroit"
+        ]
+      }
+    },
+    {
+      "sourceQuestion": 14,
+      "question": {
+        "type": "SHORT_ANSWER",
+        "skill": "READING",
+        "difficulty": 2,
+        "promptMd": "What proportion of total production expenses can energy costs represent in vertical farming?",
+        "shortAnswerAcceptTexts": [
+          "50 percent",
+          "50%",
+          "fifty percent",
+          "half"
+        ]
+      }
+    },
+    {
+      "sourceQuestion": 15,
+      "question": {
+        "type": "SHORT_ANSWER",
+        "skill": "READING",
+        "difficulty": 2,
+        "promptMd": "How many indoor farms does Spread Co. operate in Japan?",
+        "shortAnswerAcceptTexts": [
+          "18",
+          "eighteen"
+        ]
+      }
+    },
+    {
+      "sourceQuestion": 16,
+      "question": {
+        "type": "MULTIPLE_CHOICE_SINGLE",
+        "skill": "READING",
+        "difficulty": 3,
+        "promptMd": "According to the passage, which of the following is a stated limitation of vertical farming?",
+        "options": [
+          {
+            "idx": 1,
+            "contentMd": "A. Staple crops like wheat and rice cannot be grown economically",
+            "isCorrect": true
+          },
+          {
+            "idx": 2,
+            "contentMd": "B. LED lights are too expensive for commercial use",
+            "isCorrect": false
+          },
+          {
+            "idx": 3,
+            "contentMd": "C. Hydroponic systems require constant human supervision",
+            "isCorrect": false
+          },
+          {
+            "idx": 4,
+            "contentMd": "D. Vertical farms can only produce leafy greens",
+            "isCorrect": false
+          }
+        ]
+      }
+    },
+    {
+      "sourceQuestion": 17,
+      "question": {
+        "type": "MULTIPLE_CHOICE_MULTIPLE",
+        "skill": "READING",
+        "difficulty": 3,
+        "promptMd": "Which THREE of the following benefits of remote work are mentioned in the passage?",
+        "options": [
+          {
+            "idx": 1,
+            "contentMd": "A. Increased job satisfaction",
+            "isCorrect": true
+          },
+          {
+            "idx": 2,
+            "contentMd": "B. Reduced commuting time",
+            "isCorrect": true
+          },
+          {
+            "idx": 3,
+            "contentMd": "C. Higher salaries",
+            "isCorrect": false
+          },
+          {
+            "idx": 4,
+            "contentMd": "D. Improved work-life balance",
+            "isCorrect": true
+          },
+          {
+            "idx": 5,
+            "contentMd": "E. Better access to mentorship",
+            "isCorrect": false
+          },
+          {
+            "idx": 6,
+            "contentMd": "F. Reduced presenteeism",
+            "isCorrect": false
+          }
+        ]
+      }
+    },
+    {
+      "sourceQuestion": 18,
+      "question": {
+        "type": "NOTE_COMPLETION",
+        "skill": "READING",
+        "difficulty": 2,
+        "promptMd": "Complete the notes below.\nWrite ONE OR TWO WORDS from the passage for each answer.\n\nRemote Work: Key Findings\n\n• Study covered [18] countries\n• [19] percent of remote workers felt more satisfied with their jobs\n• 58 percent experienced [20] — difficulty disconnecting after work hours\n• Some companies introduced [21]-free hours to protect employee downtime\n• Four-day work weeks can increase productivity by up to [22] percent",
+        "blankAcceptTexts": {
+          "18": [
+            "16",
+            "sixteen"
+          ],
+          "19": [
+            "74"
+          ],
+          "20": [
+            "presenteeism"
+          ],
+          "21": [
+            "digital"
+          ],
+          "22": [
+            "40",
+            "forty"
+          ]
+        }
+      }
+    },
+    {
+      "sourceQuestion": 19,
+      "question": {
+        "type": "YES_NO_NOT_GIVEN",
+        "skill": "READING",
+        "difficulty": 2,
+        "promptMd": "All industries have been able to adopt remote work to the same degree.",
+        "options": [
+          {
+            "idx": 1,
+            "contentMd": "Yes",
+            "isCorrect": false
+          },
+          {
+            "idx": 2,
+            "contentMd": "No",
+            "isCorrect": true
+          },
+          {
+            "idx": 3,
+            "contentMd": "Not Given",
+            "isCorrect": false
+          }
+        ]
+      }
+    },
+    {
+      "sourceQuestion": 20,
+      "question": {
+        "type": "MATCHING_FEATURES",
+        "skill": "READING",
+        "difficulty": 3,
+        "promptMd": "Match each group (1–3) with the correct feature (A–E).\nNote: Two features will NOT be used.\n\nGroups:\n1. Remote workers\n2. Technology companies\n3. Four-day work week companies",
+        "matchPairs": {
+          "1": [
+            "D",
+            "Remote workers"
+          ],
+          "2": [
+            "A",
+            "Technology companies"
+          ],
+          "3": [
+            "B",
+            "Four-day work week companies"
+          ]
+        },
+        "options": [
+          {
+            "idx": 1,
+            "contentMd": "A. Developed digital tools for distributed teams",
+            "isCorrect": false
+          },
+          {
+            "idx": 2,
+            "contentMd": "B. Reported up to 40% productivity gains",
+            "isCorrect": false
+          },
+          {
+            "idx": 3,
+            "contentMd": "C. Mandated no-meeting periods for staff",
+            "isCorrect": false
+          },
+          {
+            "idx": 4,
+            "contentMd": "D. Higher job satisfaction than office workers",
+            "isCorrect": false
+          },
+          {
+            "idx": 5,
+            "contentMd": "E. Struggled to stop working at the end of the day",
+            "isCorrect": false
+          }
+        ]
+      }
+    },
+    {
+      "sourceQuestion": 21,
+      "question": {
+        "type": "MAP_LABEL",
+        "skill": "READING",
+        "difficulty": 2,
+        "promptMd": "The map below shows the ancient city of Alexandria. Label the locations [21] to [24] using information from the passage.\n\n[Map: Ancient Alexandria — showing coastline, harbour, city centre, and outer districts]",
+        "imageUrl": "https://placehold.co/600x400/png?text=Ancient+Alexandria+Map",
+        "blankAcceptTexts": {
+          "21": [
+            "Library of Alexandria",
+            "the library",
+            "ancient library"
+          ],
+          "22": [
+            "harbour",
+            "port",
+            " harbour"
+          ],
+          "23": [
+            "city centre",
+            "centre",
+            "city"
+          ],
+          "24": [
+            "Museion",
+            "research university",
+            "observatories"
+          ]
+        }
+      }
+    },
+    {
+      "sourceQuestion": 22,
+      "question": {
+        "type": "MATCHING_ENDINGS",
+        "skill": "READING",
+        "difficulty": 3,
+        "promptMd": "Complete each sentence with the correct ending, A–F, below.\nWrite the correct letter on your answer sheet.\n\nSentence beginnings:\n1. The ancient library held…\n2. Alongside books, the institution housed…\n3. The library's decline was caused by…\n4. The modern Bibliotheca Alexandrina now contains…",
+        "matchPairs": {
+          "1": [
+            "A",
+            "The ancient library held…"
+          ],
+          "2": [
+            "B",
+            "Alongside books, the institution housed…"
+          ],
+          "3": [
+            "C",
+            "The library's decline was caused by…"
+          ],
+          "4": [
+            "D",
+            "The modern Bibliotheca Alexandrina now contains…"
+          ]
+        },
+        "options": [
+          {
+            "idx": 1,
+            "contentMd": "A. …400,000 scrolls containing works by the greatest authors of antiquity",
+            "isCorrect": false
+          },
+          {
+            "idx": 2,
+            "contentMd": "B. …laboratories, botanical gardens and observatories",
+            "isCorrect": false
+          },
+          {
+            "idx": 3,
+            "contentMd": "C. …funding cuts, political instability and loss of patronage",
+            "isCorrect": false
+          },
+          {
+            "idx": 4,
+            "contentMd": "D. …8 million titles, making it one of the world's largest",
+            "isCorrect": false
+          },
+          {
+            "idx": 5,
+            "contentMd": "E. …the Bibliotheca Alexandrina was built nearby",
+            "isCorrect": false
+          },
+          {
+            "idx": 6,
+            "contentMd": "F. …reconstructed using its original architectural plans",
+            "isCorrect": false
+          }
+        ]
+      }
+    },
+    {
+      "sourceQuestion": 23,
+      "question": {
+        "type": "CLASSIFICATION",
+        "skill": "READING",
+        "difficulty": 3,
+        "promptMd": "Classify the following statements as referring to:\nA — the debate over what caused the library's destruction\nB — the features of the ancient library itself\nC — the modern reconstruction efforts\nD — the activities of scholars who worked there\n\n23. Funding cuts and political instability were more likely causes than a single fire.\n24. The new library combines contemporary design with historic symbolism.\n25. Scholars travelled from across the Mediterranean to study and copy texts.",
+        "matchPairs": {
+          "23": [
+            "A"
+          ],
+          "24": [
+            "C"
+          ],
+          "25": [
+            "D"
+          ]
+        },
+        "options": [
+          {
+            "idx": 1,
+            "contentMd": "A. The debate over what caused the library's destruction",
+            "isCorrect": false
+          },
+          {
+            "idx": 2,
+            "contentMd": "B. The features of the ancient library itself",
+            "isCorrect": false
+          },
+          {
+            "idx": 3,
+            "contentMd": "C. The modern reconstruction efforts",
+            "isCorrect": false
+          },
+          {
+            "idx": 4,
+            "contentMd": "D. The activities of scholars who worked there",
+            "isCorrect": false
+          }
+        ]
+      }
+    },
+    {
+      "sourceQuestion": 24,
+      "question": {
+        "type": "FORM_COMPLETION",
+        "skill": "READING",
+        "difficulty": 2,
+        "promptMd": "Complete the form below.\nWrite ONE OR TWO WORDS from the passage for each answer.\n\nLIBRARY OF ALEXANDRIA — INFORMATION SHEET\n\nFounded: [26] century BCE\nLocation: [27], Egypt\nSupported by: [28] dynasty\nPurpose: Collect all human knowledge in one place\nPeak collection: [29] scrolls\nModern successor: [30] (opened 2002)\nModern collection size: [31] titles",
+        "blankAcceptTexts": {
+          "26": [
+            "3rd",
+            "third"
+          ],
+          "27": [
+            "Alexandria"
+          ],
+          "28": [
+            "Ptolemaic"
+          ],
+          "29": [
+            "400,000"
+          ],
+          "30": [
+            "Bibliotheca Alexandrina"
+          ],
+          "31": [
+            "8 million",
+            "eight million"
+          ]
+        }
+      }
+    },
+    {
+      "sourceQuestion": 25,
+      "question": {
+        "type": "MULTIPLE_CHOICE_SINGLE_IMAGE",
+        "skill": "READING",
+        "difficulty": 2,
+        "promptMd": "Which image correctly describes the modern Bibliotheca Alexandrina?",
+        "options": [
+          {
+            "idx": 1,
+            "contentMd": "A. It was built using the original ancient architectural plans",
+            "isCorrect": false,
+            "imageUrl": "https://placehold.co/200x150/png?text=A",
+            "altText": "Option A"
+          },
+          {
+            "idx": 2,
+            "contentMd": "B. It combines modern architecture with references to the ancient library",
+            "isCorrect": true,
+            "imageUrl": "https://placehold.co/200x150/png?text=B",
+            "altText": "Option B"
+          },
+          {
+            "idx": 3,
+            "contentMd": "C. It is the largest library ever built in human history",
+            "isCorrect": false,
+            "imageUrl": "https://placehold.co/200x150/png?text=C",
+            "altText": "Option C"
+          },
+          {
+            "idx": 4,
+            "contentMd": "D. It houses the original scrolls recovered from the ancient site",
+            "isCorrect": false,
+            "imageUrl": "https://placehold.co/200x150/png?text=D",
+            "altText": "Option D"
+          }
+        ]
+      }
+    },
+    {
+      "sourceQuestion": null,
+      "note": "Supplemental fixture: SUMMARY_COMPLETION is absent from the 25-record source exam; follows its completion-family contract. Not written to the live exam.",
+      "question": {
+        "type": "SUMMARY_COMPLETION",
+        "skill": "READING",
+        "difficulty": 2,
+        "promptMd": "Complete the summary. Write ONE OR TWO WORDS from the passage.\n\nCai Lun developed paper during the [32] Dynasty. Later, industrial production used [33].",
+        "blankAcceptTexts": {
+          "32": [
+            "Han"
+          ],
+          "33": [
+            "wood pulp"
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -759,7 +759,7 @@ matchPairs keys = 1-based item index strings. matchPairs values[0] = feature let
   "type": "MATCHING_ENDINGS",
   "skill": "READING",
   "difficulty": 3,
-  "promptMd": "21. Despite the rain,\\n22. As the temperature rose,",
+  "promptMd": "Sentence beginnings:\\n1. Despite the rain,\\n2. As the temperature rose,",
   "options": [
     { "contentMd": "A. the team continued." },
     { "contentMd": "B. the ice began to melt." }
@@ -773,7 +773,7 @@ matchPairs keys = 1-based item index strings. matchPairs values[0] = feature let
       type: "MATCHING_ENDINGS",
       skill: "READING",
       difficulty: 3,
-      promptMd: "21. Despite the rain,\n22. As the temperature rose,",
+      promptMd: "Sentence beginnings:\n1. Despite the rain,\n2. As the temperature rose,",
       options: [
         { contentMd: "A. the team continued." },
         { contentMd: "B. the ice began to melt." },
@@ -867,17 +867,18 @@ options[] must contain the categories as "A. label", "B. label", "C. label".`,
     optionalFields: [...optionalCommon],
     jsonShape: `{
   "type": "FLOW_CHART",
-  "skill": "LISTENING",
-  "difficulty": 3,
-  "promptMd": "Complete the flow chart below.",
-  "orderCorrects": ["collect-samples", "analyze-data", "publish-results"]
+  "skill": "READING",
+  "difficulty": 2,
+  "promptMd": "Look at the four steps of the process below and put them in the correct chronological order.\\n\\nAvailable steps:\\n\\nA. Step one\\n\\nB. Step two\\n\\nC. Step three\\n\\nArrange steps in the correct chronological order:",
+  "orderCorrects": ["step-one", "step-two", "step-three"]
 }`,
     examplePayload: {
       type: "FLOW_CHART",
-      skill: "LISTENING",
-      difficulty: 3,
-      promptMd: "Complete the flow chart below.",
-      orderCorrects: ["collect-samples", "analyze-data", "publish-results"],
+      skill: "READING",
+      difficulty: 2,
+      promptMd:
+        "Look at the four steps of the process below and put them in the correct chronological order.\n\nAvailable steps:\n\nA. Step one\n\nB. Step two\n\nC. Step three\n\nArrange steps in the correct chronological order:",
+      orderCorrects: ["step-one", "step-two", "step-three"],
     },
     constraints: [
       "orderCorrects must be slug-like (lowercase, hyphenated)",
