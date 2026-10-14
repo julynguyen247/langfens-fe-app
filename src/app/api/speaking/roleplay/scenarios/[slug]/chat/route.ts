@@ -8,10 +8,12 @@ export async function POST(
 ) {
   try {
     const { slug } = await params;
-    const body = await request.json();
-    const { message, history } = body;
+    const body: unknown = await request.json();
+    const typedBody = body && typeof body === "object" ? (body as { message?: unknown; history?: unknown }) : null;
+    const message = typeof typedBody?.message === "string" ? typedBody.message : undefined;
+    const history = typedBody?.history;
 
-    if (!message || typeof message !== "string") {
+    if (!message) {
       return NextResponse.json(
         { error: "Message is required" },
         { status: 400 }
@@ -24,12 +26,17 @@ export async function POST(
     );
 
     return NextResponse.json(response.data);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("[RoleplayChat] Error:", error);
-    const status = axios.isAxiosError(error) ? error.response?.status : undefined;
+    if (axios.isAxiosError(error)) {
+      const status = error.response?.status || 500;
+      const errorData = error.response?.data as { error?: string } | undefined;
+      const message = errorData?.error || "Failed to get response";
+      return NextResponse.json({ error: message }, { status });
+    }
     return NextResponse.json(
-      { error: status ? "Failed to get response" : "Internal server error" },
-      { status: status ?? 500 }
+      { error: "Internal server error" },
+      { status: 500 }
     );
   }
 }

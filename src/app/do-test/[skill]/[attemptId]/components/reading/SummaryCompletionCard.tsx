@@ -34,7 +34,7 @@ function splitInstructionAndNotes(promptMd: string) {
 function tokenizeNotes(notes: string) {
   const s = notes.replace(/\\n/g, "\n");
   const tokens: Array<{ type: "text"; value: string } | { type: "blank" }> = [];
-  const re = /_{3,}/g;
+  const re = /_{3,}|\[\d+\]/g;
 
   let last = 0;
   let m: RegExpExecArray | null;

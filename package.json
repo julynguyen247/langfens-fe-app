@@ -6,9 +6,13 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
+    "typecheck": "tsc --noEmit",
     "e2e": "playwright test",
     "e2e:headed": "playwright test --headed",
     "e2e:report": "playwright show-report",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
     "test:unit": "node --test tests/unit/*.test.cjs",
     "audit:app": "npm run test:unit && tsc --noEmit --incremental false && npm run build && npm audit --omit=dev --audit-level=moderate"
   },
@@ -49,6 +53,9 @@
     "@types/react-dom": "^19",
     "@types/three": "^0.183.1",
     "shadcn": "^4.0.8",
+    "vitest": "^2.1.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "happy-dom": "^15.0.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

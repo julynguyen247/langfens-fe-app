@@ -8,43 +8,15 @@ import { AttemptQuestionGroup } from "@/stores/useAttemptStore";
 import { QuestionComponentRegistry, RawQuestion } from "../QuestionComponentRegistry";
 import { QuestionFeedbackPanel } from "../QuestionFeedbackPanel";
 import type { RagFeedbackEnvelope } from "@/types/rag";
+import type { Question } from "@/types/question.type";
+import { deriveUiKind } from "@/lib/deriveUiKind";
+import { cleanAnswer } from "@/lib/cleanAnswer";
 
+import { UnsupportedQuestionCard } from "../../_components/cards/UnsupportedQuestionCard";
+
+const seenWarnTypes = new Set<string>();
 type Choice = { value: string; label: string };
 type QA = Record<string, string>;
-
-// Map BackendQuestionType → uiKind for dispatch decisions
-function deriveUiKind(type: string): string {
-  switch (type) {
-    case "TRUE_FALSE_NOT_GIVEN":
-    case "YES_NO_NOT_GIVEN":
-    case "MULTIPLE_CHOICE_SINGLE":
-    case "MULTIPLE_CHOICE_SINGLE_IMAGE":
-    case "CLASSIFICATION":
-      return "forice_single";
-    case "MULTIPLE_CHOICE_MULTIPLE":
-      return "forice_multiple";
-    case "FORM_COMPLETION":
-    case "NOTE_COMPLETION":
-    case "SENTENCE_COMPLETION":
-    case "SUMMARY_COMPLETION":
-    case "TABLE_COMPLETION":
-    case "SHORT_ANSWER":
-    case "DIAGRAM_LABEL":
-    case "MAP_LABEL":
-      return "completion";
-    case "MATCHING_FEATURES":
-    case "MATCHING_ENDINGS":
-      return "matching_letter";
-    case "MATCHING_HEADING":
-      return "matching_heading";
-    case "MATCHING_INFORMATION":
-      return "matching_information";
-    case "FLOW_CHART":
-      return "flow_chart";
-    default:
-      return "completion";
-  }
-}
 
 export type BackendQuestionType = string;
 
@@ -60,20 +32,6 @@ export type QuestionUiKind =
   | "matching_heading_select"
   | "summary_completion"
   | "matching_information";
-
-export type Question = {
-  id: string;
-  stem: string;
-  backendType: BackendQuestionType;
-  uiKind: QuestionUiKind;
-  forices?: Array<string | Choice>;
-  placeholder?: string;
-  order?: string;
-  flowChartNodes?: { key: string; label: string }[];
-  headings?: { key: string; text: string }[];
-  explanationMd?: string;
-  idx?: number;
-};
 
 // Markdown components for instructions
 const instructionComponents = {
@@ -148,23 +106,6 @@ function packBlanks(values: string[]): string {
   return cleaned.join("\n");
 }
 
-// Clean raw answer strings like "feature-q1: D / D" -> "D"
-function cleanAnswer(s: string | undefined): string {
-  if (!s) return "";
-  let clean = String(s)
-    .replace(/blank[-_]\w+:\s*/gi, "")
-    .replace(/label[-_ ]*\w*:\s*/gi, "")
-    .replace(/^feature[-_]?q?\d*:\s*/i, "")
-    .replace(/^q\d+:\s*/i, "")
-    .replace(/^(heading|item|answer|key)[-_]?\d*:\s*/gi, "")
-    .replace(/^[\w-]+:\s*/, "")
-    .trim();
-  // Handle "D / D" patterns - take first value
-  if (clean.includes(" / ")) {
-    clean = clean.split(" / ")[0].trim();
-  }
-  return clean;
-}
 
 export type ReviewResult = {
   questionId: string;
@@ -341,7 +282,21 @@ const QuestionPanel = memo(function QuestionPanel({
                 <TargetComponent
                   question={rawQ}
                   selected={value}
-                  onSelect={(_, v) => handleAnswer(q.id, v)}
+                  onSelect={(_, v) => {
+                    // Sanity check (G24): single-choice types (TFNG/YNNG/CLASSIFICATION)
+                    // must receive the option GUID, not label text. Wire format Spec D4.
+                    if (
+                      process.env.NODE_ENV === "development" &&
+                      v &&
+                      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v)
+                    ) {
+                      console.warn(
+                        `[QuestionPanel] Non-GUID value="${v}" for questionId=${q.id}. ` +
+                          `Single-choice types (TFNG/YNNG/CLASSIFICATION/MCQ single) must send the option's GUID.`
+                      );
+                    }
+                    handleAnswer(q.id, v);
+                  }}
                 />
               );
             } else if (
@@ -371,6 +326,12 @@ const QuestionPanel = memo(function QuestionPanel({
                 />
               );
             }
+          } else {
+            if (!seenWarnTypes.has(q.backendType)) {
+              console.warn(`Unsupported question type: ${q.backendType}`);
+              seenWarnTypes.add(q.backendType);
+            }
+            questionContent = <UnsupportedQuestionCard backendType={q.backendType} />;
           }
 
           const review = reviewMap[q.id];

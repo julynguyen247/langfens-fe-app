@@ -8,6 +8,7 @@ type ServiceKey =
   | "vocabulary"
   | "speaking"
   | "ai"
+  | "generation"
   | "writing"
   | "dictionary"
   | "gamification"
@@ -27,6 +28,7 @@ const BASE_URL: Record<ServiceKey, string> = {
   vocabulary: buildBase("/api-vocabulary"),
   speaking: buildBase("/api-speaking"),
   ai: buildBase("/api-ai"),
+  generation: buildBase("/api-generation"),
   writing: buildBase("/api-writing"),
   dictionary: buildBase("/api-dictionary"),
   gamification: buildBase("/api-gamification"),
@@ -66,7 +68,9 @@ async function refreshToken(): Promise<string | null> {
       setToken(null);
       if (typeof window !== 'undefined') {
         localStorage.removeItem('access_token');
-        const isAuthPage = window.location.pathname.startsWith('/auth');
+        const isAuthPage =
+          window.location.pathname.startsWith('/auth') ||
+          window.location.pathname.startsWith('/admin');
         if (!isAuthPage) {
           window.location.href = '/auth/login';
         }
@@ -139,5 +143,6 @@ export const apisAnalytics = apis.analytics;
 export const apisNotification = apis.notification;
 export const apisStudyplan = apis.studyplan;
 export const apisCourse = apis.course;
+export const apisGeneration = apis.generation;
 const api = apisAuth;
 export default api;

@@ -9,6 +9,8 @@ import WorkbookInput from "../common/WorkbookInput";
 type Props = {
   id: string;
   stem: string;
+  /** Image URL for the map (from DTO imageUrl field). Takes precedence over regex on stem. */
+  imageUrl?: string | null;
   /** One slot per part. Falls back to a single slot if no parts are declared. */
   values: string[];
   onChange: (blankIndex: number, value: string) => void;
@@ -35,6 +37,7 @@ const PART_RE = /\[Map:\s*([^\]]+?)\s*\]/i;
 const MapLabelCard = memo(function MapLabelCard({
   id,
   stem,
+  imageUrl: imageUrlProp,
   values,
   startIdx,
   onChange,
@@ -45,15 +48,17 @@ const MapLabelCard = memo(function MapLabelCard({
   const { instruction, imageUrl, imageAlt, parts } = useMemo(() => {
     const text = stem.replace(/\\n/g, "\n");
 
-    let imgUrl = "";
+    let imgUrl = imageUrlProp ?? "";
     let imgAlt = "Map";
-    const imgMatch = text.match(IMG_MD_RE);
-    if (imgMatch) {
-      imgUrl = imgMatch[2];
-      imgAlt = imgMatch[1] || "Map";
-    } else {
-      const urlMatch = text.match(/^\s*(https?:\/\/\S+)\s*$/m);
-      if (urlMatch) imgUrl = urlMatch[1];
+    if (!imgUrl) {
+      const imgMatch = text.match(IMG_MD_RE);
+      if (imgMatch) {
+        imgUrl = imgMatch[2];
+        imgAlt = imgMatch[1] || "Map";
+      } else {
+        const urlMatch = text.match(/^\s*(https?:\/\/\S+)\s*$/m);
+        if (urlMatch) imgUrl = urlMatch[1];
+      }
     }
 
     const partMatch = text.match(PART_RE);
@@ -67,8 +72,12 @@ const MapLabelCard = memo(function MapLabelCard({
     let instr = text;
     if (partMatch && partMatch.index !== undefined) {
       instr = text.slice(0, partMatch.index);
-    } else if (imgMatch && imgMatch.index !== undefined) {
-      instr = text.slice(0, imgMatch.index);
+    } else if (!imgUrl) {
+      // regex-extracted from stem above
+      const stemImgMatch = text.match(IMG_MD_RE);
+      if (stemImgMatch && stemImgMatch.index !== undefined) {
+        instr = text.slice(0, stemImgMatch.index);
+      }
     }
     instr = instr.replace(IMG_MD_RE, "").trim();
 
@@ -79,7 +88,7 @@ const MapLabelCard = memo(function MapLabelCard({
     }
 
     return { instruction: instr, imageUrl: imgUrl, imageAlt: imgAlt, parts: built };
-  }, [stem, startIdx]);
+  }, [imageUrlProp, stem, startIdx]);
 
   const totalBlanks = parts.length;
   const answeredBlanks = values.filter(

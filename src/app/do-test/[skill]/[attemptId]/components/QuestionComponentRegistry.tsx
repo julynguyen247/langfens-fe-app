@@ -10,6 +10,9 @@ import FlowChartCard from "./reading/FlowChartCard";
 import MatchingInformation from "./reading/WordListCompletionCard";
 import ClassificationCard from "./reading/ClassificationCard";
 import FillInBlankCard from "./reading/FillInBlankCard";
+import MultiChoiceImageCard from "./reading/MultiChoiceImageCard";
+import MapLabelCard from "./reading/MapLabelCard";
+import DiagramLabelCard from "./reading/DiagramLabelCard";
 
 /** Raw question shape from API */
 export type RawQuestion = {
@@ -41,6 +44,8 @@ export type QuestionProps = {
 /**
  * Direct BackendQuestionType → Component registry.
  * Replaces the QuestionUiKind / mapApiQuestionToUi indirection.
+ * UI dispatch now uses deriveUiKind from `@/lib/deriveUiKind` for
+ * the uiKind value the QuestionPanel consumes.
  */
 export const QuestionComponentRegistry: Record<
   string,
@@ -105,10 +110,12 @@ export const QuestionComponentRegistry: Record<
       label: opt.contentMd.replace(/^[A-Z]\.\s+/, ""),
     }));
     return (
-      <QuestionCard
-        question={{ id: question.id, stem: question.stem ?? question.promptMd ?? "", forices }}
+      <MultiChoiceImageCard
+        id={question.id}
+        stem={question.stem ?? question.promptMd ?? ""}
         selected={selected}
         onSelect={onSelect!}
+        forices={forices}
       />
     );
   }) as React.FC<QuestionProps>,
@@ -261,22 +268,44 @@ export const QuestionComponentRegistry: Record<
     );
   }) as React.FC<QuestionProps>,
 
-  DIAGRAM_LABEL: (({ question, value, onChange }) => {
+  DIAGRAM_LABEL: (({ question, value, onChange, values, onBlankChange }) => {
+    const stem = question.stem ?? question.promptMd ?? "";
+    if (values !== undefined && onBlankChange) {
+      return (
+        <DiagramLabelCard
+          id={question.id}
+          stem={stem}
+          values={values}
+          onChange={onBlankChange}
+        />
+      );
+    }
     return (
       <FillInBlankCard
         id={question.id}
-        stem={question.stem ?? question.promptMd ?? ""}
+        stem={stem}
         value={value ?? ""}
         onChange={onChange!}
       />
     );
   }) as React.FC<QuestionProps>,
 
-  MAP_LABEL: (({ question, value, onChange }) => {
+  MAP_LABEL: (({ question, value, onChange, values, onBlankChange }) => {
+    const stem = question.stem ?? question.promptMd ?? "";
+    if (values !== undefined && onBlankChange) {
+      return (
+        <MapLabelCard
+          id={question.id}
+          stem={stem}
+          values={values}
+          onChange={onBlankChange}
+        />
+      );
+    }
     return (
       <FillInBlankCard
         id={question.id}
-        stem={question.stem ?? question.promptMd ?? ""}
+        stem={stem}
         value={value ?? ""}
         onChange={onChange!}
       />

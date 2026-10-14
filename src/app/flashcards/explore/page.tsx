@@ -23,10 +23,8 @@ export default function ExploreDecksPage() {
       setError(null);
       try {
         const [pubRes, subRes] = await Promise.all([
-          getPublicHandler({ status, category, page: 1, pageSize: 20 }),
-          user?.id
-            ? getUserSubscriptions(user.id)
-            : Promise.resolve({ data: [] }),
+          getPublicHandler({ status, category: category || undefined }),
+          user?.id ? getUserSubscriptions(user.id) : Promise.resolve({ data: [] }),
         ]);
 
         const rawDecks = Array.isArray(pubRes.data)
@@ -35,16 +33,19 @@ export default function ExploreDecksPage() {
         const subsPayload = Array.isArray(subRes.data)
           ? subRes.data
           : subRes.data?.data ?? [];
-        const subscribedIds = new Set(
-          (subsPayload ?? []).map((s: any) => String(s.deckId ?? s.id ?? ""))
-        );
+        const subscribedIds: Record<string, true> = {};
+        for (const s of (subsPayload as Array<{ deckId?: string; id?: string }>)) {
+          const key = String(s.deckId ?? s.id ?? "");
+          if (key) subscribedIds[key] = true;
+        }
 
         const visible = (rawDecks as PublicDeck[]).filter(
-          (d) => !subscribedIds.has(String(d.id))
+          (d) => !subscribedIds[String(d.id)]
         );
         setDecks(visible);
-      } catch (e: any) {
-        setError(e?.message || "Failed to load decks.");
+      } catch (e: unknown) {
+        const errMessage = e instanceof Error ? e.message : "Failed to load decks.";
+        setError(errMessage);
       } finally {
         setLoading(false);
       }

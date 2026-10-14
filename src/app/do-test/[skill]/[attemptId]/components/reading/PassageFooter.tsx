@@ -35,11 +35,11 @@ export default function PassageFooter({
           </button>
 
           <div className="flex items-center gap-2 justify-center">
-            {passages.map((p) => {
+            {passages.map((p, idx) => {
               const active = p.id === currentPassageId;
               return (
                 <button
-                  key={p.id}
+                  key={`${p.id}-${idx}`}
                   onClick={() => onChangePassage(p.id)}
                   className={`px-3 h-9 rounded-full border-[2px] text-sm font-medium transition-colors duration-150 ${
                     active

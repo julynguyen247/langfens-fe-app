@@ -18,7 +18,6 @@ type Props = {
 /**
  * QuestionStatusBar — the status bar that sits at the top of every
  * "workbook page" card (CompletionCard, HeadingDropdown,
- * MatchingLetterCard, DiagramLabelCard, FlowChartCompletionCard,
  * WordListCompletionCard, plus the new type-specific cards in
  * Phase 3). One source of truth so the range label pill, the
  * "X / Y answered" pill, and the "Review / Flagged" toggle render

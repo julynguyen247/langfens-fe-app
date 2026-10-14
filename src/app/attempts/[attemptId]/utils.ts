@@ -1,3 +1,4 @@
+import { cleanAnswer as cleanAnswerHelper } from "@/lib/cleanAnswer";
 import type { AttemptQuestionResult } from "./types";
 import type { RagFeedbackEnvelope } from "@/types/rag";
 
@@ -64,30 +65,7 @@ export function cleanQuestion(s: string) {
 }
 
 export function cleanAnswer(s: string) {
-  if (!s) return "";
-
-  let clean = String(s)
-    .replace(/\\n/g, "\n")
-    .replace(/blank[-_]\w+:\s*/gi, "")
-    .replace(/\[blank[-_]\w+\]/gi, "")
-    .replace(/label[-_ ]*\w*:\s*/gi, "")
-    .replace(
-      /^\s*(?:paragraph|info|step|flow|node|part|section)?[-_ ]*\w*:\s*/i,
-      ""
-    )
-    .replace(/\b(?:paragraph|info)[-_ ]*\w*:\s*/gi, "")
-    .replace(/^feature[-_]?q?\d*:\s*/i, "")
-    .replace(/^q\d+:\s*/i, "")
-    .replace(/^(heading|item|answer|key|option)[-_]?\d*:\s*/gi, "")
-    .replace(/^[\w-]+:\s*/, "")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  if (/^([A-Za-z0-9]+)\/\1$/i.test(clean)) {
-    clean = clean.split("/")[0].trim();
-  }
-
-  return clean;
+  return cleanAnswerHelper(s);
 }
 
 export function fmtMinSec(totalSec: number) {

@@ -27,7 +27,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     isLanding ||
     pathname.startsWith("/do-test") ||
     pathname.startsWith("/auth") ||
-    pathname.startsWith("/placement");
+    pathname.startsWith("/placement") ||
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/test-v3");
 
   const requireAuth =
     pathname.startsWith("/attempts") ||

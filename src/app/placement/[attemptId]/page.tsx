@@ -191,7 +191,7 @@ export default function MultiSkillAttemptPage() {
       readingQuestionsApi
         .slice()
         .sort((a: any, b: any) => a.idx - b.idx)
-        .map((q: any) => mapApiQuestionToUi(q)),
+        .map((q: any) => buildQuestion(q)),
     [readingQuestionsApi]
   );
 
@@ -200,7 +200,7 @@ export default function MultiSkillAttemptPage() {
       listeningQuestionsApi
         .slice()
         .sort((a: any, b: any) => a.idx - b.idx)
-        .map((q: any) => mapApiQuestionToUi(q)),
+        .map((q: any) => buildQuestion(q)),
     [listeningQuestionsApi]
   );
 

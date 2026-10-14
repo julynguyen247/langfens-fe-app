@@ -1,0 +1,1111 @@
+"use client";
+
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  InternalDeliveryOption,
+  InternalDeliveryQuestion,
+  QuestionSkill,
+  QuestionType,
+} from "@/app/admin/_lib/types";
+import { OptionsEditor } from "./editors/OptionsEditor";
+import { BlankAcceptsEditor } from "./editors/BlankAcceptsEditor";
+import { MatchPairsEditor } from "./editors/MatchPairsEditor";
+import { ShortAnswerEditor } from "./editors/ShortAnswerEditor";
+import { FlowChartEditor } from "./editors/FlowChartEditor";
+import { MatchingHeadingEditor } from "./editors/MatchingHeadingEditor";
+import { MatchingInformationEditor } from "./editors/MatchingInformationEditor";
+import { MatchingFeaturesEditor } from "./editors/MatchingFeaturesEditor";
+import { MatchingEndingsEditor } from "./editors/MatchingEndingsEditor";
+import { AdminQuestionPreview } from "@/components/admin/preview/AdminQuestionPreview";
+import { QuestionExporter } from "./QuestionExporter";
+import { QUESTION_TYPE_REGISTRY, getMeta } from "@/app/admin/_lib/questionTypeRegistry";
+import { generateQuestionsFromPassage } from "@/app/admin/_lib/questionGeneration";
+import {
+  FEEDBACK_REASONS,
+  evaluateSmallEditPolicy,
+} from "@/app/admin/_lib/feedbackTaxonomy";
+import {
+  aggregateIssues,
+  validateBlankKeyFormat,
+  validateBlanks,
+  validateDifficultyBounds,
+  validateFlowChart,
+  validateImageUrlRequired,
+  validateMatchingHeadingPrompt,
+  validateMatchingPromptParity,
+  validateMatchPairs,
+  validateMcqIsCorrectCount,
+  validateOptionsLength,
+  validatePromptBlanksCoverage,
+  validateQuestionPayload,
+  validateShortAnswer,
+  validateShortAnswerSubQuestionCount,
+  validateTypeSkill,
+  ValidationIssue,
+} from "@/app/admin/_lib/validation";
+
+interface QuestionEditorProps {
+  question: InternalDeliveryQuestion;
+  sectionId: string;
+  sectionPassageMd?: string | null;
+  sectionAudioUrl?: string | null;
+  availableSections?: { id: string; title: string }[];
+  onSave: (
+    updated: InternalDeliveryQuestion,
+    feedbackMeta?: { reasons: string[]; comment: string; idempotencyKey?: string }
+  ) => Promise<void>;
+  onDelete: (questionId?: string, idx?: number) => Promise<void>;
+  onDuplicate?: (q: InternalDeliveryQuestion) => Promise<void>;
+}
+export function QuestionEditor({
+  question,
+  sectionId,
+  sectionPassageMd,
+  sectionAudioUrl,
+  availableSections,
+  onSave,
+  onDelete,
+  onDuplicate,
+}: QuestionEditorProps) {
+  const [isOpen, setIsOpen] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isAiGenerating, setIsAiGenerating] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<{ text: string; isError: boolean } | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [draft, setDraft] = useState<InternalDeliveryQuestion>(question);
+  const initialRef = useRef<InternalDeliveryQuestion>(question);
+  const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
+  const [curatorComment, setCuratorComment] = useState("");
+  const [actionKey, setActionKey] = useState<string>(() =>
+    typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `edit-q-${Date.now()}`
+  );
+
+  // S31: ref forwarded to the prompt textarea so BlankAcceptsEditor's
+  // "Insert Blank at Cursor" button can read selectionStart/End and restore
+  // the cursor after React commits the new promptMd (C5/C7).
+  const promptRef = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    setDraft(question);
+    initialRef.current = question;
+    setSelectedReasons([]);
+    setCuratorComment("");
+    const newKey = typeof crypto !== "undefined" && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `edit-q-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    setActionKey(newKey);
+  }, [question.id, question.idx]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "s" && !e.shiftKey) {
+        e.preventDefault();
+        if (isDirty && !isSaving) {
+          handleSave();
+        }
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  });
+
+  const isDirty = useMemo(() => {
+    return JSON.stringify(draft) !== JSON.stringify(initialRef.current);
+  }, [draft]);
+
+  const meta = getMeta(draft.type);
+  const isListening = draft.skill === QuestionSkill.Listening;
+  const hasMissingAudio = isListening && !sectionAudioUrl;
+
+  const beforeQuestionText = useMemo(() => {
+    const q = initialRef.current;
+    if (!q) return "";
+    const parts: string[] = [];
+    parts.push(`Type: ${q.type || ""}`);
+    parts.push(`Skill: ${q.skill || ""}`);
+    parts.push(`Difficulty: ${q.difficulty ?? 1}`);
+    if (q.promptMd) parts.push(`Prompt: ${q.promptMd.trim()}`);
+    if (q.imageUrl) parts.push(`Image: ${q.imageUrl}`);
+    if (q.options && q.options.length > 0) {
+      parts.push(`Options: ${q.options.map((o) => `[${o.idx}] ${o.contentMd || ""}${o.isCorrect ? " (CORRECT)" : ""}`).join(" | ")}`);
+    }
+    if (q.blankAcceptTexts && Object.keys(q.blankAcceptTexts).length > 0) {
+      parts.push(`Blank Texts: ${JSON.stringify(q.blankAcceptTexts)}`);
+    }
+    if (q.blankAcceptRegex && Object.keys(q.blankAcceptRegex).length > 0) {
+      parts.push(`Blank Regex: ${JSON.stringify(q.blankAcceptRegex)}`);
+    }
+    if (q.shortAnswerAcceptTexts && q.shortAnswerAcceptTexts.length > 0) {
+      parts.push(`Short Answer Texts: ${q.shortAnswerAcceptTexts.join(", ")}`);
+    }
+    if (q.shortAnswerAcceptRegex && q.shortAnswerAcceptRegex.length > 0) {
+      parts.push(`Short Answer Regex: ${q.shortAnswerAcceptRegex.join(", ")}`);
+    }
+    if (q.matchPairs && Object.keys(q.matchPairs).length > 0) {
+      parts.push(`Match Pairs: ${JSON.stringify(q.matchPairs)}`);
+    }
+    if (q.orderCorrects && q.orderCorrects.length > 0) {
+      parts.push(`Order: ${q.orderCorrects.join(" -> ")}`);
+    }
+    if (q.explanationMd) parts.push(`Explanation: ${q.explanationMd.trim()}`);
+    return parts.join("\n");
+  }, [initialRef.current]);
+
+  const currentQuestionText = useMemo(() => {
+    const q = draft;
+    if (!q) return "";
+    const parts: string[] = [];
+    parts.push(`Type: ${q.type || ""}`);
+    parts.push(`Skill: ${q.skill || ""}`);
+    parts.push(`Difficulty: ${q.difficulty ?? 1}`);
+    if (q.promptMd) parts.push(`Prompt: ${q.promptMd.trim()}`);
+    if (q.imageUrl) parts.push(`Image: ${q.imageUrl}`);
+    if (q.options && q.options.length > 0) {
+      parts.push(`Options: ${q.options.map((o) => `[${o.idx}] ${o.contentMd || ""}${o.isCorrect ? " (CORRECT)" : ""}`).join(" | ")}`);
+    }
+    if (q.blankAcceptTexts && Object.keys(q.blankAcceptTexts).length > 0) {
+      parts.push(`Blank Texts: ${JSON.stringify(q.blankAcceptTexts)}`);
+    }
+    if (q.blankAcceptRegex && Object.keys(q.blankAcceptRegex).length > 0) {
+      parts.push(`Blank Regex: ${JSON.stringify(q.blankAcceptRegex)}`);
+    }
+    if (q.shortAnswerAcceptTexts && q.shortAnswerAcceptTexts.length > 0) {
+      parts.push(`Short Answer Texts: ${q.shortAnswerAcceptTexts.join(", ")}`);
+    }
+    if (q.shortAnswerAcceptRegex && q.shortAnswerAcceptRegex.length > 0) {
+      parts.push(`Short Answer Regex: ${q.shortAnswerAcceptRegex.join(", ")}`);
+    }
+    if (q.matchPairs && Object.keys(q.matchPairs).length > 0) {
+      parts.push(`Match Pairs: ${JSON.stringify(q.matchPairs)}`);
+    }
+    if (q.orderCorrects && q.orderCorrects.length > 0) {
+      parts.push(`Order: ${q.orderCorrects.join(" -> ")}`);
+    }
+    if (q.explanationMd) parts.push(`Explanation: ${q.explanationMd.trim()}`);
+    return parts.join("\n");
+  }, [draft]);
+
+  const editPolicy = useMemo(() => {
+    return evaluateSmallEditPolicy(beforeQuestionText, currentQuestionText);
+  }, [beforeQuestionText, currentQuestionText]);
+
+  const issues: ValidationIssue[] = useMemo(() => {
+    return validateQuestionPayload({
+      type: draft.type,
+      skill: draft.skill,
+      difficulty: draft.difficulty,
+      promptMd: draft.promptMd,
+      explanationMd: draft.explanationMd,
+      imageUrl: draft.imageUrl,
+      options: draft.options,
+      blankAcceptTexts: draft.blankAcceptTexts,
+      blankAcceptRegex: draft.blankAcceptRegex,
+      matchPairs: draft.matchPairs,
+      orderCorrects: draft.orderCorrects,
+      shortAnswerAcceptTexts: draft.shortAnswerAcceptTexts,
+      shortAnswerAcceptRegex: draft.shortAnswerAcceptRegex,
+    });
+  }, [draft]);
+
+  const hasErrors = issues.some((i) => i.level === "error");
+  const warnings = issues.filter((i) => i.level === "warning");
+
+  const executeSave = async (reasons: string[], comment: string, idempotencyKey: string) => {
+    try {
+      setIsSaving(true);
+      setSaveMessage(null);
+
+      await onSave(draft, {
+        reasons,
+        comment: comment.trim(),
+        idempotencyKey,
+      });
+
+      initialRef.current = draft;
+      setSelectedReasons([]);
+      setCuratorComment("");
+      const nextKey = typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `edit-q-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+      setActionKey(nextKey);
+      setIsReviewModalOpen(false);
+      setSaveMessage({ text: "Saved successfully", isError: false });
+      setTimeout(() => setSaveMessage(null), 3000);
+    } catch (err: unknown) {
+      let msg = "Failed to save question";
+      if (err && typeof err === "object") {
+        if ("response" in err && err.response && typeof err.response === "object") {
+          const resp = err.response;
+          if ("data" in resp && resp.data && typeof resp.data === "object") {
+            const data = resp.data;
+            if ("message" in data && typeof data.message === "string") {
+              msg = data.message;
+            }
+          }
+        } else if ("message" in err && typeof err.message === "string") {
+          msg = err.message;
+        }
+      }
+      setSaveMessage({ text: msg, isError: true });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSave = async () => {
+    setSaveMessage(null);
+
+    if (hasMissingAudio) {
+      setSaveMessage({
+        text: "Listening questions require an Audio URL on the parent section before saving.",
+        isError: true,
+      });
+      return;
+    }
+
+    if (hasErrors) {
+      setSaveMessage({
+        text: `Cannot save — ${issues.filter((i) => i.level === "error").length} validation error(s)`,
+        isError: true,
+      });
+      return;
+    }
+
+    if (isDirty) {
+      setIsReviewModalOpen(true);
+    } else {
+      await executeSave(selectedReasons, curatorComment, actionKey);
+    }
+  };
+
+  const handleAiPopulate = async () => {
+    const passage = sectionPassageMd?.trim();
+    if (!passage) return;
+
+    const hasCustomContent =
+      (draft.promptMd &&
+        draft.promptMd.trim() !== "" &&
+        !draft.promptMd.startsWith(`Question ${draft.idx} prompt`)) ||
+      isDirty;
+
+    if (hasCustomContent) {
+      const confirmed = window.confirm(
+        "Replace current question draft with AI-generated content from section passage?"
+      );
+      if (!confirmed) return;
+    }
+
+    setIsAiGenerating(true);
+    try {
+      const result = await generateQuestionsFromPassage({
+        type: draft.type,
+        skill: draft.skill,
+        passage,
+        count: 1,
+        difficulty: draft.difficulty,
+        sectionId,
+      });
+
+      if (!result.questions || result.questions.length === 0) {
+        throw new Error("No question generated by AI.");
+      }
+
+      if (result.validationErrors && result.validationErrors.length > 0) {
+        throw new Error(result.validationErrors[0]);
+      }
+
+      const eq = result.questions[0];
+      const existingOptions = draft.options || [];
+      const mappedOptions: InternalDeliveryOption[] = (eq.options || []).map((opt, optIdx) => {
+        const existing = existingOptions[optIdx];
+        const reuseId = existing?.id && !existing.id.startsWith("temp-") && !existing.id.startsWith("preset-")
+          ? existing.id
+          : `preset-${draft.id || "new"}-${opt.idx || optIdx + 1}`;
+        return {
+          id: reuseId,
+          questionId: draft.id || "",
+          idx: opt.idx,
+          contentMd: opt.contentMd,
+          isCorrect: opt.isCorrect,
+          imageUrl: opt.imageUrl ?? null,
+          altText: opt.altText ?? null,
+        };
+      });
+
+      setDraft((prev) => ({
+        ...prev,
+        promptMd: eq.upsert.PromptMd || "",
+        explanationMd: eq.upsert.ExplanationMd ?? null,
+        imageUrl: eq.upsert.ImageUrl ?? prev.imageUrl ?? null,
+        blankAcceptTexts: eq.upsert.BlankAcceptTexts ?? null,
+        blankAcceptRegex: eq.upsert.BlankAcceptRegex ?? null,
+        matchPairs: eq.upsert.MatchPairs ?? null,
+        orderCorrects: eq.upsert.OrderCorrects ?? null,
+        shortAnswerAcceptTexts: eq.upsert.ShortAnswerAcceptTexts ?? null,
+        shortAnswerAcceptRegex: eq.upsert.ShortAnswerAcceptRegex ?? null,
+        options: mappedOptions,
+      }));
+
+      setSaveMessage({
+        text: "✨ Populated draft from section passage! Review and save (Ctrl+S).",
+        isError: false,
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "AI generation failed";
+      setSaveMessage({
+        text: `AI generation failed: ${msg}`,
+        isError: true,
+      });
+    } finally {
+      setIsAiGenerating(false);
+    }
+  };
+
+  const handleTypeChange = (newType: string) => {
+    const newMeta = getMeta(newType);
+    const newSkill = newMeta.skillHints.length === 1 ? newMeta.skillHints[0] : draft.skill;
+    setDraft((prev) => ({
+      ...prev,
+      type: newType,
+      skill: newSkill,
+      difficulty: prev.difficulty || newMeta.defaultDifficulty,
+    }));
+  };
+
+  const handleOptionsChange = (options: InternalDeliveryOption[]) => {
+    setDraft((prev) => ({ ...prev, options }));
+  };
+
+  const handleBlanksChange = (
+    blankAcceptTexts: Record<string, string[] | null>,
+    blankAcceptRegex: Record<string, string[] | null>
+  ) => {
+    setDraft((prev) => ({
+      ...prev,
+      blankAcceptTexts,
+      blankAcceptRegex,
+    }));
+  };
+
+  const handlePairsChange = (
+    matchPairs: Record<string, string[] | null>,
+    options: InternalDeliveryOption[]
+  ) => {
+    setDraft((prev) => ({
+      ...prev,
+      matchPairs,
+      options,
+    }));
+  };
+
+  const handleShortAnswerChange = (
+    shortAnswerAcceptTexts: string[],
+    shortAnswerAcceptRegex: string[]
+  ) => {
+    setDraft((prev) => ({
+      ...prev,
+      shortAnswerAcceptTexts,
+      shortAnswerAcceptRegex,
+    }));
+  };
+
+  const handleFlowChartChange = (orderCorrects: string[]) => {
+    setDraft((prev) => ({
+      ...prev,
+      orderCorrects,
+    }));
+  };
+
+  const handleImageUrlChange = (imageUrl: string) => {
+    setDraft((prev) => ({ ...prev, imageUrl: imageUrl || null }));
+  };
+
+  const handlePromptChange = (newPrompt: string) => {
+    setDraft((prev) => ({ ...prev, promptMd: newPrompt }));
+  };
+
+  const renderTypeEditor = () => {
+    const t = draft.type;
+    const ed = QUESTION_TYPE_REGISTRY[t]?.editorKind;
+
+    if (t === "MULTIPLE_CHOICE_SINGLE") {
+      return (
+        <OptionsEditor
+          options={draft.options || []}
+          isMultiple={false}
+          questionType={t}
+          onChange={handleOptionsChange}
+        />
+      );
+    }
+    if (t === "MULTIPLE_CHOICE_SINGLE_IMAGE") {
+      return (
+        <OptionsEditor
+          options={draft.options || []}
+          isMultiple={false}
+          questionType={t}
+          onChange={handleOptionsChange}
+          enableImage
+        />
+      );
+    }
+    if (t === "TRUE_FALSE_NOT_GIVEN" || t === "YES_NO_NOT_GIVEN") {
+      return (
+        <OptionsEditor
+          options={draft.options || []}
+          isMultiple={false}
+          questionType={t}
+          onChange={handleOptionsChange}
+        />
+      );
+    }
+    if (t === "MULTIPLE_CHOICE_MULTIPLE") {
+      return (
+        <OptionsEditor
+          options={draft.options || []}
+          isMultiple={true}
+          questionType={t}
+          onChange={handleOptionsChange}
+        />
+      );
+    }
+    if (t === "CLASSIFICATION") {
+      return (
+        <MatchPairsEditor
+          matchPairs={draft.matchPairs}
+          options={draft.options || []}
+          questionType={t}
+          promptMd={draft.promptMd}
+          onChange={handlePairsChange}
+        />
+      );
+    }
+    if (t === "MATCHING_HEADING") {
+      return (
+        <MatchingHeadingEditor
+          matchPairs={draft.matchPairs}
+          options={draft.options || []}
+          promptMd={draft.promptMd}
+          onChange={handlePairsChange}
+        />
+      );
+    }
+    if (t === "MATCHING_INFORMATION") {
+      return (
+        <MatchingInformationEditor
+          matchPairs={draft.matchPairs}
+          options={draft.options || []}
+          promptMd={draft.promptMd}
+          onChange={handlePairsChange}
+        />
+      );
+    }
+    if (t === "MATCHING_FEATURES") {
+      return (
+        <MatchingFeaturesEditor
+          matchPairs={draft.matchPairs}
+          options={draft.options || []}
+          promptMd={draft.promptMd}
+          onChange={handlePairsChange}
+        />
+      );
+    }
+    if (t === "MATCHING_ENDINGS") {
+      return (
+        <MatchingEndingsEditor
+          matchPairs={draft.matchPairs}
+          options={draft.options || []}
+          promptMd={draft.promptMd}
+          onChange={handlePairsChange}
+        />
+      );
+    }
+    if (
+      t === "SUMMARY_COMPLETION" ||
+      t === "TABLE_COMPLETION" ||
+      t === "NOTE_COMPLETION" ||
+      t === "FORM_COMPLETION" ||
+      t === "SENTENCE_COMPLETION"
+    ) {
+      return (
+        <BlankAcceptsEditor
+          blankAcceptTexts={draft.blankAcceptTexts}
+          blankAcceptRegex={draft.blankAcceptRegex}
+          onChange={handleBlanksChange}
+          promptMd={draft.promptMd}
+          onPromptChange={handlePromptChange}
+          promptTextareaRef={promptRef}
+        />
+      );
+    }
+    if (t === "DIAGRAM_LABEL") {
+      return (
+        <BlankAcceptsEditor
+          blankAcceptTexts={draft.blankAcceptTexts}
+          blankAcceptRegex={draft.blankAcceptRegex}
+          onChange={handleBlanksChange}
+          variant="diagram"
+          imageUrl={draft.imageUrl}
+          onImageUrlChange={handleImageUrlChange}
+          promptMd={draft.promptMd}
+          onPromptChange={handlePromptChange}
+          promptTextareaRef={promptRef}
+        />
+      );
+    }
+    if (t === "MAP_LABEL") {
+      return (
+        <BlankAcceptsEditor
+          blankAcceptTexts={draft.blankAcceptTexts}
+          blankAcceptRegex={draft.blankAcceptRegex}
+          onChange={handleBlanksChange}
+          variant="map"
+          imageUrl={draft.imageUrl}
+          onImageUrlChange={handleImageUrlChange}
+          promptMd={draft.promptMd}
+          onPromptChange={handlePromptChange}
+          promptTextareaRef={promptRef}
+        />
+      );
+    }
+    if (t === "SHORT_ANSWER") {
+      return (
+        <ShortAnswerEditor
+          shortAnswerAcceptTexts={draft.shortAnswerAcceptTexts}
+          shortAnswerAcceptRegex={draft.shortAnswerAcceptRegex}
+          onChange={handleShortAnswerChange}
+        />
+      );
+    }
+    if (t === "FLOW_CHART") {
+      return (
+        <FlowChartEditor
+          orderCorrects={draft.orderCorrects}
+          onChange={handleFlowChartChange}
+        />
+      );
+    }
+
+    if (ed === "match-pairs") {
+      return (
+        <MatchPairsEditor
+          matchPairs={draft.matchPairs}
+          options={draft.options || []}
+          questionType={t}
+          onChange={handlePairsChange}
+        />
+      );
+    }
+
+    return (
+      <div className="p-3 text-xs text-amber-400 bg-amber-950/20 border border-amber-900 rounded-lg">
+        Custom type: {t}. Configure options and markdown prompts above.
+      </div>
+    );
+  };
+
+  return (
+    <div className="rounded-xl bg-slate-900/90 border border-slate-800 shadow-sm overflow-hidden transition">
+      <div className="flex items-center justify-between px-5 py-3.5 bg-slate-850 border-b border-slate-800/80">
+        <div className="flex items-center gap-3 min-w-0">
+          <button
+            type="button"
+            onClick={() => setIsOpen(!isOpen)}
+            className="p-1 text-slate-400 hover:text-slate-200 transition shrink-0"
+            aria-label={isOpen ? "Collapse" : "Expand"}
+          >
+            <svg
+              className={`w-4 h-4 transform transition-transform ${isOpen ? "rotate-90" : ""}`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+
+          <span className="font-mono text-sm font-bold text-indigo-400 shrink-0">
+            Q{draft.idx}
+          </span>
+
+          <span
+            className="inline-block px-2 py-0.5 text-xs font-semibold rounded bg-slate-800 text-slate-300 border border-slate-700/50 truncate"
+            title={meta.label}
+          >
+            {meta.label}
+          </span>
+
+          <span className="text-xs text-slate-400 shrink-0">
+            Skill: <strong className="text-slate-200">{draft.skill}</strong>
+          </span>
+
+          <span className="text-xs text-slate-500 shrink-0">Diff: {draft.difficulty}/5</span>
+
+          {isDirty && (
+            <span
+              className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40"
+              title="Unsaved changes"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+              Unsaved
+            </span>
+          )}
+
+          {hasErrors && (
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40">
+              {issues.filter((i) => i.level === "error").length} issue(s)
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          {saveMessage && (
+            <span
+              className={`text-xs font-medium px-2 py-0.5 rounded ${
+                saveMessage.isError
+                  ? "bg-rose-950/60 text-rose-300 border border-rose-800"
+                  : "bg-emerald-950/60 text-emerald-300 border border-emerald-800"
+              }`}
+            >
+              {saveMessage.text}
+            </span>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setShowPreview((s) => !s)}
+            className={`px-2.5 py-1.5 text-xs font-medium rounded-lg border transition ${
+              showPreview
+                ? "bg-indigo-600/20 text-indigo-300 border-indigo-500/40"
+                : "bg-slate-800 text-slate-400 hover:text-slate-200 border-slate-700"
+            }`}
+            title="Toggle preview"
+          >
+            <svg className="w-3.5 h-3.5 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            {showPreview ? "Hide" : "Preview"}
+          </button>
+
+          {sectionPassageMd && (
+            <button
+              type="button"
+              disabled={isAiGenerating || isSaving}
+              onClick={handleAiPopulate}
+              className="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-gradient-to-r from-violet-600/30 to-fuchsia-600/30 hover:from-violet-600/40 hover:to-fuchsia-600/40 text-violet-200 border border-violet-500/40 transition flex items-center gap-1.5 disabled:opacity-50"
+              title="Auto-fill question content from section passage with AI"
+            >
+              {isAiGenerating ? (
+                <>
+                  <span className="w-3.5 h-3.5 border-2 border-violet-300/30 border-t-violet-300 rounded-full animate-spin" />
+                  <span>Generating...</span>
+                </>
+              ) : (
+                <>
+                  <span>✨</span>
+                  <span>AI Auto-fill</span>
+                </>
+              )}
+            </button>
+          )}
+
+          {onDuplicate && (
+            <button
+              type="button"
+              onClick={() => {
+                if (window.confirm("Duplicate this question?")) {
+                  onDuplicate(draft);
+                }
+              }}
+              className="inline-flex items-center gap-1 px-2 py-1.5 text-xs font-medium text-slate-500 hover:text-indigo-300 hover:bg-indigo-500/10 rounded-lg transition"
+              title="Duplicate question"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125 1.125 0 3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" />
+              </svg>
+              <span>Duplicate</span>
+            </button>
+          )}
+
+          <QuestionExporter question={draft} />
+
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={isSaving || hasErrors}
+            className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSaving ? "Saving..." : "Save Question"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onDelete(draft.id, draft.idx)}
+            className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition"
+            title="Delete question"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {isOpen && (
+        <div className="p-5 space-y-5">
+          {hasMissingAudio && (
+            <div className="p-3 rounded-lg bg-rose-950/40 border border-rose-900 text-xs text-rose-300 flex items-start gap-2">
+              <svg className="w-4 h-4 shrink-0 text-rose-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+              </svg>
+              <div>
+                <strong>Listening Audio Missing:</strong> The parent section has no Audio URL. Listening questions cannot be saved without an audio recording attached to the section.
+              </div>
+            </div>
+          )}
+
+          {warnings.length > 0 && (
+            <div className="p-3 rounded-lg bg-amber-950/30 border border-amber-900/50 text-xs text-amber-200 space-y-1">
+              {warnings.map((w, i) => (
+                <div key={i} className="flex items-start gap-2">
+                  <span>⚠</span>
+                  <span>{w.message}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <div className="space-y-5">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                    Question Type
+                  </label>
+                  <select
+                    value={draft.type}
+                    onChange={(e) => handleTypeChange(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                  >
+                    {Object.values(QUESTION_TYPE_REGISTRY).map((m) => (
+                      <option key={m.type} value={m.type}>
+                        {m.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                    Skill
+                  </label>
+                  <select
+                    value={draft.skill}
+                    onChange={(e) => setDraft({ ...draft, skill: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                  >
+                    {Object.values(QuestionSkill).map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                    Difficulty (1 - 5)
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={5}
+                    value={draft.difficulty}
+                    onChange={(e) => {
+                      const raw = Number(e.target.value);
+                      const clamped = isNaN(raw) ? 1 : Math.max(1, Math.min(5, Math.floor(raw)));
+                      setDraft({ ...draft, difficulty: clamped });
+                    }}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                    Order (Idx)
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={draft.idx}
+                    onChange={(e) => setDraft({ ...draft, idx: Number(e.target.value) || 1 })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 font-mono"
+                  />
+                </div>
+              </div>
+
+              {draft.type !== "CLASSIFICATION" && (
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                    Prompt & Question Stem (Markdown) *
+                  </label>
+                  <textarea
+                    ref={promptRef}
+                    rows={3}
+                    placeholder="Question prompt, text with blanks [1], or instructions..."
+                    value={draft.promptMd || ""}
+                    onChange={(e) => setDraft({ ...draft, promptMd: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 font-mono"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                  Explanation & Review Rationale (Markdown)
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="Why this answer is correct, citing the passage..."
+                  value={draft.explanationMd || ""}
+                  onChange={(e) => setDraft({ ...draft, explanationMd: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500 font-mono"
+                />
+              </div>
+
+              {/* Reason Taxonomy, Diff Preview & Small Edit Indicator for Human Edits */}
+              {isDirty && (
+                <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3.5 space-y-3 text-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`inline-block h-2 w-2 rounded-full ${
+                          editPolicy.isSmallEdit ? "bg-emerald-400" : "bg-amber-400"
+                        }`}
+                      />
+                      <span className="font-semibold text-slate-200">
+                        {editPolicy.isSmallEdit
+                          ? "Small Edit Policy Met (Reasons Optional)"
+                          : "Substantive Edit (Reason Taxonomy Recommended)"}
+                      </span>
+                      <span className="text-[10px] font-mono text-slate-400">
+                        Δ {editPolicy.characterDiff} chars {editPolicy.formattingOnly && "(formatting only)"}
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-slate-400">
+                      {selectedReasons.length} reason tag(s) attached
+                    </span>
+                  </div>
+
+                  {/* Before / After Full Diff Preview */}
+                  {beforeQuestionText !== currentQuestionText && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px]">
+                      <div className="p-2 rounded-lg bg-rose-950/20 border border-rose-900/40 text-rose-200 font-mono overflow-x-auto max-h-32">
+                        <div className="text-[9px] uppercase font-semibold text-rose-400 mb-0.5">Original Version</div>
+                        <div className="whitespace-pre-wrap">{beforeQuestionText || "(empty)"}</div>
+                      </div>
+                      <div className="p-2 rounded-lg bg-emerald-950/20 border border-emerald-900/40 text-emerald-200 font-mono overflow-x-auto max-h-32">
+                        <div className="text-[9px] uppercase font-semibold text-emerald-400 mb-0.5">Edited Version</div>
+                        <div className="whitespace-pre-wrap">{currentQuestionText || "(empty)"}</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Reason Taxonomy Multi-Select Chips */}
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-semibold uppercase text-slate-400 block">
+                      Attach Reason Taxonomy Tags:
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {FEEDBACK_REASONS.map((r) => {
+                        const isSelected = selectedReasons.includes(r.id);
+                        return (
+                          <button
+                            key={r.id}
+                            type="button"
+                            onClick={() =>
+                              setSelectedReasons((prev) =>
+                                prev.includes(r.id) ? prev.filter((id) => id !== r.id) : [...prev, r.id]
+                              )
+                            }
+                            className={`px-2 py-1 rounded-md text-[11px] font-medium transition-all ${
+                              isSelected
+                                ? "bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-400"
+                                : "bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-slate-800"
+                            }`}
+                            title={r.description}
+                          >
+                            {r.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Curator Comment / Rationale */}
+                  <div className="space-y-1">
+                    <input
+                      type="text"
+                      aria-label="Edit rationale / comments"
+                      value={curatorComment}
+                      onChange={(e) => setCuratorComment(e.target.value)}
+                      placeholder="Optional curator justification / editorial comment..."
+                      className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="pt-4 border-t border-slate-800/80">
+                {renderTypeEditor()}
+              </div>
+            </div>
+
+            {showPreview && (
+              <div className="lg:sticky lg:top-4 lg:self-start">
+                <AdminQuestionPreview question={draft} displayIdx={draft.idx} />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Confirm-Before-Save Review Modal for Substantive Edits */}
+      {isReviewModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4 overflow-y-auto"
+        >
+          <div className="relative w-full max-w-2xl rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-5 text-slate-100 my-8 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-800 pb-3">
+              <div>
+                <h3 className="text-base font-bold text-white tracking-tight">
+                  Review Substantive Question Edit
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Target: <span className="text-indigo-300 font-medium">Q#{draft.idx} ({draft.type})</span>
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsReviewModalOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            {saveMessage?.isError && (
+              <div role="alert" className="p-3 rounded-lg border border-rose-700 bg-rose-950/40 text-xs text-rose-200">
+                {saveMessage.text}
+              </div>
+            )}
+            {/* Small Edit Policy Indicator */}
+            <div
+              className={`rounded-xl border p-3 text-xs flex items-center justify-between gap-2 ${
+                editPolicy.isSmallEdit
+                  ? "border-emerald-800/60 bg-emerald-950/30 text-emerald-300"
+                  : "border-amber-800/60 bg-amber-950/30 text-amber-300"
+              }`}
+            >
+              <div className="flex items-center gap-2 font-medium">
+                <span className={`inline-block h-2 w-2 rounded-full ${editPolicy.isSmallEdit ? "bg-emerald-400" : "bg-amber-400"}`} />
+                <span>
+                  {editPolicy.isSmallEdit
+                    ? "Small edit detected — taxonomy reasons are optional."
+                    : "Substantive edit detected — reason taxonomy recommended."}
+                </span>
+              </div>
+              <span className="font-mono text-[11px] opacity-80">Δ {editPolicy.characterDiff} chars</span>
+            </div>
+
+            {/* Full Before / After Diff */}
+            <div className="space-y-2 text-xs">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px]">
+                <div className="p-3 rounded-xl bg-rose-950/20 border border-rose-900/40 text-rose-200 font-mono overflow-x-auto max-h-40">
+                  <div className="text-[9px] uppercase font-semibold text-rose-400 mb-1">Original Question</div>
+                  <div className="whitespace-pre-wrap">{beforeQuestionText || "(empty)"}</div>
+                </div>
+                <div className="p-3 rounded-xl bg-emerald-950/20 border border-emerald-900/40 text-emerald-200 font-mono overflow-x-auto max-h-40">
+                  <div className="text-[9px] uppercase font-semibold text-emerald-400 mb-1">Edited Question</div>
+                  <div className="whitespace-pre-wrap">{currentQuestionText || "(empty)"}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Reason Taxonomy Chips */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                  Reason Taxonomy Tags
+                </label>
+                <span className="text-[11px] text-slate-500">{selectedReasons.length} selected</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto">
+                {FEEDBACK_REASONS.map((r) => {
+                  const isSelected = selectedReasons.includes(r.id);
+                  return (
+                    <button
+                      key={r.id}
+                      type="button"
+                      onClick={() =>
+                        setSelectedReasons((prev) =>
+                          prev.includes(r.id) ? prev.filter((id) => id !== r.id) : [...prev, r.id]
+                        )
+                      }
+                      className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                        isSelected
+                          ? "bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-400"
+                          : "bg-slate-950 text-slate-300 hover:bg-slate-800 border border-slate-800"
+                      }`}
+                      title={r.description}
+                    >
+                      {r.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Curator Comment */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                Curator Justification / Comments
+              </label>
+              <textarea
+                rows={2}
+                aria-label="Edit rationale / comments"
+                value={curatorComment}
+                onChange={(e) => setCuratorComment(e.target.value)}
+                placeholder="Editorial justification or reasons for changing question content..."
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => setIsReviewModalOpen(false)}
+                disabled={isSaving}
+                className="px-4 py-2 text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => executeSave(selectedReasons, curatorComment, actionKey)}
+                disabled={isSaving}
+                className="px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 transition disabled:opacity-50"
+              >
+                {isSaving ? "Saving..." : "Confirm & Save Edit"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

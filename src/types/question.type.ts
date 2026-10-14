@@ -39,6 +39,7 @@ type Choice = { value: string; label: string };
 
 export interface QuestionData {
   id: string;
+  /** 1-based question ordinal within section or exam (1..N) */
   idx: number;
   type: string;
   stem: string;
@@ -51,3 +52,31 @@ export interface QuestionData {
   order?: string;
   placeholder?: string;
 }
+
+/**
+ * UI-facing question shape consumed by QuestionPanel and the
+ * QuestionComponentRegistry. Distinct from `QuestionData` (which models
+ * the raw API row) — `Question` carries derived fields (`uiKind`,
+ * `modelAnswers`, `groupId`, etc.) and the dispatcher accepts it
+ * directly. Moved from QuestionPanel.tsx in G14a to break the circular
+ * import that the shared `deriveUiKind` helper would otherwise create
+ * (panel → deriveUiKind → panel).
+ */
+export type Question = {
+  id: string;
+  stem: string;
+  backendType: string;
+  uiKind: QuestionUiKind;
+  forices?: Array<string | Choice>;
+  placeholder?: string;
+  order?: string;
+  flowChartNodes?: { key: string; label: string }[];
+  headings?: { key: string; text: string }[];
+  explanationMd?: string;
+  /** 1-based question ordinal within section or exam (1..N) */
+  idx?: number;
+  imageUrl?: string | null;
+  modelAnswers?: string[] | null;
+  wordList?: string[] | null;
+  groupId?: string | null;
+};
