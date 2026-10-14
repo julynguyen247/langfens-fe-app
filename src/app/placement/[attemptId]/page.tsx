@@ -5,14 +5,6 @@ import { useParams, useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { motion } from "framer-motion";
-<<<<<<< HEAD
-import { useAttemptStore } from "@/app/store/useAttemptStore";
-import { useUserStore } from "@/app/store/userStore";
-import { autoSaveAttempt, submitAttempt, uploadFile } from "@/utils/api";
-import { useDebouncedAutoSave } from "@/app/utils/hook";
-import { buildQuestion } from "@/lib/buildQuestion";
-import type { BackendQuestionType, Question as UiQuestion } from "@/types/question.type";
-=======
 import { useAttemptStore } from "@/stores/useAttemptStore";
 import { useUserStore } from "@/stores/userStore";
 import { autoSaveAttempt, submitAttempt } from "@/services/attempts";
@@ -20,7 +12,6 @@ import { uploadFile } from "@/services/speaking";
 import { useDebouncedAutoSave } from "@/hooks/useDebouncedAutoSave";
 import { mapApiQuestionToUi } from "@/lib/mapApiQuestionToUi";
 import { BackendQuestionType } from "@/types/question.type";
->>>>>>> origin/master
 import ListeningAudioBar from "../../do-test/[skill]/[attemptId]/components/listening/ListeningAudioBar";
 import QuestionPanel from "../../do-test/[skill]/[attemptId]/components/common/QuestionPanel";
 import PassageView from "../../do-test/[skill]/[attemptId]/components/reading/PassageView";
@@ -51,16 +42,6 @@ const LEVEL_COLORS: Record<string, { bg: string; text: string; border: string }>
   C2: { bg: "bg-[var(--skill-writing-light)]", text: "text-[var(--skill-writing)]", border: "border-[var(--skill-writing-border)]" },
 };
 
-<<<<<<< HEAD
-function formatTime(totalSeconds: number) {
-  const m = Math.floor(totalSeconds / 60);
-  const s = totalSeconds % 60;
-  return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-}
-
-
-=======
->>>>>>> origin/master
 export default function MultiSkillAttemptPage() {
   const router = useRouter();
   const { attemptId } = useParams() as { attemptId: string };
