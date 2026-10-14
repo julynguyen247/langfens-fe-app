@@ -4,6 +4,11 @@ import React, { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { InternalDeliverySection } from "./types";
+import {
+  RESULT_BUTTON_GHOST,
+  RESULT_BUTTON_PRIMARY,
+  RESULT_BUTTON_SECONDARY,
+} from "./resultButtonStyles";
 
 interface PassagePanelV3Props {
   sections: InternalDeliverySection[];
@@ -96,11 +101,8 @@ export function PassagePanelV3({
                 key={`${sec.id ?? "sec"}-${sec.idx ?? "idx"}-${i}`}
                 type="button"
                 onClick={() => onSelectSection(i)}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  activeSectionIdx === i
-                    ? "bg-[var(--primary)] text-white border-b-[3px] border-[var(--primary-dark)] shadow-xs active:translate-y-[2px] active:border-b-[2px]"
-                    : "bg-[var(--surface)] text-[var(--text-muted)] border-2 border-[var(--border)] hover:bg-[var(--background)] hover:border-[var(--text-muted)]"
-                }`}
+                aria-pressed={activeSectionIdx === i}
+                className={`${activeSectionIdx === i ? RESULT_BUTTON_PRIMARY : RESULT_BUTTON_SECONDARY} h-8 px-4 text-xs`}
               >
                 Part {partNum}
               </button>
@@ -109,14 +111,15 @@ export function PassagePanelV3({
         </div>
 
         {/* Font size adjustment */}
-        <div className="flex items-center gap-1 border-2 border-[var(--border)] rounded-xl p-0.5 bg-[var(--background)]">
+        <div className="flex items-center gap-1 border-2 border-[var(--border)] border-b-[3px] rounded-full p-0.5 bg-[var(--background)]">
           <button
             type="button"
             onClick={() => setFontSizeClass("sm")}
-            className={`px-2 py-0.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+            aria-pressed={fontSizeClass === "sm"}
+            className={`px-2 py-0.5 rounded-full text-xs font-bold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-1 ${
               fontSizeClass === "sm"
-                ? "bg-[var(--surface)] text-[var(--foreground)] shadow-xs border border-[var(--border)]"
-                : "text-[var(--text-muted)] hover:text-[var(--foreground)]"
+                ? "bg-[var(--primary)] text-white border-b-[2px] border-b-[var(--primary-dark)]"
+                : "text-[var(--text-muted)] hover:text-[var(--primary)] hover:bg-[var(--surface)]"
             }`}
             title="Small font"
           >
@@ -125,10 +128,11 @@ export function PassagePanelV3({
           <button
             type="button"
             onClick={() => setFontSizeClass("base")}
-            className={`px-2 py-0.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+            aria-pressed={fontSizeClass === "base"}
+            className={`px-2 py-0.5 rounded-full text-xs font-bold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-1 ${
               fontSizeClass === "base"
-                ? "bg-[var(--surface)] text-[var(--foreground)] shadow-xs border border-[var(--border)]"
-                : "text-[var(--text-muted)] hover:text-[var(--foreground)]"
+                ? "bg-[var(--primary)] text-white border-b-[2px] border-b-[var(--primary-dark)]"
+                : "text-[var(--text-muted)] hover:text-[var(--primary)] hover:bg-[var(--surface)]"
             }`}
             title="Normal font"
           >
@@ -137,10 +141,11 @@ export function PassagePanelV3({
           <button
             type="button"
             onClick={() => setFontSizeClass("lg")}
-            className={`px-2 py-0.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+            aria-pressed={fontSizeClass === "lg"}
+            className={`px-2 py-0.5 rounded-full text-xs font-bold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-1 ${
               fontSizeClass === "lg"
-                ? "bg-[var(--surface)] text-[var(--foreground)] shadow-xs border border-[var(--border)]"
-                : "text-[var(--text-muted)] hover:text-[var(--foreground)]"
+                ? "bg-[var(--primary)] text-white border-b-[2px] border-b-[var(--primary-dark)]"
+                : "text-[var(--text-muted)] hover:text-[var(--primary)] hover:bg-[var(--surface)]"
             }`}
             title="Large font"
           >
@@ -212,7 +217,8 @@ export function PassagePanelV3({
             <button
               type="button"
               onClick={() => setShowTranscript(!showTranscript)}
-              className="flex items-center gap-2 text-xs font-bold text-[var(--primary)] hover:underline cursor-pointer"
+              aria-expanded={showTranscript}
+              className={`${RESULT_BUTTON_GHOST} px-3 py-1.5 text-xs`}
             >
               <span>{showTranscript ? "Hide Transcript" : "View Audio Transcript"}</span>
               <svg

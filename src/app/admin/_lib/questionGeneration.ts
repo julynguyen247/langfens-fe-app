@@ -1,5 +1,8 @@
-import { AdminQuestionUpsert } from "./types";
-import { validateQuestionPayload } from "./validation";
+import { AdminQuestionUpsert, QuestionType } from "./types";
+import {
+  validateQuestionPayload,
+  validateGeneratedMatchingQuestion,
+} from "./validation";
 import {
   AiConfig,
   DEFAULT_AI_CONFIG,
@@ -41,9 +44,16 @@ export interface GenerateQuestionsResult {
   validationErrors: string[];
 }
 
+const MATCHING_TYPES: Record<string, true> = {
+  [QuestionType.MatchingHeading]: true,
+  [QuestionType.MatchingInformation]: true,
+  [QuestionType.MatchingFeatures]: true,
+  [QuestionType.MatchingEndings]: true,
+};
+
 /**
  * Resolves the primary passage text for a section, preferring passageMd
- * (reading passage) and falling back to transcriptMd (listening transcript).
+ * (reading exams) and falling back to transcriptMd (listening exams).
  */
 export function resolveSectionPassage(
   section?: { passageMd?: string | null; transcriptMd?: string | null } | null
@@ -89,6 +99,7 @@ export async function generateQuestionsFromPassage(
   const userPrompt = prompt.userTemplate(passage, count, {
     difficulty: String(difficulty),
     extra: params.extraContext || "",
+    skill,
   });
 
   const rawText = await callAi(config, prompt.system, userPrompt, {
@@ -103,6 +114,30 @@ export async function generateQuestionsFromPassage(
   const parsed = tryParseLlmJson(rawText);
   if (!parsed) {
     throw new Error("LLM output could not be parsed as JSON. See response below.");
+  }
+
+  const validationErrors: string[] = [];
+  const isMatching = Boolean(MATCHING_TYPES[params.type]);
+
+  if (isMatching) {
+    if (parsed.length !== count) {
+      validationErrors.push(
+        `Invalid ${params.type} question count: expected ${count}, got ${parsed.length}`
+      );
+    }
+    for (let i = 0; i < parsed.length; i++) {
+      const matchingIssues = validateGeneratedMatchingQuestion(
+        parsed[i],
+        params.type,
+        skill,
+        difficulty
+      );
+      for (const iss of matchingIssues) {
+        if (iss.level === "error") {
+          validationErrors.push(`Q#${i + 1} [${iss.field}]: ${iss.message}`);
+        }
+      }
+    }
   }
 
   const questions: ParsedAuthorQuestion[] = parsed.map((q) => {
@@ -140,7 +175,6 @@ export async function generateQuestionsFromPassage(
     };
   });
 
-  const validationErrors: string[] = [];
   for (let i = 0; i < questions.length; i++) {
     const { upsert: eq, options: optList } = questions[i];
     const issues = validateQuestionPayload({
@@ -185,6 +219,40 @@ export async function persistGeneratedQuestions(
   // Validate all questions before writing to the database
   for (let i = 0; i < questions.length; i++) {
     const item = questions[i];
+    const isMatching = Boolean(MATCHING_TYPES[item.upsert.Type]);
+    if (isMatching) {
+      const matchingIssues = validateGeneratedMatchingQuestion(
+        {
+          type: item.upsert.Type,
+          skill: item.upsert.Skill,
+          difficulty: item.upsert.Difficulty,
+          promptMd: item.upsert.PromptMd,
+          options: item.options?.map((o) => ({
+            idx: o.idx,
+            contentMd: o.contentMd,
+            isCorrect: o.isCorrect,
+            imageUrl: o.imageUrl,
+            altText: o.altText,
+          })),
+          matchPairs: item.upsert.MatchPairs,
+          blankAcceptTexts: item.upsert.BlankAcceptTexts,
+          blankAcceptRegex: item.upsert.BlankAcceptRegex,
+          orderCorrects: item.upsert.OrderCorrects,
+          shortAnswerAcceptTexts: item.upsert.ShortAnswerAcceptTexts,
+          shortAnswerAcceptRegex: item.upsert.ShortAnswerAcceptRegex,
+        },
+        item.upsert.Type,
+        item.upsert.Skill,
+        item.upsert.Difficulty
+      );
+      const matchingErrors = matchingIssues.filter((iss) => iss.level === "error");
+      if (matchingErrors.length > 0) {
+        throw new Error(
+          `Cannot persist invalid matching Q#${i + 1}: ${matchingErrors.map((e) => e.message).join("; ")}`
+        );
+      }
+    }
+
     const issues = validateQuestionPayload({
       type: item.upsert.Type,
       skill: item.upsert.Skill,
@@ -214,7 +282,11 @@ export async function persistGeneratedQuestions(
       SectionId: sectionId,
     });
 
-    if (created?.id && item.options && item.options.length > 0) {
+    if (!created?.id) {
+      throw new Error("Failed to create question: server did not return a valid question ID.");
+    }
+
+    if (item.options && item.options.length > 0) {
       for (const opt of item.options) {
         await createOption({
           QuestionId: created.id,

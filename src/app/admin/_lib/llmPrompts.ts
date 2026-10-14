@@ -26,7 +26,7 @@ export const LLM_PROMPTS: Record<string, LlmPromptTemplate> = {
   },
   MATCHING_HEADING: {
     system: buildSystemPrompt(QuestionType.MatchingHeading),
-    userTemplate: (passage, n, vars) => buildUserPrompt("MATCHING_HEADING", passage, n, vars as { difficulty: string; extra?: string }),
+    userTemplate: (passage, n, vars) => buildUserPrompt("MATCHING_HEADING", passage, n, vars as { difficulty?: string; extra?: string; skill?: string }),
   },
   MULTIPLE_CHOICE_SINGLE: {
     system: buildSystemPrompt(QuestionType.MultipleChoiceSingle),
@@ -87,15 +87,15 @@ export const LLM_PROMPTS: Record<string, LlmPromptTemplate> = {
   },
   MATCHING_INFORMATION: {
     system: buildSystemPrompt(QuestionType.MatchingInformation),
-    userTemplate: (passage, n, vars) => buildUserPrompt("MATCHING_INFORMATION", passage, n, vars as { difficulty: string; extra?: string }),
+    userTemplate: (passage, n, vars) => buildUserPrompt("MATCHING_INFORMATION", passage, n, vars as { difficulty?: string; extra?: string; skill?: string }),
   },
   MATCHING_FEATURES: {
     system: buildSystemPrompt(QuestionType.MatchingFeatures),
-    userTemplate: (passage, n, vars) => buildUserPrompt("MATCHING_FEATURES", passage, n, vars as { difficulty: string; extra?: string }),
+    userTemplate: (passage, n, vars) => buildUserPrompt("MATCHING_FEATURES", passage, n, vars as { difficulty?: string; extra?: string; skill?: string }),
   },
   MATCHING_ENDINGS: {
     system: buildSystemPrompt(QuestionType.MatchingEndings),
-    userTemplate: (passage, n, vars) => buildUserPrompt("MATCHING_ENDINGS", passage, n, vars as { difficulty: string; extra?: string }),
+    userTemplate: (passage, n, vars) => buildUserPrompt("MATCHING_ENDINGS", passage, n, vars as { difficulty?: string; extra?: string; skill?: string }),
   },
 };
 

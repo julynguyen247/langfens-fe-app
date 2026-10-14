@@ -2,6 +2,7 @@
 
 import React from "react";
 import { AttemptResultData } from "@/components/exam-v3/types";
+import { RESULT_BUTTON_PRIMARY } from "@/components/exam-v3/resultButtonStyles";
 
 interface ScoreReportModalV3Props {
   isOpen: boolean;
@@ -24,9 +25,9 @@ export function ScoreReportModalV3({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 font-sans animate-fade-in">
-      <div className="w-full max-w-lg rounded-3xl bg-[var(--surface)] border-2 border-[var(--border)] p-8 shadow-2xl space-y-6 text-center">
+      <div className="w-full max-w-lg rounded-[2rem] bg-[var(--surface)] border-[3px] border-[var(--border)] p-8 shadow-[0_4px_0_rgba(0,0,0,0.08)] space-y-6 text-center">
         {/* Header Badge */}
-        <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-br from-[var(--primary)] to-[var(--primary-dark)] text-white flex items-center justify-center text-2xl shadow-lg shadow-[var(--primary)]/20">
+        <div className="mx-auto w-16 h-16 rounded-2xl bg-[var(--primary)] border-b-[4px] border-[var(--primary-dark)] text-white flex items-center justify-center text-2xl shadow-xs">
           📊
         </div>
 
@@ -80,7 +81,7 @@ export function ScoreReportModalV3({
           <button
             type="button"
             onClick={onClose}
-            className="w-full py-3 px-5 rounded-full bg-[var(--foreground)] hover:bg-[var(--text-body)] text-white text-xs font-bold transition shadow-xs cursor-pointer border-b-[3px] border-black active:translate-y-[2px] active:border-b-[2px]"
+            className={`${RESULT_BUTTON_PRIMARY} w-full py-3 px-5 text-xs`}
           >
             Close Score Report
           </button>

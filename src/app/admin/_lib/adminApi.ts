@@ -33,8 +33,17 @@ export async function createExam(dto: AdminExamCreate): Promise<{ id: string; sl
   return res.data?.data;
 }
 
-export async function updateExam(id: string, dto: AdminExamUpdate): Promise<void> {
-  await apisExam.put(`/admin/exam/update/${id}`, dto);
+export async function updateExam(
+  id: string,
+  dto: AdminExamUpdate,
+  options?: { reasons?: string[]; comment?: string; idempotencyKey?: string }
+): Promise<void> {
+  const key = options?.idempotencyKey || (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : undefined);
+  const headers: Record<string, string> = {};
+  if (key) headers["Idempotency-Key"] = key;
+  if (options?.reasons && options.reasons.length > 0) headers["X-Feedback-Reasons"] = options.reasons.join(",");
+  if (options?.comment) headers["X-Feedback-Comment"] = options.comment;
+  await apisExam.put(`/admin/exam/update/${id}`, dto, Object.keys(headers).length ? { headers } : undefined);
 }
 
 export async function deleteExam(id: string): Promise<void> {
@@ -55,8 +64,17 @@ export async function createSection(dto: AdminSectionUpsert): Promise<AdminSecti
   return res.data?.data;
 }
 
-export async function updateSection(id: string, dto: AdminSectionUpdate): Promise<void> {
-  await apisExam.put(`/admin/section/update/${id}`, dto);
+export async function updateSection(
+  id: string,
+  dto: AdminSectionUpdate,
+  options?: { reasons?: string[]; comment?: string; idempotencyKey?: string }
+): Promise<void> {
+  const key = options?.idempotencyKey || (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : undefined);
+  const headers: Record<string, string> = {};
+  if (key) headers["Idempotency-Key"] = key;
+  if (options?.reasons && options.reasons.length > 0) headers["X-Feedback-Reasons"] = options.reasons.join(",");
+  if (options?.comment) headers["X-Feedback-Comment"] = options.comment;
+  await apisExam.put(`/admin/section/update/${id}`, dto, Object.keys(headers).length ? { headers } : undefined);
 }
 
 export async function deleteSection(id: string): Promise<void> {
@@ -77,8 +95,19 @@ export async function createQuestion(dto: AdminQuestionUpsert): Promise<AdminQue
   return res.data?.data;
 }
 
-export async function updateQuestion(id: string, dto: AdminQuestionUpdate): Promise<void> {
-  await apisExam.put(`/admin/question/update/${id}`, dto);
+export async function updateQuestion(
+  id: string,
+  dto: AdminQuestionUpdate,
+  options?: { reasons?: string[]; comment?: string; idempotencyKey?: string }
+): Promise<void> {
+  const reasons = options?.reasons ?? dto.Reasons;
+  const comment = options?.comment ?? dto.Comment;
+  const key = options?.idempotencyKey ?? dto.IdempotencyKey ?? (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : undefined);
+  const headers: Record<string, string> = {};
+  if (key) headers["Idempotency-Key"] = key;
+  if (reasons && reasons.length > 0) headers["X-Feedback-Reasons"] = reasons.join(",");
+  if (comment) headers["X-Feedback-Comment"] = comment;
+  await apisExam.put(`/admin/question/update/${id}`, dto, Object.keys(headers).length ? { headers } : undefined);
 }
 
 export async function deleteQuestion(id: string): Promise<void> {
@@ -99,8 +128,17 @@ export async function createOption(dto: AdminOptionUpsert): Promise<AdminOptionI
   return res.data?.data;
 }
 
-export async function updateOption(id: string, dto: AdminOptionUpdate): Promise<void> {
-  await apisExam.put(`/admin/option/update/${id}`, dto);
+export async function updateOption(
+  id: string,
+  dto: AdminOptionUpdate,
+  options?: { reasons?: string[]; comment?: string; idempotencyKey?: string }
+): Promise<void> {
+  const key = options?.idempotencyKey || (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : undefined);
+  const headers: Record<string, string> = {};
+  if (key) headers["Idempotency-Key"] = key;
+  if (options?.reasons && options.reasons.length > 0) headers["X-Feedback-Reasons"] = options.reasons.join(",");
+  if (options?.comment) headers["X-Feedback-Comment"] = options.comment;
+  await apisExam.put(`/admin/option/update/${id}`, dto, Object.keys(headers).length ? { headers } : undefined);
 }
 
 export async function deleteOption(id: string): Promise<void> {
@@ -218,6 +256,12 @@ export async function getFullExamForEditor(examId: string): Promise<InternalDeli
         title: sec.title || adminSec?.title || `Section ${sec.idx}`,
         instructionsMd: sec.instructionsMd ?? adminSec?.instructionsMd ?? null,
         passageMd: sec.passageMd ?? adminSec?.passageMd ?? null,
+        sourcePmcid: adminSec?.sourcePmcid ?? null,
+        sourceTitle: adminSec?.sourceTitle ?? null,
+        sourceAuthors: adminSec?.sourceAuthors ?? null,
+        sourceDoi: adminSec?.sourceDoi ?? null,
+        sourceUrl: adminSec?.sourceUrl ?? null,
+        sourceLicense: adminSec?.sourceLicense ?? null,
         audioUrl: sec.audioUrl ?? adminSec?.audioUrl ?? null,
         transcriptMd: sec.transcriptMd ?? adminSec?.transcriptMd ?? null,
         questions: enrichedQuestions,

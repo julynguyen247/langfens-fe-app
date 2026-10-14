@@ -17,6 +17,14 @@ interface MatchingTarget {
   label: string;
 }
 
+function extractChoiceKey(value: string): string | null {
+  const match = value.trim().match(
+    /^\[([a-z0-9]+)\](?=$|\s|[.):\-–—])|^([a-z0-9]+)(?=$|[.)]|\s+[-–—:])/i
+  );
+  const key = match?.[1] ?? match?.[2];
+  return key?.toLowerCase() ?? null;
+}
+
 function normalizeMatchPairs(raw: unknown): Record<string, string[]> {
   const result: Record<string, string[]> = {};
   if (!raw) return result;
@@ -164,8 +172,7 @@ export function MatchingCardV3({
   const choices: { key: string; label: string }[] = [];
   if (options && options.length > 0) {
     for (const opt of options) {
-      const match = opt.contentMd.match(/^([ivxlcdm]+|[a-z0-9]+)\.?\s*(.*)/i);
-      const k = match ? match[1].toLowerCase() : String(opt.idx);
+      const k = extractChoiceKey(opt.contentMd) ?? String(opt.idx);
       choices.push({
         key: k,
         label: opt.contentMd,
@@ -317,7 +324,9 @@ export function MatchingCardV3({
                         : "text-slate-400 italic"
                     }`}
                   >
-                    {userChoice ? `[${userChoice}]` : "(No answer given)"}
+                    {userChoice
+                      ? choices.find((c) => c.key.toLowerCase() === userChoice.toLowerCase())?.label ?? `[${userChoice}]`
+                      : "(No answer given)"}
                   </span>
                 </div>
 

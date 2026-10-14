@@ -9,6 +9,10 @@ import {
   QuestionType,
   UserAnswerValue,
 } from "./types";
+import {
+  RESULT_BUTTON_GHOST,
+  RESULT_BUTTON_SECONDARY,
+} from "./resultButtonStyles";
 import { McqCardV3 } from "./cards/McqCardV3";
 import { TrueFalseCardV3 } from "./cards/TrueFalseCardV3";
 import { MatchingCardV3 } from "./cards/MatchingCardV3";
@@ -205,8 +209,9 @@ export function QuestionCardV3({
                 <button
                   type="button"
                   onClick={() => onLocateParagraph(referencedParagraph)}
-                  className="px-2.5 py-1 text-[11px] font-bold rounded-lg border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 transition flex items-center gap-1 cursor-pointer shadow-2xs"
+                  className={`${RESULT_BUTTON_SECONDARY} h-7 px-2.5 text-[11px]`}
                   title={`Locate Paragraph [${referencedParagraph}] in reading passage`}
+                  aria-label={`Locate paragraph ${referencedParagraph} in reading passage`}
                 >
                   <span>📍</span>
                   <span>Para [{referencedParagraph}]</span>
@@ -264,7 +269,8 @@ export function QuestionCardV3({
           <button
             type="button"
             onClick={() => setShowExplanation(!showExplanation)}
-            className="flex items-center gap-1.5 text-xs font-bold text-[#2563EB] hover:text-[#1D4ED8] transition cursor-pointer"
+            aria-expanded={showExplanation}
+            className={`${RESULT_BUTTON_GHOST} px-3 py-1.5 text-xs`}
           >
             <span>{showExplanation ? "Hide Detailed Explanation" : "View Detailed Explanation"}</span>
             <svg

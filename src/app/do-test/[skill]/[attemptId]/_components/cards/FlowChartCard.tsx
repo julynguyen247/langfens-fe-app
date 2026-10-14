@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { UserAnswerValue } from "../../_lib/types";
 import { parseBracketedBlanks } from "../../../../_lib/parseBlankTokens";
 
@@ -38,6 +38,7 @@ export function FlowChartCard({
   value,
   onChange,
 }: FlowChartCardProps) {
+  const inputIdPrefix = useId();
   // Derive blank keys either from blankAcceptTexts (admin / review)
   // or from bracketed placeholders in promptMd (live test snapshot where answers are stripped)
   const blankKeys = useMemo(() => {
@@ -162,114 +163,134 @@ export function FlowChartCard({
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between text-xs text-slate-600 font-medium">
-        <span>
-          Arrange steps in the correct chronological order
-          {hasBlanks ? ", then fill each blank" : ""}:
-        </span>
-      </div>
+    <div className="space-y-5">
+      <section className="rounded-3xl border border-slate-200 bg-slate-50/80 p-4 sm:p-5">
+        <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-200 pb-4">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-900 sm:text-base">
+              Process sequence
+            </h3>
+            <p className="mt-1 text-xs leading-5 text-slate-500">
+              Move each step into its correct position
+              {hasBlanks ? " and complete the missing details" : ""}.
+            </p>
+          </div>
+          <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600">
+            {items.length} {items.length === 1 ? "step" : "steps"}
+          </span>
+        </div>
 
-      {/* Step Reordering List */}
-      <div className="space-y-2.5">
-        {items.map((key, idx) => {
-          const node = (flowChartNodes || []).find((n) => n.key === key);
-          // Resolution order: flowChartNode label → promptMd "A. Label" map → de-slug
-          const humanLabel =
-            node?.label ||
-            promptLabelMap.get(key) ||
-            key.replace(/-/g, " ");
+        {items.length > 0 ? (
+          <ol className="mt-5 space-y-3" aria-label="Flowchart steps">
+            {items.map((key, idx) => {
+              const node = (flowChartNodes || []).find((n) => n.key === key);
+              // Resolution order: flowChartNode label → promptMd "A. Label" map → de-slug
+              const humanLabel =
+                node?.label ||
+                promptLabelMap.get(key) ||
+                key.replace(/-/g, " ");
 
-          return (
-            <div
-              key={`${key}-${idx}`}
-              className="p-3.5 rounded-2xl border-2 flex items-center justify-between gap-3.5 transition-all shadow-2xs bg-white border-slate-200 text-slate-800"
-            >
-              <div className="flex items-center gap-3.5 min-w-0">
-                <div className="w-7 h-7 rounded-full bg-blue-50 text-[#2563EB] border border-blue-200 flex items-center justify-center text-xs font-mono font-bold shrink-0">
-                  {idx + 1}
-                </div>
-
-                <div className="font-semibold text-xs sm:text-sm leading-snug break-words min-w-0">
-                  {humanLabel}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-1 shrink-0">
-                <button
-                  type="button"
-                  disabled={idx === 0}
-                  onClick={() => handleMove(idx, "up")}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-800 hover:bg-slate-100 disabled:opacity-30 transition cursor-pointer disabled:cursor-not-allowed"
-                  title="Move up"
+              return (
+                <li
+                  key={`${key}-${idx}`}
+                  className="grid grid-cols-[2.25rem_minmax(0,1fr)] gap-3 sm:grid-cols-[2.5rem_minmax(0,1fr)] sm:gap-4"
                 >
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2.5}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M5 15l7-7 7 7"
-                    />
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  disabled={idx === items.length - 1}
-                  onClick={() => handleMove(idx, "down")}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-800 hover:bg-slate-100 disabled:opacity-30 transition cursor-pointer disabled:cursor-not-allowed"
-                  title="Move down"
-                >
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2.5}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+                  <div className="relative flex justify-center">
+                    {idx < items.length - 1 && (
+                      <span
+                        aria-hidden="true"
+                        className="absolute top-9 bottom-[-0.75rem] w-px bg-blue-200"
+                      />
+                    )}
+                    <span className="relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-blue-200 bg-blue-50 font-mono text-xs font-bold text-blue-700">
+                      {String(idx + 1).padStart(2, "0")}
+                    </span>
+                  </div>
+
+                  <div className="flex min-w-0 flex-col justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-3.5 text-slate-800 shadow-sm transition-colors hover:border-slate-300 sm:flex-row sm:items-center sm:gap-4 sm:p-4">
+                    <div className="min-w-0 flex-1">
+                      <span className="mb-1 block text-[11px] font-medium text-slate-400">
+                        Step {idx + 1}
+                      </span>
+                      <span className="block break-words text-sm font-semibold leading-6 text-slate-800">
+                        {humanLabel}
+                      </span>
+                    </div>
+
+                    <div className="flex shrink-0 items-center gap-2 border-t border-slate-100 pt-3 sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0">
+                      <button
+                        type="button"
+                        disabled={idx === 0}
+                        onClick={() => handleMove(idx, "up")}
+                        aria-label={`Move step ${idx + 1} up`}
+                        title="Move up"
+                        className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        Move up
+                      </button>
+                      <button
+                        type="button"
+                        disabled={idx === items.length - 1}
+                        onClick={() => handleMove(idx, "down")}
+                        aria-label={`Move step ${idx + 1} down`}
+                        title="Move down"
+                        className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        Move down
+                      </button>
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+        ) : (
+          <p className="mt-5 rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-6 text-center text-sm text-slate-500">
+            Flowchart steps are not available for this question.
+          </p>
+        )}
+      </section>
 
       {/* Blank Inputs Section */}
       {hasBlanks && (
-        <div className="pt-2 space-y-2.5 border-t border-slate-100">
-          <div className="text-xs text-slate-600 font-medium">
-            Fill in each blank with ONE OR TWO WORDS from the passage:
+        <section className="space-y-3 rounded-3xl border border-slate-200 bg-white p-4 sm:p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-semibold text-slate-900">
+                Complete the flowchart
+              </h3>
+              <p className="mt-1 text-xs leading-5 text-slate-500">
+                Fill in each blank with one or two words from the passage.
+              </p>
+            </div>
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+              {blankKeys.length} {blankKeys.length === 1 ? "answer" : "answers"}
+            </span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
             {blankKeys.map((blankKey) => (
               <div
                 key={blankKey}
-                className="flex items-center gap-2 p-2.5 rounded-xl border-2 border-slate-200 bg-white shadow-2xs"
+                className="flex min-w-0 items-center gap-2.5 rounded-2xl border border-slate-200 bg-slate-50/70 p-3 transition-colors focus-within:border-blue-300 focus-within:bg-white"
               >
-                <span className="font-mono text-xs font-bold text-[#2563EB] bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg shrink-0">
+                <label
+                  htmlFor={`flowchart-blank-${inputIdPrefix}-${blankKey}`}
+                  className="shrink-0 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1.5 font-mono text-xs font-bold text-blue-700"
+                >
                   Blank [{blankKey}]
-                </span>
+                </label>
                 <input
+                  id={`flowchart-blank-${inputIdPrefix}-${blankKey}`}
                   type="text"
                   value={labels[blankKey] || ""}
                   onChange={(e) => handleLabelChange(blankKey, e.target.value)}
                   placeholder={`Type answer for [${blankKey}]...`}
-                  className="flex-1 rounded-lg border px-3 py-1.5 text-xs bg-white border-slate-300 text-slate-900 focus:border-[#2563EB] focus:outline-none transition-all"
+                  className="min-w-0 flex-1 border-0 bg-transparent px-1 py-1.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:ring-0"
                 />
               </div>
             ))}
           </div>
-        </div>
+        </section>
       )}
     </div>
   );

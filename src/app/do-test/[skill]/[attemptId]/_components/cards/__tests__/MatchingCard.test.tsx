@@ -3,6 +3,7 @@ import React from "react";
 import { describe, it, expect, afterEach, vi } from "vitest";
 import { createRoot, Root } from "react-dom/client";
 import { MatchingCard } from "../MatchingCard";
+import autogenContract from "@/app/admin/_lib/autogenContract.json";
 
 declare global {
   // eslint-disable-next-line no-var
@@ -10,6 +11,14 @@ declare global {
 }
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+
+function getContractQuestion(sourceQ: number): Record<string, unknown> {
+  const match = (autogenContract.examples as Array<{ sourceQuestion?: number; question?: Record<string, unknown> }> | undefined)?.find(
+    (e) => e.sourceQuestion === sourceQ
+  );
+  if (!match?.question) throw new Error(`Missing contract example for Q${sourceQ}`);
+  return JSON.parse(JSON.stringify(match.question));
+}
 
 describe("MatchingCard", () => {
   let container: HTMLDivElement | null = null;
@@ -154,5 +163,163 @@ Questions 1–4:
 
     expect(container.textContent).toContain("Blockbuster exhibitions");
     expect(container.textContent).toContain("Digital technology");
+  });
+
+  describe("Canonical Q6/Q7/Q9/Q10 Standard Exam Fixtures from Mirror (matchPairs=null)", () => {
+    it("Q6 (MATCHING_HEADING): renders 5 paragraph dropdowns and selects 'i' for target 1", async () => {
+      container = document.createElement("div");
+      document.body.appendChild(container);
+      root = createRoot(container);
+
+      const q6 = getContractQuestion(6);
+      const rawOptions = (q6.options as Array<{ idx: number; contentMd: string }>) || [];
+      const options = rawOptions.map((o, i) => ({
+        id: `mock-q6-opt-${i}`,
+        idx: o.idx,
+        contentMd: o.contentMd,
+      }));
+
+      const onChange = vi.fn();
+
+      await React.act(async () => {
+        root?.render(
+          <MatchingCard
+            matchPairs={null}
+            options={options}
+            promptMd={String(q6.promptMd)}
+            onChange={onChange}
+          />
+        );
+      });
+
+      const selects = container.querySelectorAll("select");
+      expect(selects.length).toBe(5);
+
+      await React.act(async () => {
+        if (selects[0]) {
+          selects[0].value = "i";
+          selects[0].dispatchEvent(new Event("change", { bubbles: true }));
+        }
+      });
+
+      expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ "1": "i" }));
+    });
+
+    it("Q7 (MATCHING_INFORMATION): renders 4 statement dropdowns and selects 'B' for target 1", async () => {
+      container = document.createElement("div");
+      document.body.appendChild(container);
+      root = createRoot(container);
+
+      const q7 = getContractQuestion(7);
+      const rawOptions = (q7.options as Array<{ idx: number; contentMd: string }>) || [];
+      const options = rawOptions.map((o, i) => ({
+        id: `mock-q7-opt-${i}`,
+        idx: o.idx,
+        contentMd: o.contentMd,
+      }));
+
+      const onChange = vi.fn();
+
+      await React.act(async () => {
+        root?.render(
+          <MatchingCard
+            matchPairs={null}
+            options={options}
+            promptMd={String(q7.promptMd)}
+            onChange={onChange}
+          />
+        );
+      });
+
+      const selects = container.querySelectorAll("select");
+      expect(selects.length).toBe(4);
+
+      await React.act(async () => {
+        if (selects[0]) {
+          selects[0].value = "B";
+          selects[0].dispatchEvent(new Event("change", { bubbles: true }));
+        }
+      });
+
+      expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ "1": "B" }));
+    });
+
+    it("Q9 (MATCHING_FEATURES): renders 4 item dropdowns and selects 'A' for target 1", async () => {
+      container = document.createElement("div");
+      document.body.appendChild(container);
+      root = createRoot(container);
+
+      const q9 = getContractQuestion(9);
+      const rawOptions = (q9.options as Array<{ idx: number; contentMd: string }>) || [];
+      const options = rawOptions.map((o, i) => ({
+        id: `mock-q9-opt-${i}`,
+        idx: o.idx,
+        contentMd: o.contentMd,
+      }));
+
+      const onChange = vi.fn();
+
+      await React.act(async () => {
+        root?.render(
+          <MatchingCard
+            matchPairs={null}
+            options={options}
+            promptMd={String(q9.promptMd)}
+            onChange={onChange}
+          />
+        );
+      });
+
+      const selects = container.querySelectorAll("select");
+      expect(selects.length).toBe(4);
+
+      await React.act(async () => {
+        if (selects[0]) {
+          selects[0].value = "A";
+          selects[0].dispatchEvent(new Event("change", { bubbles: true }));
+        }
+      });
+
+      expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ "1": "A" }));
+    });
+
+    it("Q10 (MATCHING_ENDINGS): renders 4 sentence beginning dropdowns and selects 'A' for target 1", async () => {
+      container = document.createElement("div");
+      document.body.appendChild(container);
+      root = createRoot(container);
+
+      const q10 = getContractQuestion(10);
+      const rawOptions = (q10.options as Array<{ idx: number; contentMd: string }>) || [];
+      const options = rawOptions.map((o, i) => ({
+        id: `mock-q10-opt-${i}`,
+        idx: o.idx,
+        contentMd: o.contentMd,
+      }));
+
+      const onChange = vi.fn();
+
+      await React.act(async () => {
+        root?.render(
+          <MatchingCard
+            matchPairs={null}
+            options={options}
+            promptMd={String(q10.promptMd)}
+            onChange={onChange}
+          />
+        );
+      });
+
+      const selects = container.querySelectorAll("select");
+      expect(selects.length).toBe(4);
+
+      await React.act(async () => {
+        if (selects[0]) {
+          selects[0].value = "A";
+          selects[0].dispatchEvent(new Event("change", { bubbles: true }));
+        }
+      });
+
+      expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ "1": "A" }));
+    });
   });
 });

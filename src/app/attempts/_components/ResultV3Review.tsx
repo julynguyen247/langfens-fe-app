@@ -3,6 +3,8 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { startAttempt } from "@/utils/api";
+import { useAttemptStore } from "@/app/store/useAttemptStore";
 import {
   AttemptAnswerItem,
   AttemptResultData,
@@ -20,7 +22,38 @@ import { ResultFilterTabsV3 } from "./ResultFilterTabsV3";
 import { PassagePanelV3 } from "@/components/exam-v3/PassagePanelV3";
 import { QuestionCardV3 } from "@/components/exam-v3/QuestionCardV3";
 import { QuestionNavigatorV3 } from "@/components/exam-v3/QuestionNavigatorV3";
+import {
+  RESULT_BUTTON_PRIMARY,
+  RESULT_BUTTON_SECONDARY,
+} from "@/components/exam-v3/resultButtonStyles";
 import { parseUserAnswer } from "./parseUserAnswer";
+
+type RetakeSkill = "reading" | "listening" | "writing" | "speaking";
+
+function getRetakeSkill(paper: InternalDeliveryExam): RetakeSkill | null {
+  const supportedSkills: RetakeSkill[] = [
+    "reading",
+    "listening",
+    "writing",
+    "speaking",
+  ];
+
+  for (const section of paper.sections ?? []) {
+    const questions = [
+      ...(section.questions ?? []),
+      ...((section.questionGroups ?? []).flatMap((group) => group.questions ?? [])),
+    ];
+
+    for (const question of questions) {
+      const skill = question.skill?.trim().toLowerCase();
+      if (skill && supportedSkills.includes(skill as RetakeSkill)) {
+        return skill as RetakeSkill;
+      }
+    }
+  }
+
+  return null;
+}
 
 /**
  * Result-v3 review UI for an attempt: split-screen paper (PassagePanelV3
@@ -29,10 +62,13 @@ import { parseUserAnswer } from "./parseUserAnswer";
  */
 export function ResultV3Review({ attemptId }: { attemptId: string }) {
   const router = useRouter();
+  const setAttempt = useAttemptStore((state) => state.setAttempt);
 
   const [result, setResult] = useState<AttemptResultData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isRetaking, setIsRetaking] = useState(false);
+  const [retakeError, setRetakeError] = useState<string | null>(null);
 
   // Active section tab & filter
   const [activeSectionIdx, setActiveSectionIdx] = useState(0);
@@ -41,6 +77,36 @@ export function ResultV3Review({ attemptId }: { attemptId: string }) {
   const [isScoreModalOpen, setIsScoreModalOpen] = useState(false);
 
   const rightPanelRef = useRef<HTMLDivElement>(null);
+
+  const handleRetake = async () => {
+    if (!result?.examId || isRetaking) return;
+
+    const skill = getRetakeSkill(result.paper);
+    if (!skill) {
+      setRetakeError(
+        "Could not determine this exam's skill. Please return to history and start it there."
+      );
+      return;
+    }
+
+    setIsRetaking(true);
+    setRetakeError(null);
+    try {
+      const response = await startAttempt(result.examId);
+      const payload = response?.data?.data ?? response?.data;
+      const nextAttemptId = payload?.attemptId ?? payload?.id;
+      if (typeof nextAttemptId !== "string" || !nextAttemptId) {
+        throw new Error("The attempt service did not return an attempt ID.");
+      }
+
+      setAttempt({ ...payload, attemptId: nextAttemptId });
+      router.replace(`/do-test/${skill}/${nextAttemptId}`);
+    } catch {
+      setRetakeError("Could not start the exam. Please try again.");
+    } finally {
+      setIsRetaking(false);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -227,9 +293,9 @@ export function ResultV3Review({ attemptId }: { attemptId: string }) {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#F8F9FA] text-slate-800 font-sans">
-        <div className="w-12 h-12 border-4 border-blue-500/20 border-t-[#2563EB] rounded-full animate-spin" />
-        <p className="mt-4 text-sm font-bold text-slate-600">
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[var(--background)] text-[var(--foreground)] font-sans">
+        <div className="w-12 h-12 border-4 border-[var(--primary-light)] border-t-[var(--primary)] rounded-full animate-spin" />
+        <p className="mt-4 text-sm font-bold text-[var(--text-muted)]">
           Loading attempt review & score analysis (Engine v3)...
         </p>
       </div>
@@ -238,14 +304,14 @@ export function ResultV3Review({ attemptId }: { attemptId: string }) {
 
   if (error || !result) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#F8F9FA] p-4 font-sans">
-        <div className="max-w-md w-full p-8 rounded-3xl bg-white border-2 border-slate-200 shadow-xl text-center space-y-4">
-          <h2 className="text-xl font-bold text-rose-600">Failed to load review</h2>
-          <p className="text-xs text-slate-500">{error || "Attempt not found"}</p>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--background)] p-4 font-sans">
+        <div className="max-w-md w-full p-8 rounded-[2rem] bg-[var(--surface)] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] text-center space-y-4">
+          <h2 className="text-xl font-bold text-[var(--destructive)]">Failed to load review</h2>
+          <p className="text-xs text-[var(--text-muted)]">{error || "Attempt not found"}</p>
           <div className="pt-2 flex justify-center gap-3">
             <Link
               href="/history"
-              className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition"
+              className={`${RESULT_BUTTON_PRIMARY} px-5 py-2.5 text-xs no-underline`}
             >
               Back to History
             </Link>
@@ -259,15 +325,16 @@ export function ResultV3Review({ attemptId }: { attemptId: string }) {
   const partNum = (currentSection.idx ?? activeSectionIdx) + 1;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-[#F8F9FA] text-slate-900 overflow-hidden font-sans select-none">
+    <div className="fixed inset-0 z-50 flex flex-col bg-[var(--background)] text-[var(--foreground)] overflow-hidden font-sans select-none">
       {/* Top Header */}
-      <header className="h-16 border-b-2 border-slate-200 bg-white/95 backdrop-blur-md px-6 flex items-center justify-between shrink-0 shadow-xs z-30 font-sans">
+      <header className="h-16 border-b-2 border-[var(--border)] bg-[var(--surface)] px-6 flex items-center justify-between shrink-0 shadow-xs z-30 font-sans">
         <div className="flex items-center gap-4">
           <button
             type="button"
             onClick={() => router.push("/history")}
-            className="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition border border-transparent hover:border-slate-200 cursor-pointer"
+            className={`${RESULT_BUTTON_SECONDARY} h-9 w-9 p-0 text-[var(--text-muted)]`}
             title="Back to history"
+            aria-label="Back to history"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
@@ -278,10 +345,10 @@ export function ResultV3Review({ attemptId }: { attemptId: string }) {
               IELTS
             </span>
             <div>
-              <span className="font-bold text-sm text-slate-900 truncate max-w-xs sm:max-w-md block">
+              <span className="font-bold text-sm text-[var(--foreground)] truncate max-w-xs sm:max-w-md block">
                 {result.paper.title}
               </span>
-              <span className="text-[10px] font-medium text-slate-500">
+              <span className="text-[10px] font-medium text-[var(--text-muted)]">
                 Official Review Mode (v3)
               </span>
             </div>
@@ -290,17 +357,17 @@ export function ResultV3Review({ attemptId }: { attemptId: string }) {
 
         {/* Score Capsule & Actions */}
         <div className="flex items-center gap-3">
-          <div className="hidden md:flex items-center gap-2 p-1.5 rounded-2xl bg-slate-100/80 border border-slate-200">
-            <div className="px-3 py-1 rounded-xl bg-white border border-slate-200 shadow-2xs flex items-center gap-1.5">
-              <span className="text-[10px] font-bold text-slate-400 uppercase">Band</span>
-              <span className="font-mono text-sm font-extrabold text-[#2563EB]">
+          <div className="hidden md:flex items-center gap-2 p-1 rounded-full bg-[var(--background)] border border-[var(--border)]">
+            <div className="px-3 py-1 rounded-full bg-[var(--surface)] border border-[var(--border)] flex items-center gap-1.5">
+              <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase">Band</span>
+              <span className="font-mono text-sm font-extrabold text-[var(--primary)]">
                 {result.ieltsBand ? result.ieltsBand.toFixed(1) : "N/A"}
               </span>
             </div>
 
-            <div className="px-3 py-1 rounded-xl bg-white border border-slate-200 shadow-2xs flex items-center gap-1.5">
-              <span className="text-[10px] font-bold text-slate-400 uppercase">Score</span>
-              <span className="font-mono text-sm font-bold text-slate-800">
+            <div className="px-3 py-1 rounded-full bg-[var(--surface)] border border-[var(--border)] flex items-center gap-1.5">
+              <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase">Score</span>
+              <span className="font-mono text-sm font-bold text-[var(--foreground)]">
                 {result.correctCount} / {result.totalQuestion}
               </span>
             </div>
@@ -308,7 +375,7 @@ export function ResultV3Review({ attemptId }: { attemptId: string }) {
             <button
               type="button"
               onClick={() => setIsScoreModalOpen(true)}
-              className="px-3 py-1 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold transition flex items-center gap-1 shadow-2xs cursor-pointer"
+              className={`${RESULT_BUTTON_SECONDARY} h-8 px-3 text-xs`}
             >
               <span>📊</span>
               <span>Score Report</span>
@@ -318,19 +385,27 @@ export function ResultV3Review({ attemptId }: { attemptId: string }) {
           <button
             type="button"
             onClick={() => setIsScoreModalOpen(true)}
-            className="md:hidden px-3 py-1.5 rounded-xl bg-[#2563EB] text-white text-xs font-bold transition flex items-center gap-1 shadow-xs cursor-pointer"
+            className={`${RESULT_BUTTON_SECONDARY} md:hidden h-8 px-3 text-xs`}
           >
             <span>📊</span>
             <span>Band {result.ieltsBand ? result.ieltsBand.toFixed(1) : "N/A"}</span>
           </button>
 
           {result.examId && (
-            <Link
-              href={`/test-v3/${result.examId}`}
-              className="px-4 py-2 text-xs font-bold rounded-xl bg-slate-900 hover:bg-slate-800 text-white transition-all shadow-xs"
+            <button
+              type="button"
+              onClick={() => void handleRetake()}
+              disabled={isRetaking}
+              aria-busy={isRetaking}
+              className={`${RESULT_BUTTON_PRIMARY} h-9 px-5 text-xs`}
             >
-              Retake Exam
-            </Link>
+              {isRetaking ? "Starting..." : "Retake Exam"}
+            </button>
+          )}
+          {retakeError && (
+            <span role="alert" className="max-w-48 text-[10px] font-semibold text-[var(--destructive)]">
+              {retakeError}
+            </span>
           )}
         </div>
       </header>
@@ -351,13 +426,13 @@ export function ResultV3Review({ attemptId }: { attemptId: string }) {
           className="w-1/2 h-full overflow-y-auto p-6 space-y-6 select-text"
         >
           {/* Section Heading & Filter Tabs */}
-          <div className="space-y-3 pb-3 border-b-2 border-slate-200">
+          <div className="space-y-3 pb-3 border-b-2 border-[var(--border)]">
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-[#2563EB]">
+                <span className="text-xs font-bold uppercase tracking-wider text-[var(--primary)]">
                   Part {partNum} Questions Review
                 </span>
-                <h3 className="text-lg font-bold text-slate-900 tracking-tight mt-0.5">
+                <h3 className="text-lg font-bold text-[var(--foreground)] tracking-tight mt-0.5">
                   {currentSection.title}
                 </h3>
               </div>
@@ -382,8 +457,8 @@ export function ResultV3Review({ attemptId }: { attemptId: string }) {
               return (
                 <div key={grp.id} className="space-y-4">
                   {/* Admin-like Group Instruction Banner */}
-                  <div className="p-5 rounded-2xl bg-blue-50/80 border-2 border-blue-200 text-xs text-slate-800 leading-relaxed font-sans shadow-xs">
-                    <span className="font-bold text-[#2563EB] block mb-1">
+                  <div className="p-5 rounded-2xl bg-[var(--primary-light)] border-2 border-[var(--skill-reading-border)] text-xs text-[var(--text-body)] leading-relaxed font-sans shadow-xs">
+                    <span className="font-bold text-[var(--primary)] block mb-1">
                       Questions {grp.startIdx} – {grp.endIdx} Instructions:
                     </span>
                     {grp.instructionMd}

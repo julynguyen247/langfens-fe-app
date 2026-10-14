@@ -1,4 +1,27 @@
 import { QuestionType } from "./types";
+import autogenContract from "./autogenContract.json";
+
+function getContractExample(type: string): Record<string, unknown> {
+  const match = (autogenContract.examples as Array<{ question?: { type?: string } }> | undefined)?.find(
+    (e) => e?.question?.type === type
+  );
+  if (!match?.question) {
+    throw new Error(`Missing canonical contract example for type: ${type}`);
+  }
+  return match.question as Record<string, unknown>;
+}
+
+function getContractConstraints(type: string): string[] {
+  const constraints = (autogenContract.constraints as Record<string, string[]>)?.[type];
+  if (!constraints) {
+    throw new Error(`Missing canonical contract constraints for type: ${type}`);
+  }
+  return [
+    ...(autogenContract.globalConstraints || []),
+    ...constraints,
+  ];
+}
+
 
 export interface QuestionSchema {
   type: string;
@@ -578,64 +601,21 @@ imageUrl is required. blankAcceptTexts keys match [N] placeholder indices in pro
   [QuestionType.MatchingHeading]: {
     type: QuestionType.MatchingHeading,
     label: "Matching Headings",
-    description: "Match paragraphs (A, B, C) to headings (i, ii, iii, iv, v).",
+    description: "Match paragraphs (1, 2, 3...) to headings (i, ii, iii...).",
     requiredFields: [...commonFields],
     optionalFields: [...optionalCommon],
-    jsonShape: `{
-  "type": "MATCHING_HEADING",
-  "skill": "READING",
-  "difficulty": 3,
-  "promptMd": "Reading passage...",
-  "options": [
-    { "contentMd": "i. The Early Years" },
-    { "contentMd": "ii. The Modern Period" }
-  ],
-  "matchPairs": {
-    "A": ["i", "Paragraph A excerpt"],
-    "B": ["ii", "Paragraph B excerpt"]
-  }
-}`,
-    examplePayload: {
-      type: "MATCHING_HEADING",
-      skill: "READING",
-      difficulty: 3,
-      promptMd: "Reading passage...",
-      options: [
-        { contentMd: "i. The Early Years" },
-        { contentMd: "ii. The Modern Period" },
-      ],
-      matchPairs: {
-        A: ["i", "Paragraph A excerpt"],
-        B: ["ii", "Paragraph B excerpt"],
-      },
-    },
-    constraints: [
-      "matchPairs keys = paragraph letters (A, B, C…)",
-      "matchPairs values[0] = heading Roman numeral",
-      "options[] = heading pool (i, ii, iii…)",
-    ],
-    systemProse: `You are an IELTS Reading content author. Generate MATCHING_HEADING questions: choose a heading for each paragraph.
+    jsonShape: JSON.stringify(getContractExample("MATCHING_HEADING"), null, 2),
+    examplePayload: getContractExample("MATCHING_HEADING"),
+    constraints: getContractConstraints("MATCHING_HEADING"),
+    systemProse: `You are an IELTS Reading content author. Generate MATCHING_HEADING questions: match paragraph targets to headings from the list.
+
+Constraints:
+${getContractConstraints("MATCHING_HEADING").map((c) => `- ${c}`).join("\n")}
 
 JSON shape:
-{
-  "type": "MATCHING_HEADING",
-  "skill": "READING",
-  "difficulty": 2-4,
-  "promptMd": "Choose a heading for each paragraph.",
-  "options": [
-    { "contentMd": "i. The Early Years" },
-    { "contentMd": "ii. The Modern Period" }
-  ],
-  "matchPairs": {
-    "A": ["i", "Paragraph A excerpt"],
-    "B": ["ii", "Paragraph B excerpt"]
-  }
-}
+${JSON.stringify(getContractExample("MATCHING_HEADING"), null, 2)}
 
-matchPairs keys are paragraph letters (A, B, C, …).
-matchPairs values[0] is the Roman numeral heading (i, ii, iii).
-options[] is the heading pool.
-promptMd should include the passage (or reference it).`,
+Ground all questions solely in the supplied passage. Do not copy headings or paragraphs from the example.`,
   },
 
   [QuestionType.MatchingInformation]: {
@@ -644,49 +624,18 @@ promptMd should include the passage (or reference it).`,
     description: "Match statements to the paragraph that contains them.",
     requiredFields: [...commonFields],
     optionalFields: [...optionalCommon],
-    jsonShape: `{
-  "type": "MATCHING_INFORMATION",
-  "skill": "READING",
-  "difficulty": 3,
-  "promptMd": "14. Which paragraph mentions X?\\n15. Which paragraph describes Y?",
-  "matchPairs": {
-    "1": ["B", "Question 14 text"],
-    "2": ["A", "Question 15 text"]
-  }
-}`,
-    examplePayload: {
-      type: "MATCHING_INFORMATION",
-      skill: "READING",
-      difficulty: 3,
-      promptMd: "14. Which paragraph mentions X?\n15. Which paragraph describes Y?",
-      matchPairs: {
-        "1": ["B", "Question 14 text"],
-        "2": ["A", "Question 15 text"],
-      },
-    },
-    constraints: [
-      "matchPairs keys = 1-based question index strings ('1', '2', …)",
-      "matchPairs values[0] = paragraph letter (A-H)",
-    ],
-    systemProse: `You are an IELTS Reading content author. Generate MATCHING_INFORMATION questions: match statements to the paragraph that contains the relevant information.
+    jsonShape: JSON.stringify(getContractExample("MATCHING_INFORMATION"), null, 2),
+    examplePayload: getContractExample("MATCHING_INFORMATION"),
+    constraints: getContractConstraints("MATCHING_INFORMATION"),
+    systemProse: `You are an IELTS Reading content author. Generate MATCHING_INFORMATION questions: match numbered statements to paragraphs.
+
+Constraints:
+${getContractConstraints("MATCHING_INFORMATION").map((c) => `- ${c}`).join("\n")}
 
 JSON shape:
-{
-  "type": "MATCHING_INFORMATION",
-  "skill": "READING",
-  "difficulty": 2-3,
-  "promptMd": "Which paragraph contains the following information?",
-  "options": [
-    { "contentMd": "A. Paragraph A text…" },
-    { "contentMd": "B. Paragraph B text…" }
-  ],
-  "matchPairs": {
-    "1": ["A", "Question 1 text"],
-    "2": ["B", "Question 2 text"]
-  }
-}
+${JSON.stringify(getContractExample("MATCHING_INFORMATION"), null, 2)}
 
-matchPairs keys = 1-based question index strings. matchPairs values[0] = paragraph letter (A-H). options[] = paragraph pool.`,
+Ground all questions solely in the supplied passage. Do not copy statements or paragraph letters from the example.`,
   },
 
   [QuestionType.MatchingFeatures]: {
@@ -695,58 +644,18 @@ matchPairs keys = 1-based question index strings. matchPairs values[0] = paragra
     description: "Match items to a list of features (A-H).",
     requiredFields: [...commonFields],
     optionalFields: [...optionalCommon],
-    jsonShape: `{
-  "type": "MATCHING_FEATURES",
-  "skill": "READING",
-  "difficulty": 3,
-  "promptMd": "1. The speaker\\n2. The researcher",
-  "options": [
-    { "contentMd": "A. Used the method" },
-    { "contentMd": "B. Criticised the theory" }
-  ],
-  "matchPairs": {
-    "1": ["A", "The speaker"],
-    "2": ["B", "The researcher"]
-  }
-}`,
-    examplePayload: {
-      type: "MATCHING_FEATURES",
-      skill: "READING",
-      difficulty: 3,
-      promptMd: "1. The speaker\n2. The researcher",
-      options: [
-        { contentMd: "A. Used the method" },
-        { contentMd: "B. Criticised the theory" },
-      ],
-      matchPairs: {
-        "1": ["A", "The speaker"],
-        "2": ["B", "The researcher"],
-      },
-    },
-    constraints: [
-      "options[] = feature list (A-H)",
-      "matchPairs keys = 1-based item index ('1', '2', …)",
-      "features can be reused across items",
-    ],
-    systemProse: `You are an IELTS Reading content author. Generate MATCHING_FEATURES questions: match items to their features (A-H).
+    jsonShape: JSON.stringify(getContractExample("MATCHING_FEATURES"), null, 2),
+    examplePayload: getContractExample("MATCHING_FEATURES"),
+    constraints: getContractConstraints("MATCHING_FEATURES"),
+    systemProse: `You are an IELTS Reading content author. Generate MATCHING_FEATURES questions: match numbered items to features.
+
+Constraints:
+${getContractConstraints("MATCHING_FEATURES").map((c) => `- ${c}`).join("\n")}
 
 JSON shape:
-{
-  "type": "MATCHING_FEATURES",
-  "skill": "READING",
-  "difficulty": 2-3,
-  "promptMd": "1. The speaker\\n2. The researcher",
-  "options": [
-    { "contentMd": "A. Used the method" },
-    { "contentMd": "B. Criticised the theory" }
-  ],
-  "matchPairs": {
-    "1": ["A", "The speaker"],
-    "2": ["B", "The researcher"]
-  }
-}
+${JSON.stringify(getContractExample("MATCHING_FEATURES"), null, 2)}
 
-matchPairs keys = 1-based item index strings. matchPairs values[0] = feature letter (A-H). options[] = feature pool.`,
+Ground all questions solely in the supplied passage. Do not copy items or features from the example.`,
   },
 
   [QuestionType.MatchingEndings]: {
@@ -755,58 +664,18 @@ matchPairs keys = 1-based item index strings. matchPairs values[0] = feature let
     description: "Match sentence beginnings to their endings.",
     requiredFields: [...commonFields],
     optionalFields: [...optionalCommon],
-    jsonShape: `{
-  "type": "MATCHING_ENDINGS",
-  "skill": "READING",
-  "difficulty": 3,
-  "promptMd": "Sentence beginnings:\\n1. Despite the rain,\\n2. As the temperature rose,",
-  "options": [
-    { "contentMd": "A. the team continued." },
-    { "contentMd": "B. the ice began to melt." }
-  ],
-  "matchPairs": {
-    "1": ["A", "Despite the rain,"],
-    "2": ["B", "As the temperature rose,"]
-  }
-}`,
-    examplePayload: {
-      type: "MATCHING_ENDINGS",
-      skill: "READING",
-      difficulty: 3,
-      promptMd: "Sentence beginnings:\n1. Despite the rain,\n2. As the temperature rose,",
-      options: [
-        { contentMd: "A. the team continued." },
-        { contentMd: "B. the ice began to melt." },
-      ],
-      matchPairs: {
-        "1": ["A", "Despite the rain,"],
-        "2": ["B", "As the temperature rose,"],
-      },
-    },
-    constraints: [
-      "options[] = endings pool (A-H)",
-      "matchPairs keys = 1-based beginning index ('1', '2', …)",
-      "endings can only be used once (one-to-one)",
-    ],
-    systemProse: `You are an IELTS Reading content author. Generate MATCHING_ENDINGS questions: match sentence beginnings to their correct endings (A-H).
+    jsonShape: JSON.stringify(getContractExample("MATCHING_ENDINGS"), null, 2),
+    examplePayload: getContractExample("MATCHING_ENDINGS"),
+    constraints: getContractConstraints("MATCHING_ENDINGS"),
+    systemProse: `You are an IELTS Reading content author. Generate MATCHING_ENDINGS questions: match numbered sentence beginnings to endings.
+
+Constraints:
+${getContractConstraints("MATCHING_ENDINGS").map((c) => `- ${c}`).join("\n")}
 
 JSON shape:
-{
-  "type": "MATCHING_ENDINGS",
-  "skill": "READING",
-  "difficulty": 2-3,
-  "promptMd": "21. Despite the rain,\\n22. As the temperature rose,",
-  "options": [
-    { "contentMd": "A. the team continued." },
-    { "contentMd": "B. the ice began to melt." }
-  ],
-  "matchPairs": {
-    "1": ["A", "Despite the rain,"],
-    "2": ["B", "As the temperature rose,"]
-  }
-}
+${JSON.stringify(getContractExample("MATCHING_ENDINGS"), null, 2)}
 
-matchPairs keys = 1-based beginning index strings. matchPairs values[0] = ending letter (A-H). options[] = ending pool. Each ending used once.`,
+Ground all questions solely in the supplied passage. Do not copy sentence beginnings or endings from the example.`,
   },
 
   [QuestionType.Classification]: {

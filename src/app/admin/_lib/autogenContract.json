@@ -43,29 +43,45 @@
       "An imageUrl at question level is required. Reuse a supplied image asset; never invent an image URL. Existing [Diagram: ...]/[Map: ...] word-bank markers are supported."
     ],
     "MATCHING_ENDINGS": [
-      "Include a non-empty options[] choice pool; label each contentMd with its grading key (A., B. or i., ii.).",
-      "matchPairs keys are positive numeric strings matching numbered items in promptMd; they need not start at 1.",
-      "Each matchPairs value starts with an accepted key from options[]. Include a display label as value[1] for MATCHING_*; it is optional for CLASSIFICATION.",
-      "Every item to be matched must be visible in promptMd without revealing its answer."
+      "Each question represents a complete matching exercise with at least two numbered sentence beginnings displayed as 'N. ...' in promptMd.",
+      "matchPairs keys are the exact positive decimal numbers corresponding to the beginnings in promptMd (may start above 1).",
+      "Each matchPairs value is [gradingKey, displayLabel] where gradingKey is the ending letter (e.g. 'A', 'B') and displayLabel is the exact text of the matched sentence beginning line from promptMd.",
+      "options[] choice pool lists lettered sentence endings ('A. ...ending text', 'B. ...ending text', ...) with sequential 1-based idx, unique labels, and isCorrect: false on all items.",
+      "Include at least one unused distractor option in options[].",
+      "Each ending option matches at most one sentence beginning; grading keys across matchPairs must be distinct and each pair must form a grammatically and factually coherent sentence.",
+      "Do not include other answer-family fields (blankAcceptTexts, blankAcceptRegex, orderCorrects, shortAnswerAcceptTexts, shortAnswerAcceptRegex).",
+      "Do not copy text or answers from sample exams; generate original questions grounded only in the supplied passage."
     ],
     "MATCHING_FEATURES": [
-      "Include a non-empty options[] choice pool; label each contentMd with its grading key (A., B. or i., ii.).",
-      "matchPairs keys are positive numeric strings matching numbered items in promptMd; they need not start at 1.",
-      "Each matchPairs value starts with an accepted key from options[]. Include a display label as value[1] for MATCHING_*; it is optional for CLASSIFICATION.",
-      "Every item to be matched must be visible in promptMd without revealing its answer."
+      "Each question represents a complete matching exercise with at least two numbered items or groups displayed as 'N. ...' in promptMd.",
+      "matchPairs keys are the exact positive decimal numbers corresponding to the items in promptMd (may start above 1).",
+      "Each matchPairs value is [gradingKey, displayLabel] where gradingKey is the feature letter (e.g. 'A', 'B') and displayLabel is the exact text of the matched item line from promptMd.",
+      "options[] choice pool lists lettered feature options ('A. Feature text', 'B. Feature text', ...) with sequential 1-based idx, unique labels, and isCorrect: false on all items.",
+      "Include at least one unused distractor option in options[].",
+      "Feature options may be reused across targets if supported by the passage, or matched uniquely.",
+      "Do not include other answer-family fields (blankAcceptTexts, blankAcceptRegex, orderCorrects, shortAnswerAcceptTexts, shortAnswerAcceptRegex).",
+      "Do not copy text or answers from sample exams; generate original questions grounded only in the supplied passage."
     ],
     "MATCHING_HEADING": [
-      "Include a non-empty options[] choice pool; label each contentMd with its grading key (A., B. or i., ii.).",
-      "matchPairs keys are positive numeric strings matching numbered items in promptMd; they need not start at 1.",
-      "Each matchPairs value starts with an accepted key from options[]. Include a display label as value[1] for MATCHING_*; it is optional for CLASSIFICATION.",
-      "Every item to be matched must be visible in promptMd without revealing its answer.",
-      "List paragraph targets as numbered items and include the Roman-numeral heading pool in promptMd and options[]."
+      "Each question represents a complete matching exercise with at least two numbered paragraph targets displayed as 'N. ...' in promptMd.",
+      "matchPairs keys are the exact positive decimal numbers corresponding to the targets in promptMd (may start above 1).",
+      "Each matchPairs value is [gradingKey, displayLabel] where gradingKey is a Roman numeral (e.g. 'i', 'ii') and displayLabel is the heading text without its Roman prefix.",
+      "options[] is a non-empty choice pool with sequential 1-based idx, isCorrect: false on all items, and unique Roman numeral labels ('i. Heading text', 'ii. Heading text', ...).",
+      "Include at least one unused distractor option in options[].",
+      "The full Roman-numeral heading pool must appear in both promptMd (under 'List of Headings:') and options[].",
+      "Each heading option matches at most one paragraph target; grading keys across matchPairs must be distinct.",
+      "Do not include other answer-family fields (blankAcceptTexts, blankAcceptRegex, orderCorrects, shortAnswerAcceptTexts, shortAnswerAcceptRegex).",
+      "Do not copy text or answers from sample exams; generate original questions grounded only in the supplied passage."
     ],
     "MATCHING_INFORMATION": [
-      "Include a non-empty options[] choice pool; label each contentMd with its grading key (A., B. or i., ii.).",
-      "matchPairs keys are positive numeric strings matching numbered items in promptMd; they need not start at 1.",
-      "Each matchPairs value starts with an accepted key from options[]. Include a display label as value[1] for MATCHING_*; it is optional for CLASSIFICATION.",
-      "Every item to be matched must be visible in promptMd without revealing its answer."
+      "Each question represents a complete matching exercise with at least two numbered information statements displayed as 'N. ...' in promptMd.",
+      "matchPairs keys are the exact positive decimal numbers corresponding to the statements in promptMd (may start above 1).",
+      "Each matchPairs value is [gradingKey, displayLabel] where gradingKey is the paragraph letter (e.g. 'A', 'B') and displayLabel is the exact text of the matched statement line from promptMd.",
+      "options[] choice pool lists paragraph options formatted exactly as 'A. Paragraph A', 'B. Paragraph B', etc., with sequential 1-based idx and isCorrect: false on all items.",
+      "Include at least one unused distractor option in options[].",
+      "Paragraph options may be used more than once if supported by the passage, or each used once.",
+      "Do not include other answer-family fields (blankAcceptTexts, blankAcceptRegex, orderCorrects, shortAnswerAcceptTexts, shortAnswerAcceptRegex).",
+      "Do not copy text or answers from sample exams; generate original questions grounded only in the supplied passage."
     ],
     "MULTIPLE_CHOICE_MULTIPLE": [
       "Include at least two options with boolean isCorrect values and non-empty contentMd.",

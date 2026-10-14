@@ -56,7 +56,7 @@ export default function TestV3ExamPage({
       try {
         setLoading(true);
         setError(null);
-        const raw = await fetchExamDeliveryPaper(examId, true);
+        const raw = await fetchExamDeliveryPaper(examId, false);
         if (!raw) throw new Error("Exam payload is empty or not found.");
 
         const { enrichedExam } = enrichExamWithSequentialNumbers(raw);

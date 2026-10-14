@@ -121,6 +121,12 @@ export interface AdminSectionItem {
   title: string;
   instructionsMd?: string | null;
   passageMd?: string | null;
+  sourcePmcid?: string | null;
+  sourceTitle?: string | null;
+  sourceAuthors?: string | null;
+  sourceDoi?: string | null;
+  sourceUrl?: string | null;
+  sourceLicense?: string | null;
   audioUrl?: string | null;
   transcriptMd?: string | null;
 }
@@ -157,6 +163,9 @@ export interface AdminQuestionUpdate {
   OrderCorrects?: string[] | null;
   ShortAnswerAcceptTexts?: string[] | null;
   ShortAnswerAcceptRegex?: string[] | null;
+  Reasons?: string[];
+  Comment?: string;
+  IdempotencyKey?: string;
 }
 
 export interface AdminQuestionItem {
@@ -263,6 +272,12 @@ export interface InternalDeliverySection {
   title: string;
   instructionsMd?: string | null;
   passageMd?: string | null;
+  sourcePmcid?: string | null;
+  sourceTitle?: string | null;
+  sourceAuthors?: string | null;
+  sourceDoi?: string | null;
+  sourceUrl?: string | null;
+  sourceLicense?: string | null;
   audioUrl?: string | null;
   transcriptMd?: string | null;
   questions: InternalDeliveryQuestion[];

@@ -8,6 +8,7 @@ import {
   InternalDeliveryQuestion,
   UserAnswerValue,
 } from "./types";
+import { RESULT_BUTTON_BASE } from "./resultButtonStyles";
 
 interface QuestionNavigatorV3Props {
   totalQuestions: number;
@@ -67,7 +68,7 @@ export function QuestionNavigatorV3({
   }
 
   return (
-    <nav aria-label="Question Navigator" className="h-16 border-t border-[var(--border)] bg-white px-6 flex items-center justify-between shrink-0 z-30 font-sans">
+    <nav aria-label="Question Navigator" className="h-16 border-t border-[var(--border)] bg-[var(--surface)] px-6 flex items-center justify-between shrink-0 z-30 font-sans">
       <div className="flex items-center gap-6 overflow-x-auto py-2 w-full">
         {sectionGroups.map((group, gIdx) => (
           <div key={group.sectionTitle + gIdx} className="flex items-center gap-2 shrink-0">
@@ -89,11 +90,11 @@ export function QuestionNavigatorV3({
                       (ans.selectedAnswerText !== null && ans.selectedAnswerText !== ""));
                   const isCorrect = ans?.isCorrect === true;
 
-                  let pillColor = "bg-[var(--background)] text-[var(--text-muted)] hover:bg-[var(--border-light)] border-[var(--border)]";
+                  let pillColor = "bg-[var(--background)] text-[var(--text-muted)] border-[var(--border)] border-b-[var(--border)] hover:bg-[var(--border-light)] hover:border-[var(--primary)]";
                   if (isCorrect) {
-                    pillColor = "bg-emerald-600 text-white border-emerald-700 shadow-2xs";
+                    pillColor = "bg-emerald-600 text-white border-emerald-700 border-b-emerald-800 shadow-2xs";
                   } else if (isAnswered) {
-                    pillColor = "bg-rose-600 text-white border-rose-700 shadow-2xs";
+                    pillColor = "bg-rose-600 text-white border-rose-700 border-b-rose-800 shadow-2xs";
                   }
 
                   return (
@@ -101,8 +102,9 @@ export function QuestionNavigatorV3({
                       key={num}
                       type="button"
                       onClick={() => onSelect(num)}
-                      className={`w-7 h-7 rounded-lg text-xs font-mono font-bold transition-all border flex items-center justify-center cursor-pointer ${pillColor} ${
-                        isActive ? "ring-2 ring-[var(--primary)] ring-offset-1 scale-110 z-10" : ""
+                      aria-label={`Question ${num}: ${isCorrect ? "Correct" : isAnswered ? "Incorrect" : "Unanswered"}`}
+                      className={`${RESULT_BUTTON_BASE} w-7 h-7 shrink-0 text-[11px] font-mono border-2 border-b-[3px] ${pillColor} ${
+                        isActive ? "ring-2 ring-[var(--primary)] ring-offset-2 scale-110 z-10" : ""
                       }`}
                       title={`Question ${num}: ${
                         isCorrect ? "Correct" : isAnswered ? "Incorrect" : "Unanswered"

@@ -36,12 +36,22 @@ import {
   QuestionType,
 } from "@/app/admin/_lib/types";
 import { QuestionEditor } from "./_components/QuestionEditor";
+import { SectionEditorModal } from "./_components/SectionEditorModal";
 import { QuestionTypeCardPicker } from "./_components/QuestionTypeCardPicker";
 import { QuestionImporter } from "./_components/QuestionImporter";
 import { AiAuthorModal } from "./_components/AiAuthorModal";
 import { defaultSkillForType, validateSection } from "@/app/admin/_lib/validation";
 import { resolveSectionPassage } from "@/app/admin/_lib/questionGeneration";
-
+import {
+  FEEDBACK_REASONS,
+  evaluateSmallEditPolicy,
+} from "@/app/admin/_lib/feedbackTaxonomy";
+import {
+  acceptPaper,
+  publishPaper,
+  rejectPaper,
+} from "@/app/admin/exams/reading-paper/readingPaperApi";
+import { FeedbackModal } from "@/app/admin/exams/reading-paper/FeedbackModal";
 function extractErrorMessage(err: unknown): string {
   if (err && typeof err === "object") {
     if ("response" in err && err.response && typeof err.response === "object") {
@@ -128,6 +138,24 @@ export default function AdminExamEditorPage({
     autoGenerate?: boolean;
   } | null>(null);
 
+  // Feedback & curation modal state
+  const [curationModalConfig, setCurationModalConfig] = useState<{
+    isOpen: boolean;
+    mode: "reject" | "accept" | "general" | "edit";
+    title: string;
+    targetDescription?: string;
+    beforeText?: string;
+    afterText?: string;
+  } | null>(null);
+  const [submittingCuration, setSubmittingCuration] = useState(false);
+
+  // Section Edit Feedback state
+  const [sectionEditReasons, setSectionEditReasons] = useState<string[]>([]);
+  const [sectionEditComment, setSectionEditComment] = useState("");
+  const [isSectionReviewModalOpen, setIsSectionReviewModalOpen] = useState(false);
+  const [sectionEditActionKey, setSectionEditActionKey] = useState<string>(() =>
+    typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `edit-sec-${Date.now()}`
+  );
   const loadExam = async () => {
     try {
       setLoading(true);
@@ -245,6 +273,12 @@ export default function AdminExamEditorPage({
               null,
             passageMd:
               matchingAdminSection.passageMd ?? s.passageMd ?? null,
+            sourcePmcid: matchingAdminSection.sourcePmcid ?? s.sourcePmcid ?? null,
+            sourceTitle: matchingAdminSection.sourceTitle ?? s.sourceTitle ?? null,
+            sourceAuthors: matchingAdminSection.sourceAuthors ?? s.sourceAuthors ?? null,
+            sourceDoi: matchingAdminSection.sourceDoi ?? s.sourceDoi ?? null,
+            sourceUrl: matchingAdminSection.sourceUrl ?? s.sourceUrl ?? null,
+            sourceLicense: matchingAdminSection.sourceLicense ?? s.sourceLicense ?? null,
             audioUrl:
               matchingAdminSection.audioUrl ?? s.audioUrl ?? null,
             transcriptMd:
@@ -325,10 +359,8 @@ export default function AdminExamEditorPage({
     }
   };
 
-  const handleUpdateSectionSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const executeSectionSave = async () => {
     if (!editingSection || !editingSection.id) return;
-
     try {
       setUpdatingSection(true);
       const updateDto: AdminSectionUpdate = {
@@ -341,8 +373,18 @@ export default function AdminExamEditorPage({
         TranscriptMd: editingSection.transcriptMd || null,
       };
 
-      await updateSection(editingSection.id, updateDto);
+      await updateSection(editingSection.id, updateDto, {
+        reasons: sectionEditReasons,
+        comment: sectionEditComment.trim() || undefined,
+        idempotencyKey: sectionEditActionKey,
+      });
+
       setEditingSection(null);
+      setIsSectionReviewModalOpen(false);
+      setSectionEditReasons([]);
+      setSectionEditComment("");
+      const nextSecKey = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `edit-sec-${Date.now()}`;
+      setSectionEditActionKey(nextSecKey);
       await loadExam();
       showToast("Section updated", "success");
     } catch (err: unknown) {
@@ -350,6 +392,12 @@ export default function AdminExamEditorPage({
     } finally {
       setUpdatingSection(false);
     }
+  };
+
+  const handleUpdateSectionSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingSection || !editingSection.id) return;
+    setIsSectionReviewModalOpen(true);
   };
 
   const handleDeleteSection = async (sectionId?: string, title?: string) => {
@@ -456,7 +504,8 @@ export default function AdminExamEditorPage({
 
   const handleSaveQuestion = async (
     sectionId: string,
-    updatedQ: InternalDeliveryQuestion
+    updatedQ: InternalDeliveryQuestion,
+    feedbackMeta?: { reasons?: string[]; comment?: string; idempotencyKey?: string }
   ) => {
     try {
       if (!updatedQ.id) {
@@ -480,8 +529,7 @@ export default function AdminExamEditorPage({
         ShortAnswerAcceptRegex: updatedQ.shortAnswerAcceptRegex || null,
       };
 
-      await updateQuestion(updatedQ.id, updateDto);
-
+      await updateQuestion(updatedQ.id, updateDto, feedbackMeta);
       // Delete any options that were removed
       const originalQ = exam?.sections
         .flatMap((s) => s.questions)
@@ -625,10 +673,56 @@ export default function AdminExamEditorPage({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() =>
+              setCurationModalConfig({
+                isOpen: true,
+                mode: "accept",
+                title: "Accept Reading Paper",
+                targetDescription: exam.title,
+              })
+            }
+            className="inline-flex items-center gap-1 px-3 py-2 text-xs font-semibold rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white transition"
+          >
+            ✓ Accept
+          </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              setCurationModalConfig({
+                isOpen: true,
+                mode: "reject",
+                title: "Reject Paper with Reason Taxonomy",
+                targetDescription: exam.title,
+              })
+            }
+            className="inline-flex items-center gap-1 px-3 py-2 text-xs font-semibold rounded-lg bg-rose-700 hover:bg-rose-600 text-white transition"
+          >
+            ✕ Reject
+          </button>
+
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                await publishPaper(examId);
+                showToast("Exam published successfully", "success");
+                await loadExam();
+              } catch (err: unknown) {
+                showToast(extractErrorMessage(err), "error");
+              }
+            }}
+            className="inline-flex items-center gap-1 px-3 py-2 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 transition"
+          >
+            🚀 Publish
+          </button>
+
           <button
             onClick={() => setIsAddSectionOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 transition active:scale-95"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition active:scale-95"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -637,7 +731,6 @@ export default function AdminExamEditorPage({
           </button>
         </div>
       </div>
-
       {/* Exam Metadata Card */}
       <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800">
         <form onSubmit={handleSaveMeta} className="space-y-4">
@@ -910,6 +1003,15 @@ export default function AdminExamEditorPage({
                 </div>
               )}
 
+              {section.sourceUrl && (
+                <p className="text-xs text-slate-400">
+                  Source: <a href={section.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-indigo-300 underline">{section.sourceTitle || section.sourcePmcid}</a>
+                  {section.sourceAuthors ? ` · ${section.sourceAuthors}` : ""}
+                  {section.sourceDoi ? ` · DOI ${section.sourceDoi}` : ""}
+                  {section.sourceLicense && <> · <a href={section.sourceLicense} target="_blank" rel="noopener noreferrer" className="underline">License</a></>}
+                </p>
+              )}
+
               {/* Question groups instructions if any */}
               {section.questionGroups &&
                 section.questionGroups.map((grp) => (
@@ -975,7 +1077,7 @@ export default function AdminExamEditorPage({
                       availableSections={exam?.sections
                         .filter((s) => s.id && s.id !== section.id)
                         .map((s) => ({ id: s.id as string, title: s.title }))}
-                      onSave={(updated) => handleSaveQuestion(section.id || "", updated)}
+                      onSave={(updated, meta) => handleSaveQuestion(section.id || "", updated, meta)}
                       onDelete={handleDeleteQuestion}
                       onDuplicate={handleDuplicateQuestion}
                     />
@@ -1078,90 +1180,39 @@ export default function AdminExamEditorPage({
 
       {/* Modal: Edit Section */}
       {editingSection && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4">
-          <div className="w-full max-w-2xl rounded-2xl bg-slate-900 border border-slate-800 p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
-              <h2 className="text-base font-bold text-white">Edit Section</h2>
-              <button
-                onClick={() => setEditingSection(null)}
-                className="text-slate-500 hover:text-slate-300 text-lg leading-none"
-              >
-                ✕
-              </button>
-            </div>
+        <SectionEditorModal
+          isOpen={true}
+          section={editingSection}
+          originalSection={exam?.sections.find((s) => s.id === editingSection.id)}
+          isSubmitting={updatingSection}
+          onClose={() => setEditingSection(null)}
+          onSave={async (updatedData, feedbackMeta) => {
+            if (!editingSection?.id) return;
+            setUpdatingSection(true);
+            try {
+              const updateDto: AdminSectionUpdate = {
+                ExamId: examId,
+                Idx: editingSection.idx,
+                Title: updatedData.title,
+                InstructionsMd: updatedData.instructionsMd || null,
+                PassageMd: updatedData.passageMd || null,
+                AudioUrl: updatedData.audioUrl || null,
+                TranscriptMd: editingSection.transcriptMd || null,
+              };
 
-            <form onSubmit={handleUpdateSectionSubmit} className="mt-4 space-y-4">
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
-                  Section Title *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={editingSection.title}
-                  onChange={(e) => setEditingSection({ ...editingSection, title: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
-                  Audio URL (Required for Listening)
-                </label>
-                <input
-                  type="url"
-                  placeholder="https://..."
-                  value={editingSection.audioUrl || ""}
-                  onChange={(e) => setEditingSection({ ...editingSection, audioUrl: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
-                  Passage (Markdown)
-                </label>
-                <textarea
-                  rows={6}
-                  value={editingSection.passageMd || ""}
-                  onChange={(e) => setEditingSection({ ...editingSection, passageMd: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-xs text-slate-100 focus:outline-none focus:border-indigo-500 font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
-                  Instructions (Markdown)
-                </label>
-                <textarea
-                  rows={2}
-                  value={editingSection.instructionsMd || ""}
-                  onChange={(e) => setEditingSection({ ...editingSection, instructionsMd: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-xs text-slate-100 focus:outline-none focus:border-indigo-500 font-mono"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setEditingSection(null)}
-                  className="px-4 py-2 text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={updatingSection}
-                  className="px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition disabled:opacity-50"
-                >
-                  {updatingSection ? "Saving..." : "Save Changes"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+              await updateSection(editingSection.id, updateDto, feedbackMeta);
+              setEditingSection(null);
+              await loadExam();
+              showToast("Section updated", "success");
+            } catch (err: unknown) {
+              showToast(extractErrorMessage(err), "error");
+              throw err;
+            } finally {
+              setUpdatingSection(false);
+            }
+          }}
+        />
       )}
-
       {/* Modal: New Question Type Picker */}
       {targetSectionForNewQuestion && (() => {
         const targetSec = exam?.sections.find((s) => s.id === targetSectionForNewQuestion);
@@ -1225,6 +1276,36 @@ export default function AdminExamEditorPage({
         />
       )}
 
+      {curationModalConfig && (
+        <FeedbackModal
+          isOpen={curationModalConfig.isOpen}
+          onClose={() => setCurationModalConfig(null)}
+          title={curationModalConfig.title}
+          mode={curationModalConfig.mode}
+          targetDescription={curationModalConfig.targetDescription}
+          beforeText={curationModalConfig.beforeText}
+          afterText={curationModalConfig.afterText}
+          onSubmit={async (reasons, comment, idempotencyKey) => {
+            setSubmittingCuration(true);
+            try {
+              if (curationModalConfig.mode === "reject") {
+                await rejectPaper(examId, { reasons, comment: comment || undefined, idempotencyKey });
+                showToast("Exam rejected with reason taxonomy", "info");
+              } else if (curationModalConfig.mode === "accept") {
+                await acceptPaper(examId, { reasons, comment: comment || undefined, idempotencyKey });
+                showToast("Exam accepted", "success");
+              }
+              setCurationModalConfig(null);
+              await loadExam();
+            } catch (err: unknown) {
+              showToast(extractErrorMessage(err), "error");
+            } finally {
+              setSubmittingCuration(false);
+            }
+          }}
+          isSubmitting={submittingCuration}
+        />
+      )}
       {/* Toast notifications */}
       {toast && (
         <div

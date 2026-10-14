@@ -8,6 +8,7 @@ type ServiceKey =
   | "vocabulary"
   | "speaking"
   | "ai"
+  | "generation"
   | "writing"
   | "dictionary"
   | "gamification"
@@ -27,6 +28,7 @@ const BASE_URL: Record<ServiceKey, string> = {
   vocabulary: buildBase("/api-vocabulary"),
   speaking: buildBase("/api-speaking"),
   ai: buildBase("/api-ai"),
+  generation: buildBase("/api-generation"),
   writing: buildBase("/api-writing"),
   dictionary: buildBase("/api-dictionary"),
   gamification: buildBase("/api-gamification"),
@@ -141,5 +143,6 @@ export const apisAnalytics = apis.analytics;
 export const apisNotification = apis.notification;
 export const apisStudyplan = apis.studyplan;
 export const apisCourse = apis.course;
+export const apisGeneration = apis.generation;
 const api = apisAuth;
 export default api;

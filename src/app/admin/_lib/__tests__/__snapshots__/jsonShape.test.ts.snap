@@ -64,42 +64,93 @@ If the JSON cannot be produced, output {"error": "reason"} instead."
 `;
 
 exports[`llmPrompts baseline snapshot > system prompt for MATCHING_HEADING is unchanged 1`] = `
-"You are an IELTS Reading content author. Generate MATCHING_HEADING questions: choose a heading for each paragraph.
+"You are an IELTS Reading content author. Generate MATCHING_HEADING questions: match paragraph targets to headings from the list.
+
+Constraints:
+- Use the requested type, skill and integer difficulty. Question type does not imply LISTENING; all source exam examples are READING.
+- Create original questions grounded only in the supplied passage. Examples show the wire format, not content to copy.
+- Use only answer fields relevant to the question type; omit unrelated answer families.
+- Options use positive indices; booleans are JSON true/false, never strings.
+- Each question represents a complete matching exercise with at least two numbered paragraph targets displayed as 'N. ...' in promptMd.
+- matchPairs keys are the exact positive decimal numbers corresponding to the targets in promptMd (may start above 1).
+- Each matchPairs value is [gradingKey, displayLabel] where gradingKey is a Roman numeral (e.g. 'i', 'ii') and displayLabel is the heading text without its Roman prefix.
+- options[] is a non-empty choice pool with sequential 1-based idx, isCorrect: false on all items, and unique Roman numeral labels ('i. Heading text', 'ii. Heading text', ...).
+- Include at least one unused distractor option in options[].
+- The full Roman-numeral heading pool must appear in both promptMd (under 'List of Headings:') and options[].
+- Each heading option matches at most one paragraph target; grading keys across matchPairs must be distinct.
+- Do not include other answer-family fields (blankAcceptTexts, blankAcceptRegex, orderCorrects, shortAnswerAcceptTexts, shortAnswerAcceptRegex).
+- Do not copy text or answers from sample exams; generate original questions grounded only in the supplied passage.
 
 JSON shape:
 {
   "type": "MATCHING_HEADING",
   "skill": "READING",
-  "difficulty": 2-4,
-  "promptMd": "Choose a heading for each paragraph.",
-  "options": [
-    { "contentMd": "i. The Early Years" },
-    { "contentMd": "ii. The Modern Period" }
-  ],
+  "difficulty": 3,
+  "promptMd": "The reading passage has five paragraphs, 1–5.\\nChoose the correct heading for each paragraph from the list of headings below.\\n\\nList of Headings:\\ni. How museum purposes have changed over time\\nii. The economic model of major international exhibitions\\niii. Digital technology and its effect on visitor experience\\niv. Disputes over the ownership of cultural artefacts\\nv. Museums as neighbourhood service centres\\nvi. The difference between local visitors and tourists\\nvii. Funding challenges for smaller cultural institutions\\n\\nParagraphs:\\n1. Paragraph 1\\n2. Paragraph 2\\n3. Paragraph 3\\n4. Paragraph 4\\n5. Paragraph 5",
   "matchPairs": {
-    "A": ["i", "Paragraph A excerpt"],
-    "B": ["ii", "Paragraph B excerpt"]
-  }
+    "1": [
+      "i",
+      "How museum purposes have changed over time"
+    ],
+    "2": [
+      "ii",
+      "The economic model of major international exhibitions"
+    ],
+    "3": [
+      "iii",
+      "Digital technology and its effect on visitor experience"
+    ],
+    "4": [
+      "iv",
+      "Disputes over the ownership of cultural artefacts"
+    ],
+    "5": [
+      "v",
+      "Museums as neighbourhood service centres"
+    ]
+  },
+  "options": [
+    {
+      "idx": 1,
+      "contentMd": "i. How museum purposes have changed over time",
+      "isCorrect": false
+    },
+    {
+      "idx": 2,
+      "contentMd": "ii. The economic model of major international exhibitions",
+      "isCorrect": false
+    },
+    {
+      "idx": 3,
+      "contentMd": "iii. Digital technology and its effect on visitor experience",
+      "isCorrect": false
+    },
+    {
+      "idx": 4,
+      "contentMd": "iv. Disputes over the ownership of cultural artefacts",
+      "isCorrect": false
+    },
+    {
+      "idx": 5,
+      "contentMd": "v. Museums as neighbourhood service centres",
+      "isCorrect": false
+    },
+    {
+      "idx": 6,
+      "contentMd": "vi. The difference between local visitors and tourists",
+      "isCorrect": false
+    },
+    {
+      "idx": 7,
+      "contentMd": "vii. Funding challenges for smaller cultural institutions",
+      "isCorrect": false
+    }
+  ]
 }
 
-matchPairs keys are paragraph letters (A, B, C, …).
-matchPairs values[0] is the Roman numeral heading (i, ii, iii).
-options[] is the heading pool.
-promptMd should include the passage (or reference it).
+Ground all questions solely in the supplied passage. Do not copy headings or paragraphs from the example.
 
-Output ONLY a single JSON array. No prose, no markdown fences, no explanation. Each item is a complete question payload with this exact shape:
-{
-  "type": "<QUESTION_TYPE>",
-  "skill": "READING|LISTENING|SPEAKING|WRITING",
-  "difficulty": 1-5,
-  "promptMd": "string",
-  "explanationMd": "string (optional)",
-  "options": [ ... ] or
-  "matchPairs": { ... } or
-  "blankAcceptTexts": { ... } or
-  "orderCorrects": [ ... ] or
-  "shortAnswerAcceptTexts": [ ... ]
-}
+Output ONLY a single JSON array. No prose, no markdown fences outside the JSON block, no explanation. Each item is a complete question payload and MUST include BOTH "options" (the choice pool) and "matchPairs" (the correct mappings).
 
 If the JSON cannot be produced, output {"error": "reason"} instead."
 `;

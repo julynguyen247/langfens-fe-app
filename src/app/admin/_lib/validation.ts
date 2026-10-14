@@ -813,3 +813,435 @@ export function defaultSkillForType(type: string): string {
   const meta = getMeta(type);
   return meta.skillHints?.[0] || QuestionSkill.Reading;
 }
+
+
+const GENERATED_MATCHING_TYPES: Record<string, true> = {
+  [QuestionType.MatchingHeading]: true,
+  [QuestionType.MatchingInformation]: true,
+  [QuestionType.MatchingFeatures]: true,
+  [QuestionType.MatchingEndings]: true,
+};
+
+function collapseWs(s: string): string {
+  return s.trim().replace(/\s+/g, " ");
+}
+
+export function validateGeneratedMatchingQuestion(
+  q: unknown,
+  expectedType: string,
+  expectedSkill: string,
+  expectedDifficulty: number
+): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+
+  if (!q || typeof q !== "object" || Array.isArray(q)) {
+    return [
+      {
+        level: "error",
+        field: "root",
+        message: "Question must be a JSON object",
+      },
+    ];
+  }
+
+  const obj = q as Record<string, unknown>;
+
+  // 1. Exact requested type, skill, difficulty
+  if (obj.type !== expectedType) {
+    issues.push({
+      level: "error",
+      field: "type",
+      message: `type must be '${expectedType}', got '${String(obj.type)}'`,
+    });
+  }
+
+  if (obj.skill !== expectedSkill) {
+    issues.push({
+      level: "error",
+      field: "skill",
+      message: `skill must be '${expectedSkill}', got '${String(obj.skill)}'`,
+    });
+  }
+
+  const diff = obj.difficulty;
+  if (typeof diff !== "number" || !Number.isInteger(diff) || typeof diff === "boolean") {
+    issues.push({
+      level: "error",
+      field: "difficulty",
+      message: `difficulty must be an integer, got ${typeof diff}`,
+    });
+  } else {
+    if (diff !== expectedDifficulty) {
+      issues.push({
+        level: "error",
+        field: "difficulty",
+        message: `difficulty must be ${expectedDifficulty}, got ${diff}`,
+      });
+    }
+    if (diff < 1 || diff > 5) {
+      issues.push({
+        level: "error",
+        field: "difficulty",
+        message: `difficulty must be in range [1, 5], got ${diff}`,
+      });
+    }
+  }
+
+  // 2. promptMd
+  const promptMd = typeof obj.promptMd === "string" ? obj.promptMd : "";
+  if (!promptMd.trim()) {
+    issues.push({
+      level: "error",
+      field: "promptMd",
+      message: "promptMd must be a non-empty string",
+    });
+  }
+
+  // 3. Forbidden fields
+  const forbiddenFields = [
+    "blankAcceptTexts",
+    "blankAcceptRegex",
+    "orderCorrects",
+    "shortAnswerAcceptTexts",
+    "shortAnswerAcceptRegex",
+  ];
+  for (const field of forbiddenFields) {
+    const val = obj[field];
+    if (val !== undefined && val !== null) {
+      if (typeof val === "object" && Object.keys(val).length > 0) {
+        issues.push({
+          level: "error",
+          field,
+          message: `forbidden answer-family field '${field}' must not be present or non-empty`,
+        });
+      }
+    }
+  }
+
+  // 4. options pool
+  const rawOptions = obj.options;
+  if (!Array.isArray(rawOptions) || rawOptions.length === 0) {
+    issues.push({
+      level: "error",
+      field: "options",
+      message: "options must be a non-empty array",
+    });
+  }
+
+  const options = Array.isArray(rawOptions) ? rawOptions : [];
+  const isHeading = expectedType === "MATCHING_HEADING" || expectedType === QuestionType.MatchingHeading;
+  const headingRegex = /^([ivxlcdm]+)\.\s+(.+)$/i;
+  const letterRegex = /^([A-Z])\.\s+(.+)$/;
+
+  const optionKeys: string[] = [];
+  const optionTexts: Record<string, string> = {};
+  const seenIndices = new Set<number>();
+  const nOpts = options.length;
+
+  options.forEach((opt, i) => {
+    if (!opt || typeof opt !== "object" || Array.isArray(opt)) {
+      issues.push({
+        level: "error",
+        field: `options[${i}]`,
+        message: `options[${i}] must be a JSON object`,
+      });
+      return;
+    }
+    const o = opt as Record<string, unknown>;
+    const idx = o.idx;
+    if (typeof idx !== "number" || !Number.isInteger(idx)) {
+      issues.push({
+        level: "error",
+        field: `options[${i}].idx`,
+        message: `options[${i}].idx must be an integer`,
+      });
+    } else {
+      seenIndices.add(idx);
+    }
+
+    if (o.isCorrect !== false) {
+      issues.push({
+        level: "error",
+        field: `options[${i}].isCorrect`,
+        message: `options[${i}].isCorrect must be false`,
+      });
+    }
+
+    const content = typeof o.contentMd === "string" ? o.contentMd.trim() : "";
+    if (!content) {
+      issues.push({
+        level: "error",
+        field: `options[${i}].contentMd`,
+        message: `options[${i}].contentMd must be a non-empty string`,
+      });
+      return;
+    }
+
+    if (isHeading) {
+      const m = headingRegex.exec(content);
+      if (!m) {
+        issues.push({
+          level: "error",
+          field: `options[${i}].contentMd`,
+          message: `options[${i}].contentMd '${content}' must match Roman numeral label format (e.g. 'i. Heading text')`,
+        });
+      } else {
+        const key = m[1].toLowerCase();
+        const text = m[2].trim();
+        optionKeys.push(key);
+        optionTexts[key] = text;
+      }
+    } else {
+      const m = letterRegex.exec(content);
+      if (!m) {
+        issues.push({
+          level: "error",
+          field: `options[${i}].contentMd`,
+          message: `options[${i}].contentMd '${content}' must match letter label format (e.g. 'A. Feature text')`,
+        });
+      } else {
+        const key = m[1];
+        const text = m[2].trim();
+        optionKeys.push(key);
+        optionTexts[key] = text;
+        if (expectedType === "MATCHING_INFORMATION" || expectedType === QuestionType.MatchingInformation) {
+          if (content !== `${key}. Paragraph ${key}`) {
+            issues.push({
+              level: "error",
+              field: `options[${i}].contentMd`,
+              message: `options[${i}].contentMd must be '${key}. Paragraph ${key}', got '${content}'`,
+            });
+          }
+        }
+      }
+    }
+  });
+
+  if (options.length > 0) {
+    let indicesSequential = true;
+    for (let i = 1; i <= nOpts; i++) {
+      if (!seenIndices.has(i)) {
+        indicesSequential = false;
+        break;
+      }
+    }
+    if (!indicesSequential || seenIndices.size !== nOpts) {
+      issues.push({
+        level: "error",
+        field: "options.idx",
+        message: `options idx must be sequential 1-based integers (1..${nOpts})`,
+      });
+    }
+  }
+
+  const uniqueOptionKeys = new Set(optionKeys);
+  if (optionKeys.length !== uniqueOptionKeys.size) {
+    issues.push({
+      level: "error",
+      field: "options",
+      message: "options must have unique label keys",
+    });
+  }
+
+  // 5. Parse targets from promptMd
+  const targets: Record<string, string> = {};
+  const targetPattern = /^\s*(\d+)[\.\)]\s+(.+)$/;
+  const lines = promptMd.split(/\r?\n/);
+  for (const line of lines) {
+    const m = targetPattern.exec(line);
+    if (m) {
+      const tNum = m[1];
+      const tText = m[2].trim();
+      if (targets[tNum] !== undefined) {
+        issues.push({
+          level: "error",
+          field: "promptMd",
+          message: `duplicate target number '${tNum}' in promptMd`,
+        });
+      }
+      targets[tNum] = tText;
+    }
+  }
+
+  const targetCount = Object.keys(targets).length;
+  if (targetCount < 2) {
+    issues.push({
+      level: "error",
+      field: "promptMd",
+      message: `promptMd must contain at least 2 numbered targets matching 'N. ...', found ${targetCount}`,
+    });
+  }
+
+  // 6. matchPairs validation
+  const matchPairs = obj.matchPairs;
+  if (!matchPairs || typeof matchPairs !== "object" || Array.isArray(matchPairs)) {
+    issues.push({
+      level: "error",
+      field: "matchPairs",
+      message: "matchPairs must be a JSON object",
+    });
+  } else {
+    const mp = matchPairs as Record<string, unknown>;
+    const mpKeys = Object.keys(mp);
+    if (mpKeys.length < 2) {
+      issues.push({
+        level: "error",
+        field: "matchPairs",
+        message: `matchPairs must contain at least 2 pairs, found ${mpKeys.length}`,
+      });
+    }
+
+    for (const k of mpKeys) {
+      if (!(/^\d+$/.test(k) && parseInt(k, 10) > 0)) {
+        issues.push({
+          level: "error",
+          field: `matchPairs.${k}`,
+          message: `matchPairs key '${k}' must be a positive decimal string`,
+        });
+      }
+    }
+
+    const targetKeySet = new Set(Object.keys(targets));
+    const mpKeySet = new Set(mpKeys);
+    let keysMatch = targetKeySet.size === mpKeySet.size;
+    if (keysMatch) {
+      for (const k of targetKeySet) {
+        if (!mpKeySet.has(k)) {
+          keysMatch = false;
+          break;
+        }
+      }
+    }
+    if (!keysMatch) {
+      issues.push({
+        level: "error",
+        field: "matchPairs",
+        message: `matchPairs keys [${mpKeys.sort().join(", ")}] do not match promptMd targets [${Object.keys(targets).sort().join(", ")}]`,
+      });
+    }
+
+    const usedGradingKeys: string[] = [];
+    for (const tKey of mpKeys) {
+      const val = mp[tKey];
+      if (!Array.isArray(val) || val.length !== 2) {
+        issues.push({
+          level: "error",
+          field: `matchPairs.${tKey}`,
+          message: `matchPairs['${tKey}'] must be a [gradingKey, displayLabel] pair of exactly 2 items`,
+        });
+        continue;
+      }
+
+      const gKey = typeof val[0] === "string" ? val[0].trim() : "";
+      const dLabel = typeof val[1] === "string" ? val[1].trim() : "";
+
+      if (!gKey) {
+        issues.push({
+          level: "error",
+          field: `matchPairs.${tKey}[0]`,
+          message: `matchPairs['${tKey}'][0] gradingKey must be a non-empty string`,
+        });
+        continue;
+      }
+      if (!dLabel) {
+        issues.push({
+          level: "error",
+          field: `matchPairs.${tKey}[1]`,
+          message: `matchPairs['${tKey}'][1] displayLabel must be a non-empty string`,
+        });
+        continue;
+      }
+
+      const gKeyNorm = isHeading ? gKey.toLowerCase() : gKey;
+      if (!uniqueOptionKeys.has(gKeyNorm)) {
+        issues.push({
+          level: "error",
+          field: `matchPairs.${tKey}[0]`,
+          message: `matchPairs['${tKey}'] gradingKey '${gKey}' does not exist in options choice pool`,
+        });
+      }
+      usedGradingKeys.push(gKeyNorm);
+
+      if (isHeading) {
+        const expectedHeadingText = optionTexts[gKeyNorm] || "";
+        if (collapseWs(dLabel) !== collapseWs(expectedHeadingText)) {
+          issues.push({
+            level: "error",
+            field: `matchPairs.${tKey}[1]`,
+            message: `matchPairs['${tKey}'] displayLabel '${dLabel}' does not match correct heading text '${expectedHeadingText}'`,
+          });
+        }
+      } else {
+        const expectedTargetText = targets[tKey] || "";
+        if (collapseWs(dLabel) !== collapseWs(expectedTargetText)) {
+          issues.push({
+            level: "error",
+            field: `matchPairs.${tKey}[1]`,
+            message: `matchPairs['${tKey}'] displayLabel '${dLabel}' does not match target text '${expectedTargetText}'`,
+          });
+        }
+      }
+    }
+
+    // Distractor rule
+    const usedKeySet = new Set(usedGradingKeys);
+    let unusedCount = 0;
+    for (const optKey of uniqueOptionKeys) {
+      if (!usedKeySet.has(optKey)) {
+        unusedCount++;
+      }
+    }
+    if (uniqueOptionKeys.size > 0 && unusedCount < 1) {
+      issues.push({
+        level: "error",
+        field: "options",
+        message: "options pool must contain at least one unused distractor option",
+      });
+    }
+
+    // Distinct grading keys rule for HEADING and ENDINGS
+    if (
+      expectedType === "MATCHING_HEADING" ||
+      expectedType === QuestionType.MatchingHeading ||
+      expectedType === "MATCHING_ENDINGS" ||
+      expectedType === QuestionType.MatchingEndings
+    ) {
+      if (usedGradingKeys.length !== usedKeySet.size) {
+        issues.push({
+          level: "error",
+          field: "matchPairs",
+          message: `${expectedType} grading keys must be distinct across targets`,
+        });
+      }
+    }
+
+    // HEADING prompt must include all Roman option headings
+    if (isHeading) {
+      const promptLower = collapseWs(promptMd).toLowerCase();
+      for (const k of optionKeys) {
+        const optText = optionTexts[k] || "";
+        if (!promptLower.includes(collapseWs(optText).toLowerCase())) {
+          issues.push({
+            level: "error",
+            field: "promptMd",
+            message: `MATCHING_HEADING promptMd must include heading text for option '${k}': '${optText}'`,
+          });
+        }
+      }
+    }
+  }
+
+  // Also run validateMatchingPromptParity for parity
+  issues.push(
+    ...validateMatchingPromptParity(
+      expectedType,
+      promptMd,
+      matchPairs && typeof matchPairs === "object" && !Array.isArray(matchPairs)
+        ? Object.keys(matchPairs)
+        : []
+    )
+  );
+
+  return issues;
+}
+

@@ -5,34 +5,38 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   getStoredAdminUser,
-  loginWithHardcodedAdmin,
+  isAdminRole,
+  clearStoredAdminUser,
+  loginAdmin,
 } from "../_lib/adminAuth";
-
+import { getToken } from "@/utils/cookie";
 export default function AdminLoginPage() {
   const router = useRouter();
-  const [username, setUsername] = useState("admin");
-  const [password, setPassword] = useState("admin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // If already logged in, redirect to exams
+  // If already logged in with valid admin, redirect to exams
   useEffect(() => {
     const existing = getStoredAdminUser();
-    if (existing) {
+    const token = getToken();
+    if (existing && isAdminRole(existing.roles) && token) {
       router.replace("/admin/exams");
+    } else if (!token) {
+      clearStoredAdminUser();
     }
   }, [router]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError(null);
 
-    const ok = await loginWithHardcodedAdmin(username, password);
-    if (ok) {
+    const res = await loginAdmin(email, password);
+    if (res.success) {
       router.replace("/admin/exams");
     } else {
-      setError("Invalid credentials. Please use admin / admin.");
+      setError(res.message || "Invalid email or password.");
       setIsSubmitting(false);
     }
   };
@@ -53,18 +57,16 @@ export default function AdminLoginPage() {
           </p>
         </div>
 
-        {/* Hardcoded Credentials Hint Card */}
-        <div className="p-3.5 rounded-xl bg-indigo-950/30 border border-indigo-500/30 text-xs text-indigo-300 space-y-1">
-          <div className="flex items-center gap-1.5 font-semibold text-indigo-200">
-            <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
-            Hardcoded Credentials Configured
+        {/* Security Notice */}
+        <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 text-xs text-slate-300 space-y-1">
+          <div className="flex items-center gap-1.5 font-semibold text-indigo-300">
+            <span className="w-2 h-2 rounded-full bg-emerald-400" />
+            Secure Backend Authentication
           </div>
-          <p className="text-[11px] text-indigo-300/80 font-mono">
-            Username: <strong className="text-white">admin</strong> | Password:{" "}
-            <strong className="text-white">admin</strong>
+          <p className="text-[11px] text-slate-400">
+            Use your administrator account credentials to authenticate against the auth-service.
           </p>
         </div>
-
         {/* Error message */}
         {error && (
           <div className="p-3 rounded-lg bg-rose-950/40 border border-rose-900 text-xs text-rose-300 text-center">
@@ -76,14 +78,14 @@ export default function AdminLoginPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
-              Username
+              Email Address
             </label>
             <input
-              type="text"
+              type="email"
               required
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="admin"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="admin@langfens.com"
               className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2.5 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 font-mono transition"
             />
           </div>
@@ -97,7 +99,7 @@ export default function AdminLoginPage() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="admin"
+              placeholder="••••••••"
               className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2.5 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 font-mono transition"
             />
           </div>

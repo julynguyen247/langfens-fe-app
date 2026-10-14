@@ -21,6 +21,10 @@ import { QuestionExporter } from "./QuestionExporter";
 import { QUESTION_TYPE_REGISTRY, getMeta } from "@/app/admin/_lib/questionTypeRegistry";
 import { generateQuestionsFromPassage } from "@/app/admin/_lib/questionGeneration";
 import {
+  FEEDBACK_REASONS,
+  evaluateSmallEditPolicy,
+} from "@/app/admin/_lib/feedbackTaxonomy";
+import {
   aggregateIssues,
   validateBlankKeyFormat,
   validateBlanks,
@@ -46,11 +50,13 @@ interface QuestionEditorProps {
   sectionPassageMd?: string | null;
   sectionAudioUrl?: string | null;
   availableSections?: { id: string; title: string }[];
-  onSave: (updated: InternalDeliveryQuestion) => Promise<void>;
+  onSave: (
+    updated: InternalDeliveryQuestion,
+    feedbackMeta?: { reasons: string[]; comment: string; idempotencyKey?: string }
+  ) => Promise<void>;
   onDelete: (questionId?: string, idx?: number) => Promise<void>;
   onDuplicate?: (q: InternalDeliveryQuestion) => Promise<void>;
 }
-
 export function QuestionEditor({
   question,
   sectionId,
@@ -66,9 +72,14 @@ export function QuestionEditor({
   const [isAiGenerating, setIsAiGenerating] = useState(false);
   const [saveMessage, setSaveMessage] = useState<{ text: string; isError: boolean } | null>(null);
   const [showPreview, setShowPreview] = useState(false);
-
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [draft, setDraft] = useState<InternalDeliveryQuestion>(question);
   const initialRef = useRef<InternalDeliveryQuestion>(question);
+  const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
+  const [curatorComment, setCuratorComment] = useState("");
+  const [actionKey, setActionKey] = useState<string>(() =>
+    typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `edit-q-${Date.now()}`
+  );
 
   // S31: ref forwarded to the prompt textarea so BlankAcceptsEditor's
   // "Insert Blank at Cursor" button can read selectionStart/End and restore
@@ -77,6 +88,12 @@ export function QuestionEditor({
   useEffect(() => {
     setDraft(question);
     initialRef.current = question;
+    setSelectedReasons([]);
+    setCuratorComment("");
+    const newKey = typeof crypto !== "undefined" && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `edit-q-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    setActionKey(newKey);
   }, [question.id, question.idx]);
 
   useEffect(() => {
@@ -100,6 +117,78 @@ export function QuestionEditor({
   const isListening = draft.skill === QuestionSkill.Listening;
   const hasMissingAudio = isListening && !sectionAudioUrl;
 
+  const beforeQuestionText = useMemo(() => {
+    const q = initialRef.current;
+    if (!q) return "";
+    const parts: string[] = [];
+    parts.push(`Type: ${q.type || ""}`);
+    parts.push(`Skill: ${q.skill || ""}`);
+    parts.push(`Difficulty: ${q.difficulty ?? 1}`);
+    if (q.promptMd) parts.push(`Prompt: ${q.promptMd.trim()}`);
+    if (q.imageUrl) parts.push(`Image: ${q.imageUrl}`);
+    if (q.options && q.options.length > 0) {
+      parts.push(`Options: ${q.options.map((o) => `[${o.idx}] ${o.contentMd || ""}${o.isCorrect ? " (CORRECT)" : ""}`).join(" | ")}`);
+    }
+    if (q.blankAcceptTexts && Object.keys(q.blankAcceptTexts).length > 0) {
+      parts.push(`Blank Texts: ${JSON.stringify(q.blankAcceptTexts)}`);
+    }
+    if (q.blankAcceptRegex && Object.keys(q.blankAcceptRegex).length > 0) {
+      parts.push(`Blank Regex: ${JSON.stringify(q.blankAcceptRegex)}`);
+    }
+    if (q.shortAnswerAcceptTexts && q.shortAnswerAcceptTexts.length > 0) {
+      parts.push(`Short Answer Texts: ${q.shortAnswerAcceptTexts.join(", ")}`);
+    }
+    if (q.shortAnswerAcceptRegex && q.shortAnswerAcceptRegex.length > 0) {
+      parts.push(`Short Answer Regex: ${q.shortAnswerAcceptRegex.join(", ")}`);
+    }
+    if (q.matchPairs && Object.keys(q.matchPairs).length > 0) {
+      parts.push(`Match Pairs: ${JSON.stringify(q.matchPairs)}`);
+    }
+    if (q.orderCorrects && q.orderCorrects.length > 0) {
+      parts.push(`Order: ${q.orderCorrects.join(" -> ")}`);
+    }
+    if (q.explanationMd) parts.push(`Explanation: ${q.explanationMd.trim()}`);
+    return parts.join("\n");
+  }, [initialRef.current]);
+
+  const currentQuestionText = useMemo(() => {
+    const q = draft;
+    if (!q) return "";
+    const parts: string[] = [];
+    parts.push(`Type: ${q.type || ""}`);
+    parts.push(`Skill: ${q.skill || ""}`);
+    parts.push(`Difficulty: ${q.difficulty ?? 1}`);
+    if (q.promptMd) parts.push(`Prompt: ${q.promptMd.trim()}`);
+    if (q.imageUrl) parts.push(`Image: ${q.imageUrl}`);
+    if (q.options && q.options.length > 0) {
+      parts.push(`Options: ${q.options.map((o) => `[${o.idx}] ${o.contentMd || ""}${o.isCorrect ? " (CORRECT)" : ""}`).join(" | ")}`);
+    }
+    if (q.blankAcceptTexts && Object.keys(q.blankAcceptTexts).length > 0) {
+      parts.push(`Blank Texts: ${JSON.stringify(q.blankAcceptTexts)}`);
+    }
+    if (q.blankAcceptRegex && Object.keys(q.blankAcceptRegex).length > 0) {
+      parts.push(`Blank Regex: ${JSON.stringify(q.blankAcceptRegex)}`);
+    }
+    if (q.shortAnswerAcceptTexts && q.shortAnswerAcceptTexts.length > 0) {
+      parts.push(`Short Answer Texts: ${q.shortAnswerAcceptTexts.join(", ")}`);
+    }
+    if (q.shortAnswerAcceptRegex && q.shortAnswerAcceptRegex.length > 0) {
+      parts.push(`Short Answer Regex: ${q.shortAnswerAcceptRegex.join(", ")}`);
+    }
+    if (q.matchPairs && Object.keys(q.matchPairs).length > 0) {
+      parts.push(`Match Pairs: ${JSON.stringify(q.matchPairs)}`);
+    }
+    if (q.orderCorrects && q.orderCorrects.length > 0) {
+      parts.push(`Order: ${q.orderCorrects.join(" -> ")}`);
+    }
+    if (q.explanationMd) parts.push(`Explanation: ${q.explanationMd.trim()}`);
+    return parts.join("\n");
+  }, [draft]);
+
+  const editPolicy = useMemo(() => {
+    return evaluateSmallEditPolicy(beforeQuestionText, currentQuestionText);
+  }, [beforeQuestionText, currentQuestionText]);
+
   const issues: ValidationIssue[] = useMemo(() => {
     return validateQuestionPayload({
       type: draft.type,
@@ -121,31 +210,25 @@ export function QuestionEditor({
   const hasErrors = issues.some((i) => i.level === "error");
   const warnings = issues.filter((i) => i.level === "warning");
 
-  const handleSave = async () => {
+  const executeSave = async (reasons: string[], comment: string, idempotencyKey: string) => {
     try {
       setIsSaving(true);
       setSaveMessage(null);
 
-      if (hasMissingAudio) {
-        setSaveMessage({
-          text: "Listening questions require an Audio URL on the parent section before saving.",
-          isError: true,
-        });
-        setIsSaving(false);
-        return;
-      }
+      await onSave(draft, {
+        reasons,
+        comment: comment.trim(),
+        idempotencyKey,
+      });
 
-      if (hasErrors) {
-        setSaveMessage({
-          text: `Cannot save — ${issues.filter((i) => i.level === "error").length} validation error(s)`,
-          isError: true,
-        });
-        setIsSaving(false);
-        return;
-      }
-
-      await onSave(draft);
       initialRef.current = draft;
+      setSelectedReasons([]);
+      setCuratorComment("");
+      const nextKey = typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `edit-q-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+      setActionKey(nextKey);
+      setIsReviewModalOpen(false);
       setSaveMessage({ text: "Saved successfully", isError: false });
       setTimeout(() => setSaveMessage(null), 3000);
     } catch (err: unknown) {
@@ -166,6 +249,32 @@ export function QuestionEditor({
       setSaveMessage({ text: msg, isError: true });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleSave = async () => {
+    setSaveMessage(null);
+
+    if (hasMissingAudio) {
+      setSaveMessage({
+        text: "Listening questions require an Audio URL on the parent section before saving.",
+        isError: true,
+      });
+      return;
+    }
+
+    if (hasErrors) {
+      setSaveMessage({
+        text: `Cannot save — ${issues.filter((i) => i.level === "error").length} validation error(s)`,
+        isError: true,
+      });
+      return;
+    }
+
+    if (isDirty) {
+      setIsReviewModalOpen(true);
+    } else {
+      await executeSave(selectedReasons, curatorComment, actionKey);
     }
   };
 
@@ -199,6 +308,10 @@ export function QuestionEditor({
 
       if (!result.questions || result.questions.length === 0) {
         throw new Error("No question generated by AI.");
+      }
+
+      if (result.validationErrors && result.validationErrors.length > 0) {
+        throw new Error(result.validationErrors[0]);
       }
 
       const eq = result.questions[0];
@@ -762,6 +875,89 @@ export function QuestionEditor({
                 />
               </div>
 
+              {/* Reason Taxonomy, Diff Preview & Small Edit Indicator for Human Edits */}
+              {isDirty && (
+                <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3.5 space-y-3 text-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`inline-block h-2 w-2 rounded-full ${
+                          editPolicy.isSmallEdit ? "bg-emerald-400" : "bg-amber-400"
+                        }`}
+                      />
+                      <span className="font-semibold text-slate-200">
+                        {editPolicy.isSmallEdit
+                          ? "Small Edit Policy Met (Reasons Optional)"
+                          : "Substantive Edit (Reason Taxonomy Recommended)"}
+                      </span>
+                      <span className="text-[10px] font-mono text-slate-400">
+                        Δ {editPolicy.characterDiff} chars {editPolicy.formattingOnly && "(formatting only)"}
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-slate-400">
+                      {selectedReasons.length} reason tag(s) attached
+                    </span>
+                  </div>
+
+                  {/* Before / After Full Diff Preview */}
+                  {beforeQuestionText !== currentQuestionText && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px]">
+                      <div className="p-2 rounded-lg bg-rose-950/20 border border-rose-900/40 text-rose-200 font-mono overflow-x-auto max-h-32">
+                        <div className="text-[9px] uppercase font-semibold text-rose-400 mb-0.5">Original Version</div>
+                        <div className="whitespace-pre-wrap">{beforeQuestionText || "(empty)"}</div>
+                      </div>
+                      <div className="p-2 rounded-lg bg-emerald-950/20 border border-emerald-900/40 text-emerald-200 font-mono overflow-x-auto max-h-32">
+                        <div className="text-[9px] uppercase font-semibold text-emerald-400 mb-0.5">Edited Version</div>
+                        <div className="whitespace-pre-wrap">{currentQuestionText || "(empty)"}</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Reason Taxonomy Multi-Select Chips */}
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-semibold uppercase text-slate-400 block">
+                      Attach Reason Taxonomy Tags:
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {FEEDBACK_REASONS.map((r) => {
+                        const isSelected = selectedReasons.includes(r.id);
+                        return (
+                          <button
+                            key={r.id}
+                            type="button"
+                            onClick={() =>
+                              setSelectedReasons((prev) =>
+                                prev.includes(r.id) ? prev.filter((id) => id !== r.id) : [...prev, r.id]
+                              )
+                            }
+                            className={`px-2 py-1 rounded-md text-[11px] font-medium transition-all ${
+                              isSelected
+                                ? "bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-400"
+                                : "bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-slate-800"
+                            }`}
+                            title={r.description}
+                          >
+                            {r.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Curator Comment / Rationale */}
+                  <div className="space-y-1">
+                    <input
+                      type="text"
+                      aria-label="Edit rationale / comments"
+                      value={curatorComment}
+                      onChange={(e) => setCuratorComment(e.target.value)}
+                      placeholder="Optional curator justification / editorial comment..."
+                      className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+                </div>
+              )}
+
               <div className="pt-4 border-t border-slate-800/80">
                 {renderTypeEditor()}
               </div>
@@ -772,6 +968,141 @@ export function QuestionEditor({
                 <AdminQuestionPreview question={draft} displayIdx={draft.idx} />
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Confirm-Before-Save Review Modal for Substantive Edits */}
+      {isReviewModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4 overflow-y-auto"
+        >
+          <div className="relative w-full max-w-2xl rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-5 text-slate-100 my-8 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-800 pb-3">
+              <div>
+                <h3 className="text-base font-bold text-white tracking-tight">
+                  Review Substantive Question Edit
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Target: <span className="text-indigo-300 font-medium">Q#{draft.idx} ({draft.type})</span>
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsReviewModalOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            {saveMessage?.isError && (
+              <div role="alert" className="p-3 rounded-lg border border-rose-700 bg-rose-950/40 text-xs text-rose-200">
+                {saveMessage.text}
+              </div>
+            )}
+            {/* Small Edit Policy Indicator */}
+            <div
+              className={`rounded-xl border p-3 text-xs flex items-center justify-between gap-2 ${
+                editPolicy.isSmallEdit
+                  ? "border-emerald-800/60 bg-emerald-950/30 text-emerald-300"
+                  : "border-amber-800/60 bg-amber-950/30 text-amber-300"
+              }`}
+            >
+              <div className="flex items-center gap-2 font-medium">
+                <span className={`inline-block h-2 w-2 rounded-full ${editPolicy.isSmallEdit ? "bg-emerald-400" : "bg-amber-400"}`} />
+                <span>
+                  {editPolicy.isSmallEdit
+                    ? "Small edit detected — taxonomy reasons are optional."
+                    : "Substantive edit detected — reason taxonomy recommended."}
+                </span>
+              </div>
+              <span className="font-mono text-[11px] opacity-80">Δ {editPolicy.characterDiff} chars</span>
+            </div>
+
+            {/* Full Before / After Diff */}
+            <div className="space-y-2 text-xs">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px]">
+                <div className="p-3 rounded-xl bg-rose-950/20 border border-rose-900/40 text-rose-200 font-mono overflow-x-auto max-h-40">
+                  <div className="text-[9px] uppercase font-semibold text-rose-400 mb-1">Original Question</div>
+                  <div className="whitespace-pre-wrap">{beforeQuestionText || "(empty)"}</div>
+                </div>
+                <div className="p-3 rounded-xl bg-emerald-950/20 border border-emerald-900/40 text-emerald-200 font-mono overflow-x-auto max-h-40">
+                  <div className="text-[9px] uppercase font-semibold text-emerald-400 mb-1">Edited Question</div>
+                  <div className="whitespace-pre-wrap">{currentQuestionText || "(empty)"}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Reason Taxonomy Chips */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                  Reason Taxonomy Tags
+                </label>
+                <span className="text-[11px] text-slate-500">{selectedReasons.length} selected</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto">
+                {FEEDBACK_REASONS.map((r) => {
+                  const isSelected = selectedReasons.includes(r.id);
+                  return (
+                    <button
+                      key={r.id}
+                      type="button"
+                      onClick={() =>
+                        setSelectedReasons((prev) =>
+                          prev.includes(r.id) ? prev.filter((id) => id !== r.id) : [...prev, r.id]
+                        )
+                      }
+                      className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                        isSelected
+                          ? "bg-indigo-600 text-white shadow-sm ring-1 ring-indigo-400"
+                          : "bg-slate-950 text-slate-300 hover:bg-slate-800 border border-slate-800"
+                      }`}
+                      title={r.description}
+                    >
+                      {r.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Curator Comment */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                Curator Justification / Comments
+              </label>
+              <textarea
+                rows={2}
+                aria-label="Edit rationale / comments"
+                value={curatorComment}
+                onChange={(e) => setCuratorComment(e.target.value)}
+                placeholder="Editorial justification or reasons for changing question content..."
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => setIsReviewModalOpen(false)}
+                disabled={isSaving}
+                className="px-4 py-2 text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => executeSave(selectedReasons, curatorComment, actionKey)}
+                disabled={isSaving}
+                className="px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 transition disabled:opacity-50"
+              >
+                {isSaving ? "Saving..." : "Confirm & Save Edit"}
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -11,7 +11,7 @@ interface ApiResult<T> {
 
 export async function fetchExamDeliveryPaper(
   examId: string,
-  showAnswer: boolean = true
+  showAnswer: boolean = false
 ): Promise<InternalDeliveryExam> {
   const res = await apisExam.get<ApiResult<InternalDeliveryExam>>(
     `/internal/exams/${examId}/delivery`,
