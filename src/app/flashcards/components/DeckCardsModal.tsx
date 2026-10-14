@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getDeckCards, deleteCard } from "@/utils/api";
+import { getDeckCards, deleteCard } from "@/services/vocabulary";
 import EditCardForm from "./EditCardForm";
 import AddCardForm from "./AddCardForm";
 

@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { extractVocabulary, createDeck, createBulkCards, getOwnDecks } from "@/utils/api";
-import { useUserStore } from "@/app/store/userStore";
+import { extractVocabulary, createDeck, createBulkCards, getOwnDecks } from "@/services/vocabulary";
+import { useUserStore } from "@/stores/userStore";
 
 type ExtractedWord = {
   word: string;

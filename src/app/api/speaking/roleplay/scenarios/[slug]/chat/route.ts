@@ -1,3 +1,4 @@
+import axios from "axios";
 import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
 import { apisAi } from "@/utils/api.customize";
@@ -26,6 +27,7 @@ export async function POST(
     );
 
     return NextResponse.json(response.data);
+<<<<<<< HEAD
   } catch (error: unknown) {
     console.error("[RoleplayChat] Error:", error);
     if (axios.isAxiosError(error)) {
@@ -34,9 +36,14 @@ export async function POST(
       const message = errorData?.error || "Failed to get response";
       return NextResponse.json({ error: message }, { status });
     }
+=======
+  } catch (error) {
+    console.error("[RoleplayChat] Error:", error);
+    const status = axios.isAxiosError(error) ? error.response?.status : undefined;
+>>>>>>> origin/master
     return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
+      { error: status ? "Failed to get response" : "Internal server error" },
+      { status: status ?? 500 }
     );
   }
 }

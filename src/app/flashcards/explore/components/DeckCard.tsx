@@ -2,10 +2,17 @@
 
 import Link from "next/link";
 import { useState } from "react";
+<<<<<<< HEAD
 import { subscribeDeck } from "@/utils/api";
 import { useUserStore } from "@/app/store/userStore";
 
 export type PublicDeck = {
+=======
+import { subscribeDeck } from "@/services/vocabulary";
+import { useUserStore } from "@/stores/userStore";
+
+export interface PublicDeck {
+>>>>>>> origin/master
   id: string;
   title: string;
   description?: string;
@@ -13,6 +20,7 @@ export type PublicDeck = {
   status?: string;
   creator?: string;
   cardCount?: number;
+<<<<<<< HEAD
 };
 
 export default function DeckCard({ deck }: { deck: PublicDeck }) {
@@ -29,6 +37,28 @@ export default function DeckCard({ deck }: { deck: PublicDeck }) {
       setSubscribed(true);
     } finally {
       setSubLoading(false);
+=======
+}
+
+export default function DeckCard({ deck }: { deck: PublicDeck }) {
+  const { user } = useUserStore();
+  const [subscribing, setSubscribing] = useState(false);
+  const [subscribed, setSubscribed] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubscribe = async () => {
+    if (!user?.id || !deck.id || subscribed || subscribing) return;
+
+    setSubscribing(true);
+    setError("");
+    try {
+      await subscribeDeck(user.id, deck.id);
+      setSubscribed(true);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Unable to subscribe.");
+    } finally {
+      setSubscribing(false);
+>>>>>>> origin/master
     }
   };
 
@@ -65,6 +95,15 @@ export default function DeckCard({ deck }: { deck: PublicDeck }) {
         )}
       </div>
 
+<<<<<<< HEAD
+=======
+      {error && (
+        <p className="mt-3 text-xs font-semibold text-[var(--destructive)]" role="alert">
+          {error}
+        </p>
+      )}
+
+>>>>>>> origin/master
       <div className="mt-auto pt-5 grid grid-cols-2 gap-2">
         <Link
           href={`/flashcards/${deck.id}`}
@@ -74,19 +113,29 @@ export default function DeckCard({ deck }: { deck: PublicDeck }) {
         </Link>
 
         <button
+<<<<<<< HEAD
           onClick={onSubscribe}
           disabled={subscribed}
+=======
+          type="button"
+          onClick={handleSubscribe}
+          disabled={subscribed || subscribing || !user?.id}
+>>>>>>> origin/master
           className={`h-10 rounded-full text-sm font-bold transition-all ${
             subscribed
               ? "bg-[var(--primary)] text-white border-b-[4px] border-[var(--primary-dark)]"
               : "bg-white text-[var(--primary)] border-[3px] border-[var(--border)] border-b-[5px] hover:border-[var(--primary)] hover:-translate-y-0.5 active:translate-y-[2px] active:border-b-[3px]"
           } disabled:opacity-60 disabled:cursor-not-allowed`}
         >
+<<<<<<< HEAD
           {subscribed
             ? "Subscribed"
             : subLoading
             ? "Subscribing..."
             : "Clone"}
+=======
+          {subscribed ? "Subscribed" : subscribing ? "Subscribing..." : "Clone"}
+>>>>>>> origin/master
         </button>
       </div>
     </div>

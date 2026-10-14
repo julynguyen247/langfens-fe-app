@@ -7,67 +7,28 @@ import {
   getGamificationStats,
   getXpHistory,
   getAchievements,
-  getMe,
-  getAnalyticsSummary,
   dailyCheckin,
-} from "@/utils/api";
+} from "@/services/gamification";
+import { getMe } from "@/services/auth";
+import { getAnalyticsSummary } from "@/services/analytics";
 import { SkillProgressBar } from "@/components/ui/SkillProgressBar";
 import { SkillBadge } from "@/components/ui/SkillBadge";
-import { ProgressRing } from "@/components/ui/ProgressRing";
 
-// Types
-type Achievement = {
-  id: string;
-  slug: string;
-  title: string;
-  description: string;
-  iconUrl?: string;
-  category: string;
-  requiredValue: number;
-  xpReward: number;
-  isUnlocked: boolean;
-  unlockedAt?: string;
-};
-
-type UserStats = {
-  userId: string;
-  totalXp: number;
-  level: number;
-  xpForNextLevel: number;
-  currentStreak: number;
-  longestStreak: number;
-  totalTestsCompleted: number;
-  totalCardsReviewed: number;
-  totalLessonsCompleted: number;
-  recentAchievements: Achievement[];
-};
-
-type XpHistoryItem = {
-  id: string;
-  amount: number;
-  source: string;
-  createdAt: string;
-};
-
-type UserProfile = {
-  id: string;
-  email: string;
-  username?: string;
-  displayName?: string;
-  createdAt?: string;
-};
-
-type AnalyticsSummary = {
-  averageBandScore?: number;
-  skillScores?: {
-    reading?: number;
-    listening?: number;
-    writing?: number;
-    speaking?: number;
-  };
-};
-
-type TabKey = "overview" | "achievements" | "settings";
+import {
+  type UserStats,
+  type XpHistoryItem,
+  type Achievement,
+  type UserProfile,
+  type AnalyticsSummary,
+  type TabKey,
+} from "./types";
+import { SkeletonProfile } from "./components/SkeletonProfile";
+import {
+  formatXpSource,
+  formatDate,
+  normaliseAnalyticsSummary,
+  normaliseUserStats,
+} from "./utils";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -106,11 +67,11 @@ export default function ProfilePage() {
       const meData = (meRes as any)?.data?.data ?? (meRes as any)?.data;
       const analyticsData = (analyticsRes as any)?.data?.data ?? (analyticsRes as any)?.data;
 
-      setStats(statsData);
+      setStats(normaliseUserStats(statsData));
       setXpHistory(Array.isArray(historyData) ? historyData : []);
       setAllAchievements(Array.isArray(achievementsData) ? achievementsData : []);
       if (meData) setUserProfile(meData);
-      if (analyticsData) setAnalyticsSummary(analyticsData);
+      setAnalyticsSummary(normaliseAnalyticsSummary(analyticsData));
     } catch (error) {
       console.error("Failed to load gamification data:", error);
     } finally {
@@ -676,87 +637,4 @@ export default function ProfilePage() {
       </main>
     </div>
   );
-}
-
-// ====================================
-// SKELETON LOADER
-// ====================================
-function SkeletonProfile() {
-  return (
-    <div className="space-y-8 animate-pulse">
-      {/* Hero skeleton */}
-      <div className="rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-white p-10 flex flex-col items-center">
-        <div className="w-24 h-24 rounded-full bg-[var(--primary-light)] mb-4" />
-        <div className="h-7 w-48 bg-[var(--border)] rounded-full mb-3" />
-        <div className="h-4 w-32 bg-[var(--background)] rounded-full mb-4" />
-        <div className="h-3.5 w-full max-w-sm bg-[var(--background)] rounded-full" />
-      </div>
-
-      {/* Stats row skeleton */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {[1, 2, 3, 4].map((i) => (
-          <div
-            key={i}
-            className="rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-white p-5 text-center space-y-2"
-          >
-            <div className="h-8 w-16 bg-[var(--border)] rounded-full mx-auto" />
-            <div className="h-3 w-20 bg-[var(--background)] rounded-full mx-auto" />
-          </div>
-        ))}
-      </div>
-
-      {/* Tab area skeleton */}
-      <div className="space-y-4">
-        <div className="flex gap-2">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-9 w-24 bg-[var(--border)] rounded-full" />
-          ))}
-        </div>
-        <div className="rounded-[2rem] border-[3px] border-[var(--border)] shadow-[0_4px_0_rgba(0,0,0,0.08)] bg-white p-8">
-          <div className="h-6 w-40 bg-[var(--border)] rounded-full mb-6" />
-          <div className="space-y-4">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-5 bg-[var(--background)] rounded-full" />
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ====================================
-// UTILITY FUNCTIONS
-// ====================================
-function formatXpSource(source: string): string {
-  const sourceMap: Record<string, string> = {
-    DailyLogin: "Daily Login",
-    TestCompleted: "Completed Practice Test",
-    CardReviewed: "Card Reviewed",
-    LessonCompleted: "Lesson Completed",
-    AchievementUnlocked: "Achievement Unlocked",
-    StreakBonus: "Streak Bonus",
-    DAILY_LOGIN: "Daily Login",
-    TEST_COMPLETED: "Completed Practice Test",
-    CARD_REVIEWED: "Card Reviewed",
-    LESSON_COMPLETED: "Lesson Completed",
-    ACHIEVEMENT_UNLOCKED: "Achievement Unlocked",
-    STREAK_BONUS: "Streak Bonus",
-    DAILY_CHECKIN: "Daily Check-in",
-  };
-  return sourceMap[source] || source.split("_").map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
-}
-
-function formatDate(iso: string): string {
-  try {
-    const d = new Date(iso);
-    return d.toLocaleString("en-US", {
-      month: "short",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return iso;
-  }
 }

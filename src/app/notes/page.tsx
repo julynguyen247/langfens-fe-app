@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { getNotes, updateNote, deleteNote } from "@/utils/api";
-import { useUserStore } from "@/app/store/userStore";
+import { getNotes, updateNote, deleteNote } from "@/services/notes";
+import { useUserStore } from "@/stores/userStore";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Spinner } from "@/components/ui/spinner";
 

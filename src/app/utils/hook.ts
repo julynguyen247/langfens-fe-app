@@ -1,5 +1,6 @@
 "use client";
 
+<<<<<<< HEAD
 import { autoSaveAttempt } from "@/utils/api";
 import { useRef } from "react";
 import type { UserAnswerValue } from "@/app/do-test/[skill]/[attemptId]/_lib/types";
@@ -118,3 +119,7 @@ export function useDebouncedAutoSave(
 
   return { run, cancel, saveNow };
 }
+=======
+export { buildAnswerPayload } from "@/lib/answerPayload";
+export { useDebouncedAutoSave } from "@/hooks/useDebouncedAutoSave";
+>>>>>>> origin/master

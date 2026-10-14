@@ -1,10 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getPublicHandler, getUserSubscriptions } from "@/utils/api";
+import { getPublicHandler, getUserSubscriptions } from "@/services/vocabulary";
 import { useRouter } from "next/navigation";
+<<<<<<< HEAD
 import DeckCard, { PublicDeck } from "./components/DeckCard";
 import { useUserStore } from "@/app/store/userStore";
+=======
+import DeckCard, { type PublicDeck } from "./components/DeckCard";
+import { useUserStore } from "@/stores/userStore";
+>>>>>>> origin/master
 
 export default function ExploreDecksPage() {
   const router = useRouter();

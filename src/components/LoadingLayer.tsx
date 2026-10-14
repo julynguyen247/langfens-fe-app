@@ -1,6 +1,6 @@
 "use client";
 
-import { useLoadingStore } from "@/app/store/loading";
+import { useLoadingStore } from "@/stores/loading";
 import Image from "next/image";
 import { useEffect } from "react";
 

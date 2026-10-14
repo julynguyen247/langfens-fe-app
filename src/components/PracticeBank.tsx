@@ -2,11 +2,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+<<<<<<< HEAD
 import { getQuestionTypes } from "@/utils/api";
 import type { SkillId } from "./practice/colors";
 import { PracticeCard } from "./practice/PracticeCard";
 import { PracticeToolbar, type SortKey } from "./practice/PracticeToolbar";
 import { SkeletonPracticeCard } from "./practice/SkeletonPracticeCard";
+=======
+import { motion, AnimatePresence } from "framer-motion";
+import { getQuestionTypes } from "@/services/exams";
+>>>>>>> origin/master
 
 export type PracticeItem = {
   id: string;

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { enrichVocabulary } from "@/utils/api";
+import { enrichVocabulary } from "@/services/vocabulary";
 
 type EnrichedWord = {
   word: string;

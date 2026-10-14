@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { getAchievements } from "@/utils/api";
+import { getAchievements } from "@/services/gamification";
 
 type Achievement = {
   id: string;

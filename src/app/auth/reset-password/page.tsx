@@ -3,8 +3,8 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { forgotPassword } from "@/utils/api";
-import PenguinLottie from "@/components/PenguinLottie";
+import { forgotPassword } from "@/services/auth";
+import { AuthBrandPanel } from "../components/AuthBrandPanel";
 import { motion } from "framer-motion";
 
 export default function ResetPassword() {
@@ -47,27 +47,7 @@ export default function ResetPassword() {
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
       {/* Left Panel - Branding */}
-      <div className="lg:w-[40%] bg-[var(--primary-light)] flex flex-col items-center justify-center py-8 px-6 lg:py-0 lg:min-h-screen">
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="flex flex-col items-center"
-        >
-          <div className="w-20 h-20 lg:w-32 lg:h-32">
-            <PenguinLottie />
-          </div>
-          <h2
-            className="text-2xl lg:text-3xl font-bold text-[var(--primary-dark)] mt-4 text-center"
-            style={{ fontFamily: "var(--font-heading)" }}
-          >
-            Langfens
-          </h2>
-          <p className="text-sm lg:text-base text-[var(--text-body)] mt-2 text-center max-w-xs">
-            Don't worry, we'll help you recover your password
-          </p>
-        </motion.div>
-      </div>
+      <AuthBrandPanel description={"Don't worry, we'll help you recover your password"} />
 
       {/* Right Panel - Form */}
       <div className="lg:w-[60%] bg-[var(--background)] flex items-center justify-center px-4 py-10 lg:py-0 lg:min-h-screen">

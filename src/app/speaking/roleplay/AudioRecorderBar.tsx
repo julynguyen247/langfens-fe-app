@@ -1,6 +1,6 @@
 "use client";
 
-import { audioSubmitFromUrl } from "@/utils/api";
+import { audioSubmitFromUrl } from "@/services/speaking";
 import { webmToWavFile } from "@/utils/audio";
 import { useEffect, useMemo, useState } from "react";
 import { useReactMediaRecorder } from "react-media-recorder";

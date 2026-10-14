@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getPredictedBand, getAiInsights } from "@/utils/api";
+import { getPredictedBand, getAiInsights } from "@/services/analytics";
 
 type PredictedBand = {
   overallBand: number;

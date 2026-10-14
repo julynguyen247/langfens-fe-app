@@ -5,20 +5,31 @@ import { useParams, useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { motion } from "framer-motion";
+<<<<<<< HEAD
 import { useAttemptStore } from "@/app/store/useAttemptStore";
 import { useUserStore } from "@/app/store/userStore";
 import { autoSaveAttempt, submitAttempt, uploadFile } from "@/utils/api";
 import { useDebouncedAutoSave } from "@/app/utils/hook";
 import { buildQuestion } from "@/lib/buildQuestion";
 import type { BackendQuestionType, Question as UiQuestion } from "@/types/question.type";
+=======
+import { useAttemptStore } from "@/stores/useAttemptStore";
+import { useUserStore } from "@/stores/userStore";
+import { autoSaveAttempt, submitAttempt } from "@/services/attempts";
+import { uploadFile } from "@/services/speaking";
+import { useDebouncedAutoSave } from "@/hooks/useDebouncedAutoSave";
+import { mapApiQuestionToUi } from "@/lib/mapApiQuestionToUi";
+import { BackendQuestionType } from "@/types/question.type";
+>>>>>>> origin/master
 import ListeningAudioBar from "../../do-test/[skill]/[attemptId]/components/listening/ListeningAudioBar";
 import QuestionPanel from "../../do-test/[skill]/[attemptId]/components/common/QuestionPanel";
 import PassageView from "../../do-test/[skill]/[attemptId]/components/reading/PassageView";
 import YouTubePlayer from "../../do-test/[skill]/[attemptId]/components/listening/YouTubePlayer";
 import { useReactMediaRecorder } from "react-media-recorder";
-import { useLoadingStore } from "@/app/store/loading";
+import { useLoadingStore } from "@/stores/loading";
 import BookmarkButton from "@/components/BookmarkButton";
 import { Group, Panel } from "react-resizable-panels";
+import { formatTestTime as formatTime } from "@/lib/time";
 
 type QA = Record<string, string>;
 type Tab = "reading" | "listening" | "writing" | "speaking";
@@ -40,6 +51,7 @@ const LEVEL_COLORS: Record<string, { bg: string; text: string; border: string }>
   C2: { bg: "bg-[var(--skill-writing-light)]", text: "text-[var(--skill-writing)]", border: "border-[var(--skill-writing-border)]" },
 };
 
+<<<<<<< HEAD
 function formatTime(totalSeconds: number) {
   const m = Math.floor(totalSeconds / 60);
   const s = totalSeconds % 60;
@@ -47,6 +59,8 @@ function formatTime(totalSeconds: number) {
 }
 
 
+=======
+>>>>>>> origin/master
 export default function MultiSkillAttemptPage() {
   const router = useRouter();
   const { attemptId } = useParams() as { attemptId: string };

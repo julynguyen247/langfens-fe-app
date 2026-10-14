@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { getBookmarks, deleteBookmark } from "@/utils/api";
+import { getBookmarks, deleteBookmark } from "@/services/bookmarks";
 
 type Bookmark = {
   id: string;

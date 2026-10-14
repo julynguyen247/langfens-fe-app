@@ -9,7 +9,7 @@ import {
   updateNotificationSettings,
   markNotificationAsRead,
   markAllNotificationsAsRead,
-} from "@/utils/api";
+} from "@/services/notifications";
 
 type NotificationItem = {
   id: string;

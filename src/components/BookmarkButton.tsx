@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { createBookmark, deleteBookmark } from "@/utils/api";
+import { createBookmark, deleteBookmark } from "@/services/bookmarks";
 
 type BookmarkButtonProps = {
   questionId: string;

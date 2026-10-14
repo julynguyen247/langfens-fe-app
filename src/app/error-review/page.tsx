@@ -3,105 +3,20 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { getWrongAnswers, getQuestionTypes } from "@/utils/api";
+import { getWrongAnswers } from "@/services/analytics";
+import { getQuestionTypes } from "@/services/exams";
 import ReactMarkdown from "react-markdown";
 import PenguinLottie from "@/components/PenguinLottie";
 import { RagFeedbackCard } from "@/components/rag/RagFeedbackCard";
-import type { RagFeedbackEnvelope } from "@/types/rag";
 
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const isUuidLike = (s: unknown) => typeof s === "string" && UUID_RE.test(s.trim());
-
-type WrongAnswer = {
-  answerId: string;
-  questionId: string;
-  questionContent: string;
-  questionType: string;
-  skill: string;
-  sectionTitle: string;
-  userAnswer: string;
-  correctAnswer: string;
-  explanation?: string;
-  ragFeedback?: RagFeedbackEnvelope;
-  attemptDate: string;
-  examId: string;
-  attemptId: string;
-};
-
-type WrongAnswersResult = {
-  items: WrongAnswer[];
-  total: number;
-  page: number;
-  pageSize: number;
-  statsByType: Record<string, number>;
-};
-
-const SKILLS = ["READING", "LISTENING"];
-const DATE_RANGES = [
-  { label: "7 days", days: 7 },
-  { label: "30 days", days: 30 },
-  { label: "3 months", days: 90 },
-  { label: "All time", days: 365 },
-];
-
-const SKILL_BADGE_STYLES: Record<string, string> = {
-  READING: "bg-[var(--skill-reading-light)] text-[var(--skill-reading)] border-[var(--skill-reading-border)]",
-  LISTENING: "bg-[var(--skill-listening-light)] text-[var(--skill-listening)] border-[var(--skill-listening-border)]",
-  WRITING: "bg-[var(--skill-writing-light)] text-[var(--skill-writing)] border-[var(--skill-writing-border)]",
-  SPEAKING: "bg-[var(--skill-speaking-light)] text-[var(--skill-speaking)] border-[var(--skill-speaking-border)]",
-};
-
-const QUESTION_TYPE_LABELS: Record<string, string> = {
-  "TRUE_FALSE_NOT_GIVEN": "T/F/NG",
-  "YES_NO_NOT_GIVEN": "Y/N/NG",
-  "MCQ_SINGLE": "Multiple Choice",
-  "MCQ_MULTIPLE": "Multiple Selection",
-  "MATCHING_HEADING": "Matching Headings",
-  "MATCHING_INFORMATION": "Matching Information",
-  "MATCHING_FEATURES": "Matching Features",
-  "SUMMARY_COMPLETION": "Summary Completion",
-  "TABLE_COMPLETION": "Table Completion",
-  "SENTENCE_COMPLETION": "Sentence Completion",
-  "DIAGRAM_LABEL": "Diagram Labelling",
-  "SHORT_ANSWER": "Short Answer",
-  "MAP_LABEL": "Map Labelling",
-};
-
-function formatCorrectAnswer(raw: string | undefined, questionType: string): string {
-  if (!raw || raw.trim() === "") {
-    return "(No answer key)";
-  }
-
-  let clean = String(raw)
-    .replace(/^(feature|blank|label|heading|item|q|answer|key)[-_]?\d*:\s*/gi, "")
-    .replace(/^[\w-]+:\s*/, "")
-    .trim();
-
-  if (clean.includes(" / ")) {
-    clean = clean.split(" / ")[0].trim();
-  }
-
-  if (/^([A-Za-z0-9]+)\/\1$/i.test(clean)) {
-    clean = clean.split("/")[0].trim();
-  }
-
-  const type = questionType.toUpperCase();
-
-  if (type.includes("MATCHING") && clean.length <= 3) {
-    if (/^[ivx]+$/i.test(clean)) {
-      return `Heading ${clean}`;
-    } else if (/^[A-H]$/i.test(clean)) {
-      return `Paragraph ${clean}`;
-    }
-  }
-
-  return clean || "(No answer key)";
-}
-
-function formatQuestionType(type: string): string {
-  return QUESTION_TYPE_LABELS[type] || type.split("_").map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(" ");
-}
+import { type WrongAnswersResult, type WrongAnswer } from "./types";
+import {
+  formatQuestionType,
+  formatCorrectAnswer,
+  isUuidLike,
+  normaliseWrongAnswers,
+} from "./utils";
+import { SKILLS, DATE_RANGES, SKILL_BADGE_STYLES } from "./constants";
 
 export default function ErrorReviewPage() {
   const [data, setData] = useState<WrongAnswersResult | null>(null);
@@ -120,7 +35,7 @@ export default function ErrorReviewPage() {
       try {
         const res = await getQuestionTypes();
         const types = (res as any)?.data?.data ?? [];
-        setQuestionTypes(types);
+        setQuestionTypes(Array.isArray(types) ? types : []);
       } catch (e) {
         console.error("Failed to fetch question types:", e);
       }
@@ -144,7 +59,7 @@ export default function ErrorReviewPage() {
         });
 
         const result = (res as any)?.data?.data;
-        setData(result);
+        setData(normaliseWrongAnswers(result));
       } catch (e) {
         console.error("Failed to fetch wrong answers:", e);
         setData(null);

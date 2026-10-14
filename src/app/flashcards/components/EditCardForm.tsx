@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { updateCard } from "@/utils/api";
+import { updateCard } from "@/services/vocabulary";
 
 type Props = {
   cardId: string;

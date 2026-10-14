@@ -1,7 +1,9 @@
 "use client";
 
-import VoiceWaveAnimation from "@/components/VoiceWaveAnimation";
+import { useParams } from "next/navigation";
+import { useAttemptStore } from "@/stores/useAttemptStore";
 
+<<<<<<< HEAD
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
@@ -102,6 +104,14 @@ function AudioBar({ src }: { src: string }) {
     </audio>
   );
 }
+=======
+import { ReadingScreen } from "./screens/ReadingScreen";
+import { ListeningScreen } from "./screens/ListeningScreen";
+import { SpeakingScreen } from "./screens/SpeakingScreen";
+import { WritingScreen } from "./screens/WritingScreen";
+
+type Skill = "reading" | "listening" | "writing" | "speaking";
+>>>>>>> origin/master
 
 export default function DoTestAttemptPage() {
   const { skill, attemptId } = useParams() as {
@@ -129,6 +139,7 @@ export default function DoTestAttemptPage() {
   return <div className="p-6 text-[var(--text-muted)]">Unknown skill: {String(skill)}</div>;
 }
 
+<<<<<<< HEAD
 export function ReadingScreen({
   attemptId,
   isReviewMode = false,
@@ -1640,3 +1651,6 @@ function WritingScreen({ attemptId }: { attemptId: string }) {
     </>
   );
 }
+=======
+export { ReadingScreen } from "./screens/ReadingScreen";
+>>>>>>> origin/master

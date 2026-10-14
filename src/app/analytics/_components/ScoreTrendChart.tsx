@@ -26,7 +26,7 @@ import {
   SKILL_LABEL,
   smoothPath,
   type SkillKey,
-} from "../../history/_lib/utils";
+} from "@/lib/attemptDisplay";
 
 export interface TrendSeries {
   skill: SkillKey;

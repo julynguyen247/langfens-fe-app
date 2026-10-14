@@ -1,77 +1,11 @@
-'use client';
-import { useState, useEffect, useRef, useMemo } from 'react';
-import { suggestDictionary, lookupDictionary } from '@/utils/api';
+"use client";
 
-// =============================================
-// TYPES (Based on backend JSON)
-// =============================================
-interface Pronunciation {
-  region: string;
-  ipa: string;
-  mp3Url: string | null;
-}
+import { useState, useEffect, useRef, useMemo } from "react";
+import { suggestDictionary, lookupDictionary } from "@/services/dictionary";
 
-interface DictionaryForm {
-  form: string;
-  tags: string[];
-}
-
-interface DictionarySense {
-  id: string;
-  definitionEn: string;
-  definitionVi?: string | null;
-  vietnameseTerms?: string[];
-  examples: string[];
-  labels: string[];
-}
-
-interface DictionaryEntry {
-  id: number;
-  word: string;
-  pos: string;
-  pronunciations: Pronunciation[];
-  senses: DictionarySense[];
-  forms: DictionaryForm[];
-  vietnameseTerms?: string[];
-}
-
-interface Suggestion {
-  id: number;
-  word: string;
-  pos: string;
-}
-
-// =============================================
-// LOCALSTORAGE HELPERS
-// =============================================
-const LS_HISTORY = "lf_dict_history";
-const LS_SAVED = "lf_dict_saved";
-
-const saveJSON = (k: string, v: any) =>
-  typeof window !== 'undefined' && localStorage.setItem(k, JSON.stringify(v));
-
-const readJSON = <T,>(k: string, fallback: T): T => {
-  if (typeof window === 'undefined') return fallback;
-  try {
-    const raw = localStorage.getItem(k);
-    return raw ? (JSON.parse(raw) as T) : fallback;
-  } catch {
-    return fallback;
-  }
-};
-
-// =============================================
-// AUDIO HELPER (Web Speech API)
-// =============================================
-function speakWord(word: string, region: 'UK' | 'US' = 'UK') {
-  if (typeof window === 'undefined' || !window.speechSynthesis) return;
-
-  const utterance = new SpeechSynthesisUtterance(word);
-  utterance.lang = region === 'UK' ? 'en-GB' : 'en-US';
-  utterance.rate = 0.9;
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(utterance);
-}
+import { type Suggestion, type DictionaryEntry } from "./types";
+import { readJSON, LS_HISTORY, LS_SAVED, saveJSON } from "./storage";
+import { speakWord } from "../../lib/speech";
 
 // =============================================
 // MAIN COMPONENT

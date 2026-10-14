@@ -10,10 +10,10 @@ import {
 import TopBar from "./components/common/TopBar";
 import TimerDisplay from "./components/common/TimerDisplay";
 import PassageFooter from "./components/reading/PassageFooter";
-import { useAttemptStore } from "@/app/store/useAttemptStore";
-import { useLoadingStore } from "@/app/store/loading";
+import { useAttemptStore } from "@/stores/useAttemptStore";
+import { useLoadingStore } from "@/stores/loading";
 import Modal from "@/components/Modal";
-import { submitAttempt } from "@/utils/api";
+import { submitAttempt } from "@/services/attempts";
 
 type Skill = "reading" | "listening" | "writing" | "speaking";
 

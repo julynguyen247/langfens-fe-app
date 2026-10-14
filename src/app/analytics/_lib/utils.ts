@@ -1,8 +1,8 @@
 // Shared utilities for the Analytics page.
 //
-// We re-export the helpers from `../history/_lib/utils` (pure functions) rather
-// than duplicating them, so history stays untouched. Analytics-specific helpers
-// (percent → band conversion, accuracy tiers, etc.) live here.
+// Shared attempt display helpers are re-exported from the common library.
+// Analytics-specific helpers (percent → band conversion, accuracy tiers, etc.)
+// live here.
 //
 // ---------------------------------------------------------------------------
 // BACKEND CONTRACT — `getAnalyticsSummary` field semantics
@@ -20,7 +20,7 @@
 import {
   normaliseSkill,
   type SkillKey,
-} from "../../history/_lib/utils";
+} from "@/lib/attemptDisplay";
 
 export {
   SKILL_LABEL,
@@ -37,7 +37,7 @@ export {
   smoothPath,
   type AttemptRecord,
   type SkillKey as SkillKeyType,
-} from "../../history/_lib/utils";
+} from "@/lib/attemptDisplay";
 
 // ---------------------------------------------------------------------------
 // Analytics-specific helpers

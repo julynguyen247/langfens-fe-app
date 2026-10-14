@@ -4,15 +4,7 @@ import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { cameraYRef } from "./OceanEnvironment";
-
-// Same seeded PRNG as CoralField / KelpForest for consistency
-function seededRandom(seed: number) {
-  let s = seed;
-  return () => {
-    s = (s * 16807 + 0) % 2147483647;
-    return (s - 1) / 2147483646;
-  };
-}
+import { seededRandom } from "@/app/landing/lib/seededRandom";
 
 const VENT_POSITIONS: [number, number, number][] = [
   [0, -25, -5],

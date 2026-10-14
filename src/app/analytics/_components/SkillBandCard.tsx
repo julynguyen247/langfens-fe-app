@@ -6,7 +6,7 @@
 // comes from the same percent 0–100 backend (no conversion needed for display).
 
 import { SkillProgressBar } from "@/components/ui/SkillProgressBar";
-import { bandDescriptor, formatBand } from "../../history/_lib/utils";
+import { bandDescriptor, formatBand } from "@/lib/attemptDisplay";
 
 export interface SkillBandCardProps {
   /** Skill name (uppercase enum as returned by backend). */
