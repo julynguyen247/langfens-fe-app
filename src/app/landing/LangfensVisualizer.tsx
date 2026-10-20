@@ -117,26 +117,16 @@ export default function LangfensVisualizer({ onCTA }: LangfensVisualizerProps) {
         }
       ` }} />
 
-      {/* Modern Langfens Floating Navigation Bar (z-index above 3D scene, below boot cover) */}
-      <header className="fixed top-0 left-0 right-0 z-[300] px-6 py-4 flex items-center justify-between pointer-events-none">
-        <div className="flex items-center gap-3 pointer-events-auto">
-          <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 shadow-lg">
-            <span className="text-xl">🎓</span>
-            <span className="text-white font-bold tracking-wide text-sm uppercase">Langfens</span>
-            <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30">AI Study Lounge</span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3 pointer-events-auto">
-          <button
-            onClick={handleCTA}
-            className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-medium text-xs px-5 py-2.5 rounded-full shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-95"
-          >
-            <span>Bắt đầu học</span>
-            <span>→</span>
-          </button>
-        </div>
-      </header>
+      {/* Floating CTA Button (top-right only, unblocking top-left settings gear) */}
+      <div className="fixed top-4 right-6 z-[300] pointer-events-auto">
+        <button
+          onClick={handleCTA}
+          className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-medium text-xs px-5 py-2.5 rounded-full shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-95"
+        >
+          <span>Bắt đầu học</span>
+          <span>→</span>
+        </button>
+      </div>
 
       {/* Boot Cover Overlay */}
       <div id="boot-cover">
