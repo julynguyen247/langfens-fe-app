@@ -1,15 +1,16 @@
-<svg width="343" height="90" viewBox="0 0 343 90" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Accent icon mark -->
-  <g transform="translate(10, 15)">
-    <!-- Graduation / Focus icon cap -->
-    <path d="M24 6L4 16L24 26L44 16L24 6Z" fill="#FF9D2C"/>
-    <path d="M11 20V32C11 32 16 38 24 38C32 38 37 32 37 32V20" stroke="#FF9D2C" stroke-width="3" stroke-linecap="round"/>
-    <path d="M44 16V30" stroke="#FF9D2C" stroke-width="3" stroke-linecap="round"/>
-  </g>
-
-  <!-- Wordmark: langfens -->
-  <text x="68" y="44" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif" font-size="36" font-weight="800" letter-spacing="-0.5" fill="#E0E0E0">langfens</text>
+<svg width="280" height="65" viewBox="0 0 280 65" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- L -->
+  <path d="M8 12V52H32V45H16V12H8Z" fill="#E0E0E0"/>
   
-  <!-- Subtitle: ENGLISH & IELTS -->
-  <text x="70" y="62" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="700" letter-spacing="2.5" fill="#FF9D2C">ENGLISH &amp; IELTS</text>
+  <!-- Delta A: Top Triangle -->
+  <polygon points="50,12 38,32 62,32" fill="#208DFA"/>
+  <!-- Delta A: Bottom Left Leg -->
+  <polygon points="35,37 29,48 39,48 42,42 38,37" fill="#208DFA"/>
+  <!-- Delta A: Bottom Right Leg -->
+  <polygon points="65,37 62,42 65,48 75,48 69,37" fill="#208DFA"/>
+  <!-- Delta A: Center cross connector -->
+  <rect x="42" y="42" width="20" height="6" fill="#208DFA"/>
+  
+  <!-- ngfens wordmark -->
+  <text x="80" y="48" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif" font-size="44" font-weight="600" letter-spacing="-0.5" fill="#E0E0E0">ngfens</text>
 </svg>
