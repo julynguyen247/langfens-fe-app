@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const q = searchParams.get("q") || "IELTS Listening";
+  const q = searchParams.get("q") || "Cambridge IELTS Listening Test";
 
   return NextResponse.json({
     kind: "youtube#searchListResponse",
     items: [
       {
-        id: { videoId: "hLOheGDwD_0" },
-        snippet: { title: q, channelTitle: "langfens English" }
+        id: { videoId: "DmV2oZaDcgg" },
+        snippet: { title: q, channelTitle: "Langfens IELTS Academy" }
       }
     ]
   });
