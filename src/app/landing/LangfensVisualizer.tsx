@@ -144,6 +144,20 @@ export default function LangfensVisualizer({ onCTA }: LangfensVisualizerProps) {
         #public-ui.pui-idle .pui-device * {
           pointer-events: none !important;
         }
+
+        /* Clean station buttons: remove heavy dark box-shadow on hover / default */
+        .pui-station,
+        .pui-station:hover,
+        .pui-station:focus,
+        .pui-station:active {
+          box-shadow: none !important;
+          text-shadow: none !important;
+        }
+        .pui-station:hover {
+          background: rgba(255, 255, 255, 0.15) !important;
+          border-color: #ffffff !important;
+          transform: translateY(-2px);
+        }
       ` }} />
 
       {/* Boot Cover Overlay */}
