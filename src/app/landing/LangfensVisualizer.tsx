@@ -136,7 +136,7 @@ export default function LangfensVisualizer({ onCTA }: LangfensVisualizerProps) {
         </div>
         <div className="boot-bar"><i data-cover-bar></i></div>
         <div className="boot-pct" data-cover-pct>0%</div>
-        <div className="boot-logo" data-boot-logo></div>
+        <div className="boot-logo" data-boot-logo><img src="/logo.png" alt="Langfens" className="pui-boot-logo-img" /></div>
       </div>
 
       {/* WebGL Canvas & Public UI Mount Target */}

@@ -2,3 +2,7 @@
 
 .pui-logo{display:none!important}
 .pui-logo{display:none!important}.pui-main-logo{display:flex;justify-content:center;align-items:center;margin-bottom:12px;pointer-events:auto}.pui-main-logo img{height:76px;width:auto;max-width:min(420px,88vw);object-fit:contain;filter:drop-shadow(0 6px 28px rgba(32,141,250,.55));transition:transform .25s ease,filter .25s ease;cursor:pointer}.pui-main-logo img:hover{transform:scale(1.05);filter:drop-shadow(0 8px 36px rgba(32,141,250,.8))}@media(max-width:860px){.pui-main-logo img{height:60px;max-width:320px}}@media(max-width:520px){.pui-main-logo img{height:46px;max-width:240px}}
+.pui-s2-credit{display:none!important}
+.pui-s2-logo{display:flex!important;justify-content:center!important;align-items:center!important;margin:0 auto clamp(10px,2.5vh,28px)!important;width:auto!important}
+.pui-s2-logo img,.pui-s2-logo-img{height:52px!important;width:auto!important;max-width:260px!important;object-fit:contain!important;filter:drop-shadow(0 4px 18px rgba(32,141,250,.5))!important;display:block!important}
+.boot-logo img,.pui-boot-logo-img{height:46px!important;width:auto!important;object-fit:contain!important}
