@@ -10,7 +10,9 @@ const LangfensVisualizer = dynamic(() => import("./LangfensVisualizer"), {
 
 export default function LandingPage() {
   const router = useRouter();
-  const goSignUp = () => router.push("/auth/login");
+  const goSignUp = () => {
+    router.push("/auth/login");
+  };
 
   return <LangfensVisualizer onCTA={goSignUp} />;
 }

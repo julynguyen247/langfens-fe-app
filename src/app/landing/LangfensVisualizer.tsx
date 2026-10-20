@@ -117,14 +117,14 @@ export default function LangfensVisualizer({ onCTA }: LangfensVisualizerProps) {
         }
       ` }} />
 
-      {/* Floating CTA Button (top-right only) */}
+      {/* Floating CTA Button (matching exact old landing page UI & behavior) */}
       <div className="fixed top-4 right-6 z-[300] pointer-events-auto">
         <button
           onClick={handleCTA}
-          className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-medium text-xs px-5 py-2.5 rounded-full shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-95"
+          className="bg-[#3B82F6] hover:bg-[#2563EB] text-white font-bold text-sm border-2 border-[#1D4ED8] border-b-[4px] active:border-b-2 active:translate-y-[2px] rounded-full px-6 py-2 cursor-pointer shadow-lg transition-all duration-150"
+          style={{ fontFamily: "var(--font-heading, inherit)" }}
         >
-          <span>Bắt đầu học</span>
-          <span>→</span>
+          Start Free
         </button>
       </div>
 
