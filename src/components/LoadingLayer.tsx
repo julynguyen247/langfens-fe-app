@@ -51,7 +51,7 @@ export default function LoadingLayer() {
               src="/langfens.svg"
               width={120}
               height={40}
-              alt="ProMan"
+              alt="Langfens"
               className="w-20 h-20 object-contain animate-logo-spin"
             />
             <span
