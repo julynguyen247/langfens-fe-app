@@ -6385,6 +6385,7 @@ three.controls.target.set(${F.x.toFixed(2)}, ${F.y.toFixed(2)}, ${F.z.toFixed(2)
            behind a magnifier button next to two big "share your screen" pills;
            now it opens the page, the sources are three quiet chips under it,
            and the stations live on their own rail at the bottom. -->
+      <div class="pui-main-logo"><img src="/logo.png" alt="Langfens" /></div>
       <div class="pui-searchbar" data-pui-searchbar>
         <input type="text" data-pui-search-input spellcheck="false" autocomplete="off" aria-label="search and play a song" />
         <span class="pui-search-ghost" data-pui-search-ghost aria-hidden="true"></span>
