@@ -134,6 +134,16 @@ export default function LangfensVisualizer({ onCTA }: LangfensVisualizerProps) {
           pointer-events: auto;
           transition: opacity 0.5s ease;
         }
+
+        /* Ensure stations grid sits above device in stacking order */
+        .pui-stations {
+          z-index: 50 !important;
+        }
+
+        /* In idle mode, device text (pui-tape-idle) must not intercept pointer events over station buttons */
+        #public-ui.pui-idle .pui-device * {
+          pointer-events: none !important;
+        }
       ` }} />
 
       {/* Boot Cover Overlay */}
