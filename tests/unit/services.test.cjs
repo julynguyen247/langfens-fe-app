@@ -43,13 +43,13 @@ test('verification and password reset preserve query parameters and request bodi
   ]);
 });
 
-test('attempt submission defaults to an empty answer list and navigator unwraps data', async () => {
+test('attempt submission sends no ignored answer body and navigator unwraps data', async () => {
   const { load, calls, response } = setup();
   const api = load('src/services/attempts.ts');
   assert.equal(await api.submitAttempt('attempt-1'), response);
   assert.equal(await api.getQuestionNavigator('attempt-1'), response.data.data);
   assert.deepEqual(calls.map(call => call.args), [
-    ['/attempt/submit/attempt-1', { answers: [] }],
+    ['/attempt/submit/attempt-1', {}],
     ['/attempt/attempt-1/navigator'],
   ]);
 });

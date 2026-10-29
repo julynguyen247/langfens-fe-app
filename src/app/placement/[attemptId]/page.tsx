@@ -6,16 +6,16 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { motion } from "framer-motion";
 import { useAttemptStore } from "@/stores/useAttemptStore";
-import { useUserStore } from "@/stores/userStore";
-import { autoSaveAttempt, submitAttempt } from "@/services/attempts";
+import { getAttemptDetail } from "@/services/attempts";
 import { uploadFile } from "@/services/speaking";
-import { useDebouncedAutoSave } from "@/hooks/useDebouncedAutoSave";
-import { mapApiQuestionToUi } from "@/lib/mapApiQuestionToUi";
-import { BackendQuestionType } from "@/types/question.type";
+import { normalizeExamPaper, sectionQuestions, hasAnswer } from "@/features/exam/contract";
+import { useExamSession } from "@/features/exam/useExamSession";
+import { getAttemptDeadline } from "@/features/exam/deadline";
+import type { InternalDeliveryExam } from "@/features/exam/types";
 import ListeningAudioBar from "../../do-test/[skill]/[attemptId]/components/listening/ListeningAudioBar";
-import QuestionPanel from "../../do-test/[skill]/[attemptId]/components/common/QuestionPanel";
-import PassageView from "../../do-test/[skill]/[attemptId]/components/reading/PassageView";
-import YouTubePlayer from "../../do-test/[skill]/[attemptId]/components/listening/YouTubePlayer";
+import QuestionPanel from "@/features/exam/components/QuestionPanel";
+import PassageView from "@/features/exam/components/PassageView";
+import YouTubePlayer from "@/features/exam/components/AudioPlayer";
 import { useReactMediaRecorder } from "react-media-recorder";
 import { useLoadingStore } from "@/stores/loading";
 import BookmarkButton from "@/components/BookmarkButton";
@@ -25,35 +25,21 @@ import { formatTestTime as formatTime } from "@/lib/time";
 type QA = Record<string, string>;
 type Tab = "reading" | "listening" | "writing" | "speaking";
 
-type QuestionMeta = {
-  sectionId: string;
-  type: BackendQuestionType;
-  skill: string;
-};
 type SpeakingSource = "none" | "record" | "upload";
-
-const LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"] as const;
-const LEVEL_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  A1: { bg: "bg-[var(--skill-speaking-light)]", text: "text-[var(--skill-speaking)]", border: "border-[var(--skill-speaking-border)]" },
-  A2: { bg: "bg-[var(--skill-speaking-light)]", text: "text-[var(--skill-speaking)]", border: "border-[var(--skill-speaking-border)]" },
-  B1: { bg: "bg-[var(--skill-reading-light)]", text: "text-[var(--skill-reading)]", border: "border-[var(--skill-reading-border)]" },
-  B2: { bg: "bg-[var(--primary-light)]", text: "text-[var(--primary)]", border: "border-[var(--border)]" },
-  C1: { bg: "bg-[var(--skill-listening-light)]", text: "text-[var(--skill-listening)]", border: "border-[var(--skill-listening-border)]" },
-  C2: { bg: "bg-[var(--skill-writing-light)]", text: "text-[var(--skill-writing)]", border: "border-[var(--skill-writing-border)]" },
-};
 
 export default function MultiSkillAttemptPage() {
   const router = useRouter();
   const { attemptId } = useParams() as { attemptId: string };
-  const { user } = useUserStore();
+  const [restoreError, setRestoreError] = useState<string | null>(null);
   const attempt = useAttemptStore((s) => s.byId[attemptId]);
   const { setLoading } = useLoadingStore();
   const [activeTab, setActiveTab] = useState<Tab>("reading");
   const [submitting, setSubmitting] = useState(false);
-  const [answers, setAnswers] = useState<QA>({});
   const lastAnswersRef = useRef<QA>({});
   const [speakingSource, setSpeakingSource] = useState<SpeakingSource>("none");
-  const initialSecondsLeft = attempt?.timeLeft ?? attempt?.durationSec ?? 3600;
+  const initialSecondsLeft = Number.isFinite(attempt?.timeLeft) && (attempt?.timeLeft ?? 0) > 0
+    ? (attempt!.timeLeft as number)
+    : attempt?.durationSec ?? 3600;
   const [secondsLeft, setSecondsLeft] = useState(initialSecondsLeft);
 
   const { status, startRecording, stopRecording, mediaBlobUrl, clearBlobUrl } =
@@ -70,43 +56,36 @@ export default function MultiSkillAttemptPage() {
     setSpeakingSource("none");
     if (speakingQuestion) {
       const next = { ...lastAnswersRef.current };
-      delete next[String(speakingQuestion.id)];
+      next[String(speakingQuestion.id)] = "";
 
       lastAnswersRef.current = next;
       setAnswers(next);
     }
   };
 
-  const sections = useMemo(
-    () =>
-      attempt?.paper?.sections
-        ? [...attempt.paper.sections].sort((a, b) => a.idx - b.idx)
-        : [],
-    [attempt?.paper?.sections]
-  );
-
-  const questionMeta = useMemo(() => {
-    const m = new Map<string, QuestionMeta>();
-    for (const s of sections) {
-      for (const g of s.questionGroups ?? []) {
-        for (const q of g.questions ?? []) {
-          m.set(q.id, {
-            sectionId: s.id,
-            type: q.type as BackendQuestionType,
-            skill: q.skill.toLowerCase(),
-          });
-        }
-      }
-    }
-    return m;
-  }, [sections]);
+  const sections = useMemo(() => attempt?.paper ? normalizeExamPaper(attempt.paper as unknown as InternalDeliveryExam).sections : [], [attempt?.paper]);
+  const allQuestions = useMemo(() => sections.flatMap(sectionQuestions), [sections]);
+  const session = useExamSession(attemptId, allQuestions, !!attempt);
+  const answers = session.answers;
+  const setAnswers = session.changeAnswers;
+  lastAnswersRef.current = answers;
+  const setAttempt = useAttemptStore(s => s.setAttempt);
+  useEffect(() => {
+    if (attempt) return;
+    let cancelled = false;
+    getAttemptDetail(attemptId).then(response => {
+      if (cancelled) return;
+      const data = response.data?.data;
+      if (!data?.paper) throw new Error("Snapshot missing");
+      setAttempt({ ...data, attemptId, durationSec: data.durationSec ?? data.paper.durationMin * 60, timeLeft: data.timeLeftSec ?? data.timeLeft });
+    }).catch(() => { if (!cancelled) setRestoreError("Could not restore this attempt. Please return to history."); });
+    return () => { cancelled = true; };
+  }, [attempt, attemptId, setAttempt]);
 
   const readingQuestionsApi = useMemo(
     () =>
-      sections
-        .flatMap((s) => (s.questionGroups ?? []).flatMap((g) => g.questions ?? []))
-        .filter((a) => a?.skill?.toLowerCase() === "reading"),
-    [sections]
+      allQuestions.filter(q => q.skill.toLowerCase() === "reading"),
+    [allQuestions]
   );
 
   const readingSection = useMemo(
@@ -136,10 +115,8 @@ export default function MultiSkillAttemptPage() {
 
   const listeningQuestionsApi = useMemo(
     () =>
-      sections
-        .flatMap((s: any) => (s.questionGroups ?? []).flatMap((g: any) => g.questions ?? []))
-        .filter((q: any) => String(q.skill).toLowerCase() === "listening"),
-    [sections]
+      allQuestions.filter(q => q.skill.toLowerCase() === "listening"),
+    [allQuestions]
   );
 
   const writingSection = useMemo(
@@ -190,8 +167,7 @@ export default function MultiSkillAttemptPage() {
     () =>
       readingQuestionsApi
         .slice()
-        .sort((a: any, b: any) => a.idx - b.idx)
-        .map((q: any) => buildQuestion(q)),
+        .sort((a, b) => (a.displayIdx ?? a.idx) - (b.displayIdx ?? b.idx)),
     [readingQuestionsApi]
   );
 
@@ -199,76 +175,35 @@ export default function MultiSkillAttemptPage() {
     () =>
       listeningQuestionsApi
         .slice()
-        .sort((a: any, b: any) => a.idx - b.idx)
-        .map((q: any) => buildQuestion(q)),
+        .sort((a, b) => (a.displayIdx ?? a.idx) - (b.displayIdx ?? b.idx)),
     [listeningQuestionsApi]
   );
 
-  const questionUiKindMap = useMemo(() => {
-    const m: Record<string, string> = {};
-    for (const q of [...readingUiQuestions, ...listeningUiQuestions]) {
-      m[String(q.id)] = q.uiKind;
-    }
-    return m;
-  }, [readingUiQuestions, listeningUiQuestions]);
-
-  // Estimate level based on answered questions
+  // Completion is progress, not an estimate of language ability.
   const totalQuestions = readingUiQuestions.length + listeningUiQuestions.length + (writingQuestion ? 1 : 0) + (speakingQuestion ? 1 : 0);
-  const answeredCount = Object.keys(answers).filter(k => answers[k] && answers[k].trim()).length;
-  const estimatedLevelIdx = useMemo(() => {
-    if (totalQuestions === 0) return 0;
-    const ratio = answeredCount / totalQuestions;
-    return Math.min(LEVELS.length - 1, Math.floor(ratio * LEVELS.length));
-  }, [answeredCount, totalQuestions]);
-  const estimatedLevel = LEVELS[estimatedLevelIdx];
-  const levelStyle = LEVEL_COLORS[estimatedLevel] ?? LEVEL_COLORS.A1;
+  const answeredCount = Object.values(answers).filter(textAnswer => hasAnswer({ textAnswer })).length;
 
-  const { run: debouncedSave, cancel: cancelAutoSave } = useDebouncedAutoSave(
-    user?.id,
-    attemptId
-  );
+  const mergeAndAutoSave = (partial: QA) => session.changeAnswers(partial);
 
-  const buildSectionId = (qid: string) => questionMeta.get(qid)?.sectionId;
-
-  const buildTextAnswer = (qid: string, value: string) => {
-    if (!value) return undefined;
-    const meta = questionMeta.get(qid);
-    if (!meta) return undefined;
-
-    const isChoice =
-      meta.type === "MULTIPLE_CHOICE_SINGLE" ||
-      questionUiKindMap[qid] === "forice_single";
-
-    if (isChoice) return undefined;
-    return value;
-  };
-
-  const mergeAndAutoSave = (partial: QA) => {
-    const merged = { ...lastAnswersRef.current, ...partial };
-    lastAnswersRef.current = merged;
-    setAnswers(merged);
-    debouncedSave(merged, buildSectionId, buildTextAnswer);
-  };
-
+  const submitRef = useRef(handleSubmit);
+  submitRef.current = handleSubmit;
   useEffect(() => {
-    if (!attempt) return;
-    setSecondsLeft(attempt.timeLeft ?? attempt.durationSec ?? 3600);
-  }, [attempt?.timeLeft, attempt?.durationSec]);
-
-  useEffect(() => {
-    if (!secondsLeft) return;
-    const t = setInterval(() => {
-      setSecondsLeft((s) => {
-        if (s <= 1) {
-          clearInterval(t);
-          handleSubmit(true);
-          return 0;
-        }
-        return s - 1;
-      });
-    }, 1000);
-    return () => clearInterval(t);
-  }, []);
+    if (!attempt || !session.ready) return;
+    const deadline = getAttemptDeadline(attempt.startedAt, attempt.durationSec, attempt.timeLeft);
+    if (deadline === null) return;
+    let expired = false;
+    const tick = () => {
+      const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      setSecondsLeft(remaining);
+      if (Number.isFinite(remaining) && remaining <= 0 && !expired) {
+        expired = true;
+        void submitRef.current(true);
+      }
+    };
+    const timer = setInterval(tick, 1000);
+    tick();
+    return () => clearInterval(timer);
+  }, [attempt, session.ready]);
 
   useEffect(() => {
     if (!isRecording) return;
@@ -278,34 +213,13 @@ export default function MultiSkillAttemptPage() {
     return () => clearInterval(t);
   }, [isRecording]);
 
-  const buildPayload = (answersMap: QA) => ({
-    answers: Object.entries(answersMap).map(([questionId, value]) => {
-      const meta = questionMeta.get(questionId);
-      const sectionId = meta?.sectionId ?? "";
-      const textAnswer = buildTextAnswer(questionId, value);
-      const hasText = !!textAnswer && textAnswer.trim().length > 0;
-
-      return {
-        questionId,
-        sectionId,
-        selectedOptionIds: !hasText && value ? [value] : [],
-        textAnswer: hasText ? textAnswer : undefined,
-      };
-    }),
-    clientRevision: Date.now(),
-  });
-
   async function handleSubmit(auto = false) {
     if (submitting) return;
 
     setLoading(true);
     try {
       setSubmitting(true);
-      cancelAutoSave();
-
-      const payload = buildPayload(lastAnswersRef.current);
-      await autoSaveAttempt(attemptId, payload);
-      await submitAttempt(attemptId);
+      await session.submit();
 
       setLoading(false);
       router.push(`/attempts/${attemptId}`);
@@ -404,6 +318,9 @@ export default function MultiSkillAttemptPage() {
     { id: "speaking", label: "Speaking" },
   ];
 
+  if (session.error || restoreError) return <p role="alert" className="p-6">{session.error ?? restoreError}</p>;
+  if (!attempt || !session.ready) return <p role="status" className="p-6">Loading test and saved answers...</p>;
+
   return (
     <div className="flex flex-col h-screen bg-[var(--background)] overflow-hidden">
 
@@ -419,16 +336,7 @@ export default function MultiSkillAttemptPage() {
             <span className="text-[var(--primary)] font-extrabold">EP</span>
             <span>English Placement</span>
           </div>
-          {/* Level indicator badge */}
-          <motion.div
-            key={estimatedLevel}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className={`px-4 py-1.5 rounded-full font-extrabold text-sm border-[2px] ${levelStyle.bg} ${levelStyle.text} ${levelStyle.border}`}
-            style={{ fontFamily: "var(--font-mono)" }}
-          >
-            {estimatedLevel}
-          </motion.div>
+          <span className="rounded-full border-2 border-[var(--border)] px-4 py-1.5 text-sm font-bold">{answeredCount} / {totalQuestions} answered</span>
         </div>
 
         {/* Center: Section Pills */}
@@ -525,15 +433,9 @@ export default function MultiSkillAttemptPage() {
                     <QuestionPanel
                       attemptId={attemptId}
                       questions={readingUiQuestions}
-                      questionGroups={readingSection?.questionGroups}
-                      initialAnswers={lastAnswersRef.current}
-                      onAnswersChange={(next) => {
-                        lastAnswersRef.current = {
-                          ...lastAnswersRef.current,
-                          ...(next as QA),
-                        };
-                        debouncedSave(next as QA, buildSectionId, buildTextAnswer);
-                      }}
+                      questionGroups={sections.flatMap(s => s.questionGroups ?? [])}
+                      answers={session.answers}
+                      onAnswersChange={session.changeAnswers}
                     />
                   </div>
                 </div>
@@ -604,12 +506,9 @@ export default function MultiSkillAttemptPage() {
                     <QuestionPanel
                       attemptId={attemptId}
                       questions={listeningUiQuestions}
-                      questionGroups={listeningSection?.questionGroups}
-                      initialAnswers={lastAnswersRef.current}
-                      onAnswersChange={(next) => {
-                        lastAnswersRef.current = { ...lastAnswersRef.current, ...(next as QA) };
-                        debouncedSave(next as QA, buildSectionId, buildTextAnswer);
-                      }}
+                      questionGroups={sections.flatMap(s => s.questionGroups ?? [])}
+                      answers={session.answers}
+                      onAnswersChange={session.changeAnswers}
                     />
                   </div>
                 </div>

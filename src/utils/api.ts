@@ -17,6 +17,7 @@ export {
   autoSaveAttempt,
   submitAttempt,
   getAttemptResult,
+  getAttemptDetail,
   type NavigatorEntry,
   type NavigatorResponse,
   getQuestionNavigator,

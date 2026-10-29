@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { getAttemptDetail } from "@/services/attempts";
 import { useAttemptStore } from "@/stores/useAttemptStore";
 
 import { ReadingScreen } from "./screens/ReadingScreen";
@@ -16,20 +18,34 @@ export default function DoTestAttemptPage() {
     attemptId: string;
   };
   const attempt = useAttemptStore((s) => s.byId[attemptId]);
+  const setAttempt = useAttemptStore(s => s.setAttempt);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    if (attempt || (skill !== "reading" && skill !== "listening")) return;
+    let cancelled = false;
+    getAttemptDetail(attemptId).then(response => {
+      if (cancelled) return;
+      const data = response.data?.data;
+      if (!data?.paper) throw new Error("Snapshot missing");
+      setAttempt({ ...data, attemptId, durationSec: data.durationSec ?? data.paper.durationMin * 60, timeLeft: data.timeLeftSec ?? data.timeLeft });
+    }).catch(() => { if (!cancelled) setError("Could not restore this attempt. Please return to history and reopen it."); });
+    return () => { cancelled = true; };
+  }, [attempt, attemptId, skill, setAttempt]);
 
+  if (error) return <p role="alert" className="p-6">{error}</p>;
   if (!attempt) {
     return (
       <div className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center gap-4">
         <div className="h-10 w-10 animate-spin rounded-full border-[4px] border-[var(--border)] border-t-[var(--primary)]" />
         <p className="text-sm text-[var(--text-muted)] font-bold" style={{ fontFamily: "var(--font-heading)" }}>
-          Loading test... If you refreshed, please go back and re-enter.
+          Loading test...
         </p>
       </div>
     );
   }
 
-  if (skill === "reading") return <ReadingScreen attemptId={attemptId} />;
-  if (skill === "listening") return <ListeningScreen attemptId={attemptId} />;
+  if (skill === "reading") return <ReadingScreen key={attemptId} attemptId={attemptId} />;
+  if (skill === "listening") return <ListeningScreen key={attemptId} attemptId={attemptId} />;
   if (skill === "speaking") return <SpeakingScreen attemptId={attemptId} />;
   if (skill === "writing") return <WritingScreen attemptId={attemptId} />;
 

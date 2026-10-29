@@ -13,7 +13,8 @@ import PassageFooter from "./components/reading/PassageFooter";
 import { useAttemptStore } from "@/stores/useAttemptStore";
 import { useLoadingStore } from "@/stores/loading";
 import Modal from "@/components/Modal";
-import { submitAttempt } from "@/services/attempts";
+import { normalizeExamPaper, sectionQuestions } from "@/features/exam/contract";
+import type { InternalDeliveryExam } from "@/features/exam/types";
 
 type Skill = "reading" | "listening" | "writing" | "speaking";
 
@@ -54,15 +55,10 @@ export default function DoTestAttemptLayout({
 
   const passages = useMemo(() => {
     if (!attempt || skill !== "reading") return [];
-    const sortedSections = [...attempt.paper.sections].sort(
-      (a, b) => (a.idx ?? 0) - (b.idx ?? 0)
-    );
+    const sortedSections = normalizeExamPaper(attempt.paper as unknown as InternalDeliveryExam).sections;
     let runningStart = 1;
     return sortedSections.map((sec) => {
-      const groups = [...(sec.questionGroups ?? [])].sort(
-        (a, b) => (a.idx ?? 0) - (b.idx ?? 0)
-      );
-      const allQs = groups.flatMap((g) => g.questions ?? []);
+      const allQs = sectionQuestions(sec);
       const totalQs = allQs.length;
 
       // Continuous question numbering across all reading sections
@@ -74,7 +70,7 @@ export default function DoTestAttemptLayout({
         totalQs > 0
           ? `${String(start).padStart(2, "0")}–${String(end).padStart(2, "0")}`
           : `S${(sec.idx ?? 0) + 1}`;
-      return { id: sec.id, label, total: totalQs, done: 0 };
+      return { id: sec.id ?? "", label, total: totalQs, done: 0 };
     });
   }, [attempt, skill]);
 
@@ -144,17 +140,16 @@ export default function DoTestAttemptLayout({
       if (isAutoGraded && attempt) {
         // Delegate to the screen's doSubmit so the latest in-memory answers
         // (autosave is 2s-debounced) are flushed to the BE first.
-        if (submitHandler) {
-          await submitHandler();
-        } else {
-          await submitAttempt(attempt.attemptId);
-        }
+        if (!submitHandler) throw new Error("Test answers are still loading.");
+        await submitHandler();
         clearAttempt(attemptId);
         router.replace(`/attempts/${attempt.attemptId}`);
         return;
       }
 
       router.replace("/home");
+    } catch {
+      alert("Could not save and submit your answers. Your draft is retained; please try again.");
     } finally {
       setLoading(false);
       setIsSubmitting(false);
@@ -167,7 +162,8 @@ export default function DoTestAttemptLayout({
     // Delegate to the screen's doSubmit so the latest in-memory answers
     // (autosave is 2s-debounced) are flushed to the BE first.
     if (submitHandler) {
-      await submitHandler();
+      try { await submitHandler(); }
+      catch { alert("Could not save and submit your answers. Your draft is retained; please try again."); }
       return;
     }
 
@@ -180,7 +176,7 @@ export default function DoTestAttemptLayout({
   };
 
   // Timer component
-  const timerSlot = showTimer && attempt ? (
+  const timerSlot = showTimer && attempt && submitHandler ? (
     <TimerDisplay
       startedAt={attempt.startedAt}
       durationSec={attempt.durationSec}

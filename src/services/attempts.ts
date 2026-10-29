@@ -1,4 +1,9 @@
 import { apisAttempt } from "../utils/api.customize";
+import { enqueueAttemptSave } from "@/lib/attemptSaveQueue";
+
+export async function getAttemptDetail(attemptId: string) {
+  return apisAttempt.get(`/attempt/${attemptId}`);
+}
 
 export async function startAttempt(examId: string) {
   const res = await apisAttempt.post("/attempt/attempts:start", { examId });
@@ -17,14 +22,13 @@ export async function autoSaveAttempt(
     clientRevision: number;
   }
 ) {
-  const res = await apisAttempt.post(
+  // Snapshot before queueing: later edits must not change a pending request.
+  const snapshot = { ...payload, answers: payload.answers.map(a => ({ ...a, selectedOptionIds: [...a.selectedOptionIds] })) };
+  return enqueueAttemptSave(attemptId, () => apisAttempt.post(
     `/attempt/autosave/${attemptId}`,
-    payload,
-    {
-      headers: { "Content-Type": "application/json" },
-    }
-  );
-  return res;
+    snapshot,
+    { headers: { "Content-Type": "application/json" } }
+  ));
 }
 
 export async function submitAttempt(
@@ -36,10 +40,10 @@ export async function submitAttempt(
     textAnswer?: string;
   }>
 ) {
-  const res = await apisAttempt.post(`/attempt/submit/${attemptId}`, {
-    answers: answers ?? [],
-  });
-  return res;
+  // The backend submit endpoint ignores an answers body. Persist explicitly,
+  // and NEVER submit when that save fails.
+  if (answers) await autoSaveAttempt(attemptId, { answers, clientRevision: Date.now() });
+  return enqueueAttemptSave(attemptId, () => apisAttempt.post(`/attempt/submit/${attemptId}`, {}));
 }
 
 export async function getAttemptResult(attemptId: string) {

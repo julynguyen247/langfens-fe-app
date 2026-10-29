@@ -8,11 +8,11 @@ const second = '22222222-2222-2222-2222-222222222222';
 test('answer payload distinguishes option IDs, multiple selections and text', () => {
   const payload = buildAnswerPayload({ single: first, multi: JSON.stringify([first, second]), text: 'answer', letters: '["A","B"]', empty: '' }, () => 'section-1');
   assert.deepEqual(payload.answers, [
-    { questionId: 'single', sectionId: 'section-1', selectedOptionIds: [first], textAnswer: undefined },
-    { questionId: 'multi', sectionId: 'section-1', selectedOptionIds: [first, second], textAnswer: undefined },
+    { questionId: 'single', sectionId: 'section-1', selectedOptionIds: [first], textAnswer: '' },
+    { questionId: 'multi', sectionId: 'section-1', selectedOptionIds: [first, second], textAnswer: '' },
     { questionId: 'text', sectionId: 'section-1', selectedOptionIds: [], textAnswer: 'answer' },
     { questionId: 'letters', sectionId: 'section-1', selectedOptionIds: [], textAnswer: '["A","B"]' },
-    { questionId: 'empty', sectionId: 'section-1', selectedOptionIds: [], textAnswer: undefined },
+    { questionId: 'empty', sectionId: 'section-1', selectedOptionIds: [], textAnswer: '' },
   ]);
   assert.equal(typeof payload.clientRevision, 'number');
 });
@@ -27,5 +27,5 @@ test('invalid JSON and mixed selections preserve the original text', () => {
   assert.equal(answers[0].textAnswer, '[oops]');
   assert.equal(answers[1].textAnswer, JSON.stringify([first, 'A']));
   assert.deepEqual(answers[1].selectedOptionIds, []);
-  assert.equal(answers[2].textAnswer, undefined);
+  assert.equal(answers[2].textAnswer, '');
 });
